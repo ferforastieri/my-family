@@ -24,7 +24,39 @@ const FotosGrid = styled.div`
   margin-top: 2rem;
 `;
 
+const DeleteButton = styled.button`
+  background: #ff4757;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem;
+  cursor: pointer;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 10;
+
+  &:hover {
+    background: #ff6b81;
+  }
+`;
+
 const FotoCard = styled.div`
+  position: relative;
+
+  &:hover ${DeleteButton} {
+    opacity: 1;
+  }
+
+  video {
+    pointer-events: none;
+    &::-webkit-media-controls {
+      z-index: 2;
+    }
+  }
+
   background: white;
   border-radius: 10px;
   overflow: hidden;
@@ -39,6 +71,7 @@ const FotoCard = styled.div`
     width: 100%;
     height: 200px;
     object-fit: cover;
+    display: block;
   }
 
   .texto {
@@ -125,6 +158,26 @@ const Galeria = () => {
     }
   };
 
+  const handleExcluirFoto = async (id: string) => {
+    if (!window.confirm('Tem certeza que deseja excluir esta memória?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('fotos')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setFotos(fotos.filter(foto => foto.id !== id));
+    } catch (error) {
+      console.error('Erro ao excluir foto:', error);
+      alert('Erro ao excluir a foto');
+    }
+  };
+
   return (
     <GaleriaContainer>
       <h1>Nossa Galeria de Memórias</h1>
@@ -136,6 +189,9 @@ const Galeria = () => {
         <FotosGrid>
           {fotos.map(foto => (
             <FotoCard key={foto.id}>
+              <DeleteButton onClick={() => handleExcluirFoto(foto.id)}>
+                Excluir
+              </DeleteButton>
               {foto.tipo === 'video' ? (
                 <video controls>
                   <source src={foto.url} type="video/mp4" />
