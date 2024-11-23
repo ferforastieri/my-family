@@ -1,6 +1,7 @@
 {
   "name": "Love Page",
   "short_name": "Love",
+  "version": "2.0.0",
   "description": "Uma página especial de amor",
   "start_url": "/",
   "display": "standalone",
@@ -33,5 +34,6 @@
       "type": "image/png",
       "form_factor": "narrow"
     }
-  ]
+  ],
+  "update_via_cache": "none"
 } 
