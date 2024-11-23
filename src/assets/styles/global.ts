@@ -7,9 +7,8 @@ export const GlobalStyle = createGlobalStyle`
     box-sizing: border-box;
   }
 
-  html, body {
+  html {
     height: 100%;
-    width: 100%;
     overflow-x: hidden;
   }
 
@@ -17,14 +16,15 @@ export const GlobalStyle = createGlobalStyle`
     font-family: 'Pacifico', Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     background: linear-gradient(180deg, #fff8fa 0%, #fff0f5 100%);
-    position: relative;
+    min-height: 100%;
+    overflow-x: hidden;
   }
 
   #root {
     display: flex;
     min-height: 100vh;
+    width: 100%;
     position: relative;
-    overflow-x: hidden;
   }
 
   button {
@@ -45,6 +45,10 @@ export const GlobalStyle = createGlobalStyle`
 
   /* Fix para scroll mobile */
   @media (max-width: 768px) {
+    html, body {
+      overflow-x: hidden;
+    }
+    
     body {
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;

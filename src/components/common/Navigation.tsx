@@ -17,6 +17,11 @@ const Nav = styled.nav<{ isOpen: boolean }>`
   display: flex;
   flex-direction: column;
   align-items: center;
+
+  @media (max-width: 768px) {
+    width: ${props => props.isOpen ? '100%' : '60px'};
+    transition: width 0.3s ease;
+  }
 `;
 
 const ToggleButton = styled.button<{ isOpen: boolean }>`
@@ -162,14 +167,38 @@ const LogoutButton = styled.button<{ isOpen: boolean }>`
   }
 `;
 
+const MobileOverlay = styled.div<{ isOpen: boolean }>`
+  display: none;
+  
+  @media (max-width: 768px) {
+    display: ${props => props.isOpen ? 'block' : 'none'};
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+  }
+`;
+
 const Navigation = ({ onToggle }: { onToggle: (isOpen: boolean) => void }) => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const isMobile = window.innerWidth <= 768;
 
   const handleToggle = () => {
     const newState = !isOpen;
     setIsOpen(newState);
-    onToggle(newState);
+    if (!isMobile) {
+      onToggle(newState);
+    }
+  };
+
+  const handleLinkClick = () => {
+    if (isMobile && isOpen) {
+      setIsOpen(false);
+    }
   };
 
   const handleLogout = () => {
@@ -178,53 +207,56 @@ const Navigation = ({ onToggle }: { onToggle: (isOpen: boolean) => void }) => {
   };
 
   return (
-    <Nav isOpen={isOpen}>
-      <ToggleButton 
-        isOpen={isOpen} 
-        onClick={handleToggle}
-        aria-label={isOpen ? 'Fechar menu' : 'Abrir menu'}
-      >
-        {isOpen ? '◀' : '▶'}
-      </ToggleButton>
-      <NavList isOpen={isOpen}>
-        <NavItem isOpen={isOpen}>
-          <NavLink to="/" isOpen={isOpen}>
-            <span className="icon">🏠</span>
-            <span className="text">Nosso Início</span>
-          </NavLink>
-        </NavItem>
-        <NavItem isOpen={isOpen}>
-          <NavLink to="/nossa-historia" isOpen={isOpen}>
-            <span className="icon">📖</span>
-            <span className="text">Nossa Jornada</span>
-          </NavLink>
-        </NavItem>
-        <NavItem isOpen={isOpen}>
-          <NavLink to="/momentos" isOpen={isOpen}>
-            <span className="icon">✨</span>
-            <span className="text">Momentos Mágicos</span>
-          </NavLink>
-        </NavItem>
-        <NavItem isOpen={isOpen}>
-          <NavLink to="/galeria" isOpen={isOpen}>
-            <span className="icon">📸</span>
-            <span className="text">Memórias em Fotos</span>
-          </NavLink>
-        </NavItem>
-        <NavItem isOpen={isOpen}>
-          <NavLink to="/mensagens" isOpen={isOpen}>
-            <span className="icon">💌</span>
-            <span className="text">Palavras do Coração</span>
-          </NavLink>
-        </NavItem>
-        <NavItem isOpen={isOpen}>
-          <LogoutButton onClick={handleLogout} isOpen={isOpen}>
-            <span className="icon">🚪</span>
-            <span className="text">Sair</span>
-          </LogoutButton>
-        </NavItem>
-      </NavList>
-    </Nav>
+    <>
+      <MobileOverlay isOpen={isOpen} onClick={handleToggle} />
+      <Nav isOpen={isOpen}>
+        <ToggleButton 
+          isOpen={isOpen} 
+          onClick={handleToggle}
+          aria-label={isOpen ? 'Fechar menu' : 'Abrir menu'}
+        >
+          {isOpen ? '◀' : '▶'}
+        </ToggleButton>
+        <NavList isOpen={isOpen}>
+          <NavItem isOpen={isOpen}>
+            <NavLink to="/" isOpen={isOpen} onClick={handleLinkClick}>
+              <span className="icon">🏠</span>
+              <span className="text">Nosso Início</span>
+            </NavLink>
+          </NavItem>
+          <NavItem isOpen={isOpen}>
+            <NavLink to="/nossa-historia" isOpen={isOpen} onClick={handleLinkClick}>
+              <span className="icon">📖</span>
+              <span className="text">Nossa Jornada</span>
+            </NavLink>
+          </NavItem>
+          <NavItem isOpen={isOpen}>
+            <NavLink to="/momentos" isOpen={isOpen} onClick={handleLinkClick}>
+              <span className="icon">✨</span>
+              <span className="text">Momentos Mágicos</span>
+            </NavLink>
+          </NavItem>
+          <NavItem isOpen={isOpen}>
+            <NavLink to="/galeria" isOpen={isOpen} onClick={handleLinkClick}>
+              <span className="icon">📸</span>
+              <span className="text">Memórias em Fotos</span>
+            </NavLink>
+          </NavItem>
+          <NavItem isOpen={isOpen}>
+            <NavLink to="/mensagens" isOpen={isOpen} onClick={handleLinkClick}>
+              <span className="icon">💌</span>
+              <span className="text">Palavras do Coração</span>
+            </NavLink>
+          </NavItem>
+          <NavItem isOpen={isOpen}>
+            <LogoutButton onClick={handleLogout} isOpen={isOpen}>
+              <span className="icon">🚪</span>
+              <span className="text">Sair</span>
+            </LogoutButton>
+          </NavItem>
+        </NavList>
+      </Nav>
+    </>
   );
 };
 
