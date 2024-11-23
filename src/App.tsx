@@ -12,6 +12,15 @@ const MainContent = styled.div<{ isOpen: boolean }>`
   width: calc(100% - ${props => props.isOpen ? '250px' : '60px'});
   transition: margin-left 0.2s ease, width 0.2s ease;
   min-height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  
+  @media (max-width: 768px) {
+    margin-left: 60px;
+    width: calc(100% - 60px);
+    height: 100vh;
+    position: relative;
+  }
 `;
 
 function App() {
