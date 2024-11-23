@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 
 const Nav = styled.nav<{ isOpen: boolean }>`
@@ -12,7 +12,7 @@ const Nav = styled.nav<{ isOpen: boolean }>`
   padding: 1rem 0.5rem;
   z-index: 100;
   box-shadow: 2px 0 15px rgba(255, 105, 180, 0.15);
-  transition: all 0.3s ease-in-out;
+  transition: width 0.2s ease;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -29,7 +29,7 @@ const ToggleButton = styled.button<{ isOpen: boolean }>`
   cursor: pointer;
   color: #ff69b4;
   font-size: 1.3rem;
-  transition: all 0.3s ease;
+  transition: transform 0.2s ease, right 0.2s ease;
   padding: 0.5rem;
   border-radius: 50%;
   width: 35px;
@@ -84,7 +84,7 @@ const NavLink = styled(Link)<{ isOpen: boolean }>`
   font-family: 'Dancing Script', cursive;
   text-decoration: none;
   padding: 0.8rem;
-  transition: all 0.3s ease;
+  transition: transform 0.2s ease, background-color 0.2s ease;
   display: flex;
   align-items: center;
   white-space: nowrap;
@@ -117,20 +117,71 @@ const NavLink = styled(Link)<{ isOpen: boolean }>`
 
   .text {
     opacity: ${props => props.isOpen ? 1 : 0};
-    transition: opacity 0.2s ease;
+    transition: opacity 0.15s ease;
     font-size: 1.1rem;
     display: ${props => props.isOpen ? 'block' : 'none'};
   }
 `;
 
-const Navigation = () => {
+const LogoutButton = styled.button<{ isOpen: boolean }>`
+  color: #ff69b4;
+  font-size: 1.2rem;
+  font-family: 'Dancing Script', cursive;
+  text-decoration: none;
+  padding: 0.8rem;
+  background: none;
+  border: none;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  justify-content: ${props => props.isOpen ? 'flex-start' : 'center'};
+  cursor: pointer;
+  
+  &:hover {
+    color: #ff1493;
+    transform: translateX(${props => props.isOpen ? '10px' : '0'});
+    background: rgba(255, 105, 180, 0.1);
+    border-radius: 8px;
+  }
+
+  .icon {
+    font-size: 1.4rem;
+    margin-right: ${props => props.isOpen ? '1rem' : '0'};
+    min-width: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .text {
+    opacity: ${props => props.isOpen ? 1 : 0};
+    transition: opacity 0.15s ease;
+    font-size: 1.1rem;
+    visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
+  }
+`;
+
+const Navigation = ({ onToggle }: { onToggle: (isOpen: boolean) => void }) => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+
+  const handleToggle = () => {
+    const newState = !isOpen;
+    setIsOpen(newState);
+    onToggle(newState);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    navigate('/login');
+  };
 
   return (
     <Nav isOpen={isOpen}>
       <ToggleButton 
         isOpen={isOpen} 
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggle}
         aria-label={isOpen ? 'Fechar menu' : 'Abrir menu'}
       >
         {isOpen ? '◀' : '▶'}
@@ -165,6 +216,12 @@ const Navigation = () => {
             <span className="icon">💌</span>
             <span className="text">Palavras do Coração</span>
           </NavLink>
+        </NavItem>
+        <NavItem isOpen={isOpen}>
+          <LogoutButton onClick={handleLogout} isOpen={isOpen}>
+            <span className="icon">🚪</span>
+            <span className="text">Sair</span>
+          </LogoutButton>
         </NavItem>
       </NavList>
     </Nav>

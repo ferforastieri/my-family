@@ -13,13 +13,12 @@ const glowAnimation = keyframes`
 `;
 
 const HomeContainer = styled.div`
+  width: 100%;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   position: relative;
   background: linear-gradient(180deg, #fff8fa 0%, #fff0f5 100%);
-  width: 100%;
-  overflow-x: hidden;
 `;
 
 const ContentSection = styled.section`
@@ -28,6 +27,10 @@ const ContentSection = styled.section`
   position: relative;
   width: 100%;
   margin: 0 auto;
+  
+  @media (max-width: 768px) {
+    padding: 10px 16px 0;
+  }
 `;
 
 const HeaderSection = styled.header`
@@ -56,6 +59,10 @@ const Title = styled.h1`
       transition: transform 0.3s ease;
     }
   }
+
+  @media (max-width: 768px) {
+    font-size: 2.5rem;
+  }
 `;
 
 const Heart = styled.span`
@@ -72,6 +79,11 @@ const Subtitle = styled.p`
   margin: 0 auto 2rem;
   line-height: 1.6;
   font-family: 'Dancing Script', cursive;
+
+  @media (max-width: 768px) {
+    font-size: 1.2rem;
+    padding: 0 1rem;
+  }
 `;
 
 const CardGrid = styled.div`
@@ -79,13 +91,18 @@ const CardGrid = styled.div`
   flex-direction: row;
   flex-wrap: wrap;
   gap: 1rem;
-  padding: 1.5rem;
+  padding: 1rem;
   width: 100%;
   max-width: 1400px;
   margin: 0 auto;
   position: relative;
   justify-content: center;
   align-items: center;
+
+  @media (max-width: 768px) {
+    gap: 0.8rem;
+    padding: 0.8rem;
+  }
 `;
 
 const Card = styled.div`
@@ -103,6 +120,13 @@ const Card = styled.div`
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    flex: 0 0 100%;
+    height: 150px;
+    padding: 1rem;
+  }
   
   &:hover {
     transform: translateY(-5px);
@@ -134,6 +158,11 @@ const FlowerSection = styled.div`
   position: relative;
   height: 60vh;
   margin-top: -2rem;
+  
+  @media (max-width: 768px) {
+    height: 40vh;
+    margin-top: 1rem;
+  }
 `;
 
 const Home = () => {
