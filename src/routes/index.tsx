@@ -3,11 +3,13 @@ import Home from '../pages/Home';
 import Login from '../pages/Login';
 import Galeria from '../pages/Galeria';
 import Messages from '../pages/Messages';
-import LoveLetter from '../pages/LoveLetter';
 import FlowerForWife from '../pages/FlowerForWife';
 import QuizDoAmor from '../pages/QuizDoAmor';
 import Painel from '../pages/Painel';
 import PrivateRoute from '../components/PrivateRoute';
+import NossaHistoria from '../pages/NossaHistoria';
+import LoveLetter from '../pages/LoveLetter';
+import Playlist from '../pages/Playlist';
 
 export const AppRoutes = () => {
   return (
@@ -15,8 +17,10 @@ export const AppRoutes = () => {
       {/* Rotas Públicas */}
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/nossa-historia" element={<NossaHistoria />} />
       <Route path="/mensagens" element={<Messages />} />
-      <Route path="/carta-de-amor" element={<LoveLetter />} />
+      <Route path="/carta-de-amor" element={<LoveLetter />} />  
+      <Route path="/playlist" element={<Playlist />} />
       <Route path="/flor-para-esposa" element={<FlowerForWife />} />
       <Route path="/quiz-do-amor" element={<QuizDoAmor />} />
 

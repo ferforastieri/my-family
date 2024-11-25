@@ -12,12 +12,15 @@ const glowAnimation = keyframes`
   50% { text-shadow: 2px 2px 12px rgba(255, 105, 180, 0.6); }
 `;
 
-const HomeContainer = styled.div`
-  width: 100%;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  position: relative;
+const HomeContainer = styled.div.attrs(() => ({
+  style: {
+    width: '100%',
+    minHeight: '100vh',
+    position: 'relative',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+}))`
   background: linear-gradient(180deg, #fff8fa 0%, #fff0f5 100%);
 `;
 
@@ -86,18 +89,21 @@ const Subtitle = styled.p`
   }
 `;
 
-const CardGrid = styled.div`
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+const CardGrid = styled.div.attrs(() => ({
+  style: {
+    display: 'flex',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    width: '100%',
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+}))`
   gap: 1rem;
   padding: 1rem;
-  width: 100%;
   max-width: 1400px;
   margin: 0 auto;
-  position: relative;
-  justify-content: center;
-  align-items: center;
 
   @media (max-width: 768px) {
     gap: 0.8rem;
@@ -105,7 +111,15 @@ const CardGrid = styled.div`
   }
 `;
 
-const Card = styled.div`
+const Card = styled.div.attrs(() => ({
+  style: {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+}))`
   background: rgba(255, 255, 255, 0.9);
   padding: 1.5rem;
   border-radius: 15px;
@@ -116,11 +130,7 @@ const Card = styled.div`
   height: 180px;
   width: 250px;
   flex: 0 0 250px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  
+
   @media (max-width: 768px) {
     width: 100%;
     flex: 0 0 100%;
