@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../services/supabase';
 import { NovaMusicaModal } from '../components/NovaMusicaModal';
 import { SpotifyPlayer } from '../components/SpotifyPlayer';
+import { YouTubePlayer } from '../components/YouTubePlayer';
 
 const floatAnimation = keyframes`
   0%, 100% { transform: translateY(0); }
@@ -139,6 +140,9 @@ const MusicCard = styled.div`
     margin-top: 1rem;
     border-top: 1px solid #f0f0f0;
     padding-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
   }
 `;
 
@@ -207,6 +211,7 @@ const Playlist = () => {
         .order('data', { ascending: false });
 
       if (error) throw error;
+      console.log('Dados carregados do Supabase:', data);
       setMusicas(data || []);
     } catch (error) {
       console.error('Erro ao carregar músicas:', error);
@@ -232,7 +237,7 @@ const Playlist = () => {
 
       if (error) throw error;
       
-      await carregarMusicas(); // Recarrega a lista após salvar
+      await carregarMusicas();
     } catch (error) {
       console.error('Erro ao salvar música:', error);
     }
@@ -241,6 +246,7 @@ const Playlist = () => {
   const musicasFiltradas = musicas.filter(musica => 
     filtroMomento === 'Todos' || musica.momento === filtroMomento
   );
+  console.log('Músicas filtradas:', musicasFiltradas);
 
   return (
     <PlaylistContainer>
@@ -280,11 +286,15 @@ const Playlist = () => {
             <div className="artista">{musica.artista}</div>
             <div className="momento">{musica.momento}</div>
             <div className="descricao">{musica.descricao}</div>
-            {musica.link_spotify && (
-              <div className="player-container">
-                <SpotifyPlayer spotifyUrl={musica.link_spotify} />
-              </div>
-            )}
+            <div className="player-container">
+              {musica.link_spotify && (
+                musica.link_spotify.includes('youtube.com') || musica.link_spotify.includes('youtu.be') ? (
+                  <YouTubePlayer youtubeUrl={musica.link_spotify} />
+                ) : musica.link_spotify.includes('spotify.com') ? (
+                  <SpotifyPlayer spotifyUrl={musica.link_spotify} />
+                ) : null
+              )}
+            </div>
           </MusicCard>
         ))}
       </MusicGrid>

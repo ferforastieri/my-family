@@ -1,14 +1,20 @@
+import React from 'react';
 import styled from 'styled-components';
 
 const PlayerContainer = styled.div`
-  margin-top: 1rem;
-  width: 100%;
+  position: relative;
+  padding-bottom: 152px;
+  height: 0;
+  overflow: hidden;
   
   iframe {
-    border-radius: 12px;
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
-    max-height: 80px;
+    height: 100%;
     border: none;
+    border-radius: 8px;
   }
 `;
 
@@ -16,26 +22,20 @@ interface SpotifyPlayerProps {
   spotifyUrl: string;
 }
 
-export const SpotifyPlayer = ({ spotifyUrl }: SpotifyPlayerProps) => {
-  // Converte URL normal do Spotify para URL de embed
-  const getEmbedUrl = (url: string) => {
+export const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ spotifyUrl }) => {
+  const getSpotifyEmbedUrl = (url: string) => {
     const trackId = url.split('/track/')[1]?.split('?')[0];
-    return trackId 
-      ? `https://open.spotify.com/embed/track/${trackId}` 
-      : null;
+    return trackId ? `https://open.spotify.com/embed/track/${trackId}` : '';
   };
 
-  const embedUrl = getEmbedUrl(spotifyUrl);
-  
-  if (!embedUrl) return null;
+  const embedUrl = getSpotifyEmbedUrl(spotifyUrl);
 
   return (
     <PlayerContainer>
       <iframe
         src={embedUrl}
         allow="encrypted-media"
-        allowTransparency={true}
-        loading="lazy"
+        allowFullScreen
       />
     </PlayerContainer>
   );

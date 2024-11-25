@@ -1,6 +1,7 @@
 import styled, { keyframes } from 'styled-components';
 import FlowerGarden from '../components/common/FlowerGarden';
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 const floatAnimation = keyframes`
   0%, 100% { transform: translateY(0); }
@@ -19,10 +20,9 @@ const HomeContainer = styled.div.attrs(() => ({
     position: 'relative',
     display: 'flex',
     flexDirection: 'column',
+    background: 'linear-gradient(180deg, #fff8fa 0%, #fff0f5 100%)'
   },
-}))`
-  background: linear-gradient(180deg, #fff8fa 0%, #fff0f5 100%);
-`;
+}))``;
 
 const ContentSection = styled.section`
   padding: 10px 2rem 0;
@@ -98,13 +98,12 @@ const CardGrid = styled.div.attrs(() => ({
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
+    gap: '1rem',
+    padding: '1rem',
+    maxWidth: '1400px',
+    margin: '0 auto',
   },
 }))`
-  gap: 1rem;
-  padding: 1rem;
-  max-width: 1400px;
-  margin: 0 auto;
-
   @media (max-width: 768px) {
     gap: 0.8rem;
     padding: 0.8rem;
@@ -118,18 +117,18 @@ const Card = styled.div.attrs(() => ({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+    background: 'rgba(255, 255, 255, 0.9)',
+    padding: '1.5rem',
+    borderRadius: '15px',
+    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
+    backdropFilter: 'blur(5px)',
+    cursor: 'pointer',
+    height: '180px',
+    width: '250px',
+    flex: '0 0 250px',
   },
 }))`
-  background: rgba(255, 255, 255, 0.9);
-  padding: 1.5rem;
-  border-radius: 15px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
-  backdrop-filter: blur(5px);
-  cursor: pointer;
-  height: 180px;
-  width: 250px;
-  flex: 0 0 250px;
 
   @media (max-width: 768px) {
     width: 100%;
@@ -175,8 +174,120 @@ const FlowerSection = styled.div`
   }
 `;
 
+const CountdownCard = styled.div`
+  background: linear-gradient(135deg, #ff69b4 0%, #d4488e 100%);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 8px 20px rgba(212, 72, 142, 0.3);
+  margin: 2rem auto;
+  max-width: 800px;
+  text-align: center;
+  transform: translateY(0);
+  transition: transform 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-5px);
+  }
+
+  @media (max-width: 768px) {
+    margin: 1.5rem 1rem;
+    padding: 1.5rem;
+  }
+`;
+
+const CountdownTitle = styled.h3`
+  color: white;
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  font-family: 'Pacifico', cursive;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+  }
+`;
+
+const CountdownGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.8rem;
+  }
+`;
+
+const TimeUnit = styled.div`
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  padding: 0.8rem;
+  
+  .number {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #ff69b4;
+    margin-bottom: 0.3rem;
+  }
+  
+  .label {
+    font-size: 0.9rem;
+    color: #d4488e;
+    font-family: 'Dancing Script', cursive;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.6rem;
+    
+    .number {
+      font-size: 1.4rem;
+    }
+    
+    .label {
+      font-size: 0.8rem;
+    }
+  }
+`;
+
 const Home = () => {
   const navigate = useNavigate();
+  const [timeElapsed, setTimeElapsed] = useState({
+    years: 0,
+    months: 0,
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0
+  });
+
+  useEffect(() => {
+    const startDate = new Date('2024-10-15'); // Substitua pela data do início do namoro
+    
+    const updateCounter = () => {
+      const now = new Date();
+      const diff = now.getTime() - startDate.getTime();
+      
+      const seconds = Math.floor(diff / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
+      const months = Math.floor(days / 30.44); // média de dias por mês
+      const years = Math.floor(months / 12);
+
+      setTimeElapsed({
+        years,
+        months: months % 12,
+        days: days % 30,
+        hours: hours % 24,
+        minutes: minutes % 60,
+        seconds: seconds % 60
+      });
+    };
+
+    const timer = setInterval(updateCounter, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleCardClick = (path: string) => {
     navigate(path);
@@ -194,6 +305,35 @@ const Home = () => {
             ))}
             <Heart>❤️</Heart>
           </Title>
+          <CountdownCard>
+            <CountdownTitle>Nosso Amor em Números</CountdownTitle>
+            <CountdownGrid>
+              <TimeUnit>
+                <div className="number">{timeElapsed.years}</div>
+                <div className="label">Anos</div>
+              </TimeUnit>
+              <TimeUnit>
+                <div className="number">{timeElapsed.months}</div>
+                <div className="label">Meses</div>
+              </TimeUnit>
+              <TimeUnit>
+                <div className="number">{timeElapsed.days}</div>
+                <div className="label">Dias</div>
+              </TimeUnit>
+              <TimeUnit>
+                <div className="number">{timeElapsed.hours}</div>
+                <div className="label">Horas</div>
+              </TimeUnit>
+              <TimeUnit>
+                <div className="number">{timeElapsed.minutes}</div>
+                <div className="label">Minutos</div>
+              </TimeUnit>
+              <TimeUnit>
+                <div className="number">{timeElapsed.seconds}</div>
+                <div className="label">Segundos</div>
+              </TimeUnit>
+            </CountdownGrid>
+          </CountdownCard>
           <Subtitle>
             Um jardim digital de memórias e amor, onde cada flor representa 
             um momento especial da nossa história juntos.

@@ -224,7 +224,7 @@ export const NovaMusicaModal = ({ isOpen, onClose, onSave }: NovaMusicaModalProp
           />
           <Input
             type="url"
-            placeholder="Link do Spotify (opcional)"
+            placeholder="Link do Spotify ou YouTube"
             value={linkSpotify}
             onChange={e => setLinkSpotify(e.target.value)}
           />
