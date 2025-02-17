@@ -31,3 +31,4 @@ dist-ssr
 # Service Worker dev files
 dev.dist/
 *.sw.js
+dev-dist/

@@ -1,7 +1,7 @@
 import styled, { keyframes } from 'styled-components';
-import FlowerGarden from '../components/common/FlowerGarden';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import FlowerGarden from '../components/common/FlowerGarden';
 
 const floatAnimation = keyframes`
   0%, 100% { transform: translateY(0); }
@@ -30,6 +30,7 @@ const ContentSection = styled.section`
   position: relative;
   width: 100%;
   margin: 0 auto;
+  z-index: 1;
   
   @media (max-width: 768px) {
     padding: 10px 16px 0;
@@ -163,17 +164,6 @@ const Card = styled.div.attrs(() => ({
   }
 `;
 
-const FlowerSection = styled.div`
-  position: relative;
-  height: 60vh;
-  margin-top: -2rem;
-  
-  @media (max-width: 768px) {
-    height: 40vh;
-    margin-top: 1rem;
-  }
-`;
-
 const CountdownCard = styled.div`
   background: linear-gradient(135deg, #ff69b4 0%, #d4488e 100%);
   border-radius: 20px;
@@ -248,6 +238,16 @@ const TimeUnit = styled.div`
       font-size: 0.8rem;
     }
   }
+`;
+
+const FlowerSection = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
 `;
 
 const Home = () => {
@@ -346,9 +346,9 @@ const Home = () => {
             <h3>Nossa História</h3>
             <p>Descubra como tudo começou e os momentos que nos trouxeram até aqui.</p>
           </Card>
-          <Card onClick={() => handleCardClick('/quiz-do-amor')}>
-            <h3>Quiz do Amor ❤️</h3>
-            <p>Teste seus conhecimentos sobre nossa história de amor em um jogo divertido!</p>
+          <Card onClick={() => handleCardClick('/jogos')}>
+            <h3>Jogos do Amor 🎮</h3>
+            <p>Divirta-se com nossos jogos especiais, incluindo o Quiz do Amor!</p>
           </Card>
           <Card onClick={() => handleCardClick('/mensagens')}>
             <h3>Mensagens do Coração</h3>

@@ -10,6 +10,8 @@ import PrivateRoute from '../components/PrivateRoute';
 import NossaHistoria from '../pages/NossaHistoria';
 import LoveLetter from '../pages/LoveLetter';
 import Playlist from '../pages/Playlist';
+import Jogos from '../pages/Jogos';
+import CacaPalavras from '../pages/CacaPalavras';
 
 export const AppRoutes = () => {
   return (
@@ -22,7 +24,9 @@ export const AppRoutes = () => {
       <Route path="/carta-de-amor" element={<LoveLetter />} />  
       <Route path="/playlist" element={<Playlist />} />
       <Route path="/flor-para-esposa" element={<FlowerForWife />} />
+      <Route path="/jogos" element={<Jogos />} />
       <Route path="/quiz-do-amor" element={<QuizDoAmor />} />
+      <Route path="/caca-palavras" element={<CacaPalavras />} />
 
       {/* Rotas Protegidas */}
       <Route
