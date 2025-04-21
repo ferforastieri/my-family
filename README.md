@@ -1,18 +1,20 @@
 # Love Page 💝
 
-Um projeto multiplataforma que consiste em uma aplicação web e mobile desenvolvida com tecnologias modernas.
+Um projeto multiplataforma que consiste em uma aplicação web (descontinuada) e mobile desenvolvida com tecnologias modernas.
 
 ## 🚀 Estrutura do Projeto
 
 O projeto está dividido em duas partes principais:
 
-### Web (Frontend)
+### Web (Frontend) - Descontinuado
+> ⚠️ A versão web deste projeto foi descontinuada. O foco atual está no desenvolvimento mobile.
+
 - Desenvolvido com React + TypeScript + Vite
 - Estilização com Styled Components
 - Integração com Supabase
 - PWA (Progressive Web App) habilitado
 
-### Mobile
+### Mobile (Atual)
 - Desenvolvido com React Native + Expo
 - Navegação com Expo Router
 - Interface nativa para iOS e Android
