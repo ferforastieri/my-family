@@ -10,8 +10,8 @@ export default {
     userInterfaceStyle: "light",
     splash: {
       image: "./assets/images/splash-icon.png",
-      objectFit: "contain",
-      backgroundColor: "#ff69b4",
+      resizeMode: "contain",
+      backgroundColor: "#ff69b4"
     },
     ios: {
       supportsTablet: true,
@@ -30,8 +30,7 @@ export default {
       favicon: "./assets/favicon.png",
     },
     plugins: [
-      "expo-router",
-      "expo-splash-screen"
+      "expo-router"
     ],
     experiments: {
       typedRoutes: true,
