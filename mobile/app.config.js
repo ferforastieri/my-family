@@ -31,24 +31,7 @@ export default {
     },
     plugins: [
       "expo-router",
-      "expo-splash-screen",
-      [
-        "expo-secure-store",
-        {
-          configureAndroidBackup: true,
-          faceIDPermission:
-            "Permitir que o aplicativo acesse seus dados biométricos para autenticação segura.",
-        },
-      ],
-      [
-        "expo-build-properties",
-        {
-          ios: {
-            useFrameworks: "static",
-          },
-        },
-      ],
-      "expo-sqlite",
+      "expo-splash-screen"
     ],
     experiments: {
       typedRoutes: true,
