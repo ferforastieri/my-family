@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import FallingFlowers from '../components/FallingFlowers';
+import TimeCounter from '../components/TimeCounter';
 
 type RouteType = '/history' | '/games' | '/messages' | '/love-letter' | '/flower' | '/playlist';
 
@@ -14,42 +15,8 @@ interface MenuItem {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [timeElapsed, setTimeElapsed] = useState({
-    years: 0,
-    months: 0,
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0
-  });
-
-  useEffect(() => {
-    const startDate = new Date('2024-10-15T00:00:00');
-    
-    const updateCounter = () => {
-      const now = new Date();
-      const diff = now.getTime() - startDate.getTime();
-      
-      const seconds = Math.floor(diff / 1000);
-      const minutes = Math.floor(seconds / 60);
-      const hours = Math.floor(minutes / 60);
-      const days = Math.floor(hours / 24);
-      const months = Math.floor(days / 30.44);
-      const years = Math.floor(months / 12);
-
-      setTimeElapsed({
-        years,
-        months: months % 12,
-        days: days % 30,
-        hours: hours % 24,
-        minutes: minutes % 60,
-        seconds: seconds % 60
-      });
-    };
-
-    const timer = setInterval(updateCounter, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const startDate = new Date('2024-10-15T00:00:00');
+  const weddingDate = new Date('2024-04-15T00:00:00');
 
   const menuItems: MenuItem[] = [
     { title: 'Nossa História', icon: '📖', route: '/history', description: 'Como tudo começou...' },
@@ -65,19 +32,18 @@ export default function HomeScreen() {
       <FallingFlowers />
       <ScrollView>
         <View style={styles.header}>
-          <Text style={styles.title}>Para Meu Amor ❤️</Text>
+          <Text style={styles.title}>Para Minha Esposa ❤️</Text>
           
-          <View style={styles.countdownCard}>
-            <Text style={styles.countdownTitle}>Nosso Amor em Números</Text>
-            <View style={styles.timeGrid}>
-              <TimeUnit value={timeElapsed.years} label="Anos" />
-              <TimeUnit value={timeElapsed.months} label="Meses" />
-              <TimeUnit value={timeElapsed.days} label="Dias" />
-              <TimeUnit value={timeElapsed.hours} label="Horas" />
-              <TimeUnit value={timeElapsed.minutes} label="Min" />
-              <TimeUnit value={timeElapsed.seconds} label="Seg" />
-            </View>
-          </View>
+          <TimeCounter
+            title="Nosso Amor em Números"
+            startDate={startDate}
+          />
+
+          <TimeCounter
+            title="Nosso Casamento"
+            startDate={weddingDate}
+            style={styles.weddingCard}
+          />
 
           <Text style={styles.subtitle}>
             Um jardim digital de memórias e amor, onde cada flor representa 
@@ -103,13 +69,6 @@ export default function HomeScreen() {
   );
 }
 
-const TimeUnit = ({ value, label }: { value: number; label: string }) => (
-  <View style={styles.timeUnit}>
-    <Text style={styles.timeNumber}>{value}</Text>
-    <Text style={styles.timeLabel}>{label}</Text>
-  </View>
-);
-
 const { width } = Dimensions.get('window');
 const styles = StyleSheet.create({
   container: {
@@ -127,43 +86,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
-  countdownCard: {
-    backgroundColor: '#ff69b4',
-    borderRadius: 15,
-    padding: 15,
-    width: '100%',
-    marginBottom: 20,
-    elevation: 3,
-  },
-  countdownTitle: {
-    color: 'white',
-    fontSize: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  timeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-around',
-    marginTop: 10,
-  },
-  timeUnit: {
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 8,
-    minWidth: width / 6 - 10,
-    alignItems: 'center',
-    margin: 2,
-  },
-  timeNumber: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#ff69b4',
-  },
-  timeLabel: {
-    fontSize: 12,
-    color: '#d4488e',
+  weddingCard: {
+    backgroundColor: '#d4488e',
   },
   subtitle: {
     color: '#d4488e',
