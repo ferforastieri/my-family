@@ -1,17 +1,24 @@
 import { Drawer } from 'expo-router/drawer';
 import { TouchableOpacity } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import { useCallback } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { DrawerActions, useNavigation } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
+import AnimatedSplashScreen from '../components/AnimatedSplashScreen';
 
 export default function Layout() {
   const navigation = useNavigation();
+  const [isReady, setIsReady] = useState(false);
 
   const openMenu = useCallback(() => {
     navigation.dispatch(DrawerActions.toggleDrawer());
   }, [navigation]);
+
+  // Se a splash screen não estiver pronta, mostre-a
+  if (!isReady) {
+    return <AnimatedSplashScreen onFinish={() => setIsReady(true)} />;
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -49,7 +56,7 @@ export default function Layout() {
           name="index"
           options={{
             title: 'Início',
-            headerTitle: 'Love Page',
+            headerTitle: 'Familia & Pessoa 💑',
             drawerIcon: ({ color }) => <FontAwesome name="home" size={24} color={color} />,
           }}
         />
