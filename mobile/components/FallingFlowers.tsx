@@ -1,99 +1,107 @@
 import React, { useEffect, useState } from 'react';
-import { View, Animated, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  withSequence,
+  withDelay,
+  Easing,
+} from 'react-native-reanimated';
 
 const { width, height } = Dimensions.get('window');
 
+const FLOWERS = ['🌸', '🌹', '🌺', '🌻', '🌼', '🌷', '💐', '🏵️', '🥀', '🌱'];
+const FLOWER_COLORS = ['#ff69b4', '#ff1493', '#ffc0cb', '#ffb6c1', '#db7093', '#ff69b4'];
+
 interface Flower {
   id: number;
-  x: Animated.Value;
-  y: Animated.Value;
-  rotation: Animated.Value;
-  scale: Animated.Value;
   emoji: string;
+  color: string;
+  size: number;
+  x: number;
+  y: number;
+  rotation: number;
+  delay: number;
+  duration: number;
 }
-
-const flowerEmojis = ['🌸', '🌹', '🌺', '🌷', '💐', '🌼'];
 
 export default function FallingFlowers() {
   const [flowers, setFlowers] = useState<Flower[]>([]);
 
   useEffect(() => {
-    const createFlower = () => {
-      const id = Date.now();
-      const startX = Math.random() * width;
-      const x = new Animated.Value(startX);
-      const y = new Animated.Value(-50);
-      const startRotation = Math.random() * 360;
-      const rotation = new Animated.Value(startRotation);
-      const scale = new Animated.Value(0.5 + Math.random() * 0.5);
-
-      const flower: Flower = {
-        id,
-        x,
-        y,
-        rotation,
-        scale,
-        emoji: flowerEmojis[Math.floor(Math.random() * flowerEmojis.length)]
-      };
-
-      setFlowers(prev => [...prev, flower]);
-
-      Animated.parallel([
-        Animated.timing(y, {
-          toValue: height + 50,
-          duration: 5000 + Math.random() * 5000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(x, {
-          toValue: startX + (Math.random() - 0.5) * 200,
-          duration: 5000 + Math.random() * 5000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(rotation, {
-          toValue: startRotation + 360,
-          duration: 5000 + Math.random() * 5000,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        setFlowers(prev => prev.filter(f => f.id !== id));
+    const newFlowers: Flower[] = [];
+    for (let i = 0; i < 30; i++) {
+      newFlowers.push({
+        id: i,
+        emoji: FLOWERS[Math.floor(Math.random() * FLOWERS.length)],
+        color: FLOWER_COLORS[Math.floor(Math.random() * FLOWER_COLORS.length)],
+        size: Math.random() * 20 + 15,
+        x: Math.random() * width,
+        y: -50,
+        rotation: Math.random() * 360,
+        delay: Math.random() * 5000,
+        duration: Math.random() * 5000 + 5000,
       });
-    };
-
-    const interval = setInterval(createFlower, 1000);
-    return () => clearInterval(interval);
+    }
+    setFlowers(newFlowers);
   }, []);
 
   return (
-    <View style={StyleSheet.absoluteFill}>
-      {flowers.map(flower => (
-        <Animated.Text
-          key={flower.id}
-          style={[
-            styles.flower,
-            {
-              transform: [
-                { translateX: flower.x },
-                { translateY: flower.y },
-                { rotate: flower.rotation.interpolate({
-                    inputRange: [0, 360],
-                    outputRange: ['0deg', '360deg']
-                  })
-                },
-                { scale: flower.scale }
-              ]
-            }
-          ]}
-        >
-          {flower.emoji}
-        </Animated.Text>
+    <View style={styles.container}>
+      {flowers.map((flower) => (
+        <AnimatedFlower key={flower.id} flower={flower} />
       ))}
     </View>
   );
 }
 
+function AnimatedFlower({ flower }: { flower: Flower }) {
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { translateY: withRepeat(withTiming(height + 50, { duration: flower.duration, easing: Easing.linear }), -1, false) },
+        { translateX: withRepeat(withSequence(
+          withTiming(flower.x + 50, { duration: flower.duration / 2 }),
+          withTiming(flower.x - 50, { duration: flower.duration / 2 })
+        ), -1, true) },
+        { rotate: withRepeat(withTiming('360deg', { duration: flower.duration / 2 }), -1, false) },
+      ],
+    };
+  });
+
+  return (
+    <Animated.View
+      style={[
+        styles.flower,
+        {
+          left: flower.x,
+          top: flower.y,
+          width: flower.size,
+          height: flower.size,
+        },
+        animatedStyle,
+      ]}
+    >
+      <Text style={[styles.flowerEmoji, { fontSize: flower.size }]}>
+        {flower.emoji}
+      </Text>
+    </Animated.View>
+  );
+}
+
 const styles = StyleSheet.create({
+  container: {
+    ...StyleSheet.absoluteFillObject,
+  },
   flower: {
     position: 'absolute',
-    fontSize: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  flowerEmoji: {
+    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
 }); 

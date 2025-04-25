@@ -16,7 +16,7 @@ interface MenuItem {
 export default function HomeScreen() {
   const router = useRouter();
   const startDate = new Date('2024-10-15T00:00:00');
-  const weddingDate = new Date('2024-04-15T00:00:00');
+  const weddingDate = new Date('2026-01-01T00:00:00');
 
   const menuItems: MenuItem[] = [
     { title: 'Nossa História', icon: '📖', route: '/history', description: 'Como tudo começou...' },
@@ -29,20 +29,14 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <FallingFlowers />
       <ScrollView>
         <View style={styles.header}>
-          <Text style={styles.title}>Para Minha Esposa ❤️</Text>
+          <Text style={styles.title}>Nossa História de Amor ❤️</Text>
           
           <TimeCounter
-            title="Nosso Amor em Números"
+            title="Nosso Tempo Juntos"
             startDate={startDate}
-          />
-
-          <TimeCounter
-            title="Nosso Casamento"
-            startDate={weddingDate}
-            style={styles.weddingCard}
+            weddingDate={weddingDate}
           />
 
           <Text style={styles.subtitle}>
@@ -65,6 +59,9 @@ export default function HomeScreen() {
           ))}
         </View>
       </ScrollView>
+      <View style={styles.flowersContainer}>
+        <FallingFlowers />
+      </View>
     </View>
   );
 }
@@ -75,15 +72,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff8fa',
   },
+  flowersContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1,
+    pointerEvents: 'none',
+  },
   header: {
-    padding: 20,
+    padding: 15,
     alignItems: 'center',
   },
   title: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#ff69b4',
-    marginBottom: 20,
+    marginBottom: 15,
     textAlign: 'center',
   },
   weddingCard: {
@@ -91,10 +97,10 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: '#d4488e',
-    fontSize: 16,
+    fontSize: 14,
     textAlign: 'center',
     marginHorizontal: 20,
-    marginBottom: 20,
+    marginBottom: 15,
   },
   menuGrid: {
     flexDirection: 'row',
