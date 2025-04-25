@@ -6,6 +6,10 @@ import { DrawerActions, useNavigation } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import AnimatedSplashScreen from '../components/AnimatedSplashScreen';
+import * as SplashScreen from 'expo-splash-screen';
+
+// Mantém a tela de splash visível enquanto carregamos recursos
+SplashScreen.preventAutoHideAsync();
 
 export default function Layout() {
   const navigation = useNavigation();
@@ -14,6 +18,13 @@ export default function Layout() {
   const openMenu = useCallback(() => {
     navigation.dispatch(DrawerActions.toggleDrawer());
   }, [navigation]);
+
+  useEffect(() => {
+    if (isReady) {
+      // Esconde a tela de splash do Expo quando estivermos prontos
+      SplashScreen.hideAsync();
+    }
+  }, [isReady]);
 
   // Se a splash screen não estiver pronta, mostre-a
   if (!isReady) {

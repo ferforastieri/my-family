@@ -8,11 +8,6 @@ export default {
     icon: "./assets/images/adaptive-icon.png",
     scheme: "love-page",
     userInterfaceStyle: "light",
-    splash: {
-      image: "./assets/images/splash-icon.png",
-      resizeMode: "contain",
-      backgroundColor: "#ff69b4"
-    },
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.lovepage.app",
