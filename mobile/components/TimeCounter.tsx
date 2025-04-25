@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Dimensions, ViewStyle } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, type ViewStyle } from 'react-native';
 
 interface TimeCounterProps {
   title: string;
