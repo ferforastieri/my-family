@@ -16,7 +16,7 @@ interface MenuItem {
 export default function HomeScreen() {
   const router = useRouter();
   const startDate = new Date('2024-10-15T00:00:00');
-  const weddingDate = new Date('2026-01-01T00:00:00');
+  const weddingDate = new Date('2025-04-12T00:00:00');
 
   const menuItems: MenuItem[] = [
     { title: 'Nossa História', icon: '📖', route: '/history', description: 'Como tudo começou...' },
