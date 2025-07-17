@@ -8,8 +8,8 @@ import { StatusBar } from 'expo-status-bar';
 import AnimatedSplashScreen from '../components/AnimatedSplashScreen';
 import * as SplashScreen from 'expo-splash-screen';
 
-// Mantém a tela de splash visível enquanto carregamos recursos
-SplashScreen.preventAutoHideAsync();
+// Esconde a splash screen nativa imediatamente
+SplashScreen.hideAsync();
 
 export default function Layout() {
   const navigation = useNavigation();
@@ -18,13 +18,6 @@ export default function Layout() {
   const openMenu = useCallback(() => {
     navigation.dispatch(DrawerActions.toggleDrawer());
   }, [navigation]);
-
-  useEffect(() => {
-    if (isReady) {
-      // Esconde a tela de splash do Expo quando estivermos prontos
-      SplashScreen.hideAsync();
-    }
-  }, [isReady]);
 
   // Se a splash screen não estiver pronta, mostre-a
   if (!isReady) {
@@ -111,6 +104,13 @@ export default function Layout() {
           options={{
             title: 'Nossa Playlist',
             drawerIcon: ({ color }) => <FontAwesome name="music" size={24} color={color} />,
+          }}
+        />
+        <Drawer.Screen
+          name="login"
+          options={{
+            title: 'Login',
+            drawerIcon: ({ color }) => <FontAwesome name="lock" size={24} color={color} />,
           }}
         />
       </Drawer>

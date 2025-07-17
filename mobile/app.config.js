@@ -10,14 +10,16 @@ export default {
     userInterfaceStyle: "light",
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.lovepage.app",
+      bundleIdentifier: "Love.Page",
+      googleServicesFile: "./google-services.json",
     },
     android: {
       adaptiveIcon: {
         foregroundImage: "./assets/images/adaptive-icon.png",
         backgroundColor: "#ff69b4",
       },
-      package: "com.lovepage.app",
+      package: "Love.Page",
+      googleServicesFile: "./google-services.json",
     },
     web: {
       bundler: "metro",
@@ -25,7 +27,9 @@ export default {
       favicon: "./assets/favicon.png",
     },
     plugins: [
-      "expo-router"
+      "expo-router",
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth"
     ],
     experiments: {
       typedRoutes: true,
@@ -35,7 +39,7 @@ export default {
         origin: false,
       },
       eas: {
-        projectId: "7c530d57-fade-41f3-842c-a905d03557f8",
+        projectId: "7c530d57-fade-41f3-842c-a905d03557f8"
       },
     },
   },
