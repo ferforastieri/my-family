@@ -9,6 +9,7 @@ import AnimatedSplashScreen from '../components/AnimatedSplashScreen';
 import * as SplashScreen from 'expo-splash-screen';
 import notificationService from '../api/notifications/notificationService';
 import { useAuth } from '../hooks/useAuth';
+import firebaseConfig from '../api/firebase/config';
 
 // Esconde a splash screen nativa imediatamente
 SplashScreen.hideAsync();
@@ -21,6 +22,16 @@ export default function Layout() {
   const openMenu = useCallback(() => {
     navigation.dispatch(DrawerActions.toggleDrawer());
   }, [navigation]);
+
+  // Inicializar Firebase manualmente
+  useEffect(() => {
+    try {
+      firebaseConfig.initializeFirebase();
+      console.log('✅ Firebase inicializado com sucesso');
+    } catch (error) {
+      console.error('❌ Erro ao inicializar Firebase:', error);
+    }
+  }, []);
 
   // Configurar notificações
   useEffect(() => {

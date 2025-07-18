@@ -1,6 +1,9 @@
-import storage from '@react-native-firebase/storage';
-import firestore from '@react-native-firebase/firestore';
 import { Platform } from 'react-native';
+import firebaseConfig from '../firebase/config';
+
+// Usar as instâncias configuradas manualmente
+const firestore = firebaseConfig.firestore;
+const storage = firebaseConfig.storage;
 
 export interface GalleryItem {
   id: string;
@@ -24,7 +27,7 @@ class StorageService {
   ): Promise<GalleryItem> {
     try {
       // Criar referência no storage
-      const storageRef = storage().ref(`users/${userId}/gallery/${fileName}`);
+      const storageRef = storage.ref(`users/${userId}/gallery/${fileName}`);
       
       // Upload do arquivo
       const uploadTask = storageRef.putFile(fileUri);
@@ -49,7 +52,7 @@ class StorageService {
         uploadedBy: userId,
       };
       
-      const docRef = await firestore()
+      const docRef = await firestore
         .collection('users')
         .doc(userId)
         .collection('gallery')
@@ -72,7 +75,7 @@ class StorageService {
   // Obter arquivos do usuário
   async getUserFiles(userId: string): Promise<GalleryItem[]> {
     try {
-      const snapshot = await firestore()
+      const snapshot = await firestore
         .collection('users')
         .doc(userId)
         .collection('gallery')
@@ -109,7 +112,7 @@ class StorageService {
     description: string
   ): Promise<void> {
     try {
-      await firestore()
+      await firestore
         .collection('users')
         .doc(userId)
         .collection('gallery')
@@ -130,7 +133,7 @@ class StorageService {
   async deleteFile(userId: string, fileId: string, fileName: string): Promise<void> {
     try {
       // Deletar do Firestore
-      await firestore()
+      await firestore
         .collection('users')
         .doc(userId)
         .collection('gallery')
@@ -138,7 +141,7 @@ class StorageService {
         .delete();
       
       // Deletar do Storage
-      const storageRef = storage().ref(`users/${userId}/gallery/${fileName}`);
+      const storageRef = storage.ref(`users/${userId}/gallery/${fileName}`);
       await storageRef.delete();
       
       console.log('Arquivo deletado com sucesso');
@@ -151,7 +154,7 @@ class StorageService {
   // Obter URL de preview
   async getPreviewUrl(filePath: string): Promise<string> {
     try {
-      const storageRef = storage().ref(filePath);
+      const storageRef = storage.ref(filePath);
       return await storageRef.getDownloadURL();
     } catch (error) {
       console.error('Erro ao obter URL de preview:', error);
@@ -159,16 +162,16 @@ class StorageService {
     }
   }
 
-  // Verificar se arquivo é imagem
-  isImage(fileName: string): boolean {
+  // Verificar se é imagem
+  private isImage(fileName: string): boolean {
     const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
     const extension = fileName.toLowerCase().substring(fileName.lastIndexOf('.'));
     return imageExtensions.includes(extension);
   }
 
-  // Verificar se arquivo é vídeo
-  isVideo(fileName: string): boolean {
-    const videoExtensions = ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm'];
+  // Verificar se é vídeo
+  private isVideo(fileName: string): boolean {
+    const videoExtensions = ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm', '.mkv'];
     const extension = fileName.toLowerCase().substring(fileName.lastIndexOf('.'));
     return videoExtensions.includes(extension);
   }
