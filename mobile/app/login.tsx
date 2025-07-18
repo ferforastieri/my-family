@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
   ScrollView,
   Alert,
@@ -13,43 +11,77 @@ import {
 import { useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { useAuth } from '../hooks/useAuth';
+import Button from '../components/Button';
+import Input from '../components/Input';
+import Toast from '../components/Toast';
 
 function LoginScreen() {
   const router = useRouter();
-  const { signIn, signUp, loading, error, clearError } = useAuth();
+  const { signIn, signUp, loading, error, clearError, resetPassword } = useAuth();
   
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+
+  const showToastMessage = (message: string, type: 'success' | 'error') => {
+    setToastMessage(message);
+    setToastType(type);
+    setShowToast(true);
+  };
 
   const handleSubmit = async () => {
     if (!email || !password || (!isLogin && !displayName)) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos');
+      showToastMessage('Por favor, preencha todos os campos', 'error');
       return;
     }
 
     try {
       if (isLogin) {
-        await signIn(email, password);
-        router.replace('/');
+        const result = await signIn(email, password);
+        if (result.success) {
+          showToastMessage('Login realizado com sucesso!', 'success');
+          setTimeout(() => {
+            router.replace('/');
+          }, 1500);
+        } else {
+          showToastMessage(result.error, 'error');
+        }
       } else {
-        await signUp(email, password, displayName);
-        router.replace('/');
+        const result = await signUp(email, password, displayName);
+        if (result.success) {
+          showToastMessage('Conta criada com sucesso!', 'success');
+          setTimeout(() => {
+            router.replace('/');
+          }, 1500);
+        } else {
+          showToastMessage(result.error, 'error');
+        }
       }
     } catch (error: any) {
-      Alert.alert('Erro', error.message);
+      showToastMessage(error.message, 'error');
     }
   };
 
-  const handleForgotPassword = () => {
+  const handleForgotPassword = async () => {
     if (!email) {
-      Alert.alert('Erro', 'Digite seu email primeiro');
+      showToastMessage('Digite seu email primeiro', 'error');
       return;
     }
-    // Implementar reset de senha
-    Alert.alert('Sucesso', 'Mail de reset enviado!');
+    
+    try {
+      const result = await resetPassword(email);
+      if (result.success) {
+        showToastMessage('Email de reset enviado! Verifique sua caixa de entrada.', 'success');
+      } else {
+        showToastMessage(result.error, 'error');
+      }
+    } catch (error: any) {
+      showToastMessage(error.message, 'error');
+    }
   };
 
   return (
@@ -67,93 +99,70 @@ function LoginScreen() {
 
         <View style={styles.form}>
           {!isLogin && (
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Nome</Text>
-              <TextInput
-                style={styles.input}
-                value={displayName}
-                onChangeText={setDisplayName}
-                placeholder="Digite seu nome"
-                autoCapitalize="words"
-              />
-            </View>
-          )}
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Digite seu email"
-              keyboardType="email-address"
-              autoCapitalize="none"
+            <Input
+              label="Nome"
+              placeholder="Digite seu nome"
+              value={displayName}
+              onChangeText={setDisplayName}
+              autoCapitalize="words"
             />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Senha</Text>
-            <View style={styles.passwordContainer}>
-              <TextInput
-                style={styles.passwordInput}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Digite sua senha"
-                secureTextEntry={!showPassword}
-              />
-              <TouchableOpacity
-                style={styles.eyeButton}
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                <FontAwesome 
-                  name={showPassword ? 'eye-slash' : 'eye'} 
-                  size={20} 
-                  color="#666"
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {error && (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{error}</Text>
-              <TouchableOpacity onPress={clearError}>
-                <FontAwesome name="times" size={16} color="#ff69b4" />
-              </TouchableOpacity>
-            </View>
           )}
 
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
+          <Input
+            label="Email"
+            placeholder="Digite seu email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+
+          <Input
+            label="Senha"
+            placeholder="Digite sua senha"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+
+          <Button
+            title={loading ? 'Carregando...' : (isLogin ? 'Entrar' : 'Cadastre-se')}
             onPress={handleSubmit}
+            loading={loading}
             disabled={loading}
-          >
-            <Text style={styles.buttonText}>
-              {loading ? 'Carregando...' : (isLogin ? 'Entrar' : 'Cadastre-se')}
-            </Text>
-          </TouchableOpacity>
+            variant="primary"
+            size="large"
+          />
 
           {isLogin && (
-            <TouchableOpacity
-              style={styles.forgotPassword}
+            <Button
+              title="Esqueceu a senha?"
               onPress={handleForgotPassword}
-            >
-              <Text style={styles.forgotPasswordText}>Esqueceu a senha?</Text>
-            </TouchableOpacity>
+              variant="outline"
+              size="medium"
+            />
           )}
 
           <View style={styles.switchContainer}>
             <Text style={styles.switchText}>
               {isLogin ? 'Não tem uma conta?' : 'Já tem uma conta?'}
             </Text>
-            <TouchableOpacity onPress={() => setIsLogin(!isLogin)}>
-              <Text style={styles.switchButton}>
-                {isLogin ? 'Cadastre-se' : 'in'}
-              </Text>
-            </TouchableOpacity>
+            <Button
+              title={isLogin ? 'Cadastre-se' : 'Entrar'}
+              onPress={() => setIsLogin(!isLogin)}
+              variant="outline"
+              size="small"
+            />
           </View>
         </View>
       </ScrollView>
+
+      <Toast
+        type={toastType}
+        message={toastMessage}
+        visible={showToast}
+        onClose={() => setShowToast(false)}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -186,91 +195,16 @@ const styles = StyleSheet.create({
   form: {
     flex: 1,
   },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: 600,
-    color: '#333',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 15,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  passwordInput: {
-    flex: 1,
-    padding: 15,
-    fontSize: 16,
-  },
-  eyeButton: {
-    padding: 15,
-  },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#ffe6e6',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 20,
-  },
-  errorText: {
-    color: '#ff69b4',
-    fontSize: 14,
-    flex: 1,
-  },
-  button: {
-    backgroundColor: '#ff69b4',
-    borderRadius: 10,
-    padding: 15,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  forgotPassword: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  forgotPasswordText: {
-    color: '#ff69b4',
-    fontSize: 14,
-  },
   switchContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,
+    gap: 10,
   },
   switchText: {
     color: '#666',
     fontSize: 14,
-  },
-  switchButton: {
-    color: '#ff69b4',
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginLeft: 5,
   },
 });
 

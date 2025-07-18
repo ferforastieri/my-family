@@ -29,7 +29,10 @@ export default {
     plugins: [
       "expo-router",
       "@react-native-firebase/app",
-      "@react-native-firebase/auth"
+      "@react-native-firebase/auth",
+      "@react-native-firebase/storage",
+      "@react-native-firebase/firestore",
+      "expo-notifications"
     ],
     experiments: {
       typedRoutes: true,

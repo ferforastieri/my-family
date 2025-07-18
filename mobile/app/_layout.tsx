@@ -7,6 +7,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import AnimatedSplashScreen from '../components/AnimatedSplashScreen';
 import * as SplashScreen from 'expo-splash-screen';
+import notificationService from '../api/notifications/notificationService';
+import { useAuth } from '../hooks/useAuth';
 
 // Esconde a splash screen nativa imediatamente
 SplashScreen.hideAsync();
@@ -14,10 +16,51 @@ SplashScreen.hideAsync();
 export default function Layout() {
   const navigation = useNavigation();
   const [isReady, setIsReady] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   const openMenu = useCallback(() => {
     navigation.dispatch(DrawerActions.toggleDrawer());
   }, [navigation]);
+
+  // Configurar notificações
+  useEffect(() => {
+    const setupNotifications = async () => {
+      try {
+        // Solicitar permissão
+        const hasPermission = await notificationService.requestPermission();
+        
+        if (hasPermission) {
+          // Obter token Expo Push
+          const token = await notificationService.getExpoPushToken();
+          
+          // Configurar listeners
+          const unsubscribe = notificationService.setupNotificationListeners();
+          
+          // Configurar notificações carinhosas automáticas
+          await notificationService.setupLoveNotifications();
+          
+          // Salvar token no backend (opcional)
+          if (token) {
+            console.log('Expo Push Token salvo:', token);
+            // Aqui você pode salvar o token no seu backend
+          }
+          
+          return unsubscribe;
+        }
+      } catch (error) {
+        console.error('Erro ao configurar notificações:', error);
+      }
+    };
+
+    const unsubscribe = setupNotifications();
+    
+    return () => {
+      // Cleanup se necessário
+      if (unsubscribe) {
+        unsubscribe.then(unsub => unsub?.());
+      }
+    };
+  }, []);
 
   // Se a splash screen não estiver pronta, mostre-a
   if (!isReady) {
@@ -106,6 +149,15 @@ export default function Layout() {
             drawerIcon: ({ color }) => <FontAwesome name="music" size={24} color={color} />,
           }}
         />
+        {isAuthenticated && (
+          <Drawer.Screen
+            name="gallery"
+            options={{
+              title: '📸 Nossa Galeria',
+              drawerIcon: ({ color }) => <FontAwesome name="image" size={24} color={color} />,
+            }}
+          />
+        )}
         <Drawer.Screen
           name="login"
           options={{

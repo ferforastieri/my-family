@@ -8,7 +8,8 @@ export function useAuth() {
     error: null,
   });
 
-  useEffect(() => {  // Verificar usuário atual
+  useEffect(() => {
+    // Verificar usuário atual
     const currentUser = authService.getCurrentUser();
     setAuthState(prev => ({
       ...prev,
@@ -33,14 +34,14 @@ export function useAuth() {
     try {
       const user = await authService.signInWithEmail(email, password);
       setAuthState({ user, loading: false, error: null });
-      return user;
+      return { success: true, user };
     } catch (error: any) {
       setAuthState(prev => ({
         ...prev,
         loading: false,
         error: error.message
       }));
-      throw error;
+      return { success: false, error: error.message };
     }
   };
 
@@ -49,14 +50,14 @@ export function useAuth() {
     try {
       const user = await authService.signUpWithEmail(email, password, displayName);
       setAuthState({ user, loading: false, error: null });
-      return user;
+      return { success: true, user };
     } catch (error: any) {
       setAuthState(prev => ({
         ...prev,
         loading: false,
         error: error.message
       }));
-      throw error;
+      return { success: false, error: error.message };
     }
   };
 
@@ -65,13 +66,14 @@ export function useAuth() {
     try {
       await authService.signOut();
       setAuthState({ user: null, loading: false, error: null });
+      return { success: true };
     } catch (error: any) {
       setAuthState(prev => ({
         ...prev,
         loading: false,
         error: error.message
       }));
-      throw error;
+      return { success: false, error: error.message };
     }
   };
 
@@ -80,13 +82,14 @@ export function useAuth() {
     try {
       await authService.resetPassword(email);
       setAuthState(prev => ({ ...prev, loading: false, error: null }));
+      return { success: true };
     } catch (error: any) {
       setAuthState(prev => ({
         ...prev,
         loading: false,
         error: error.message
       }));
-      throw error;
+      return { success: false, error: error.message };
     }
   };
 
