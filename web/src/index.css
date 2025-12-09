@@ -86,26 +86,6 @@
     font-family: 'Playfair Display', serif;
   }
   
-  /* Navegação rosa customizada */
-  nav[class*="sticky"] {
-    background: linear-gradient(to right, rgb(251, 182, 206), rgb(252, 165, 165), rgb(251, 182, 206)) !important;
-    border-bottom-color: rgba(255, 105, 180, 0.3) !important;
-  }
-  
-  nav[class*="sticky"] a[class*="text-foreground"] {
-    background-color: var(--love-primary) !important;
-    color: white !important;
-  }
-  
-  nav[class*="sticky"] a[class*="text-muted-foreground"]:hover {
-    background-color: rgba(255, 105, 180, 0.7) !important;
-    color: white !important;
-  }
-  
-  nav[class*="sticky"] button[class*="hover:bg-muted"]:hover {
-    background-color: rgba(255, 105, 180, 0.3) !important;
-  }
-  
   #root {
     min-height: 100vh;
     width: 100%;
