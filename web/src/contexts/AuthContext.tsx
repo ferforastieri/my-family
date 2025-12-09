@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '../services/supabase';
+import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
+import { signIn, signOut, authClient } from '../lib/better-auth';
 
 interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
@@ -10,41 +10,48 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Verifica a sessão atual
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    // Verificar sessão inicial
+    authClient.getSession().then((response) => {
+      if (response?.data) {
+        setUser(response.data.user ?? null);
+      }
+      setLoading(false);
+    }).catch(() => {
       setLoading(false);
     });
-
-    // Escuta mudanças na autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+  const handleSignIn = async (email: string, password: string) => {
+    await signIn.email({
       email,
-      password
+      password,
     });
-    if (error) throw error;
+    // Atualizar usuário após login
+    const response = await authClient.getSession();
+    if (response?.data) {
+      setUser(response.data.user ?? null);
+    }
   };
 
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+  const handleSignOut = async () => {
+    await signOut();
+    setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ signIn, signOut, user, loading }}>
+    <AuthContext.Provider
+      value={{
+        signIn: handleSignIn,
+        signOut: handleSignOut,
+        user,
+        loading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -56,4 +63,4 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}; 
+};

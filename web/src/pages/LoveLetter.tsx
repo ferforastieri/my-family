@@ -1,6 +1,6 @@
 import styled, { keyframes } from 'styled-components';
 import { useEffect, useState } from 'react';
-import { supabase } from '../services/supabase';
+// import { supabase } from '../services/supabase'; // Removido - usando backend agora
 import { NovaCartaModal } from '../components/NovaCartaModal';
 
 const floatAnimation = keyframes`

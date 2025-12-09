@@ -1,39 +1,36 @@
 {
-  "name": "Love Page",
-  "short_name": "Love",
-  "version": "2.0.0",
-  "description": "Uma página especial de amor",
+  "name": "Love Page - Para Meu Amor",
+  "short_name": "Love Page",
+  "description": "Uma página especial de amor - Um jardim digital de memórias e amor",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#fff8fa",
   "theme_color": "#ff69b4",
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "icons/icon-192x192.png",
+      "src": "/favicon-16.png",
+      "sizes": "16x16",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon-32.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "icons/icon-512x512.png",
+      "src": "/favicon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
-  ],
-  "screenshots": [
-    {
-      "src": "screenshots/desktop.png",
-      "sizes": "1920x1080",
-      "type": "image/png",
-      "form_factor": "wide"
-    },
-    {
-      "src": "screenshots/mobile.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "form_factor": "narrow"
-    }
-  ],
-  "update_via_cache": "none"
+  ]
 } 

@@ -1,373 +1,166 @@
-import styled, { keyframes } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import FlowerGarden from '../components/common/FlowerGarden';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/layout';
 
-const floatAnimation = keyframes`
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-`;
+interface TimeData {
+  years: number;
+  months: number;
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+}
 
-const glowAnimation = keyframes`
-  0%, 100% { text-shadow: 2px 2px 4px rgba(255, 105, 180, 0.3); }
-  50% { text-shadow: 2px 2px 12px rgba(255, 105, 180, 0.6); }
-`;
-
-const HomeContainer = styled.div.attrs(() => ({
-  style: {
-    width: '100%',
-    minHeight: '100vh',
-    position: 'relative',
-    display: 'flex',
-    flexDirection: 'column',
-    background: 'linear-gradient(180deg, #fff8fa 0%, #fff0f5 100%)'
-  },
-}))``;
-
-const ContentSection = styled.section`
-  padding: 10px 2rem 0;
-  text-align: center;
-  position: relative;
-  width: 100%;
-  margin: 0 auto;
-  z-index: 1;
+const calculateTimeElapsed = (startDate: Date): TimeData => {
+  const now = new Date();
+  const diff = now.getTime() - startDate.getTime();
   
-  @media (max-width: 768px) {
-    padding: 10px 16px 0;
-  }
-`;
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const totalDays = Math.floor(hours / 24);
+  const years = Math.floor(totalDays / 365);
+  const months = Math.floor((totalDays % 365) / 30.44);
+  const days = Math.floor(totalDays % 30.44);
 
-const HeaderSection = styled.header`
-  padding: 1rem;
-  text-align: center;
-  position: relative;
-  border-radius: 20px;
-  margin: 1rem auto 2rem;
-  max-width: 1000px;
-`;
-
-const Title = styled.h1`
-  color: #ff69b4;
-  font-size: 3.5rem;
-  font-family: 'Pacifico', cursive;
-  margin: 0.5rem 0 1rem;
-  padding-top: 0.5rem;
-  animation: ${floatAnimation} 3s ease-in-out infinite,
-             ${glowAnimation} 2s ease-in-out infinite;
-  
-  span {
-    display: inline-block;
-    
-    &:hover {
-      transform: scale(1.1);
-      transition: transform 0.3s ease;
-    }
-  }
-
-  @media (max-width: 768px) {
-    font-size: 2.5rem;
-  }
-`;
-
-const Heart = styled.span`
-  color: #ff1493;
-  display: inline-block;
-  margin: 0 0.5rem;
-  animation: ${floatAnimation} 2s ease-in-out infinite;
-`;
-
-const Subtitle = styled.p`
-  color: #d4488e;
-  font-size: 1.4rem;
-  max-width: 800px;
-  margin: 0 auto 2rem;
-  line-height: 1.6;
-  font-family: 'Dancing Script', cursive;
-
-  @media (max-width: 768px) {
-    font-size: 1.2rem;
-    padding: 0 1rem;
-  }
-`;
-
-const CardGrid = styled.div.attrs(() => ({
-  style: {
-    display: 'flex',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    width: '100%',
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: '1rem',
-    padding: '1rem',
-    maxWidth: '1400px',
-    margin: '0 auto',
-  },
-}))`
-  @media (max-width: 768px) {
-    gap: 0.8rem;
-    padding: 0.8rem;
-  }
-`;
-
-const Card = styled.div.attrs(() => ({
-  style: {
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-    background: 'rgba(255, 255, 255, 0.9)',
-    padding: '1.5rem',
-    borderRadius: '15px',
-    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
-    backdropFilter: 'blur(5px)',
-    cursor: 'pointer',
-    height: '180px',
-    width: '250px',
-    flex: '0 0 250px',
-  },
-}))`
-  transition: transform 0.3s ease;
-
-  @media (max-width: 768px) {
-    width: 100%;
-    flex: 0 0 100%;
-    height: 150px;
-    padding: 1rem;
-  }
-  
-  &:hover {
-    transform: translateY(-5px);
-    background: rgba(255, 255, 255, 0.95);
-  }
-  
-  h3 {
-    color: #ff69b4;
-    margin-bottom: 0.8rem;
-    position: relative;
-    z-index: 2;
-    font-size: 1.2rem;
-    text-align: center;
-  }
-  
-  p {
-    color: #666;
-    position: relative;
-    z-index: 2;
-    font-size: 0.9rem;
-    text-align: center;
-    max-width: 90%;
-    margin: 0 auto;
-    line-height: 1.4;
-  }
-`;
-
-const CountdownCard = styled.div`
-  background: linear-gradient(135deg, #ff69b4 0%, #d4488e 100%);
-  border-radius: 20px;
-  padding: 2rem;
-  box-shadow: 0 8px 20px rgba(212, 72, 142, 0.3);
-  margin: 2rem auto;
-  max-width: 800px;
-  text-align: center;
-  transform: translateY(0);
-  transition: transform 0.3s ease;
-  
-  &:hover {
-    transform: translateY(-5px);
-  }
-
-  @media (max-width: 768px) {
-    margin: 1.5rem 1rem;
-    padding: 1.5rem;
-  }
-`;
-
-const CountdownTitle = styled.h3`
-  color: white;
-  font-size: 1.8rem;
-  margin-bottom: 1rem;
-  font-family: 'Pacifico', cursive;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-
-  @media (max-width: 768px) {
-    font-size: 1.5rem;
-  }
-`;
-
-const CountdownGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 1rem;
-  margin-top: 1rem;
-
-  @media (max-width: 768px) {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.8rem;
-  }
-`;
-
-const TimeUnit = styled.div`
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 12px;
-  padding: 0.8rem;
-  
-  .number {
-    font-size: 1.8rem;
-    font-weight: bold;
-    color: #ff69b4;
-    margin-bottom: 0.3rem;
-  }
-  
-  .label {
-    font-size: 0.9rem;
-    color: #d4488e;
-    font-family: 'Dancing Script', cursive;
-  }
-
-  @media (max-width: 768px) {
-    padding: 0.6rem;
-    
-    .number {
-      font-size: 1.4rem;
-    }
-    
-    .label {
-      font-size: 0.8rem;
-    }
-  }
-`;
-
-const FlowerSection = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 0;
-`;
+  return {
+    years,
+    months,
+    days,
+    hours: hours % 24,
+    minutes: minutes % 60,
+    seconds: seconds % 60
+  };
+};
 
 const Home = () => {
   const navigate = useNavigate();
-  const [timeElapsed, setTimeElapsed] = useState({
-    years: 0,
-    months: 0,
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0
+  const [namoroTime, setNamoroTime] = useState<TimeData>({
+    years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0
+  });
+  const [casamentoTime, setCasamentoTime] = useState<TimeData>({
+    years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0
+  });
+  const [jadeTime, setJadeTime] = useState<TimeData>({
+    years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0
   });
 
   useEffect(() => {
-    const startDate = new Date('2024-10-15'); // Substitua pela data do início do namoro
+    const namoroDate = new Date('2024-10-12');
+    const casamentoDate = new Date('2025-04-15');
+    const jadeDate = new Date('2026-06-01'); // Assumindo início de junho
     
-    const updateCounter = () => {
-      const now = new Date();
-      const diff = now.getTime() - startDate.getTime();
-      
-      const seconds = Math.floor(diff / 1000);
-      const minutes = Math.floor(seconds / 60);
-      const hours = Math.floor(minutes / 60);
-      const totalDays = Math.floor(hours / 24);
-      const years = Math.floor(totalDays / 365);
-      const months = Math.floor((totalDays % 365) / 30.44);
-      const days = Math.floor(totalDays % 30.44); // Dias restantes após meses completos
-
-      setTimeElapsed({
-        years,
-        months,
-        days,
-        hours: hours % 24,
-        minutes: minutes % 60,
-        seconds: seconds % 60
-      });
+    const updateCounters = () => {
+      setNamoroTime(calculateTimeElapsed(namoroDate));
+      setCasamentoTime(calculateTimeElapsed(casamentoDate));
+      setJadeTime(calculateTimeElapsed(jadeDate));
     };
 
-    const timer = setInterval(updateCounter, 1000);
+    updateCounters();
+    const timer = setInterval(updateCounters, 1000);
     return () => clearInterval(timer);
   }, []);
 
-  const handleCardClick = (path: string) => {
-    navigate(path);
-  };
+  const menuCards = [
+    {
+      title: 'Nossa História',
+      description: 'Descubra como tudo começou e os momentos que nos trouxeram até aqui.',
+      path: '/nossa-historia',
+    },
+    {
+      title: 'Jogos do Amor 🎮',
+      description: 'Divirta-se com nossos jogos especiais, incluindo o Quiz do Amor!',
+      path: '/jogos',
+    },
+    {
+      title: 'Mensagens do Coração',
+      description: 'Palavras de amor e carinho que compartilhamos.',
+      path: '/mensagens',
+    },
+    {
+      title: 'Carta de Amor',
+      description: 'Uma declaração especial do meu coração para você.',
+      path: '/carta-de-amor',
+    },
+    {
+      title: 'Uma Flor para Minha Esposa',
+      description: 'Um jardim especial dedicado à mulher da minha vida 🌹',
+      path: '/flor-para-esposa',
+    },
+  ];
+
+  const renderCounter = (title: string, time: TimeData, icon: string) => (
+    <Card className="bg-gradient-to-br from-love-primary to-love-primary-dark rounded-xl sm:rounded-2xl md:rounded-3xl p-3 sm:p-4 md:p-6 lg:p-8 shadow-lg my-4 sm:my-6 md:my-8 max-w-3xl mx-auto text-center transform transition-transform duration-300 hover:-translate-y-1">
+      <CardHeader className="pb-1 sm:pb-2 md:pb-4">
+        <CardTitle className="text-white text-lg sm:text-xl md:text-2xl lg:text-[1.8rem] mb-2 sm:mb-3 md:mb-4 font-semibold drop-shadow-md flex items-center justify-center gap-2">
+          <span>{icon}</span>
+          <span>{title}</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="px-2 sm:px-4">
+        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-6 gap-1.5 sm:gap-2 md:gap-3 lg:gap-4">
+          {[
+            { value: time.years, label: 'Anos' },
+            { value: time.months, label: 'Meses' },
+            { value: time.days, label: 'Dias' },
+            { value: time.hours, label: 'Horas' },
+            { value: time.minutes, label: 'Minutos' },
+            { value: time.seconds, label: 'Segundos' },
+          ].map((item, index) => (
+            <div key={index} className="bg-white/90 rounded-lg sm:rounded-xl p-1.5 sm:p-2 md:p-3 lg:p-4">
+              <div className="text-love-primary text-base sm:text-lg md:text-xl lg:text-2xl xl:text-[1.8rem] font-bold mb-0.5 sm:mb-1">
+                {item.value}
+              </div>
+              <div className="text-love-primary-dark text-[10px] sm:text-xs md:text-sm lg:text-base">
+                {item.label}
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
-    <HomeContainer>
-      <ContentSection>
-        <HeaderSection>
-          <Title>
-            {'Para Meu Amor'.split('').map((letter, index) => (
-              <span key={index} style={{ animationDelay: `${index * 0.1}s` }}>
-                {letter === ' ' ? '\u00A0' : letter}
-              </span>
-            ))}
-            <Heart>❤️</Heart>
-          </Title>
-          <CountdownCard>
-            <CountdownTitle>Nosso Amor em Números</CountdownTitle>
-            <CountdownGrid>
-              <TimeUnit>
-                <div className="number">{timeElapsed.years}</div>
-                <div className="label">Anos</div>
-              </TimeUnit>
-              <TimeUnit>
-                <div className="number">{timeElapsed.months}</div>
-                <div className="label">Meses</div>
-              </TimeUnit>
-              <TimeUnit>
-                <div className="number">{timeElapsed.days}</div>
-                <div className="label">Dias</div>
-              </TimeUnit>
-              <TimeUnit>
-                <div className="number">{timeElapsed.hours}</div>
-                <div className="label">Horas</div>
-              </TimeUnit>
-              <TimeUnit>
-                <div className="number">{timeElapsed.minutes}</div>
-                <div className="label">Minutos</div>
-              </TimeUnit>
-              <TimeUnit>
-                <div className="number">{timeElapsed.seconds}</div>
-                <div className="label">Segundos</div>
-              </TimeUnit>
-            </CountdownGrid>
-          </CountdownCard>
-          <Subtitle>
-            Um jardim digital de memórias e amor, onde cada flor representa 
-            um momento especial da nossa história juntos.
-          </Subtitle>
-        </HeaderSection>
+    <div className="w-full min-h-screen relative flex flex-col bg-gradient-to-b from-love-bg-start to-love-bg-end">
+      <section className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 text-center relative z-10">
+        <header className="max-w-4xl mx-auto mb-8 sm:mb-12">
+          <h1 className="text-love-primary text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-[3.5rem] font-bold my-2 sm:my-4 md:my-6">
+            Para Meu Amor <span className="text-[#ff1493]">❤️</span>
+          </h1>
+          
+          {renderCounter('Começamos a Namorar', namoroTime, '💕')}
+          {renderCounter('Nosso Casamento', casamentoTime, '💍')}
+          {renderCounter('Nascimento da Jade', jadeTime, '👶')}
+          
+          <p className="text-love-primary-dark text-sm sm:text-base md:text-lg lg:text-xl xl:text-[1.4rem] max-w-2xl mx-auto mb-4 sm:mb-6 md:mb-8 leading-relaxed px-2 sm:px-4">
+            Um jardim digital de memórias e amor, onde cada momento representa 
+            uma parte especial da nossa história juntos.
+          </p>
+        </header>
         
-        <CardGrid>
-          <Card>
-            <h3>Nossa História</h3>
-            <p>Descubra como tudo começou e os momentos que nos trouxeram até aqui.</p>
-          </Card>
-          <Card onClick={() => handleCardClick('/jogos')}>
-            <h3>Jogos do Amor 🎮</h3>
-            <p>Divirta-se com nossos jogos especiais, incluindo o Quiz do Amor!</p>
-          </Card>
-          <Card onClick={() => handleCardClick('/mensagens')}>
-            <h3>Mensagens do Coração</h3>
-            <p>Palavras de amor e carinho que compartilhamos.</p>
-          </Card>
-          <Card onClick={() => handleCardClick('/carta-de-amor')}>
-            <h3>Carta de Amor</h3>
-            <p>Uma declaração especial do meu coração para você.</p>
-          </Card>
-          <Card onClick={() => handleCardClick('/flor-para-esposa')}>
-            <h3>Uma Flor para Minha Esposa</h3>
-            <p>Um jardim especial dedicado à mulher da minha vida 🌹</p>
-          </Card>
-        </CardGrid>
-      </ContentSection>
-      <FlowerSection>
-        <FlowerGarden />
-      </FlowerSection>
-    </HomeContainer>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6 max-w-7xl mx-auto px-4 sm:px-6 pb-8">
+          {menuCards.map((card, index) => (
+            <Card 
+              key={index}
+              className="flex flex-col justify-center items-center bg-white/90 p-3 sm:p-4 md:p-6 rounded-lg sm:rounded-xl md:rounded-2xl shadow-md backdrop-blur-sm cursor-pointer min-h-[140px] sm:min-h-[160px] md:min-h-[180px] transition-all duration-300 hover:-translate-y-1 hover:bg-white/95 hover:shadow-lg"
+              onClick={() => navigate(card.path)}
+            >
+              <CardHeader className="p-0 pb-1 sm:pb-2">
+                <CardTitle className="text-love-primary text-base sm:text-lg md:text-xl text-center font-medium">
+                  {card.title}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <p className="text-gray-600 text-[11px] sm:text-xs md:text-sm text-center max-w-full mx-auto leading-snug">
+                  {card.description}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+    </div>
   );
 };
 
