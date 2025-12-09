@@ -1,12 +1,12 @@
 export default {
   expo: {
     name: "Fernando & Miriam 💑",
-    slug: "love-page",
+    slug: "nossa-familia",
     version: "1.0.0",
     newArchEnabled: false,
     orientation: "portrait",
     icon: "./assets/images/adaptive-icon.png",
-    scheme: "love-page",
+    scheme: "nossa-familia",
     userInterfaceStyle: "light",
     ios: {
       supportsTablet: true,
