@@ -1,6 +1,6 @@
-# Love Page 💝
+# Nossa Família 💝
 
-Um projeto multiplataforma que consiste em uma aplicação web (descontinuada) e mobile desenvolvida com tecnologias modernas.
+Um projeto multiplataforma que consiste em uma aplicação web e mobile desenvolvida com tecnologias modernas.
 
 ## 🚀 Estrutura do Projeto
 

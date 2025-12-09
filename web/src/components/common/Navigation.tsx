@@ -82,7 +82,7 @@ const Navigation = () => {
       className="bg-pink-200"
       logo={
         <span className="text-xl font-bold text-love-primary">
-          💕 Love Page
+          💕 Nossa Família
         </span>
       }
       rightContent={
