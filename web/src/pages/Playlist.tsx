@@ -1,6 +1,6 @@
 import styled, { keyframes } from 'styled-components';
 import { useEffect, useState } from 'react';
-import { supabase } from '../services/supabase';
+// import { supabase } from '../services/supabase'; // Removido - usando backend agora
 import { NovaMusicaModal } from '../components/NovaMusicaModal';
 import { SpotifyPlayer } from '../components/SpotifyPlayer';
 import { YouTubePlayer } from '../components/YouTubePlayer';

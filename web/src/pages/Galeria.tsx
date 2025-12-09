@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import UploadFoto from '../components/common/UploadFoto';
-import { supabase } from '../services/supabase';
+// import { supabase } from '../services/supabase'; // Removido - usando backend agora
 
 interface Foto {
   id: string;

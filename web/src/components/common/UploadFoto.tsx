@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import styled from 'styled-components';
-import { uploadToCloudinary } from '../../services/cloudinary';
+// import { uploadToCloudinary } from '../../services/cloudinary'; // Removido - usando backend agora
 
 const UploadContainer = styled.div`
   margin: 1rem 0;
@@ -95,9 +95,16 @@ const UploadFoto = ({ onUploadComplete }: UploadFotoProps) => {
     setProgress(20);
 
     try {
-      const result = await uploadToCloudinary(file);
+      // TODO: Implementar upload via backend
+      // const result = await uploadToBackend(file);
+      // setProgress(100);
+      // onUploadComplete(result.url);
+      
+      // Temporário: simular upload
+      await new Promise(resolve => setTimeout(resolve, 1000));
       setProgress(100);
-      onUploadComplete(result.secure_url);
+      const mockUrl = URL.createObjectURL(file);
+      onUploadComplete(mockUrl);
     } catch (error) {
       console.error('Erro no upload:', error);
       alert('Erro ao fazer upload do arquivo. Por favor, tente novamente.');

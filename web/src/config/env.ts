@@ -1,39 +1,16 @@
-console.log('Variáveis de ambiente:', {
-  supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
-  cloudinaryName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
+import { z } from 'zod';
+
+const envSchema = z.object({
+  VITE_API_URL: z.string().url(),
+  VITE_BETTER_AUTH_URL: z.string().url(),
 });
 
-interface EnvConfig {
-  supabase: {
-    url: string;
-    anonKey: string;
-  };
-  cloudinary: {
-    cloudName: string;
-    uploadPreset: string;
-  };
-}
+const env = envSchema.parse({
+  VITE_API_URL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  VITE_BETTER_AUTH_URL: import.meta.env.VITE_BETTER_AUTH_URL || 'http://localhost:3000/api/auth',
+});
 
-if (!import.meta.env.VITE_SUPABASE_URL || 
-    !import.meta.env.VITE_SUPABASE_ANON_KEY || 
-    !import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 
-    !import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET) {
-  console.error('Variáveis faltando:', {
-    supabaseUrl: !!import.meta.env.VITE_SUPABASE_URL,
-    supabaseKey: !!import.meta.env.VITE_SUPABASE_ANON_KEY,
-    cloudinaryName: !!import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
-    uploadPreset: !!import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
-  });
-  throw new Error('Variáveis de ambiente necessárias não encontradas');
-}
-
-export const config: EnvConfig = {
-  supabase: {
-    url: import.meta.env.VITE_SUPABASE_URL,
-    anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY
-  },
-  cloudinary: {
-    cloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
-    uploadPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
-  }
-}; 
+export const config = {
+  apiUrl: env.VITE_API_URL,
+  betterAuthUrl: env.VITE_BETTER_AUTH_URL,
+};
