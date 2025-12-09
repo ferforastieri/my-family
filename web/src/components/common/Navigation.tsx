@@ -79,7 +79,7 @@ const Navigation = () => {
       items={navItems}
       currentPath={location.pathname}
       LinkComponent={LinkComponent}
-      className="bg-gradient-to-r from-pink-200 via-pink-300 to-pink-200 border-b border-pink-400/30"
+      className="bg-pink-200"
       logo={
         <span className="text-xl font-bold text-love-primary">
           💕 Love Page
@@ -89,7 +89,7 @@ const Navigation = () => {
         user && (
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-love-primary-dark hover:bg-pink-200/50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-love-primary-dark hover:bg-pink-300/50 transition-colors"
           >
             <ArrowRightOnRectangleIcon className="h-5 w-5" />
             <span className="hidden md:inline">Sair</span>
