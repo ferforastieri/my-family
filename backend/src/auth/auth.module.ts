@@ -11,3 +11,4 @@ import { DatabaseModule } from '@shared/infrastructure/database/database.module'
 })
 export class AuthModule {}
 
+

@@ -12,3 +12,4 @@ export const cartasDeAmor = pgTable('cartas_de_amor', {
 export type CartaDeAmor = typeof cartasDeAmor.$inferSelect;
 export type NewCartaDeAmor = typeof cartasDeAmor.$inferInsert;
 
+
