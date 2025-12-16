@@ -15,3 +15,4 @@ export const musicasEspeciais = pgTable('musicas_especiais', {
 export type MusicaEspecial = typeof musicasEspeciais.$inferSelect;
 export type NewMusicaEspecial = typeof musicasEspeciais.$inferInsert;
 
+

@@ -12,3 +12,4 @@ export const fotos = pgTable('fotos', {
 export type Foto = typeof fotos.$inferSelect;
 export type NewFoto = typeof fotos.$inferInsert;
 
+
