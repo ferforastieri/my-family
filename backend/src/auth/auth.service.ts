@@ -2,7 +2,7 @@ import { Injectable, Inject, UnauthorizedException, ConflictException } from '@n
 import { JwtService } from '@nestjs/jwt';
 import { DATABASE_CONNECTION } from '@shared/infrastructure/database/database.module';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { users, User, NewUser } from '@shared/infrastructure/database/schema';
+import { users, User, NewUser, UserRole } from '@shared/infrastructure/database/schema';
 import { eq } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
 import { Environment } from '@shared/infrastructure/environment/environment.module';
@@ -16,11 +16,11 @@ export class AuthService {
     private env: Environment,
   ) {}
 
-  async register(email: string, password: string, name?: string) {
+  async register(email: string, password: string, name?: string, role?: UserRole) {
     const existing = await this.db.select().from(users).where(eq(users.email, email)).limit(1);
     if (existing.length) throw new ConflictException('Email já cadastrado');
     const passwordHash = await bcrypt.hash(password, 12);
-    const [user] = await this.db.insert(users).values({ email, passwordHash, name } as NewUser).returning();
+    const [user] = await this.db.insert(users).values({ email, passwordHash, name, role } as NewUser).returning();
     return this.tokenResponse(user);
   }
 
@@ -44,7 +44,7 @@ export class AuthService {
     } as any);
     return {
       access_token,
-      user: { id: user.id, email: user.email, name: user.name },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role },
     };
   }
 }

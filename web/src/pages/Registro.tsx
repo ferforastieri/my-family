@@ -1,26 +1,25 @@
 import { useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-export default function Login() {
+export default function Registro() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
-  const { signIn } = useAuth();
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
+  const { register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      await signIn(email, password);
-      navigate(from, { replace: true });
+      await register(email, password, name || undefined);
+      navigate('/', { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao fazer login');
+      setError(err instanceof Error ? err.message : 'Erro ao cadastrar');
     } finally {
       setLoading(false);
     }
@@ -32,10 +31,17 @@ export default function Login() {
         onSubmit={handleSubmit}
         className="w-full max-w-md bg-white/95 p-8 rounded-2xl shadow-lg shadow-pink-200/50"
       >
-        <h1 className="text-3xl font-[Pacifico] text-pink-500 text-center mb-8">Entrar</h1>
+        <h1 className="text-3xl font-[Pacifico] text-pink-500 text-center mb-8">Criar conta</h1>
         {error && (
           <p className="text-center text-rose-600 text-sm mb-4">{error}</p>
         )}
+        <input
+          type="text"
+          placeholder="Nome (opcional)"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="w-full px-4 py-3 mb-4 border-2 border-pink-100 rounded-lg text-base focus:outline-none focus:border-pink-500"
+        />
         <input
           type="email"
           placeholder="E-mail"
@@ -46,10 +52,11 @@ export default function Login() {
         />
         <input
           type="password"
-          placeholder="Senha"
+          placeholder="Senha (mín. 6 caracteres)"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          minLength={6}
           className="w-full px-4 py-3 mb-4 border-2 border-pink-100 rounded-lg text-base focus:outline-none focus:border-pink-500"
         />
         <button
@@ -57,14 +64,11 @@ export default function Login() {
           disabled={loading}
           className="w-full py-4 bg-pink-500 text-white rounded-lg text-lg font-medium hover:bg-pink-600 hover:-translate-y-0.5 disabled:bg-pink-200 disabled:cursor-not-allowed disabled:transform-none transition-all"
         >
-          {loading ? 'Entrando...' : 'Entrar'}
+          {loading ? 'Cadastrando...' : 'Registrar'}
         </button>
-        <div className="mt-5 flex flex-col gap-2 text-center">
-          <Link to="/registro" className="text-pink-500 text-sm hover:underline">
-            Criar conta (registrar)
-          </Link>
-          <Link to="/esqueci-senha" className="text-pink-500 text-sm hover:underline">
-            Esqueci a senha
+        <div className="mt-5 text-center">
+          <Link to="/login" className="text-pink-500 text-sm hover:underline">
+            Já tenho conta – Entrar
           </Link>
         </div>
       </form>
