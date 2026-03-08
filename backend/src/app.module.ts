@@ -8,7 +8,7 @@ import { FotosModule } from '@fotos/fotos.module';
 import { MusicasModule } from '@musicas/musicas.module';
 import { CartasModule } from '@cartas/cartas.module';
 import { HealthModule } from './health/health.module';
-import { PushModule } from './push/push.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -21,7 +21,7 @@ import { PushModule } from './push/push.module';
     FotosModule,
     MusicasModule,
     CartasModule,
-    PushModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}
