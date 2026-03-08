@@ -31,21 +31,19 @@ export default function Registro() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-gradient-to-b from-[#fff8fa] to-[#fff0f5]">
+    <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-gradient-to-b from-[var(--love-bg-start)] to-[var(--love-bg-end)]">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-md bg-white/95 p-8 rounded-2xl shadow-lg shadow-pink-200/50"
+        className="w-full max-w-md bg-card p-8 rounded-2xl shadow-lg border border-border"
       >
-        <h1 className="text-3xl font-[Pacifico] text-pink-500 text-center mb-8">Criar conta</h1>
-        {error && (
-          <p className="text-center text-rose-600 text-sm mb-4">{error}</p>
-        )}
+        <h1 className="text-3xl font-[Pacifico] text-primary text-center mb-8">Criar conta</h1>
+        {error && <p className="text-center text-destructive text-sm mb-4">{error}</p>}
         <input
           type="text"
           placeholder="Nome (opcional)"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full px-4 py-3 mb-4 border-2 border-pink-100 rounded-lg text-base focus:outline-none focus:border-pink-500"
+          className="w-full px-4 py-3 mb-4 border-2 border-input rounded-lg text-base bg-background text-foreground focus:outline-none focus:border-primary"
         />
         <input
           type="email"
@@ -53,7 +51,7 @@ export default function Registro() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="w-full px-4 py-3 mb-4 border-2 border-pink-100 rounded-lg text-base focus:outline-none focus:border-pink-500"
+          className="w-full px-4 py-3 mb-4 border-2 border-input rounded-lg text-base bg-background text-foreground focus:outline-none focus:border-primary"
         />
         <input
           type="password"
@@ -62,17 +60,17 @@ export default function Registro() {
           onChange={(e) => setPassword(e.target.value)}
           required
           minLength={6}
-          className="w-full px-4 py-3 mb-4 border-2 border-pink-100 rounded-lg text-base focus:outline-none focus:border-pink-500"
+          className="w-full px-4 py-3 mb-4 border-2 border-input rounded-lg text-base bg-background text-foreground focus:outline-none focus:border-primary"
         />
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-4 bg-pink-500 text-white rounded-lg text-lg font-medium hover:bg-pink-600 hover:-translate-y-0.5 disabled:bg-pink-200 disabled:cursor-not-allowed disabled:transform-none transition-all"
+          className="w-full py-4 bg-primary text-primary-foreground rounded-lg text-lg font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           {loading ? 'Cadastrando...' : 'Registrar'}
         </button>
         <div className="mt-5 text-center">
-          <Link to="/login" className="text-pink-500 text-sm hover:underline">
+          <Link to="/login" className="text-primary text-sm hover:underline">
             Já tenho conta – Entrar
           </Link>
         </div>

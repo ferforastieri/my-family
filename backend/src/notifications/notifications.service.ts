@@ -77,7 +77,7 @@ export class NotificationsService {
       body: body ?? '',
       url: url ?? '/',
       icon: '/favicon-192.png',
-    } as Parameters<typeof notifications.$inferInsert extends infer I ? (v: I) => void : never>[0] extends (v: infer I) => void ? I : never);
+    } as any);
     if (!this.pushEnabled) return { sent: 0 };
     const wp = (webPush as any).default ?? webPush;
     const payload = JSON.stringify({

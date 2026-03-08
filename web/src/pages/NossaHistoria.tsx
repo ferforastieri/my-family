@@ -1,12 +1,12 @@
 const NossaHistoria = () => {
   return (
     <div className="w-full min-h-screen p-8 bg-gradient-to-b from-[var(--love-bg-start)] to-[var(--love-bg-end)]">
-      <h1 className="text-love-primary text-4xl md:text-5xl font-[Pacifico] text-center mb-8 animate-float animate-glow">
+      <h1 className="text-primary text-4xl md:text-5xl font-[Pacifico] text-center mb-8 animate-float animate-glow">
         Nossa História
       </h1>
       <div className="flex flex-col gap-8 max-w-[1000px] mx-auto">
         <section className="bg-white/90 dark:bg-card backdrop-blur-sm p-8 rounded-2xl shadow-md hover:shadow-lg hover:-translate-y-1 hover:bg-white/95 dark:hover:bg-card/95 transition-all duration-300">
-          <h2 className="text-love-primary text-2xl font-[Dancing_Script] mb-4">
+          <h2 className="text-primary text-2xl font-[Dancing_Script] mb-4">
             Como Nos Conhecemos
           </h2>
           <p className="text-muted-foreground leading-relaxed text-lg">
@@ -17,7 +17,7 @@ const NossaHistoria = () => {
         </section>
 
         <section className="bg-white/90 dark:bg-card backdrop-blur-sm p-8 rounded-2xl shadow-md hover:shadow-lg hover:-translate-y-1 hover:bg-white/95 dark:hover:bg-card/95 transition-all duration-300">
-          <h2 className="text-love-primary text-2xl font-[Dancing_Script] mb-4">
+          <h2 className="text-primary text-2xl font-[Dancing_Script] mb-4">
             Nosso Relacionamento
           </h2>
           <p className="text-muted-foreground leading-relaxed text-lg">
@@ -28,7 +28,7 @@ const NossaHistoria = () => {
         </section>
 
         <section className="bg-white/90 dark:bg-card backdrop-blur-sm p-8 rounded-2xl shadow-md hover:shadow-lg hover:-translate-y-1 hover:bg-white/95 dark:hover:bg-card/95 transition-all duration-300">
-          <h2 className="text-love-primary text-2xl font-[Dancing_Script] mb-4">
+          <h2 className="text-primary text-2xl font-[Dancing_Script] mb-4">
             Nossa Conexão
           </h2>
           <p className="text-muted-foreground leading-relaxed text-lg">

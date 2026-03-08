@@ -86,7 +86,7 @@ const UploadFoto = ({ onUploadComplete }: UploadFotoProps) => {
         className={`cursor-pointer px-6 py-3 rounded-lg text-white text-lg font-[Dancing_Script] transition-all shadow-md ${
           uploading
             ? 'opacity-70 cursor-not-allowed'
-            : 'bg-[var(--love-primary)] hover:bg-[var(--love-primary-dark)] hover:-translate-y-0.5 hover:shadow-lg'
+            : 'bg-primary hover:opacity-90 hover:-translate-y-0.5 hover:shadow-lg'
         }`}
       >
         {uploading ? 'Enviando...' : 'Adicionar Foto ou Vídeo'}
@@ -94,13 +94,13 @@ const UploadFoto = ({ onUploadComplete }: UploadFotoProps) => {
 
       {uploading && (
         <>
-          <div className="w-[200px] h-1.5 rounded-full overflow-hidden bg-[var(--love-primary-light)]">
+          <div className="w-[200px] h-1.5 rounded-full overflow-hidden bg-muted">
             <div
-              className="h-full rounded-full bg-[var(--love-primary)] transition-all duration-300"
+              className="h-full rounded-full bg-primary transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="text-[var(--love-primary)] font-[Dancing_Script] text-base m-0">
+          <p className="text-primary font-[Dancing_Script] text-base m-0">
             {progress < 100 ? 'Enviando arquivo...' : 'Upload concluído!'}
           </p>
         </>

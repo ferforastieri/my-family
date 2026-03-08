@@ -109,7 +109,7 @@ const Galeria = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[var(--love-bg-start)] to-[var(--love-bg-end)] p-6 sm:p-8">
-      <h1 className="text-2xl sm:text-3xl font-bold text-love-primary mb-6">
+      <h1 className="text-2xl sm:text-3xl font-bold text-primary mb-6">
         Nossa Galeria de Memórias
       </h1>
       <UploadFoto onUploadComplete={handleNovaFoto} />
@@ -135,7 +135,7 @@ const Galeria = () => {
       )}
 
       {loading ? (
-        <p className="text-love-primary-dark">Carregando...</p>
+        <p className="text-primary-dark">Carregando...</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-8">
           {fotos.map((foto) => (
@@ -163,7 +163,7 @@ const Galeria = () => {
                   value={foto.texto || ''}
                   onChange={(e) => handleTextoChange(foto.id, e.target.value)}
                   placeholder="Adicione uma descrição..."
-                  className="w-full p-2 mt-2 min-h-[60px] resize-y rounded border border-[var(--love-primary-light)] bg-background text-foreground font-inherit focus:outline-none focus:border-[var(--love-primary)] transition-colors"
+                  className="w-full p-2 mt-2 min-h-[60px] resize-y rounded border border-input bg-background text-foreground font-inherit focus:outline-none focus:border-primary transition-colors"
                 />
               </div>
             </div>

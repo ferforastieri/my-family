@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiUrl } from '../config/env';
 
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
+function urlBase64ToUint8Array(base64String: string): BufferSource {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
   const rawData = atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
+  const buf = new ArrayBuffer(rawData.length);
+  const outputArray = new Uint8Array(buf);
   for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
   return outputArray;
 }
@@ -47,7 +48,7 @@ export function usePushNotifications() {
       const { publicKey } = await vapidRes.json();
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey),
+        applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
       });
       await fetch(`${apiUrl}/notifications/subscribe`, {
         method: 'POST',
