@@ -1,70 +1,7 @@
 import { useState } from 'react';
-import styled from 'styled-components';
-// import { uploadToCloudinary } from '../../services/cloudinary'; // Removido - usando backend agora
-
-const UploadContainer = styled.div`
-  margin: 1rem 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-`;
-
-const UploadButton = styled.button`
-  background: #ff69b4;
-  color: white;
-  padding: 0.8rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-family: 'Dancing Script', cursive;
-  font-size: 1.1rem;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(255, 105, 180, 0.2);
-
-  &:hover {
-    background: #ff1493;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255, 105, 180, 0.3);
-  }
-
-  &:disabled {
-    background: #ffb6c1;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const UploadInput = styled.input`
-  display: none;
-`;
-
-const ProgressBar = styled.div<{ progress: number }>`
-  width: 200px;
-  height: 6px;
-  background: #ffe6f2;
-  border-radius: 3px;
-  overflow: hidden;
-  position: relative;
-
-  &::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    height: 100%;
-    width: ${props => props.progress}%;
-    background: #ff69b4;
-    transition: width 0.3s ease;
-  }
-`;
-
-const StatusMessage = styled.p`
-  color: #ff69b4;
-  font-family: 'Dancing Script', cursive;
-  font-size: 1rem;
-  margin: 0;
-`;
+import { apiUrl } from '../../config/env';
+import { getToken } from '../../contexts/AuthContext';
+import { useToast } from '../ui/feedback';
 
 interface UploadFotoProps {
   onUploadComplete: (url: string) => void;
@@ -73,21 +10,30 @@ interface UploadFotoProps {
 const UploadFoto = ({ onUploadComplete }: UploadFotoProps) => {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const { showToast } = useToast();
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-      alert('Por favor, selecione apenas arquivos de imagem ou vídeo.');
+      showToast({ title: 'Selecione apenas imagem ou vídeo.', variant: 'error' });
       return;
     }
 
     const isVideo = file.type.startsWith('video/');
     const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
-    
     if (file.size > maxSize) {
-      alert(`O arquivo deve ter no máximo ${isVideo ? '50MB' : '5MB'}.`);
+      showToast({
+        title: `Tamanho máximo: ${isVideo ? '50MB' : '5MB'}.`,
+        variant: 'error',
+      });
+      return;
+    }
+
+    const token = getToken();
+    if (!token) {
+      showToast({ title: 'Faça login para adicionar fotos.', variant: 'error' });
       return;
     }
 
@@ -95,52 +41,72 @@ const UploadFoto = ({ onUploadComplete }: UploadFotoProps) => {
     setProgress(20);
 
     try {
-      // TODO: Implementar upload via backend
-      // const result = await uploadToBackend(file);
-      // setProgress(100);
-      // onUploadComplete(result.url);
-      
-      // Temporário: simular upload
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(`${apiUrl}/fotos/upload`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Falha no upload');
+      }
+      const data = await res.json();
       setProgress(100);
-      const mockUrl = URL.createObjectURL(file);
-      onUploadComplete(mockUrl);
+      const url = `${apiUrl}/fotos/file?path=${encodeURIComponent(data.relativePath)}`;
+      onUploadComplete(url);
+      showToast({ title: 'Upload concluído!', variant: 'success' });
     } catch (error) {
       console.error('Erro no upload:', error);
-      alert('Erro ao fazer upload do arquivo. Por favor, tente novamente.');
+      showToast({
+        title: 'Erro ao enviar o arquivo',
+        description: 'Tente novamente.',
+        variant: 'error',
+      });
     } finally {
       setUploading(false);
       setTimeout(() => setProgress(0), 1000);
     }
+    event.target.value = '';
   };
 
   return (
-    <UploadContainer>
-      <UploadInput
+    <div className="my-4 flex flex-col items-center gap-4">
+      <input
         type="file"
         id="foto-upload"
         accept="image/*,video/*"
         onChange={handleUpload}
         disabled={uploading}
+        className="hidden"
       />
-      <UploadButton
-        as="label"
+      <label
         htmlFor="foto-upload"
-        disabled={uploading}
+        className={`cursor-pointer px-6 py-3 rounded-lg text-white text-lg font-[Dancing_Script] transition-all shadow-md ${
+          uploading
+            ? 'opacity-70 cursor-not-allowed'
+            : 'bg-[var(--love-primary)] hover:bg-[var(--love-primary-dark)] hover:-translate-y-0.5 hover:shadow-lg'
+        }`}
       >
         {uploading ? 'Enviando...' : 'Adicionar Foto ou Vídeo'}
-      </UploadButton>
-      
+      </label>
+
       {uploading && (
         <>
-          <ProgressBar progress={progress} />
-          <StatusMessage>
+          <div className="w-[200px] h-1.5 rounded-full overflow-hidden bg-[var(--love-primary-light)]">
+            <div
+              className="h-full rounded-full bg-[var(--love-primary)] transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <p className="text-[var(--love-primary)] font-[Dancing_Script] text-base m-0">
             {progress < 100 ? 'Enviando arquivo...' : 'Upload concluído!'}
-          </StatusMessage>
+          </p>
         </>
       )}
-    </UploadContainer>
+    </div>
   );
 };
 
-export default UploadFoto; 
+export default UploadFoto;

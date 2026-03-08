@@ -25,12 +25,27 @@
     --ring: 330 100% 71%;
     --radius: 0.75rem;
     
-    /* Cores específicas do Nossa Família */
     --love-primary: #ff69b4;
     --love-primary-dark: #d4488e;
     --love-primary-light: #ffb6c1;
     --love-bg-start: #fff8fa;
     --love-bg-end: #fff0f5;
+  }
+
+  [data-color="azul"] {
+    --love-primary: #3b82f6;
+    --love-primary-dark: #2563eb;
+    --love-primary-light: #93c5fd;
+    --love-bg-start: #eff6ff;
+    --love-bg-end: #dbeafe;
+  }
+
+  [data-color="vermelho"] {
+    --love-primary: #ef4444;
+    --love-primary-dark: #dc2626;
+    --love-primary-light: #fca5a5;
+    --love-bg-start: #fef2f2;
+    --love-bg-end: #fee2e2;
   }
 
   .dark {
@@ -53,6 +68,18 @@
     --border: 330 20% 15%;
     --input: 330 20% 15%;
     --ring: 330 100% 71%;
+    --love-bg-start: #1a0a12;
+    --love-bg-end: #2d151f;
+  }
+
+  html.dark[data-color="azul"] {
+    --love-bg-start: #0f172a;
+    --love-bg-end: #1e3a5f;
+  }
+
+  html.dark[data-color="vermelho"] {
+    --love-bg-start: #1c0a0a;
+    --love-bg-end: #2d1515;
   }
 }
 
@@ -103,4 +130,4 @@
   }
 }
 
-
+@import './styles/flower.css';

@@ -1,60 +1,3 @@
-import styled from 'styled-components';
-
-const MessagesContainer = styled.div`
-  min-height: 100vh;
-  padding: 80px 2rem 2rem;
-  background: linear-gradient(180deg, #fff8fa 0%, #fff0f5 100%);
-`;
-
-const Title = styled.h1`
-  color: #ff69b4;
-  font-size: 2.5rem;
-  font-family: 'Dancing Script', cursive;
-  text-align: center;
-  margin-bottom: 2rem;
-`;
-
-const MessageGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-`;
-
-const MessageCard = styled.div`
-  background: rgba(255, 255, 255, 0.9);
-  padding: 2rem;
-  border-radius: 15px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
-  
-  &:hover {
-    transform: translateY(-5px);
-  }
-
-  h3 {
-    color: #ff1493;
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-    font-family: 'Pacifico', cursive;
-  }
-
-  p {
-    color: #666;
-    line-height: 1.6;
-    font-size: 1.1rem;
-  }
-
-  .date {
-    color: #ff69b4;
-    font-size: 0.9rem;
-    margin-top: 1rem;
-    text-align: right;
-    font-style: italic;
-  }
-`;
-
 const Messages = () => {
   const messages = [
     {
@@ -69,23 +12,27 @@ const Messages = () => {
       content: "Você é o sonho que eu não sabia que tinha até te encontrar...",
       date: "11 de Fevereiro, 2024"
     },
-    // Adicione mais mensagens conforme necessário
   ];
 
   return (
-    <MessagesContainer>
-      <Title>Mensagens do Coração</Title>
-      <MessageGrid>
-        {messages.map(message => (
-          <MessageCard key={message.id}>
-            <h3>{message.title}</h3>
-            <p>{message.content}</p>
-            <p className="date">{message.date}</p>
-          </MessageCard>
+    <div className="min-h-screen pt-20 px-6 pb-8 bg-gradient-to-b from-[var(--love-bg-start)] to-[var(--love-bg-end)]">
+      <h1 className="text-love-primary text-3xl md:text-4xl font-[Dancing_Script] text-center mb-8">
+        Mensagens do Coração
+      </h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 max-w-[1200px] mx-auto">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className="bg-card/90 dark:bg-card p-8 rounded-2xl shadow-md hover:-translate-y-1 transition-all duration-300"
+          >
+            <h3 className="text-[var(--love-primary-dark)] text-xl font-[Pacifico] mb-4">{message.title}</h3>
+            <p className="text-muted-foreground leading-relaxed text-lg">{message.content}</p>
+            <p className="text-love-primary text-sm mt-4 text-right italic">{message.date}</p>
+          </div>
         ))}
-      </MessageGrid>
-    </MessagesContainer>
+      </div>
+    </div>
   );
 };
 
-export default Messages; 
+export default Messages;

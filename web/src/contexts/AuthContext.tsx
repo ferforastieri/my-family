@@ -1,5 +1,5 @@
 import { createContext, useContext, ReactNode, useState, useEffect, useCallback } from 'react';
-import { config } from '../config/env';
+import { apiUrl } from '../config/env';
 
 export type UserRole = 'admin' | 'wife' | 'child' | 'friend';
 
@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchUser = useCallback(async (token: string) => {
-    const res = await fetch(`${config.apiUrl}/auth/me`, {
+    const res = await fetch(`${apiUrl}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return null;
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchUser]);
 
   const signIn = async (email: string, password: string) => {
-    const res = await fetch(`${config.apiUrl}/auth/login`, {
+    const res = await fetch(`${apiUrl}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const register = async (email: string, password: string, name?: string) => {
-    const res = await fetch(`${config.apiUrl}/auth/register`, {
+    const res = await fetch(`${apiUrl}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, name }),
@@ -90,7 +90,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!token) throw new Error('Não autenticado');
     const form = new FormData();
     form.append('file', file);
-    const res = await fetch(`${config.apiUrl}/auth/avatar`, {
+    const res = await fetch(`${apiUrl}/auth/avatar`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: form,

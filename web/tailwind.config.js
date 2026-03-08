@@ -8,6 +8,46 @@ export default {
   ],
   prefix: '',
   theme: {
+    keyframes: {
+      float: {
+        '0%, 100%': { transform: 'translateY(0)' },
+        '50%': { transform: 'translateY(-10px)' },
+      },
+      glow: {
+        '0%, 100%': { textShadow: '2px 2px 4px rgba(255, 105, 180, 0.3)' },
+        '50%': { textShadow: '2px 2px 12px rgba(255, 105, 180, 0.6)' },
+      },
+      'title-glow': {
+        from: { filter: 'drop-shadow(0 0 2px rgba(255, 105, 180, 0.3))' },
+        to: { filter: 'drop-shadow(0 0 5px rgba(255, 105, 180, 0.6))' },
+      },
+      fadeIn: {
+        from: { opacity: '0' },
+        to: { opacity: '1' },
+      },
+      slideIn: {
+        from: { transform: 'translateY(-20px)', opacity: '0' },
+        to: { transform: 'translateY(0)', opacity: '1' },
+      },
+      sway: {
+        '0%, 100%': { transform: 'rotate(-8deg)' },
+        '50%': { transform: 'rotate(8deg)' },
+      },
+      'grow-flower': {
+        '0%': { transform: 'scale(0) translateY(100%)' },
+        '100%': { transform: 'scale(1) translateY(0)' },
+      },
+    },
+    animation: {
+      float: 'float 3s ease-in-out infinite',
+      glow: 'glow 2s ease-in-out infinite',
+      'title-glow': 'title-glow 2s ease-in-out infinite alternate',
+      'fade-in': 'fadeIn 0.5s ease',
+      'slide-in': 'slideIn 0.3s ease-out',
+      sway: 'sway 4s ease-in-out infinite',
+      'sway-fast': 'sway 2s ease-in-out infinite',
+      'grow-flower': 'grow-flower 2s backwards',
+    },
     container: {
       center: true,
       padding: '2rem',

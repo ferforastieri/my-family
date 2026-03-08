@@ -1,51 +1,4 @@
-import styled from 'styled-components';
 import { useEffect } from 'react';
-
-const PageContainer = styled.div`
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: linear-gradient(180deg, #fff8fa 0%, #fff0f5 100%);
-  padding: 2rem;
-  position: relative;
-  overflow: hidden;
-`;
-
-const Title = styled.h1`
-  color: #d4488e;
-  font-size: 3.5rem;
-  font-family: 'Pacifico', cursive;
-  text-align: center;
-  margin-bottom: 2rem;
-  z-index: 2;
-  text-shadow: 2px 2px 4px rgba(212, 72, 142, 0.3);
-  background: linear-gradient(45deg, #ff69b4, #d4488e);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: titleGlow 2s ease-in-out infinite alternate;
-
-  @keyframes titleGlow {
-    from {
-      filter: drop-shadow(0 0 2px rgba(255, 105, 180, 0.3));
-    }
-    to {
-      filter: drop-shadow(0 0 5px rgba(255, 105, 180, 0.6));
-    }
-  }
-`;
-
-const FlowerContainer = styled.div`
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 80vh;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-`;
 
 const FlowerForWife = () => {
   useEffect(() => {
@@ -54,9 +7,11 @@ const FlowerForWife = () => {
   }, []);
 
   return (
-    <PageContainer>
-      <Title>Uma Flor para Minha Esposa</Title>
-      <FlowerContainer>
+    <div className="min-h-screen flex flex-col items-center bg-gradient-to-b from-[var(--love-bg-start)] to-[var(--love-bg-end)] p-8 relative overflow-hidden">
+      <h1 className="text-love-primary-dark text-4xl md:text-5xl font-[Pacifico] text-center mb-8 z-[2] bg-gradient-to-r from-love-primary to-love-primary-dark bg-clip-text text-transparent animate-title-glow">
+        Uma Flor para Meu Esposo
+      </h1>
+      <div className="absolute bottom-0 left-0 right-0 h-[80vh] w-full flex justify-center items-end">
         <div className="night"></div>
         <div className="flowers">
           <div className="flower flower--1">
@@ -98,8 +53,8 @@ const FlowerForWife = () => {
             </div>
           </div>
         </div>
-      </FlowerContainer>
-    </PageContainer>
+      </div>
+    </div>
   );
 };
 

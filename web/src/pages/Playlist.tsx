@@ -1,176 +1,7 @@
-import styled, { keyframes } from 'styled-components';
 import { useEffect, useState } from 'react';
-// import { supabase } from '../services/supabase'; // Removido - usando backend agora
 import { NovaMusicaModal } from '../components/NovaMusicaModal';
 import { SpotifyPlayer } from '../components/SpotifyPlayer';
 import { YouTubePlayer } from '../components/YouTubePlayer';
-
-const floatAnimation = keyframes`
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-`;
-
-const glowAnimation = keyframes`
-  0%, 100% { text-shadow: 2px 2px 4px rgba(255, 105, 180, 0.3); }
-  50% { text-shadow: 2px 2px 12px rgba(255, 105, 180, 0.6); }
-`;
-
-const PlaylistContainer = styled.div`
-  min-height: 100vh;
-  padding: 80px 2rem 2rem;
-  background: linear-gradient(180deg, #fff8fa 0%, #fff0f5 100%);
-`;
-
-const HeaderSection = styled.header`
-  padding: 1rem;
-  text-align: center;
-  position: relative;
-  border-radius: 20px;
-  margin: 1rem auto 2rem;
-  max-width: 1000px;
-`;
-
-const Title = styled.h1`
-  color: #ff69b4;
-  font-size: 3.5rem;
-  font-family: 'Pacifico', cursive;
-  margin: 0.5rem 0 1rem;
-  padding-top: 0.5rem;
-  animation: ${floatAnimation} 3s ease-in-out infinite,
-             ${glowAnimation} 2s ease-in-out infinite;
-  
-  span {
-    display: inline-block;
-    
-    &:hover {
-      transform: scale(1.1);
-      transition: transform 0.3s ease;
-    }
-  }
-
-  @media (max-width: 768px) {
-    font-size: 2.5rem;
-  }
-`;
-
-const Subtitle = styled.p`
-  color: #d4488e;
-  font-size: 1.4rem;
-  max-width: 800px;
-  margin: 0 auto 2rem;
-  line-height: 1.6;
-  font-family: 'Dancing Script', cursive;
-
-  @media (max-width: 768px) {
-    font-size: 1.2rem;
-    padding: 0 1rem;
-  }
-`;
-
-const AddButton = styled.button`
-  background: #ff69b4;
-  color: white;
-  border: none;
-  padding: 0.8rem 2rem;
-  border-radius: 25px;
-  font-size: 1.1rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0 auto 2rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 10px rgba(255, 105, 180, 0.3);
-  font-family: 'Dancing Script', cursive;
-  
-  &:hover {
-    background: #ff1493;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(255, 105, 180, 0.4);
-  }
-`;
-
-const MusicGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-`;
-
-const MusicCard = styled.div`
-  background: white;
-  border-radius: 15px;
-  padding: 2rem;
-  box-shadow: 0 4px 15px rgba(255, 105, 180, 0.1);
-  transition: transform 0.3s ease;
-  
-  &:hover {
-    transform: translateY(-5px);
-  }
-
-  h3 {
-    color: #ff69b4;
-    font-size: 1.4rem;
-    margin-bottom: 0.5rem;
-    font-family: 'Dancing Script', cursive;
-  }
-
-  .artista {
-    color: #666;
-    font-size: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .momento {
-    color: #ff69b4;
-    font-size: 0.9rem;
-    margin-bottom: 1rem;
-    font-style: italic;
-  }
-
-  .descricao {
-    color: #444;
-    font-size: 1rem;
-    line-height: 1.6;
-    margin-bottom: 1rem;
-  }
-
-  .player-container {
-    margin-top: 1rem;
-    border-top: 1px solid #f0f0f0;
-    padding-top: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-`;
-
-const FilterSection = styled.div`
-  margin: 0 auto 2rem;
-  max-width: 1200px;
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-`;
-
-const FilterButton = styled.button<{ active: boolean }>`
-  padding: 0.6rem 1.2rem;
-  border-radius: 20px;
-  border: 2px solid #ff69b4;
-  background: ${props => props.active ? '#ff69b4' : 'transparent'};
-  color: ${props => props.active ? 'white' : '#ff69b4'};
-  font-family: 'Dancing Script', cursive;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(255, 105, 180, 0.2);
-  }
-`;
 
 interface Musica {
   id: number;
@@ -211,7 +42,6 @@ const Playlist = () => {
         .order('data', { ascending: false });
 
       if (error) throw error;
-      console.log('Dados carregados do Supabase:', data);
       setMusicas(data || []);
     } catch (error) {
       console.error('Erro ao carregar músicas:', error);
@@ -236,57 +66,67 @@ const Playlist = () => {
         ]);
 
       if (error) throw error;
-      
       await carregarMusicas();
     } catch (error) {
       console.error('Erro ao salvar música:', error);
     }
   };
 
-  const musicasFiltradas = musicas.filter(musica => 
+  const musicasFiltradas = musicas.filter(musica =>
     filtroMomento === 'Todos' || musica.momento === filtroMomento
   );
-  console.log('Músicas filtradas:', musicasFiltradas);
 
   return (
-    <PlaylistContainer>
-      <HeaderSection>
-        <Title>
+    <div className="min-h-screen pt-20 px-6 pb-8 bg-gradient-to-b from-[var(--love-bg-start)] to-[var(--love-bg-end)]">
+      <header className="p-4 text-center relative rounded-2xl my-4 mx-auto max-w-[1000px]">
+        <h1 className="text-love-primary text-4xl md:text-5xl font-[Pacifico] my-2 pt-2 animate-float animate-glow">
           {'Playlist do Nosso Amor'.split('').map((letter, index) => (
-            <span key={index} style={{ animationDelay: `${index * 0.1}s` }}>
+            <span key={index} className="inline-block hover:scale-110 transition-transform duration-300" style={{ animationDelay: `${index * 0.1}s` }}>
               {letter === ' ' ? '\u00A0' : letter}
             </span>
           ))}
-        </Title>
-        <Subtitle>
-          Cada música conta uma história nossa. Uma melodia que nos faz sorrir, 
+        </h1>
+        <p className="text-love-primary-dark text-xl md:text-2xl max-w-[800px] mx-auto mb-8 leading-relaxed font-[Dancing_Script] md:px-4">
+          Cada música conta uma história nossa. Uma melodia que nos faz sorrir,
           dançar e reviver momentos especiais do nosso amor.
-        </Subtitle>
-        <AddButton onClick={() => setModalAberto(true)}>
+        </p>
+        <button
+          type="button"
+          onClick={() => setModalAberto(true)}
+          className="flex items-center gap-2 mx-auto mb-8 px-8 py-3 rounded-[25px] text-lg text-white border-0 cursor-pointer transition-all duration-300 shadow-md bg-[var(--love-primary)] hover:bg-[var(--love-primary-dark)] hover:-translate-y-0.5 hover:shadow-lg font-[Dancing_Script]"
+        >
           <span>+</span> Adicionar Nova Música
-        </AddButton>
-      </HeaderSection>
+        </button>
+      </header>
 
-      <FilterSection>
-        {momentos.map(momento => (
-          <FilterButton
+      <div className="flex flex-wrap justify-center gap-4 mb-8 max-w-[1200px] mx-auto">
+        {momentos.map((momento) => (
+          <button
             key={momento}
-            active={filtroMomento === momento}
+            type="button"
             onClick={() => setFiltroMomento(momento)}
+            className={`px-5 py-2.5 rounded-xl border-2 border-[var(--love-primary)] font-[Dancing_Script] text-base cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
+              filtroMomento === momento
+                ? 'bg-[var(--love-primary)] text-white'
+                : 'bg-transparent text-love-primary'
+            }`}
           >
             {momento}
-          </FilterButton>
+          </button>
         ))}
-      </FilterSection>
+      </div>
 
-      <MusicGrid>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 max-w-[1200px] mx-auto">
         {musicasFiltradas.map((musica) => (
-          <MusicCard key={musica.id}>
-            <h3>{musica.titulo}</h3>
-            <div className="artista">{musica.artista}</div>
-            <div className="momento">{musica.momento}</div>
-            <div className="descricao">{musica.descricao}</div>
-            <div className="player-container">
+          <div
+            key={musica.id}
+            className="bg-card rounded-2xl p-8 shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+          >
+            <h3 className="text-love-primary text-xl font-[Dancing_Script] mb-2">{musica.titulo}</h3>
+            <div className="text-muted-foreground text-base mb-4">{musica.artista}</div>
+            <div className="text-love-primary text-sm mb-4 italic">{musica.momento}</div>
+            <div className="text-foreground/80 text-base leading-relaxed mb-4">{musica.descricao}</div>
+            <div className="mt-4 pt-4 border-t border-border flex flex-col gap-4">
               {musica.link_spotify && (
                 musica.link_spotify.includes('youtube.com') || musica.link_spotify.includes('youtu.be') ? (
                   <YouTubePlayer youtubeUrl={musica.link_spotify} />
@@ -295,17 +135,17 @@ const Playlist = () => {
                 ) : null
               )}
             </div>
-          </MusicCard>
+          </div>
         ))}
-      </MusicGrid>
+      </div>
 
       <NovaMusicaModal
         isOpen={modalAberto}
         onClose={() => setModalAberto(false)}
         onSave={salvarMusica}
       />
-    </PlaylistContainer>
+    </div>
   );
 };
 
-export default Playlist; 
+export default Playlist;

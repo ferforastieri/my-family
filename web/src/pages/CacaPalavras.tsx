@@ -1,119 +1,10 @@
-import styled from 'styled-components';
 import { useState, useEffect } from 'react';
 
-const Container = styled.div`
-  width: 100%;
-  min-height: 100vh;
-  background: linear-gradient(180deg, #fff8fa 0%, #fff0f5 100%);
-  padding: 2rem;
-`;
-
-const Title = styled.h1`
-  color: #ff69b4;
-  font-size: 2.5rem;
-  font-family: 'Pacifico', cursive;
-  text-align: center;
-  margin-bottom: 2rem;
-`;
-
-const Grid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(15, 30px);
-  gap: 2px;
-  justify-content: center;
-  margin: 2rem auto;
-  background: white;
-  padding: 1rem;
-  border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(255, 105, 180, 0.2);
-`;
-
-const Cell = styled.div<{ isSelected: boolean }>`
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #ffd1dc;
-  cursor: pointer;
-  user-select: none;
-  background-color: ${props => props.isSelected ? '#ff69b4' : 'white'};
-  color: ${props => props.isSelected ? 'white' : '#666'};
-  transition: all 0.2s ease;
-
-  &:hover {
-    background-color: #ffd1dc;
-  }
-`;
-
-const WordList = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  justify-content: center;
-  margin: 2rem auto;
-  max-width: 600px;
-`;
-
-const Word = styled.div<{ found: boolean }>`
-  padding: 0.5rem 1rem;
-  background: ${props => props.found ? '#ff69b4' : 'white'};
-  color: ${props => props.found ? 'white' : '#666'};
-  border-radius: 20px;
-  box-shadow: 0 2px 8px rgba(255, 105, 180, 0.2);
-`;
-
-// Palavras relacionadas ao amor que podem aparecer no jogo
 const PALAVRAS_POSSIVEIS = [
   'AMOR', 'BEIJO', 'CARINHO', 'ABRACO', 'PAIXAO',
   'ROMANCE', 'TERNURA', 'AFETO', 'CORACAO', 'SAUDADE',
   'NAMORO', 'FAMILIA', 'ALEGRIA', 'FELIZ', 'SONHOS'
 ];
-
-const ParabensContainer = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 105, 180, 0.9);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  animation: fadeIn 0.5s ease;
-
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-`;
-
-const ParabensMessage = styled.h2`
-  color: white;
-  font-size: 2.5rem;
-  font-family: 'Pacifico', cursive;
-  text-align: center;
-  margin-bottom: 2rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-`;
-
-const NovoJogoButton = styled.button`
-  background: white;
-  color: #ff69b4;
-  border: none;
-  padding: 1rem 2rem;
-  border-radius: 25px;
-  font-size: 1.2rem;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-
-  &:hover {
-    transform: scale(1.05);
-  }
-`;
 
 const CacaPalavras = () => {
   const [grid, setGrid] = useState<string[][]>([]);
@@ -122,21 +13,18 @@ const CacaPalavras = () => {
   const [selectedCells, setSelectedCells] = useState<number[]>([]);
   const [showParabens, setShowParabens] = useState(false);
 
-  // Função para gerar palavras do dia baseado na data
   const gerarPalavrasDoDia = () => {
     const hoje = new Date().toISOString().split('T')[0];
     const seed = hoje.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
     const palavrasEmbaralhadas = [...PALAVRAS_POSSIVEIS].sort(() => {
-      return 0.5 - Math.random() + Math.sin(seed); // Usando seed na ordenação
+      return 0.5 - Math.random() + Math.sin(seed);
     });
     return palavrasEmbaralhadas.slice(0, 6);
   };
 
-  // Função para criar o grid com as palavras
   const criarGrid = (palavras: string[]): string[][] => {
-    // Criar grid vazio 15x15 com letras aleatórias
-    const grid: string[][] = Array(15).fill(null).map(() => 
-      Array(15).fill(null).map(() => 
+    const grid: string[][] = Array(15).fill(null).map(() =>
+      Array(15).fill(null).map(() =>
         String.fromCharCode(65 + Math.floor(Math.random() * 26))
       )
     );
@@ -144,32 +32,23 @@ const CacaPalavras = () => {
     const tentarInserirPalavra = (palavra: string): boolean => {
       const maxTentativas = 100;
       let tentativas = 0;
-
       while (tentativas < maxTentativas) {
         const direcao = Math.random() < 0.5 ? 'horizontal' : 'vertical';
         const maxRow = direcao === 'horizontal' ? 15 : 15 - palavra.length;
         const maxCol = direcao === 'horizontal' ? 15 - palavra.length : 15;
-        
         const row = Math.floor(Math.random() * maxRow);
         const col = Math.floor(Math.random() * maxCol);
-        
         let podeInserir = true;
-
-        // Verificar se o espaço está livre ou tem letra compatível
         for (let i = 0; i < palavra.length; i++) {
           const currentRow = direcao === 'horizontal' ? row : row + i;
           const currentCol = direcao === 'horizontal' ? col + i : col;
           const letraAtual = grid[currentRow][currentCol];
-          
-          // Só pode inserir se a posição estiver vazia ou tiver a mesma letra
           if (letraAtual !== palavra[i] && letraAtual !== '') {
             podeInserir = false;
             break;
           }
         }
-
         if (podeInserir) {
-          // Inserir a palavra
           for (let i = 0; i < palavra.length; i++) {
             const currentRow = direcao === 'horizontal' ? row : row + i;
             const currentCol = direcao === 'horizontal' ? col + i : col;
@@ -177,25 +56,17 @@ const CacaPalavras = () => {
           }
           return true;
         }
-
         tentativas++;
       }
       return false;
     };
 
-    // Primeiro, limpar o grid com espaços vazios
     for (let i = 0; i < 15; i++) {
       for (let j = 0; j < 15; j++) {
         grid[i][j] = '';
       }
     }
-
-    // Inserir cada palavra
-    palavras.forEach(palavra => {
-      tentarInserirPalavra(palavra);
-    });
-
-    // Preencher espaços vazios com letras aleatórias
+    palavras.forEach(palavra => tentarInserirPalavra(palavra));
     for (let i = 0; i < 15; i++) {
       for (let j = 0; j < 15; j++) {
         if (grid[i][j] === '') {
@@ -203,22 +74,19 @@ const CacaPalavras = () => {
         }
       }
     }
-
     return grid;
   };
 
   useEffect(() => {
     const palavras = gerarPalavrasDoDia();
     setPalavrasDoDia(palavras);
-    const novoGrid = criarGrid(palavras);
-    setGrid(novoGrid);
+    setGrid(criarGrid(palavras));
   }, []);
 
   const reiniciarJogo = () => {
     const novasPalavras = gerarPalavrasDoDia();
     setPalavrasDoDia(novasPalavras);
-    const novoGrid = criarGrid(novasPalavras);
-    setGrid(novoGrid);
+    setGrid(criarGrid(novasPalavras));
     setPalavrasEncontradas([]);
     setSelectedCells([]);
     setShowParabens(false);
@@ -230,19 +98,15 @@ const CacaPalavras = () => {
     } else {
       const novaSelecao = [...selectedCells, index];
       setSelectedCells(novaSelecao);
-      
       const palavra = novaSelecao.map(idx => {
         const row = Math.floor(idx / 15);
         const col = idx % 15;
         return grid[row][col];
       }).join('');
-
       if (palavrasDoDia.includes(palavra) && !palavrasEncontradas.includes(palavra)) {
         const novasEncontradas = [...palavrasEncontradas, palavra];
         setPalavrasEncontradas(novasEncontradas);
         setSelectedCells([]);
-
-        // Verificar se todas as palavras foram encontradas
         if (novasEncontradas.length === palavrasDoDia.length) {
           setShowParabens(true);
         }
@@ -251,40 +115,58 @@ const CacaPalavras = () => {
   };
 
   return (
-    <Container>
-      <Title>Caça Palavras do Amor</Title>
-      <WordList>
+    <div className="w-full min-h-screen bg-gradient-to-b from-[var(--love-bg-start)] to-[var(--love-bg-end)] p-8">
+      <h1 className="text-love-primary text-3xl font-[Pacifico] text-center mb-8">Caça Palavras do Amor</h1>
+      <div className="flex flex-wrap justify-center gap-4 my-8 max-w-[600px] mx-auto">
         {palavrasDoDia.map(palavra => (
-          <Word key={palavra} found={palavrasEncontradas.includes(palavra)}>
+          <div
+            key={palavra}
+            className={`px-4 py-2 rounded-full shadow-md ${
+              palavrasEncontradas.includes(palavra)
+                ? 'bg-[var(--love-primary)] text-white'
+                : 'bg-card text-muted-foreground'
+            }`}
+          >
             {palavra}
-          </Word>
+          </div>
         ))}
-      </WordList>
-      <Grid>
+      </div>
+      <div className="grid gap-0.5 justify-center mx-auto my-8 bg-card p-4 rounded-xl shadow-md w-fit" style={{ gridTemplateColumns: 'repeat(15, 30px)' }}>
         {grid.flat().map((letra, index) => (
-          <Cell
+          <div
             key={index}
-            isSelected={selectedCells.includes(index)}
+            role="button"
+            tabIndex={0}
             onClick={() => handleCellClick(index)}
+            onKeyDown={(e) => e.key === 'Enter' && handleCellClick(index)}
+            className={`w-[30px] h-[30px] flex items-center justify-center border cursor-pointer select-none transition-colors text-sm ${
+              selectedCells.includes(index)
+                ? 'bg-[var(--love-primary)] text-white border-[var(--love-primary)]'
+                : 'bg-background text-muted-foreground border-[var(--love-primary-light)] hover:bg-[var(--love-primary-light)]'
+            }`}
           >
             {letra}
-          </Cell>
+          </div>
         ))}
-      </Grid>
+      </div>
 
       {showParabens && (
-        <ParabensContainer>
-          <ParabensMessage>
-            Parabéns! 🎉<br/>
+        <div className="fixed inset-0 bg-[var(--love-primary)]/90 flex flex-col items-center justify-center z-[1000] animate-fade-in">
+          <h2 className="text-white text-3xl font-[Pacifico] text-center mb-8 drop-shadow">
+            Parabéns! 🎉<br />
             Você encontrou todas as palavras!
-          </ParabensMessage>
-          <NovoJogoButton onClick={reiniciarJogo}>
+          </h2>
+          <button
+            type="button"
+            onClick={reiniciarJogo}
+            className="bg-white text-love-primary border-0 py-4 px-8 rounded-[25px] text-xl cursor-pointer transition-transform hover:scale-105 shadow-lg"
+          >
             Jogar Novamente
-          </NovoJogoButton>
-        </ParabensContainer>
+          </button>
+        </div>
       )}
-    </Container>
+    </div>
   );
 };
 
-export default CacaPalavras; 
+export default CacaPalavras;
