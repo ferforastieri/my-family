@@ -39,7 +39,7 @@ export function usePushNotifications() {
         return;
       }
       const reg = await navigator.serviceWorker.ready;
-      const vapidRes = await fetch(`${apiUrl}/push/vapid-public`);
+      const vapidRes = await fetch(`${apiUrl}/notifications/vapid-public`);
       if (!vapidRes.ok) {
         setError('Push não disponível no servidor.');
         return;
@@ -49,7 +49,7 @@ export function usePushNotifications() {
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
-      await fetch(`${apiUrl}/push/subscribe`, {
+      await fetch(`${apiUrl}/notifications/subscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -73,7 +73,7 @@ export function usePushNotifications() {
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
       if (sub) {
-        await fetch(`${apiUrl}/push/unsubscribe`, {
+        await fetch(`${apiUrl}/notifications/unsubscribe`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ endpoint: sub.endpoint }),

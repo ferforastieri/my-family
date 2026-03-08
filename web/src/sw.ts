@@ -25,8 +25,13 @@ self.addEventListener('push', (event: PushEvent) => {
     tag: 'lovepage-push',
     renotify: true,
   };
+  const msg = { title, body: payload.body ?? '', url: payload.url ?? '/', icon: payload.icon, at: Date.now() };
   event.waitUntil(
-    self.registration.showNotification(title, options)
+    self.registration.showNotification(title, options).then(() =>
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+        clients.forEach((c) => c.postMessage?.({ type: 'PUSH_NOTIFICATION', payload: msg }));
+      })
+    )
   );
 });
 
