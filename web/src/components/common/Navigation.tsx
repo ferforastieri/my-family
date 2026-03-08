@@ -1,8 +1,8 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { Navigation as UINavigation } from '../ui/layout';
 import type { NavigationItem } from '../ui/layout/navigation';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { DropdownMenu, DropdownMenuItem } from '../ui/feedback';
 import {
   HomeIcon,
   BookOpenIcon,
@@ -14,6 +14,7 @@ import {
   SparklesIcon,
   ArrowRightOnRectangleIcon,
   UserCircleIcon,
+  UserIcon,
 } from '@heroicons/react/24/outline';
 
 const baseNavItems: NavigationItem[] = [
@@ -51,13 +52,33 @@ const Navigation = () => {
   );
 
   const rightContent = user ? (
-    <button
-      onClick={handleLogout}
-      className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-love-primary-dark hover:bg-pink-300/50 transition-colors"
+    <DropdownMenu
+      align="right"
+      side="bottom"
+      trigger={
+        <button
+          type="button"
+          className="flex items-center justify-center w-9 h-9 rounded-full bg-pink-400 text-white hover:bg-pink-500 transition-colors ring-2 ring-pink-300/50"
+          aria-label="Menu do usuário"
+        >
+          <UserIcon className="h-5 w-5" />
+        </button>
+      }
     >
-      <ArrowRightOnRectangleIcon className="h-5 w-5" />
-      <span className="hidden md:inline">Sair</span>
-    </button>
+      <DropdownMenuItem asChild>
+        <Link to="/perfil" className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-pink-100">
+          <UserIcon className="h-4 w-4" />
+          Meu perfil
+        </Link>
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        onClick={handleLogout}
+        className="flex items-center gap-2 text-rose-600 hover:bg-rose-50"
+      >
+        <ArrowRightOnRectangleIcon className="h-4 w-4" />
+        Sair
+      </DropdownMenuItem>
+    </DropdownMenu>
   ) : (
     <Link
       to="/login"

@@ -8,6 +8,7 @@ import Messages from '../pages/Messages';
 import FlowerForWife from '../pages/FlowerForWife';
 import QuizDoAmor from '../pages/QuizDoAmor';
 import Painel from '../pages/Painel';
+import Perfil from '../pages/Perfil';
 import PrivateRoute from '../components/PrivateRoute';
 import NossaHistoria from '../pages/NossaHistoria';
 import LoveLetter from '../pages/LoveLetter';
@@ -38,6 +39,14 @@ export const AppRoutes = () => {
         element={
           <PrivateRoute>
             <Galeria />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/perfil"
+        element={
+          <PrivateRoute>
+            <Perfil />
           </PrivateRoute>
         }
       />

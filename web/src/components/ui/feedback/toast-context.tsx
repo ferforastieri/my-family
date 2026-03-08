@@ -37,14 +37,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ toasts, showToast, removeToast }}>
       {children}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 max-w-md w-full px-4 pointer-events-none">
+      <div className="fixed top-4 right-4 z-[100] flex flex-col gap-2 max-w-md w-full px-4 pointer-events-none">
         {toasts.map((toast) => (
-          <div 
-            key={toast.id} 
-            className="pointer-events-auto transition-all duration-300 ease-in-out"
-            style={{
-              animation: 'slideInUp 0.3s ease-out',
-            }}
+          <div
+            key={toast.id}
+            className="pointer-events-auto transition-all duration-300 ease-out"
+            style={{ animation: 'slideInRight 0.3s ease-out' }}
           >
             <Toast
               {...toast}
@@ -54,14 +52,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         ))}
       </div>
       <style>{`
-        @keyframes slideInUp {
+        @keyframes slideInRight {
           from {
             opacity: 0;
-            transform: translateY(20px);
+            transform: translateX(100%);
           }
           to {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateX(0);
           }
         }
       `}</style>

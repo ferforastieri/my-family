@@ -36,6 +36,15 @@ export class AuthService {
     return user ?? null;
   }
 
+  async updateAvatar(userId: number, avatarPath: string) {
+    const [updated] = await this.db
+      .update(users)
+      .set({ avatarPath, updatedAt: new Date() } as any)
+      .where(eq(users.id, userId))
+      .returning();
+    return updated ?? null;
+  }
+
   tokenResponse(user: User) {
     const payload = { sub: user.id, email: user.email };
     const access_token = this.jwt.sign(payload, {
@@ -44,7 +53,7 @@ export class AuthService {
     } as any);
     return {
       access_token,
-      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, avatarPath: user.avatarPath },
     };
   }
 }

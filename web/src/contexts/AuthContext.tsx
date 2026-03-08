@@ -8,12 +8,15 @@ interface User {
   email: string;
   name: string | null;
   role: UserRole;
+  avatarPath?: string | null;
 }
 
 interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   register: (email: string, password: string, name?: string) => Promise<void>;
+  setUser: (user: User | null) => void;
+  uploadAvatar: (file: File) => Promise<void>;
   user: User | null;
   loading: boolean;
 }
@@ -82,8 +85,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(data.user);
   };
 
+  const uploadAvatar = async (file: File) => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) throw new Error('Não autenticado');
+    const form = new FormData();
+    form.append('file', file);
+    const res = await fetch(`${config.apiUrl}/auth/avatar`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Erro ao enviar avatar');
+    }
+    const data = await res.json();
+    if (data.user) setUser(data.user);
+  };
+
   return (
-    <AuthContext.Provider value={{ signIn, signOut, register, user, loading }}>
+    <AuthContext.Provider value={{ signIn, signOut, register, setUser, uploadAvatar, user, loading }}>
       {children}
     </AuthContext.Provider>
   );

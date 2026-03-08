@@ -16,6 +16,7 @@ export class Environment {
     secret: string;
     expiresIn: string;
   };
+  uploadPath: string;
   cors: {
     origin: string;
   };
@@ -59,6 +60,7 @@ class EnvironmentFactory {
         secret: output.parsed?.JWT_SECRET || 'change-me',
         expiresIn: output.parsed?.JWT_EXPIRES_IN || '7d',
       },
+      uploadPath: output.parsed?.UPLOAD_PATH || 'sda1/Aplicativos/Family',
       cors: {
         origin: output.parsed?.CORS_ORIGIN || '*',
       },
