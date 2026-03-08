@@ -37,12 +37,14 @@ export function usePushNotifications() {
       setPermission(permissionResult);
       if (permissionResult !== 'granted') {
         setError('Permissão de notificação negada.');
+        setLoading(false);
         return;
       }
       const reg = await navigator.serviceWorker.ready;
       const vapidRes = await fetch(`${apiUrl}/notifications/vapid-public`);
       if (!vapidRes.ok) {
         setError('Push não disponível no servidor.');
+        setLoading(false);
         return;
       }
       const { publicKey } = await vapidRes.json();
@@ -50,7 +52,7 @@ export function usePushNotifications() {
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
       });
-      await fetch(`${apiUrl}/notifications/subscribe`, {
+      const subscribeRes = await fetch(`${apiUrl}/notifications/subscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -58,6 +60,11 @@ export function usePushNotifications() {
           userAgent: navigator.userAgent,
         }),
       });
+      if (!subscribeRes.ok) {
+        setError('Falha ao registrar no servidor.');
+        setLoading(false);
+        return;
+      }
       setSubscribed(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao ativar notificações.');

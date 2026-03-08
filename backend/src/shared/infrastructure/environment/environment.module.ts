@@ -31,6 +31,7 @@ export class Environment {
   passwordResetUrl?: string;
   vapidPublicKey?: string;
   vapidPrivateKey?: string;
+  redis?: { url: string };
 
   isProduction(): boolean {
     return this.type === 'production';
@@ -89,6 +90,9 @@ class EnvironmentFactory {
       passwordResetUrl: output.parsed?.PASSWORD_RESET_URL || '',
       vapidPublicKey: output.parsed?.VAPID_PUBLIC_KEY,
       vapidPrivateKey: output.parsed?.VAPID_PRIVATE_KEY,
+      redis: (process.env.REDIS_URL || output.parsed?.REDIS_URL)
+        ? { url: process.env.REDIS_URL || output.parsed?.REDIS_URL! }
+        : undefined,
     });
   }
 }

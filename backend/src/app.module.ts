@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
 import { EnvironmentModule } from '@shared/infrastructure/environment/environment.module';
+import { Environment } from '@shared/infrastructure/environment/environment.module';
 import { DatabaseModule } from '@shared/infrastructure/database/database.module';
 import { EmailModule } from '@shared/infrastructure/email/email.module';
 import { UploadModule } from '@shared/infrastructure/upload';
@@ -13,6 +15,17 @@ import { NotificationsModule } from './notifications/notifications.module';
 @Module({
   imports: [
     EnvironmentModule.forRoot(),
+    BullModule.forRootAsync({
+      imports: [EnvironmentModule],
+      inject: [Environment],
+      useFactory: (env: Environment) => {
+        if (!env.redis?.url) throw new Error('REDIS_URL é obrigatório');
+        const u = new URL(env.redis.url);
+        return {
+          connection: { host: u.hostname, port: parseInt(u.port || '6379', 10) },
+        };
+      },
+    }),
     DatabaseModule,
     EmailModule,
     UploadModule,

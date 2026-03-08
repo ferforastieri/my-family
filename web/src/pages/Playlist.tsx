@@ -79,7 +79,7 @@ const Playlist = () => {
   return (
     <div className="min-h-screen pt-20 px-6 pb-8 bg-gradient-to-b from-[var(--love-bg-start)] to-[var(--love-bg-end)]">
       <header className="p-4 text-center relative rounded-2xl my-4 mx-auto max-w-[1000px] bg-transparent">
-        <h1 className="text-primary text-4xl md:text-5xl font-[Pacifico] my-2 pt-2 animate-float animate-glow">
+        <h1 className="text-primary text-4xl md:text-5xl font-[Pacifico] my-2 pt-2">
           {'Playlist do Nosso Amor'.split('').map((letter, index) => (
             <span key={index} className="inline-block hover:scale-110 transition-transform duration-300" style={{ animationDelay: `${index * 0.1}s` }}>
               {letter === ' ' ? '\u00A0' : letter}
