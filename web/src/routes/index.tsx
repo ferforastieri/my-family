@@ -9,7 +9,9 @@ import FlowerForWife from '../pages/FlowerForWife';
 import QuizDoAmor from '../pages/QuizDoAmor';
 import Painel from '../pages/Painel';
 import Perfil from '../pages/Perfil';
+import Admin from '../pages/Admin';
 import PrivateRoute from '../components/PrivateRoute';
+import AdminRoute from '../components/AdminRoute';
 import NossaHistoria from '../pages/NossaHistoria';
 import LoveLetter from '../pages/LoveLetter';
 import Playlist from '../pages/Playlist';
@@ -54,6 +56,14 @@ export const AppRoutes = () => {
           <PrivateRoute>
             <Painel />
           </PrivateRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <Admin />
+          </AdminRoute>
         }
       />
     </Routes>
