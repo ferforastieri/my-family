@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../components/ui/feedback';
 
 export default function Registro() {
   const [name, setName] = useState('');
@@ -10,6 +11,7 @@ export default function Registro() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { register } = useAuth();
+  const { showToast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,9 +19,12 @@ export default function Registro() {
     setLoading(true);
     try {
       await register(email, password, name || undefined);
-      navigate('/', { replace: true });
+      showToast({ title: 'Conta criada!', variant: 'success', duration: 2000 });
+      setTimeout(() => navigate('/', { replace: true }), 500);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao cadastrar');
+      const msg = err instanceof Error ? err.message : 'Erro ao cadastrar';
+      setError(msg);
+      showToast({ title: 'Erro ao cadastrar', description: msg, variant: 'error' });
     } finally {
       setLoading(false);
     }

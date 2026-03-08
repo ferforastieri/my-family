@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../components/ui/feedback';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -10,6 +11,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { signIn } = useAuth();
+  const { showToast } = useToast();
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -18,9 +20,12 @@ export default function Login() {
     setLoading(true);
     try {
       await signIn(email, password);
-      navigate(from, { replace: true });
+      showToast({ title: 'Bem-vindo!', variant: 'success', duration: 2000 });
+      setTimeout(() => navigate(from, { replace: true }), 500);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao fazer login');
+      const msg = err instanceof Error ? err.message : 'Erro ao fazer login';
+      setError(msg);
+      showToast({ title: 'Erro ao entrar', description: msg, variant: 'error' });
     } finally {
       setLoading(false);
     }
