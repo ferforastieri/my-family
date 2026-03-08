@@ -3,6 +3,8 @@ FROM node:18-alpine AS builder
 WORKDIR /app
 COPY web/package*.json ./
 COPY web/tsconfig.json ./
+COPY web/tsconfig.app.json ./
+COPY web/tsconfig.node.json ./
 COPY web/vite.config.ts ./
 COPY web/tailwind.config.js ./
 COPY web/postcss.config.js ./

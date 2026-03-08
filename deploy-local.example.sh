@@ -55,7 +55,7 @@ chown -R \$USER:\$USER /DATA/.docker 2>/dev/null || run_sudo chown -R \$USER:\$U
 
 export VITE_API_URL="http://$SERVER_HOST:3459/api"
 run_docker rm -f lovepage-front lovepage-backend 2>/dev/null || true
-run_compose down || true
+# Não usar "compose down" para não afetar o Atacte no mesmo servidor
 run_compose up -d --build
 
 sleep 10
