@@ -49,7 +49,7 @@ const UploadFoto = ({ onUploadComplete }: UploadFotoProps) => {
         body: form,
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
+        const err = await res.json();
         throw new Error(err.message || 'Falha no upload');
       }
       const data = await res.json();

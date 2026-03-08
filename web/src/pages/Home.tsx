@@ -47,19 +47,19 @@ const Home = () => {
   const [casamentoTime, setCasamentoTime] = useState<TimeData>({
     years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0, totalDays: 0, isFuture: false
   });
-  const [jadeTime, setJadeTime] = useState<TimeData>({
+  const [fernandoTime, setFernandoTime] = useState<TimeData>({
     years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0, totalDays: 0, isFuture: false
   });
 
   useEffect(() => {
     const namoroDate = new Date('2024-10-12');
     const casamentoDate = new Date('2025-04-15');
-    const jadeDate = new Date('2026-06-01'); // Assumindo início de junho
+    const fernandoDate = new Date('2026-06-01'); // Assumindo início de junho
     
     const updateCounters = () => {
       setNamoroTime(calculateTimeElapsed(namoroDate));
       setCasamentoTime(calculateTimeElapsed(casamentoDate));
-      setJadeTime(calculateTimeElapsed(jadeDate));
+      setFernandoTime(calculateTimeElapsed(fernandoDate));
     };
 
     updateCounters();
@@ -119,7 +119,7 @@ const Home = () => {
       color: 'from-rose-400 to-rose-600'
     },
     {
-      title: 'Nascimento da Jade',
+      title: 'Nascimento do Fernando',
       icon: '👶',
       date: new Date('2026-06-01'),
       message: 'Nosso maior presente de amor chegando',
@@ -185,7 +185,7 @@ const Home = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 mb-6 sm:mb-8 items-stretch">
             {renderCounter(counterInfo[0], namoroTime)}
             {renderCounter(counterInfo[1], casamentoTime)}
-            {renderCounter(counterInfo[2], jadeTime)}
+            {renderCounter(counterInfo[2], fernandoTime)}
           </div>
           
           <p className="text-love-primary-dark text-sm sm:text-base max-w-2xl mx-auto mb-6 leading-relaxed px-2">

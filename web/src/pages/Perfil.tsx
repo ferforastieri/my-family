@@ -2,7 +2,8 @@ import { useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiUrl } from '../config/env';
 import { useToast } from '../components/ui/feedback';
-import { CameraIcon } from '@heroicons/react/24/outline';
+import { usePushNotifications } from '../hooks/usePushNotifications';
+import { CameraIcon, BellIcon, BellSlashIcon } from '@heroicons/react/24/outline';
 
 const roleLabels: Record<string, string> = {
   admin: 'Administrador',
@@ -19,6 +20,7 @@ function avatarUrl(avatarPath: string | null | undefined): string | null {
 export default function Perfil() {
   const { user, uploadAvatar } = useAuth();
   const { showToast } = useToast();
+  const push = usePushNotifications();
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -86,6 +88,42 @@ export default function Perfil() {
             <dd className="font-medium text-gray-900">{roleLabels[user.role] ?? user.role}</dd>
           </div>
         </dl>
+
+        {push.supported && (
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
+              <BellIcon className="h-5 w-5 text-pink-500" />
+              Notificações no celular
+            </h2>
+            <p className="text-sm text-gray-600 mb-3">
+              Receba avisos como no app, mesmo com o navegador fechado (PWA).
+            </p>
+            {push.error && (
+              <p className="text-sm text-red-600 mb-2" role="alert">{push.error}</p>
+            )}
+            {push.subscribed ? (
+              <button
+                type="button"
+                onClick={push.disable}
+                disabled={push.loading}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors text-sm font-medium"
+              >
+                <BellSlashIcon className="h-4 w-4" />
+                {push.loading ? 'Desativando...' : 'Desativar notificações'}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={push.enable}
+                disabled={push.loading || push.permission === 'denied'}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-pink-500 text-white hover:bg-pink-600 transition-colors text-sm font-medium disabled:opacity-50"
+              >
+                <BellIcon className="h-4 w-4" />
+                {push.loading ? 'Ativando...' : 'Ativar notificações'}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

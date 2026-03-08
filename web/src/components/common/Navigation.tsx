@@ -3,6 +3,7 @@ import { Navigation as UINavigation } from '../ui/layout';
 import type { NavigationItem } from '../ui/layout/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { DropdownMenu, DropdownMenuItem } from '../ui/feedback';
+import ThemeControls from './ThemeControls';
 import {
   HomeIcon,
   BookOpenIcon,
@@ -51,7 +52,10 @@ const Navigation = () => {
     </Link>
   );
 
-  const rightContent = user ? (
+  const rightContent = (
+    <div className="flex items-center gap-2 sm:gap-3">
+      <ThemeControls />
+      {user ? (
     <DropdownMenu
       align="right"
       side="bottom"
@@ -79,7 +83,7 @@ const Navigation = () => {
         Sair
       </DropdownMenuItem>
     </DropdownMenu>
-  ) : (
+      ) : (
     <Link
       to="/login"
       className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-love-primary-dark hover:bg-pink-300/50 transition-colors"
@@ -87,6 +91,8 @@ const Navigation = () => {
       <UserCircleIcon className="h-5 w-5" />
       <span className="hidden md:inline">Entrar</span>
     </Link>
+      )}
+    </div>
   );
 
   return (

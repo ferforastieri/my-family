@@ -20,6 +20,17 @@ export class Environment {
   cors: {
     origin: string;
   };
+  smtp?: {
+    host: string;
+    port: number;
+    user: string;
+    pass: string;
+  };
+  emailFrom?: string;
+  emailFromName?: string;
+  passwordResetUrl?: string;
+  vapidPublicKey?: string;
+  vapidPrivateKey?: string;
 
   isProduction(): boolean {
     return this.type === 'production';
@@ -64,6 +75,20 @@ class EnvironmentFactory {
       cors: {
         origin: output.parsed?.CORS_ORIGIN || '*',
       },
+      smtp:
+        output.parsed?.SMTP_HOST && output.parsed?.SMTP_USER && output.parsed?.SMTP_PASS
+          ? {
+              host: output.parsed.SMTP_HOST,
+              port: +(output.parsed.SMTP_PORT || '587'),
+              user: output.parsed.SMTP_USER,
+              pass: output.parsed.SMTP_PASS,
+            }
+          : undefined,
+      emailFrom: output.parsed?.EMAIL_FROM,
+      emailFromName: output.parsed?.EMAIL_FROM_NAME || 'Nossa Família',
+      passwordResetUrl: output.parsed?.PASSWORD_RESET_URL || '',
+      vapidPublicKey: output.parsed?.VAPID_PUBLIC_KEY,
+      vapidPrivateKey: output.parsed?.VAPID_PRIVATE_KEY,
     });
   }
 }
