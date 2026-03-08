@@ -61,7 +61,7 @@ class EnvironmentFactory {
         (output.parsed?.NODE_ENV as 'development' | 'production' | 'staging') ||
         'development',
       http: {
-        port: +(output.parsed?.PORT || 3000),
+        port: +(process.env.PORT || output.parsed?.PORT || 3000),
       },
       database: {
         postgres: {
