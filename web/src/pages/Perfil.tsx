@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { config } from '../config/env';
+import { apiUrl } from '../config/env';
 import { useToast } from '../components/ui/feedback';
 import { CameraIcon } from '@heroicons/react/24/outline';
 
@@ -13,7 +13,7 @@ const roleLabels: Record<string, string> = {
 
 function avatarUrl(avatarPath: string | null | undefined): string | null {
   if (!avatarPath) return null;
-  return `${config.apiUrl}/auth/avatar?path=${encodeURIComponent(avatarPath)}`;
+  return `${apiUrl}/auth/avatar?path=${encodeURIComponent(avatarPath)}`;
 }
 
 export default function Perfil() {

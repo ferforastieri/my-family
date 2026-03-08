@@ -1,73 +1,33 @@
-import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-
-const JogosContainer = styled.div`
-  width: 100%;
-  min-height: 100vh;
-  background: linear-gradient(180deg, #fff8fa 0%, #fff0f5 100%);
-  padding: 2rem;
-`;
-
-const Title = styled.h1`
-  color: #ff69b4;
-  font-size: 2.5rem;
-  font-family: 'Pacifico', cursive;
-  text-align: center;
-  margin-bottom: 2rem;
-`;
-
-const GamesGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
-`;
-
-const GameCard = styled.div`
-  background: white;
-  border-radius: 15px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 15px rgba(255, 105, 180, 0.2);
-  cursor: pointer;
-  transition: transform 0.3s ease;
-
-  &:hover {
-    transform: translateY(-5px);
-  }
-
-  h3 {
-    color: #ff69b4;
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-    text-align: center;
-  }
-
-  p {
-    color: #666;
-    text-align: center;
-  }
-`;
 
 const Jogos = () => {
   const navigate = useNavigate();
 
   return (
-    <JogosContainer>
-      <Title>Jogos do Amor</Title>
-      <GamesGrid>
-        <GameCard onClick={() => navigate('/quiz-do-amor')}>
-          <h3>Quiz do Amor ❤️</h3>
-          <p>Teste seus conhecimentos sobre nossa história de amor!</p>
-        </GameCard>
-        <GameCard onClick={() => navigate('/caca-palavras')}>
-          <h3>Caça Palavras 🔍</h3>
-          <p>Encontre palavras românticas que mudam todos os dias!</p>
-        </GameCard>
-      </GamesGrid>
-    </JogosContainer>
+    <div className="w-full min-h-screen bg-gradient-to-b from-[var(--love-bg-start)] to-[var(--love-bg-end)] p-8">
+      <h1 className="text-love-primary text-3xl md:text-4xl font-[Pacifico] text-center mb-8">
+        Jogos do Amor
+      </h1>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-[1200px] mx-auto p-4">
+        <button
+          type="button"
+          onClick={() => navigate('/quiz-do-amor')}
+          className="bg-card rounded-2xl p-6 shadow-md cursor-pointer hover:-translate-y-1 hover:shadow-lg transition-all duration-300 text-left"
+        >
+          <h3 className="text-love-primary text-xl font-semibold mb-4 text-center">Quiz do Amor ❤️</h3>
+          <p className="text-muted-foreground text-center">Teste seus conhecimentos sobre nossa história de amor!</p>
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate('/caca-palavras')}
+          className="bg-card rounded-2xl p-6 shadow-md cursor-pointer hover:-translate-y-1 hover:shadow-lg transition-all duration-300 text-left"
+        >
+          <h3 className="text-love-primary text-xl font-semibold mb-4 text-center">Caça Palavras 🔍</h3>
+          <p className="text-muted-foreground text-center">Encontre palavras românticas que mudam todos os dias!</p>
+        </button>
+      </div>
+    </div>
   );
 };
 
-export default Jogos; 
+export default Jogos;

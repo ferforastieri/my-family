@@ -20,7 +20,7 @@ export default function Registro() {
     try {
       await register(email, password, name || undefined);
       showToast({ title: 'Conta criada!', variant: 'success', duration: 2000 });
-      setTimeout(() => navigate('/', { replace: true }), 500);
+      navigate('/', { replace: true });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro ao cadastrar';
       setError(msg);

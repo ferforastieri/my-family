@@ -1,107 +1,44 @@
-import styled from 'styled-components';
-
-const PainelContainer = styled.div`
-  padding: 2rem;
-  min-height: 100vh;
-  background: linear-gradient(180deg, #fff8fa 0%, #fff0f5 100%);
-`;
-
-const Title = styled.h1`
-  color: #ff69b4;
-  font-family: 'Pacifico', cursive;
-  font-size: 2.5rem;
-  text-align: center;
-  margin-bottom: 2rem;
-`;
-
-const AdminSection = styled.section`
-  background: white;
-  border-radius: 15px;
-  padding: 2rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 4px 15px rgba(255, 105, 180, 0.1);
-`;
-
-const SectionTitle = styled.h2`
-  color: #ff69b4;
-  font-family: 'Dancing Script', cursive;
-  font-size: 1.8rem;
-  margin-bottom: 1rem;
-`;
-
-const AdminGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-top: 1rem;
-`;
-
-const AdminCard = styled.div`
-  background: #fff8fa;
-  padding: 1.5rem;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(255, 105, 180, 0.1);
-  transition: transform 0.2s ease;
-  cursor: pointer;
-
-  &:hover {
-    transform: translateY(-5px);
-  }
-
-  h3 {
-    color: #ff69b4;
-    font-family: 'Dancing Script', cursive;
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
-  }
-
-  p {
-    color: #666;
-    font-size: 0.9rem;
-  }
-`;
-
 const Painel = () => {
   return (
-    <PainelContainer>
-      <Title>Painel Administrativo</Title>
+    <div className="p-8 min-h-screen bg-gradient-to-b from-[var(--love-bg-start)] to-[var(--love-bg-end)]">
+      <h1 className="text-love-primary font-[Pacifico] text-3xl text-center mb-8">Painel Administrativo</h1>
 
-      <AdminSection>
-        <SectionTitle>Gerenciar Conteúdo</SectionTitle>
-        <AdminGrid>
-          <AdminCard>
-            <h3>Galeria de Fotos</h3>
-            <p>Adicionar, remover ou editar fotos da galeria privada.</p>
-          </AdminCard>
-          <AdminCard>
-            <h3>Mensagens</h3>
-            <p>Gerenciar mensagens e declarações de amor.</p>
-          </AdminCard>
-          <AdminCard>
-            <h3>Quiz do Amor</h3>
-            <p>Editar perguntas e respostas do quiz.</p>
-          </AdminCard>
-          <AdminCard>
-            <h3>Carta de Amor</h3>
-            <p>Atualizar o conteúdo da carta de amor.</p>
-          </AdminCard>
-        </AdminGrid>
-      </AdminSection>
+      <section className="bg-card dark:bg-card rounded-2xl p-8 mb-8 shadow-md">
+        <h2 className="text-love-primary font-[Dancing_Script] text-2xl mb-4">Gerenciar Conteúdo</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-4">
+          <div className="bg-[var(--love-bg-start)] dark:bg-card p-6 rounded-xl shadow-md hover:-translate-y-1 transition-transform cursor-pointer">
+            <h3 className="text-love-primary font-[Dancing_Script] text-xl mb-2">Galeria de Fotos</h3>
+            <p className="text-muted-foreground text-sm">Adicionar, remover ou editar fotos da galeria privada.</p>
+          </div>
+          <div className="bg-[var(--love-bg-start)] dark:bg-card p-6 rounded-xl shadow-md hover:-translate-y-1 transition-transform cursor-pointer">
+            <h3 className="text-love-primary font-[Dancing_Script] text-xl mb-2">Mensagens</h3>
+            <p className="text-muted-foreground text-sm">Gerenciar mensagens e declarações de amor.</p>
+          </div>
+          <div className="bg-[var(--love-bg-start)] dark:bg-card p-6 rounded-xl shadow-md hover:-translate-y-1 transition-transform cursor-pointer">
+            <h3 className="text-love-primary font-[Dancing_Script] text-xl mb-2">Quiz do Amor</h3>
+            <p className="text-muted-foreground text-sm">Editar perguntas e respostas do quiz.</p>
+          </div>
+          <div className="bg-[var(--love-bg-start)] dark:bg-card p-6 rounded-xl shadow-md hover:-translate-y-1 transition-transform cursor-pointer">
+            <h3 className="text-love-primary font-[Dancing_Script] text-xl mb-2">Carta de Amor</h3>
+            <p className="text-muted-foreground text-sm">Atualizar o conteúdo da carta de amor.</p>
+          </div>
+        </div>
+      </section>
 
-      <AdminSection>
-        <SectionTitle>Configurações</SectionTitle>
-        <AdminGrid>
-          <AdminCard>
-            <h3>Alterar Senha</h3>
-            <p>Modificar a senha de acesso ao painel.</p>
-          </AdminCard>
-          <AdminCard>
-            <h3>Backup</h3>
-            <p>Fazer backup dos dados e conteúdos.</p>
-          </AdminCard>
-        </AdminGrid>
-      </AdminSection>
-    </PainelContainer>
+      <section className="bg-card dark:bg-card rounded-2xl p-8 shadow-md">
+        <h2 className="text-love-primary font-[Dancing_Script] text-2xl mb-4">Configurações</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-4">
+          <div className="bg-[var(--love-bg-start)] dark:bg-card p-6 rounded-xl shadow-md hover:-translate-y-1 transition-transform cursor-pointer">
+            <h3 className="text-love-primary font-[Dancing_Script] text-xl mb-2">Alterar Senha</h3>
+            <p className="text-muted-foreground text-sm">Modificar a senha de acesso ao painel.</p>
+          </div>
+          <div className="bg-[var(--love-bg-start)] dark:bg-card p-6 rounded-xl shadow-md hover:-translate-y-1 transition-transform cursor-pointer">
+            <h3 className="text-love-primary font-[Dancing_Script] text-xl mb-2">Backup</h3>
+            <p className="text-muted-foreground text-sm">Fazer backup dos dados e conteúdos.</p>
+          </div>
+        </div>
+      </section>
+    </div>
   );
 };
 

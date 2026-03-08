@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import styled from 'styled-components';
 
 declare global {
   interface Window {
@@ -7,41 +6,6 @@ declare global {
     onYouTubeIframeAPIReady: () => void;
   }
 }
-
-const PlayerContainer = styled.div`
-  position: relative;
-  padding-bottom: 56.25%;
-  height: 0;
-  overflow: hidden;
-  border-radius: 8px;
-`;
-
-const FallbackContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  background: #f8f8f8;
-  border-radius: 8px;
-  text-align: center;
-`;
-
-const WatchOnYouTubeButton = styled.a`
-  background: #ff0000;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 20px;
-  text-decoration: none;
-  margin-top: 10px;
-  font-family: 'Dancing Script', cursive;
-  transition: all 0.3s ease;
-
-  &:hover {
-    background: #cc0000;
-    transform: translateY(-2px);
-  }
-`;
 
 interface YouTubePlayerProps {
   youtubeUrl: string;
@@ -158,18 +122,14 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({ youtubeUrl }) => {
 
   if (error) {
     return (
-      <FallbackContainer>
-        <p>Este vídeo não pode ser incorporado</p>
-        <WatchOnYouTubeButton 
-          href={youtubeUrl} 
-          target="_blank" 
-          rel="noopener noreferrer"
-        >
+      <div className="flex flex-col items-center justify-center p-5 bg-muted dark:bg-muted rounded-lg text-center">
+        <p className="text-foreground">Este vídeo não pode ser incorporado</p>
+        <a href={youtubeUrl} target="_blank" rel="noopener noreferrer" className="mt-3 px-5 py-2.5 rounded-full bg-red-600 text-white no-underline font-[Dancing_Script] transition-all hover:bg-red-700 hover:-translate-y-0.5">
           Assistir no YouTube
-        </WatchOnYouTubeButton>
-      </FallbackContainer>
+        </a>
+      </div>
     );
   }
 
-  return <PlayerContainer ref={containerRef} />;
+  return <div ref={containerRef} className="relative pb-[56.25%] h-0 overflow-hidden rounded-lg" />;
 }; 

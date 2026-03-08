@@ -21,7 +21,7 @@ export default function Login() {
     try {
       await signIn(email, password);
       showToast({ title: 'Bem-vindo!', variant: 'success', duration: 2000 });
-      setTimeout(() => navigate(from, { replace: true }), 500);
+      navigate(from, { replace: true });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro ao fazer login';
       setError(msg);

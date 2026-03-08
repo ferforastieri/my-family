@@ -1,22 +1,4 @@
 import React from 'react';
-import styled from 'styled-components';
-
-const PlayerContainer = styled.div`
-  position: relative;
-  padding-bottom: 152px;
-  height: 0;
-  overflow: hidden;
-  
-  iframe {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border: none;
-    border-radius: 8px;
-  }
-`;
 
 interface SpotifyPlayerProps {
   spotifyUrl: string;
@@ -31,12 +13,8 @@ export const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ spotifyUrl }) => {
   const embedUrl = getSpotifyEmbedUrl(spotifyUrl);
 
   return (
-    <PlayerContainer>
-      <iframe
-        src={embedUrl}
-        allow="encrypted-media"
-        allowFullScreen
-      />
-    </PlayerContainer>
+    <div className="relative pb-[152px] h-0 overflow-hidden">
+      <iframe src={embedUrl} allow="encrypted-media" allowFullScreen className="absolute top-0 left-0 w-full h-full border-0 rounded-lg" />
+    </div>
   );
 }; 

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import styled from 'styled-components';
 import UploadFoto from '../components/common/UploadFoto';
-// import { supabase } from '../services/supabase'; // Removido - usando backend agora
+import { apiUrl } from '../config/env';
+import { getToken } from '../contexts/AuthContext';
+import { useToast } from '../components/ui/feedback';
 
 interface Foto {
   id: string;
@@ -11,94 +12,21 @@ interface Foto {
   created_at: string;
 }
 
-const GaleriaContainer = styled.div`
-  padding: 2rem;
-  background: linear-gradient(180deg, #fff8fa 0%, #fff0f5 100%);
-  min-height: 100vh;
-`;
-
-const FotosGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-top: 2rem;
-`;
-
-const DeleteButton = styled.button`
-  background: #ff4757;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 0.5rem;
-  cursor: pointer;
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  z-index: 10;
-
-  &:hover {
-    background: #ff6b81;
-  }
-`;
-
-const FotoCard = styled.div`
-  position: relative;
-
-  &:hover ${DeleteButton} {
-    opacity: 1;
-  }
-
-  video {
-    pointer-events: none;
-    &::-webkit-media-controls {
-      z-index: 2;
-    }
-  }
-
-  background: white;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 4px 15px rgba(255, 105, 180, 0.1);
-  transition: transform 0.2s ease;
-
-  &:hover {
-    transform: translateY(-5px);
-  }
-
-  img, video {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-    display: block;
-  }
-
-  .texto {
-    padding: 1rem;
-    color: #666;
-  }
-`;
-
-const TextArea = styled.textarea`
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #ffb6c1;
-  border-radius: 4px;
-  margin-top: 0.5rem;
-  resize: vertical;
-  min-height: 60px;
-  font-family: inherit;
-
-  &:focus {
-    outline: none;
-    border-color: #ff69b4;
-  }
-`;
+function mapFromApi(item: { id: string; url: string; texto: string | null; tipo: 'imagem' | 'video'; createdAt: string }) {
+  return {
+    id: item.id,
+    url: item.url,
+    texto: item.texto ?? '',
+    tipo: item.tipo,
+    created_at: item.createdAt,
+  };
+}
 
 const Galeria = () => {
   const [fotos, setFotos] = useState<Foto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     carregarFotos();
@@ -106,113 +34,144 @@ const Galeria = () => {
 
   const carregarFotos = async () => {
     try {
-      const { data, error } = await supabase
-        .from('fotos')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setFotos(data || []);
+      const res = await fetch(`${apiUrl}/fotos`);
+      if (!res.ok) throw new Error('Falha ao carregar');
+      const data = await res.json();
+      setFotos((data as any[]).map(mapFromApi));
     } catch (error) {
       console.error('Erro ao carregar fotos:', error);
-      alert('Erro ao carregar as fotos');
+      showToast({ title: 'Erro ao carregar as fotos', variant: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
   const handleNovaFoto = async (url: string) => {
+    const token = getToken();
+    if (!token) {
+      showToast({ title: 'Faça login para adicionar fotos', variant: 'error' });
+      return;
+    }
     try {
-      const novaFoto = {
-        url,
-        texto: '',
-        tipo: url.includes('video') ? 'video' : 'imagem'
-      };
-
-      const { error } = await supabase
-        .from('fotos')
-        .insert([novaFoto]);
-
-      if (error) throw error;
+      const tipo = url.includes('video') ? 'video' : 'imagem';
+      const res = await fetch(`${apiUrl}/fotos`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ url, texto: '', tipo }),
+      });
+      if (!res.ok) throw new Error('Falha ao salvar');
+      showToast({ title: 'Foto adicionada!', variant: 'success' });
       carregarFotos();
     } catch (error) {
       console.error('Erro ao salvar foto:', error);
-      alert('Erro ao salvar a foto');
+      showToast({ title: 'Erro ao salvar a foto', variant: 'error' });
     }
   };
 
   const handleTextoChange = async (id: string, novoTexto: string) => {
     try {
-      const { error } = await supabase
-        .from('fotos')
-        .update({ texto: novoTexto })
-        .eq('id', id);
-
-      if (error) throw error;
-      setFotos(fotos.map(foto => 
-        foto.id === id ? { ...foto, texto: novoTexto } : foto
-      ));
+      const res = await fetch(`${apiUrl}/fotos/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ texto: novoTexto }),
+      });
+      if (!res.ok) throw new Error('Falha ao atualizar');
+      setFotos((prev) =>
+        prev.map((f) => (f.id === id ? { ...f, texto: novoTexto } : f))
+      );
     } catch (error) {
       console.error('Erro ao atualizar texto:', error);
-      alert('Erro ao salvar o texto');
+      showToast({ title: 'Erro ao salvar o texto', variant: 'error' });
     }
   };
 
-  const handleExcluirFoto = async (id: string) => {
-    if (!window.confirm('Tem certeza que deseja excluir esta memória?')) {
-      return;
-    }
+  const handleExcluirFoto = (id: string) => setConfirmDeleteId(id);
 
+  const confirmExcluir = async () => {
+    if (!confirmDeleteId) return;
     try {
-      const { error } = await supabase
-        .from('fotos')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setFotos(fotos.filter(foto => foto.id !== id));
+      const res = await fetch(`${apiUrl}/fotos/${confirmDeleteId}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Falha ao excluir');
+      setFotos((prev) => prev.filter((f) => f.id !== confirmDeleteId));
+      showToast({ title: 'Memória excluída', variant: 'success' });
     } catch (error) {
       console.error('Erro ao excluir foto:', error);
-      alert('Erro ao excluir a foto');
+      showToast({ title: 'Erro ao excluir a foto', variant: 'error' });
+    } finally {
+      setConfirmDeleteId(null);
     }
   };
 
   return (
-    <GaleriaContainer>
-      <h1>Nossa Galeria de Memórias</h1>
+    <div className="min-h-screen bg-gradient-to-b from-[var(--love-bg-start)] to-[var(--love-bg-end)] p-6 sm:p-8">
+      <h1 className="text-2xl sm:text-3xl font-bold text-love-primary mb-6">
+        Nossa Galeria de Memórias
+      </h1>
       <UploadFoto onUploadComplete={handleNovaFoto} />
-      
+
+      {confirmDeleteId && (
+        <div className="flex flex-wrap items-center gap-2 p-3 mb-4 rounded-lg bg-card shadow-md">
+          <span className="text-sm text-foreground">Excluir esta memória?</span>
+          <button
+            type="button"
+            className="px-3 py-1.5 rounded-md bg-red-500 text-white text-sm hover:bg-red-600 transition-colors"
+            onClick={confirmExcluir}
+          >
+            Sim
+          </button>
+          <button
+            type="button"
+            className="px-3 py-1.5 rounded-md bg-muted text-muted-foreground text-sm hover:bg-muted/80 transition-colors"
+            onClick={() => setConfirmDeleteId(null)}
+          >
+            Cancelar
+          </button>
+        </div>
+      )}
+
       {loading ? (
-        <p>Carregando...</p>
+        <p className="text-love-primary-dark">Carregando...</p>
       ) : (
-        <FotosGrid>
-          {fotos.map(foto => (
-            <FotoCard key={foto.id}>
-              <DeleteButton onClick={() => handleExcluirFoto(foto.id)}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-8">
+          {fotos.map((foto) => (
+            <div
+              key={foto.id}
+              className="group relative rounded-xl overflow-hidden bg-card shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
+            >
+              <button
+                type="button"
+                className="absolute top-2.5 right-2.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500 hover:bg-red-600 text-white border-0 rounded py-2 px-3 text-sm cursor-pointer"
+                onClick={() => handleExcluirFoto(foto.id)}
+              >
                 Excluir
-              </DeleteButton>
+              </button>
               {foto.tipo === 'video' ? (
-                <video controls>
+                <video controls className="w-full h-[200px] object-cover block [&::-webkit-media-controls]:z-[2] pointer-events-none">
                   <source src={foto.url} type="video/mp4" />
                   Seu navegador não suporta vídeos.
                 </video>
               ) : (
-                <img src={foto.url} alt="" />
+                <img src={foto.url} alt="" className="w-full h-[200px] object-cover block" />
               )}
-              <div className="texto">
-                <TextArea
+              <div className="p-4 text-muted-foreground">
+                <textarea
                   value={foto.texto || ''}
                   onChange={(e) => handleTextoChange(foto.id, e.target.value)}
                   placeholder="Adicione uma descrição..."
+                  className="w-full p-2 mt-2 min-h-[60px] resize-y rounded border border-[var(--love-primary-light)] bg-background text-foreground font-inherit focus:outline-none focus:border-[var(--love-primary)] transition-colors"
                 />
               </div>
-            </FotoCard>
+            </div>
           ))}
-        </FotosGrid>
+        </div>
       )}
-    </GaleriaContainer>
+    </div>
   );
 };
 
-export default Galeria; 
+export default Galeria;
