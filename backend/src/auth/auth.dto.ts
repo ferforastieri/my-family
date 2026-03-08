@@ -1,4 +1,5 @@
-import { IsEmail, IsString, MinLength, IsOptional } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsOptional, IsIn } from 'class-validator';
+import { userRoles } from '@shared/infrastructure/database/schema';
 
 export class RegisterDto {
   @IsEmail()
@@ -11,6 +12,11 @@ export class RegisterDto {
   @IsString()
   @IsOptional()
   name?: string;
+
+  @IsString()
+  @IsOptional()
+  @IsIn(userRoles)
+  role?: (typeof userRoles)[number];
 }
 
 export class LoginDto {

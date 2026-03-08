@@ -10,7 +10,7 @@ export class AuthController {
 
   @Post('register')
   async register(@Body() dto: RegisterDto) {
-    return this.auth.register(dto.email, dto.password, dto.name);
+    return this.auth.register(dto.email, dto.password, dto.name, dto.role);
   }
 
   @Post('login')
@@ -21,8 +21,8 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  async me(@Req() req: { user: { id: number; email: string; name: string | null } }) {
-    const { id, email, name } = req.user;
-    return { user: { id, email, name } };
+  async me(@Req() req: { user: { id: number; email: string; name: string | null; role: string } }) {
+    const { id, email, name, role } = req.user;
+    return { user: { id, email, name, role } };
   }
 }

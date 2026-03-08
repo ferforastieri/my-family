@@ -1,6 +1,8 @@
 import { Routes, Route } from 'react-router-dom';
 import Home from '../pages/Home';
 import Login from '../pages/Login';
+import Registro from '../pages/Registro';
+import EsqueciSenha from '../pages/EsqueciSenha';
 import Galeria from '../pages/Galeria';
 import Messages from '../pages/Messages';
 import FlowerForWife from '../pages/FlowerForWife';
@@ -19,6 +21,8 @@ export const AppRoutes = () => {
       {/* Rotas Públicas */}
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/registro" element={<Registro />} />
+      <Route path="/esqueci-senha" element={<EsqueciSenha />} />
       <Route path="/nossa-historia" element={<NossaHistoria />} />
       <Route path="/mensagens" element={<Messages />} />
       <Route path="/carta-de-amor" element={<LoveLetter />} />  

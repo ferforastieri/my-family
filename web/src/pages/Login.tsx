@@ -1,124 +1,73 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
-const LoginContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 2rem;
-  background: linear-gradient(180deg, #fff8fa 0%, #fff0f5 100%);
-`;
-
-const LoginForm = styled.form`
-  background: rgba(255, 255, 255, 0.95);
-  padding: 2rem;
-  border-radius: 15px;
-  box-shadow: 0 4px 15px rgba(255, 105, 180, 0.2);
-  width: 100%;
-  max-width: 400px;
-`;
-
-const Title = styled.h1`
-  color: #ff69b4;
-  font-family: 'Pacifico', cursive;
-  font-size: 2.5rem;
-  text-align: center;
-  margin-bottom: 2rem;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 0.8rem;
-  margin-bottom: 1rem;
-  border: 2px solid #ffe6f2;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.2s ease;
-
-  &:focus {
-    outline: none;
-    border-color: #ff69b4;
-  }
-`;
-
-const Button = styled.button`
-  width: 100%;
-  padding: 1rem;
-  background: #ff69b4;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1.1rem;
-  font-family: 'Dancing Script', cursive;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #ff1493;
-    transform: translateY(-2px);
-  }
-
-  &:disabled {
-    background: #ffb6c1;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const ErrorMessage = styled.p`
-  color: #ff1493;
-  text-align: center;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-`;
-
-const Login = () => {
-  const [senha, setSenha] = useState('');
+export default function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { signIn } = useAuth();
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
-      // Aqui você pode adicionar sua lógica de validação
-      if (senha === import.meta.env.VITE_LOGIN_PASSWORD) {
-        localStorage.setItem('isAuthenticated', 'true');
-        navigate('/');
-      } else {
-        setError('Senha incorreta');
-      }
-    } catch (error) {
-      setError('Erro ao fazer login');
+      await signIn(email, password);
+      navigate(from, { replace: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao fazer login');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <LoginContainer>
-      <LoginForm onSubmit={handleSubmit}>
-        <Title>Área Restrita</Title>
-        {error && <ErrorMessage>{error}</ErrorMessage>}
-        <Input
-          type="password"
-          placeholder="Digite a senha..."
-          value={senha}
-          onChange={(e) => setSenha(e.target.value)}
+    <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-gradient-to-b from-[#fff8fa] to-[#fff0f5]">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-md bg-white/95 p-8 rounded-2xl shadow-lg shadow-pink-200/50"
+      >
+        <h1 className="text-3xl font-[Pacifico] text-pink-500 text-center mb-8">Entrar</h1>
+        {error && (
+          <p className="text-center text-rose-600 text-sm mb-4">{error}</p>
+        )}
+        <input
+          type="email"
+          placeholder="E-mail"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           required
+          className="w-full px-4 py-3 mb-4 border-2 border-pink-100 rounded-lg text-base focus:outline-none focus:border-pink-500"
         />
-        <Button type="submit" disabled={loading}>
+        <input
+          type="password"
+          placeholder="Senha"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          className="w-full px-4 py-3 mb-4 border-2 border-pink-100 rounded-lg text-base focus:outline-none focus:border-pink-500"
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-4 bg-pink-500 text-white rounded-lg text-lg font-medium hover:bg-pink-600 hover:-translate-y-0.5 disabled:bg-pink-200 disabled:cursor-not-allowed disabled:transform-none transition-all"
+        >
           {loading ? 'Entrando...' : 'Entrar'}
-        </Button>
-      </LoginForm>
-    </LoginContainer>
+        </button>
+        <div className="mt-5 flex flex-col gap-2 text-center">
+          <Link to="/registro" className="text-pink-500 text-sm hover:underline">
+            Criar conta (registrar)
+          </Link>
+          <Link to="/esqueci-senha" className="text-pink-500 text-sm hover:underline">
+            Esqueci a senha
+          </Link>
+        </div>
+      </form>
+    </div>
   );
-};
-
-export default Login; 
+}
