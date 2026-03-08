@@ -17,6 +17,7 @@ import {
   ArrowRightOnRectangleIcon,
   UserCircleIcon,
   UserIcon,
+  ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 
 const baseNavItems: NavigationItem[] = [
@@ -78,6 +79,14 @@ const Navigation = ({ onOpenNotifications }: { onOpenNotifications: () => void }
             </button>
           }
         >
+          {user.role === 'admin' && (
+            <DropdownMenuItem asChild>
+              <Link to="/admin" className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent">
+                <ShieldCheckIcon className="h-4 w-4" />
+                Administração
+              </Link>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem asChild>
             <Link to="/perfil" className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent">
               <UserIcon className="h-4 w-4" />
