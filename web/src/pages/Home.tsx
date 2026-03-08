@@ -109,14 +109,14 @@ const Home = () => {
       icon: '💕',
       date: new Date('2024-10-12'),
       message: 'Desde o primeiro olhar, sabia que você era especial',
-      color: 'from-pink-400 to-pink-600'
+      color: 'from-primary to-primary/80'
     },
     {
       title: 'Nosso Casamento',
       icon: '💍',
       date: new Date('2025-04-15'),
       message: 'O dia mais feliz da minha vida ao seu lado',
-      color: 'from-rose-400 to-rose-600'
+      color: 'from-primary/90 to-primary/70'
     },
     {
       title: 'Nascimento do Fernando',
@@ -152,10 +152,10 @@ const Home = () => {
               { value: Math.abs(time.days), label: 'Dias' },
             ].map((item, index) => (
               <div key={index} className="bg-white/95 rounded-lg p-2 sm:p-2.5 shadow-md">
-                <div className="text-love-primary text-xl sm:text-2xl font-bold mb-1">
+                <div className="text-primary text-xl sm:text-2xl font-bold mb-1">
                   {item.value}
                 </div>
-                <div className="text-love-primary-dark text-[10px] sm:text-xs font-medium">
+                <div className="text-muted-foreground text-[10px] sm:text-xs font-medium">
                   {item.label}
                 </div>
               </div>
@@ -175,11 +175,11 @@ const Home = () => {
   };
 
   return (
-    <div className="w-full min-h-screen relative flex flex-col bg-gradient-to-b from-love-bg-start to-love-bg-end">
+    <div className="w-full min-h-screen relative flex flex-col bg-gradient-to-b from-[var(--love-bg-start)] to-[var(--love-bg-end)]">
       <section className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 text-center relative z-10">
         <header className="max-w-6xl mx-auto mb-6 sm:mb-8">
-          <h1 className="text-love-primary text-2xl sm:text-3xl md:text-4xl font-bold my-4 sm:my-6">
-            Para Meu Amor <span className="text-[#ff1493]">❤️</span>
+          <h1 className="text-primary text-2xl sm:text-3xl md:text-4xl font-bold my-4 sm:my-6">
+            Para Meu Amor <span className="text-primary">❤️</span>
           </h1>
           
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 mb-6 sm:mb-8 items-stretch">
@@ -188,7 +188,7 @@ const Home = () => {
             {renderCounter(counterInfo[2], fernandoTime)}
           </div>
           
-          <p className="text-love-primary-dark text-sm sm:text-base max-w-2xl mx-auto mb-6 leading-relaxed px-2">
+          <p className="text-muted-foreground text-sm sm:text-base max-w-2xl mx-auto mb-6 leading-relaxed px-2">
             Um jardim digital de memórias e amor, onde cada momento representa 
             uma parte especial da nossa história juntos.
           </p>
@@ -196,18 +196,18 @@ const Home = () => {
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6 max-w-7xl mx-auto px-4 sm:px-6 pb-8">
           {menuCards.map((card, index) => (
-            <Card 
+            <Card
               key={index}
-              className="flex flex-col justify-center items-center bg-white/90 p-3 sm:p-4 md:p-6 rounded-lg sm:rounded-xl md:rounded-2xl shadow-md backdrop-blur-sm cursor-pointer min-h-[140px] sm:min-h-[160px] md:min-h-[180px] transition-all duration-300 hover:-translate-y-1 hover:bg-white/95 hover:shadow-lg"
+              className="flex flex-col justify-center items-center bg-card border border-border p-3 sm:p-4 md:p-6 rounded-lg sm:rounded-xl md:rounded-2xl shadow-md cursor-pointer min-h-[140px] sm:min-h-[160px] md:min-h-[180px] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
               onClick={() => navigate(card.path)}
             >
               <CardHeader className="p-0 pb-1 sm:pb-2">
-                <CardTitle className="text-love-primary text-base sm:text-lg md:text-xl text-center font-medium">
+                <CardTitle className="text-primary text-base sm:text-lg md:text-xl text-center font-medium">
                   {card.title}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <p className="text-gray-600 text-[11px] sm:text-xs md:text-sm text-center max-w-full mx-auto leading-snug">
+                <p className="text-muted-foreground text-[11px] sm:text-xs md:text-sm text-center max-w-full mx-auto leading-snug">
                   {card.description}
                 </p>
               </CardContent>

@@ -16,7 +16,7 @@ const Messages = () => {
 
   return (
     <div className="min-h-screen pt-20 px-6 pb-8 bg-gradient-to-b from-[var(--love-bg-start)] to-[var(--love-bg-end)]">
-      <h1 className="text-love-primary text-3xl md:text-4xl font-[Dancing_Script] text-center mb-8">
+      <h1 className="text-primary text-3xl md:text-4xl font-[Dancing_Script] text-center mb-8">
         Mensagens do Coração
       </h1>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 max-w-[1200px] mx-auto">
@@ -25,9 +25,9 @@ const Messages = () => {
             key={message.id}
             className="bg-card/90 dark:bg-card p-8 rounded-2xl shadow-md hover:-translate-y-1 transition-all duration-300"
           >
-            <h3 className="text-[var(--love-primary-dark)] text-xl font-[Pacifico] mb-4">{message.title}</h3>
+            <h3 className="text-primary text-xl font-[Pacifico] mb-4">{message.title}</h3>
             <p className="text-muted-foreground leading-relaxed text-lg">{message.content}</p>
-            <p className="text-love-primary text-sm mt-4 text-right italic">{message.date}</p>
+            <p className="text-primary text-sm mt-4 text-right italic">{message.date}</p>
           </div>
         ))}
       </div>

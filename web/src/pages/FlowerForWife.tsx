@@ -8,7 +8,7 @@ const FlowerForWife = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gradient-to-b from-[var(--love-bg-start)] to-[var(--love-bg-end)] p-8 relative overflow-hidden">
-      <h1 className="text-love-primary-dark text-4xl md:text-5xl font-[Pacifico] text-center mb-8 z-[2] bg-gradient-to-r from-love-primary to-love-primary-dark bg-clip-text text-transparent animate-title-glow">
+      <h1 className="text-primary text-4xl md:text-5xl font-[Pacifico] text-center mb-8 z-[2] bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent animate-title-glow">
         Uma Flor para Meu Esposo
       </h1>
       <div className="absolute bottom-0 left-0 right-0 h-[80vh] w-full flex justify-center items-end">

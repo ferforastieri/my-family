@@ -116,14 +116,14 @@ const CacaPalavras = () => {
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-b from-[var(--love-bg-start)] to-[var(--love-bg-end)] p-8">
-      <h1 className="text-love-primary text-3xl font-[Pacifico] text-center mb-8">Caça Palavras do Amor</h1>
+      <h1 className="text-primary text-3xl font-[Pacifico] text-center mb-8">Caça Palavras do Amor</h1>
       <div className="flex flex-wrap justify-center gap-4 my-8 max-w-[600px] mx-auto">
         {palavrasDoDia.map(palavra => (
           <div
             key={palavra}
             className={`px-4 py-2 rounded-full shadow-md ${
               palavrasEncontradas.includes(palavra)
-                ? 'bg-[var(--love-primary)] text-white'
+                ? 'bg-primary text-primary-foreground'
                 : 'bg-card text-muted-foreground'
             }`}
           >
@@ -141,8 +141,8 @@ const CacaPalavras = () => {
             onKeyDown={(e) => e.key === 'Enter' && handleCellClick(index)}
             className={`w-[30px] h-[30px] flex items-center justify-center border cursor-pointer select-none transition-colors text-sm ${
               selectedCells.includes(index)
-                ? 'bg-[var(--love-primary)] text-white border-[var(--love-primary)]'
-                : 'bg-background text-muted-foreground border-[var(--love-primary-light)] hover:bg-[var(--love-primary-light)]'
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-background text-muted-foreground border-input hover:bg-accent'
             }`}
           >
             {letra}
@@ -151,7 +151,7 @@ const CacaPalavras = () => {
       </div>
 
       {showParabens && (
-        <div className="fixed inset-0 bg-[var(--love-primary)]/90 flex flex-col items-center justify-center z-[1000] animate-fade-in">
+        <div className="fixed inset-0 bg-primary/90 flex flex-col items-center justify-center z-[1000] animate-fade-in">
           <h2 className="text-white text-3xl font-[Pacifico] text-center mb-8 drop-shadow">
             Parabéns! 🎉<br />
             Você encontrou todas as palavras!
@@ -159,7 +159,7 @@ const CacaPalavras = () => {
           <button
             type="button"
             onClick={reiniciarJogo}
-            className="bg-white text-love-primary border-0 py-4 px-8 rounded-[25px] text-xl cursor-pointer transition-transform hover:scale-105 shadow-lg"
+            className="bg-card text-primary border-0 py-4 px-8 rounded-[25px] text-xl cursor-pointer transition-transform hover:scale-105 shadow-lg"
           >
             Jogar Novamente
           </button>

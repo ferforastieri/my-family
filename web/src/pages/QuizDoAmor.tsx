@@ -31,17 +31,17 @@ const QuizDoAmor = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[var(--love-bg-start)] to-[var(--love-bg-end)] p-8">
-      <h1 className="text-love-primary text-3xl font-[Pacifico] text-center mb-8">Quiz do Amor ❤️</h1>
+      <h1 className="text-primary text-3xl font-[Pacifico] text-center mb-8">Quiz do Amor ❤️</h1>
       {!showResult ? (
         <div className="bg-card/90 dark:bg-card p-8 rounded-2xl max-w-[600px] mx-auto shadow-md">
-          <h2 className="text-love-primary-dark text-xl mb-6">{questions[currentQuestion].question}</h2>
+          <h2 className="text-foreground text-xl mb-6">{questions[currentQuestion].question}</h2>
           <div className="flex flex-col gap-2">
             {questions[currentQuestion].options.map((option, index) => (
               <button
                 key={index}
                 type="button"
                 onClick={() => handleAnswer(index)}
-                className="w-full py-4 px-4 rounded-lg border-2 border-[var(--love-primary)] bg-background text-love-primary cursor-pointer transition-all hover:bg-[var(--love-primary)] hover:text-white"
+                className="w-full py-4 px-4 rounded-lg border-2 border-primary bg-background text-primary cursor-pointer transition-all hover:bg-primary hover:text-primary-foreground"
               >
                 {option}
               </button>
@@ -49,7 +49,7 @@ const QuizDoAmor = () => {
           </div>
         </div>
       ) : (
-        <div className="text-center py-8 text-love-primary-dark text-2xl font-[Dancing_Script]">
+        <div className="text-center py-8 text-foreground text-2xl font-[Dancing_Script]">
           {score === questions.length ? (
             <>
               <h2 className="text-2xl font-bold mb-4">Parabéns meu amor! ❤️</h2>

@@ -73,7 +73,7 @@ export default function EsqueciSenha() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-gradient-to-b from-[var(--love-bg-start)] to-[var(--love-bg-end)]">
       <div className="w-full max-w-md bg-card p-8 rounded-2xl shadow-lg">
-        <h1 className="text-2xl font-[Pacifico] text-love-primary text-center mb-2">Recuperar senha</h1>
+        <h1 className="text-2xl font-[Pacifico] text-primary text-center mb-2">Recuperar senha</h1>
         <p className="text-muted-foreground text-sm text-center mb-6">
           {step === 'request' ? 'Digite seu email para receber um token de recuperação' : 'Informe o token e a nova senha'}
         </p>
@@ -86,13 +86,13 @@ export default function EsqueciSenha() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 border-2 border-[var(--love-primary-light)] rounded-xl focus:outline-none focus:border-[var(--love-primary)] bg-background"
+              className="w-full px-4 py-3 border-2 border-input rounded-xl focus:outline-none focus:border-primary bg-background text-foreground"
             />
             <p className="text-muted-foreground text-xs text-center">Se o email existir, você receberá um token por email. Verifique a caixa de entrada e o spam.</p>
-            <button type="submit" disabled={loading} className="w-full py-3 rounded-xl bg-[var(--love-primary)] text-white font-medium hover:bg-[var(--love-primary-dark)] disabled:opacity-70">
+            <button type="submit" disabled={loading} className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:opacity-90 disabled:opacity-70">
               {loading ? 'Enviando...' : 'Enviar token'}
             </button>
-            <Link to="/login" className="block text-center text-sm text-love-primary hover:underline">Voltar ao login</Link>
+            <Link to="/login" className="block text-center text-sm text-primary hover:underline">Voltar ao login</Link>
           </form>
         ) : (
           <form onSubmit={handleReset} className="space-y-4">
@@ -101,7 +101,7 @@ export default function EsqueciSenha() {
               placeholder="Token de recuperação"
               value={token}
               onChange={(e) => setToken(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-[var(--love-primary-light)] rounded-xl focus:outline-none focus:border-[var(--love-primary)] bg-background"
+              className="w-full px-4 py-3 border-2 border-input rounded-xl focus:outline-none focus:border-primary bg-background text-foreground"
             />
             {errors.token && <p className="text-sm text-destructive">{errors.token}</p>}
             <input
@@ -110,7 +110,7 @@ export default function EsqueciSenha() {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               minLength={8}
-              className="w-full px-4 py-3 border-2 border-[var(--love-primary-light)] rounded-xl focus:outline-none focus:border-[var(--love-primary)] bg-background"
+              className="w-full px-4 py-3 border-2 border-input rounded-xl focus:outline-none focus:border-primary bg-background text-foreground"
             />
             {errors.newPassword && <p className="text-sm text-destructive">{errors.newPassword}</p>}
             <input
@@ -118,13 +118,13 @@ export default function EsqueciSenha() {
               placeholder="Confirmar senha"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-[var(--love-primary-light)] rounded-xl focus:outline-none focus:border-[var(--love-primary)] bg-background"
+              className="w-full px-4 py-3 border-2 border-input rounded-xl focus:outline-none focus:border-primary bg-background text-foreground"
             />
             {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
-            <button type="submit" disabled={loading} className="w-full py-3 rounded-xl bg-[var(--love-primary)] text-white font-medium hover:bg-[var(--love-primary-dark)] disabled:opacity-70">
+            <button type="submit" disabled={loading} className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:opacity-90 disabled:opacity-70">
               {loading ? 'Redefinindo...' : 'Redefinir senha'}
             </button>
-            <button type="button" onClick={() => setStep('request')} className="w-full py-2 text-sm text-love-primary hover:underline">
+            <button type="button" onClick={() => setStep('request')} className="w-full py-2 text-sm text-primary hover:underline">
               Voltar
             </button>
           </form>

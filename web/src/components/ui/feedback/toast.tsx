@@ -12,19 +12,19 @@ export interface ToastProps extends React.HTMLAttributes<HTMLDivElement> {
 const Toast = forwardRef<HTMLDivElement, ToastProps>(
   ({ className, title, description, variant = 'default', onClose, ...props }, ref) => {
     const variants = {
-      default: 'bg-pink-50 border-pink-300 text-pink-900 shadow-lg shadow-pink-300/40',
-      success: 'bg-pink-50 border-pink-400 text-pink-900 shadow-lg shadow-pink-300/40',
-      error: 'bg-pink-50 border-rose-400 text-rose-800 shadow-lg shadow-rose-300/40',
-      warning: 'bg-pink-50 border-pink-400 text-pink-900 shadow-lg shadow-pink-300/40',
-      info: 'bg-pink-50 border-pink-300 text-pink-900 shadow-lg shadow-pink-300/40',
+      default: 'bg-card border-border text-foreground shadow-lg',
+      success: 'bg-card border-primary/50 text-foreground shadow-lg',
+      error: 'bg-card border-destructive text-foreground shadow-lg',
+      warning: 'bg-card border-border text-foreground shadow-lg',
+      info: 'bg-card border-primary/50 text-foreground shadow-lg',
     }
 
     const iconClasses = {
-      default: 'text-pink-600',
-      success: 'text-pink-600',
-      error: 'text-rose-600',
-      warning: 'text-pink-600',
-      info: 'text-pink-600',
+      default: 'text-primary',
+      success: 'text-primary',
+      error: 'text-destructive',
+      warning: 'text-primary',
+      info: 'text-primary',
     }
 
     const icons = {
@@ -61,7 +61,7 @@ const Toast = forwardRef<HTMLDivElement, ToastProps>(
         {onClose && (
           <button
             onClick={onClose}
-            className="flex-shrink-0 rounded-lg p-1 hover:bg-pink-100 text-gray-500 hover:text-gray-700 transition-colors"
+            className="flex-shrink-0 rounded-lg p-1 hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Fechar"
           >
             <XMarkIcon className="h-4 w-4" />

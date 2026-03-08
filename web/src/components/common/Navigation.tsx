@@ -3,7 +3,8 @@ import { Navigation as UINavigation } from '../ui/layout';
 import type { NavigationItem } from '../ui/layout/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { DropdownMenu, DropdownMenuItem } from '../ui/feedback';
-import ThemeControls from './ThemeControls';
+import ThemeDropdown from './ThemeDropdown';
+import { BellIcon } from '@heroicons/react/24/outline';
 import {
   HomeIcon,
   BookOpenIcon,
@@ -34,7 +35,7 @@ const memoriaItem: NavigationItem = {
   icon: PhotoIcon,
 };
 
-const Navigation = () => {
+const Navigation = ({ onOpenNotifications }: { onOpenNotifications: () => void }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
@@ -54,43 +55,48 @@ const Navigation = () => {
 
   const rightContent = (
     <div className="flex items-center gap-2 sm:gap-3">
-      <ThemeControls />
-      {user ? (
-    <DropdownMenu
-      align="right"
-      side="bottom"
-      trigger={
-        <button
-          type="button"
-          className="flex items-center justify-center w-9 h-9 rounded-full bg-pink-400 text-white hover:bg-pink-500 transition-colors ring-2 ring-pink-300/50"
-          aria-label="Menu do usuário"
-        >
-          <UserIcon className="h-5 w-5" />
-        </button>
-      }
-    >
-      <DropdownMenuItem asChild>
-        <Link to="/perfil" className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-pink-100">
-          <UserIcon className="h-4 w-4" />
-          Meu perfil
-        </Link>
-      </DropdownMenuItem>
-      <DropdownMenuItem
-        onClick={handleLogout}
-        className="flex items-center gap-2 text-rose-600 hover:bg-rose-50"
+      <button
+        type="button"
+        onClick={onOpenNotifications}
+        className="flex items-center justify-center w-9 h-9 rounded-full bg-muted hover:bg-accent text-foreground border border-border transition-colors"
+        aria-label="Notificações"
       >
-        <ArrowRightOnRectangleIcon className="h-4 w-4" />
-        Sair
-      </DropdownMenuItem>
-    </DropdownMenu>
+        <BellIcon className="h-5 w-5" />
+      </button>
+      <ThemeDropdown />
+      {user ? (
+        <DropdownMenu
+          align="right"
+          side="bottom"
+          trigger={
+            <button
+              type="button"
+              className="flex items-center justify-center w-9 h-9 rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity border border-border"
+              aria-label="Menu do usuário"
+            >
+              <UserIcon className="h-5 w-5" />
+            </button>
+          }
+        >
+          <DropdownMenuItem asChild>
+            <Link to="/perfil" className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent">
+              <UserIcon className="h-4 w-4" />
+              Meu perfil
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 text-destructive hover:bg-accent">
+            <ArrowRightOnRectangleIcon className="h-4 w-4" />
+            Sair
+          </DropdownMenuItem>
+        </DropdownMenu>
       ) : (
-    <Link
-      to="/login"
-      className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-love-primary-dark hover:bg-pink-300/50 transition-colors"
-    >
-      <UserCircleIcon className="h-5 w-5" />
-      <span className="hidden md:inline">Entrar</span>
-    </Link>
+        <Link
+          to="/login"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-primary hover:bg-accent transition-colors"
+        >
+          <UserCircleIcon className="h-5 w-5" />
+          <span className="hidden md:inline">Entrar</span>
+        </Link>
       )}
     </div>
   );
@@ -100,9 +106,9 @@ const Navigation = () => {
       items={navItems}
       currentPath={location.pathname}
       LinkComponent={LinkComponent}
-      className="bg-pink-200"
+      className="bg-card border-b border-border"
       logo={
-        <span className="text-xl font-bold text-love-primary">
+        <span className="text-xl font-bold text-primary">
           💕 Nossa Família
         </span>
       }

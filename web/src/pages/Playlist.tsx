@@ -78,22 +78,22 @@ const Playlist = () => {
 
   return (
     <div className="min-h-screen pt-20 px-6 pb-8 bg-gradient-to-b from-[var(--love-bg-start)] to-[var(--love-bg-end)]">
-      <header className="p-4 text-center relative rounded-2xl my-4 mx-auto max-w-[1000px]">
-        <h1 className="text-love-primary text-4xl md:text-5xl font-[Pacifico] my-2 pt-2 animate-float animate-glow">
+      <header className="p-4 text-center relative rounded-2xl my-4 mx-auto max-w-[1000px] bg-transparent">
+        <h1 className="text-primary text-4xl md:text-5xl font-[Pacifico] my-2 pt-2 animate-float animate-glow">
           {'Playlist do Nosso Amor'.split('').map((letter, index) => (
             <span key={index} className="inline-block hover:scale-110 transition-transform duration-300" style={{ animationDelay: `${index * 0.1}s` }}>
               {letter === ' ' ? '\u00A0' : letter}
             </span>
           ))}
         </h1>
-        <p className="text-love-primary-dark text-xl md:text-2xl max-w-[800px] mx-auto mb-8 leading-relaxed font-[Dancing_Script] md:px-4">
+        <p className="text-muted-foreground text-xl md:text-2xl max-w-[800px] mx-auto mb-8 leading-relaxed font-[Dancing_Script] md:px-4">
           Cada música conta uma história nossa. Uma melodia que nos faz sorrir,
           dançar e reviver momentos especiais do nosso amor.
         </p>
         <button
           type="button"
           onClick={() => setModalAberto(true)}
-          className="flex items-center gap-2 mx-auto mb-8 px-8 py-3 rounded-[25px] text-lg text-white border-0 cursor-pointer transition-all duration-300 shadow-md bg-[var(--love-primary)] hover:bg-[var(--love-primary-dark)] hover:-translate-y-0.5 hover:shadow-lg font-[Dancing_Script]"
+          className="flex items-center gap-2 mx-auto mb-8 px-8 py-3 rounded-[25px] text-lg text-primary-foreground border-0 cursor-pointer transition-all duration-300 shadow-md bg-primary hover:opacity-90 hover:-translate-y-0.5 hover:shadow-lg font-[Dancing_Script]"
         >
           <span>+</span> Adicionar Nova Música
         </button>
@@ -105,10 +105,10 @@ const Playlist = () => {
             key={momento}
             type="button"
             onClick={() => setFiltroMomento(momento)}
-            className={`px-5 py-2.5 rounded-xl border-2 border-[var(--love-primary)] font-[Dancing_Script] text-base cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
+            className={`px-5 py-2.5 rounded-xl border-2 border-primary font-[Dancing_Script] text-base cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${
               filtroMomento === momento
-                ? 'bg-[var(--love-primary)] text-white'
-                : 'bg-transparent text-love-primary'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-transparent text-primary'
             }`}
           >
             {momento}
@@ -122,9 +122,9 @@ const Playlist = () => {
             key={musica.id}
             className="bg-card rounded-2xl p-8 shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
           >
-            <h3 className="text-love-primary text-xl font-[Dancing_Script] mb-2">{musica.titulo}</h3>
+            <h3 className="text-primary text-xl font-[Dancing_Script] mb-2">{musica.titulo}</h3>
             <div className="text-muted-foreground text-base mb-4">{musica.artista}</div>
-            <div className="text-love-primary text-sm mb-4 italic">{musica.momento}</div>
+            <div className="text-primary text-sm mb-4 italic">{musica.momento}</div>
             <div className="text-foreground/80 text-base leading-relaxed mb-4">{musica.descricao}</div>
             <div className="mt-4 pt-4 border-t border-border flex flex-col gap-4">
               {musica.link_spotify && (
