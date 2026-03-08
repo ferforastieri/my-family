@@ -1,0 +1,24 @@
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+COPY web/package*.json ./
+COPY web/tsconfig.json ./
+COPY web/vite.config.ts ./
+COPY web/tailwind.config.js ./
+COPY web/postcss.config.js ./
+COPY web/index.html ./
+RUN npm ci && npm cache clean --force
+
+ARG VITE_API_URL=http://localhost:3459/api
+ENV VITE_API_URL=$VITE_API_URL
+
+COPY web/src/ ./src/
+COPY web/public/ ./public/
+RUN npm run build
+
+FROM nginx:alpine
+RUN rm -f /etc/nginx/conf.d/default.conf
+COPY nginx/nginx.front.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/dist /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
