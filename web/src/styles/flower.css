@@ -997,7 +997,6 @@ body {
   animation-play-state: paused !important;
 }
 
-/* Estilos para as flores adicionais */
 .flower-adicional {
   position: absolute;
   z-index: 1;

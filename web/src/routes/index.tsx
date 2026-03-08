@@ -19,7 +19,6 @@ import CacaPalavras from '../pages/CacaPalavras';
 export const AppRoutes = () => {
   return (
     <Routes>
-      {/* Rotas Públicas */}
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/registro" element={<Registro />} />
@@ -33,7 +32,6 @@ export const AppRoutes = () => {
       <Route path="/quiz-do-amor" element={<QuizDoAmor />} />
       <Route path="/caca-palavras" element={<CacaPalavras />} />
 
-      {/* Rotas Protegidas */}
       <Route
         path="/galeria"
         element={

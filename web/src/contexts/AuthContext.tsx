@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     fetchUser(token)
       .then((u) => setUser(u))
-      .catch(() => localStorage.removeItem(TOKEN_KEY))
+      .catch(() => { localStorage.removeItem(TOKEN_KEY); })
       .finally(() => setLoading(false));
   }, [fetchUser]);
 
@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       body: JSON.stringify({ email, password }),
     });
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
+      const err = await res.json();
       throw new Error(err.message || 'Email ou senha inválidos');
     }
     const data = await res.json();
@@ -77,7 +77,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       body: JSON.stringify({ email, password, name }),
     });
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
+      const err = await res.json();
       throw new Error(err.message || 'Erro ao cadastrar');
     }
     const data = await res.json();
@@ -96,7 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       body: form,
     });
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
+      const err = await res.json();
       throw new Error(err.message || 'Erro ao enviar avatar');
     }
     const data = await res.json();

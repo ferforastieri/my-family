@@ -25,14 +25,17 @@ function loadTheme(): ThemeState {
     if (['rosa', 'azul', 'vermelho'].includes(parsed.color) && ['light', 'dark'].includes(parsed.mode)) {
       return parsed;
     }
-  } catch {}
+  } catch {
+    return defaultTheme;
+  }
   return defaultTheme;
 }
 
 function saveTheme(theme: ThemeState) {
   try {
     localStorage.setItem(THEME_KEY, JSON.stringify(theme));
-  } catch {}
+  } catch {
+  }
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);

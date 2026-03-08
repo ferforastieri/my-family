@@ -42,8 +42,6 @@ export const NovaMusicaModal = ({ isOpen, onClose, onSave }: NovaMusicaModalProp
       descricao,
       momento
     });
-    
-    // Limpar formulário
     setTitulo('');
     setArtista('');
     setLinkSpotify('');

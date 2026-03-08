@@ -46,6 +46,21 @@ export class AuthController {
     return { user: user ? { id: user.id, email: user.email, name: user.name, role: user.role, avatarPath: user.avatarPath } : null };
   }
 
+  @Post('forgot-password')
+  async forgotPassword(@Body('email') email: string) {
+    if (!email) throw new BadRequestException('Email é obrigatório');
+    await this.auth.requestPasswordReset(email);
+    return { success: true, message: 'Se o email existir, você receberá um token de recuperação por email.' };
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() body: { token: string; newPassword: string }) {
+    const { token, newPassword } = body;
+    if (!token || !newPassword) throw new BadRequestException('Token e nova senha são obrigatórios');
+    await this.auth.resetPassword(token, newPassword);
+    return { success: true, message: 'Senha redefinida com sucesso.' };
+  }
+
   @Get('avatar')
   getAvatar(@Query('path') relativePath: string) {
     if (!relativePath || !relativePath.startsWith('avatar/')) {
