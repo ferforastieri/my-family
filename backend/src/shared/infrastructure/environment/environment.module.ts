@@ -12,9 +12,9 @@ export class Environment {
       url: string;
     };
   };
-  betterAuth: {
+  jwt: {
     secret: string;
-    url: string;
+    expiresIn: string;
   };
   cors: {
     origin: string;
@@ -55,9 +55,9 @@ class EnvironmentFactory {
           url: output.parsed?.DATABASE_URL || '',
         },
       },
-      betterAuth: {
-        secret: output.parsed?.BETTER_AUTH_SECRET || '',
-        url: output.parsed?.BETTER_AUTH_URL || 'http://localhost:3000/api/auth',
+      jwt: {
+        secret: output.parsed?.JWT_SECRET || 'change-me',
+        expiresIn: output.parsed?.JWT_EXPIRES_IN || '7d',
       },
       cors: {
         origin: output.parsed?.CORS_ORIGIN || '*',

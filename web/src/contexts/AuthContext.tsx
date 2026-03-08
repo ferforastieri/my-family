@@ -1,57 +1,26 @@
-import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
-import { signIn, signOut, authClient } from '../lib/better-auth';
+import { createContext, useContext, ReactNode, useState } from 'react';
 
 interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  user: any;
+  user: unknown;
   loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [user] = useState<unknown>(null);
+  const loading = false;
 
-  useEffect(() => {
-    // Verificar sessão inicial
-    authClient.getSession().then((response) => {
-      if (response?.data) {
-        setUser(response.data.user ?? null);
-      }
-      setLoading(false);
-    }).catch(() => {
-      setLoading(false);
-    });
-  }, []);
-
-  const handleSignIn = async (email: string, password: string) => {
-    await signIn.email({
-      email,
-      password,
-    });
-    // Atualizar usuário após login
-    const response = await authClient.getSession();
-    if (response?.data) {
-      setUser(response.data.user ?? null);
-    }
+  const signIn = async (_email: string, _password: string) => {
+    // Configurar auth (ex.: Firebase, NextAuth, etc.)
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    setUser(null);
-  };
+  const signOut = async () => {};
 
   return (
-    <AuthContext.Provider
-      value={{
-        signIn: handleSignIn,
-        signOut: handleSignOut,
-        user,
-        loading,
-      }}
-    >
+    <AuthContext.Provider value={{ signIn, signOut, user, loading }}>
       {children}
     </AuthContext.Provider>
   );

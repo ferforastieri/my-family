@@ -27,7 +27,7 @@ export class FotosService {
   async update(id: string, data: Partial<NewFoto>) {
     const [foto] = await this.db
       .update(fotos)
-      .set({ ...data, updatedAt: new Date() })
+      .set({ ...data, updatedAt: new Date() } as typeof fotos.$inferInsert)
       .where(eq(fotos.id, id))
       .returning();
     return foto;

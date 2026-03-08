@@ -27,7 +27,7 @@ export class CartasService {
   async update(id: number, data: Partial<NewCartaDeAmor>) {
     const [carta] = await this.db
       .update(cartasDeAmor)
-      .set({ ...data, updatedAt: new Date() })
+      .set({ ...data, updatedAt: new Date() } as typeof cartasDeAmor.$inferInsert)
       .where(eq(cartasDeAmor.id, id))
       .returning();
     return carta;
