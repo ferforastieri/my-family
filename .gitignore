@@ -62,4 +62,4 @@ Dockerfile
 docker-compose.yml
 deploy-local.sh
 entrypoint.sh
-nginx/
+nginx/nginx.conf

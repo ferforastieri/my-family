@@ -1,0 +1,20 @@
+FROM node:18-alpine
+
+RUN apk add --no-cache curl
+
+WORKDIR /app
+COPY backend/package*.json ./
+COPY backend/tsconfig*.json ./
+COPY backend/nest-cli.json ./
+RUN npm ci && npm cache clean --force
+
+COPY backend/src/ ./src/
+RUN npm run build
+
+RUN echo '#!/bin/sh' > /usr/local/bin/health-check.sh && \
+    echo 'curl -f http://localhost:3001/api/health || exit 1' >> /usr/local/bin/health-check.sh && \
+    chmod +x /usr/local/bin/health-check.sh
+
+EXPOSE 3001
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 CMD /usr/local/bin/health-check.sh
+CMD ["node", "dist/main.js"]
