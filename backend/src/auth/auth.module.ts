@@ -6,8 +6,11 @@ import { EnvironmentModule } from '@shared/infrastructure/environment/environmen
 import { Environment } from '@shared/infrastructure/environment/environment.module';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
+import { UserService } from './user.service';
+import { UsersController } from './users.controller';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { RolesGuard } from './guards/roles.guard';
 
 @Module({
   imports: [
@@ -22,8 +25,8 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       } as any),
     }),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
-  exports: [AuthService],
+  controllers: [AuthController, UsersController],
+  providers: [AuthService, UserService, LocalStrategy, JwtStrategy, RolesGuard],
+  exports: [AuthService, UserService, RolesGuard],
 })
 export class AuthModule {}

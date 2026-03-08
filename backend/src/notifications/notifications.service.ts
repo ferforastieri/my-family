@@ -5,6 +5,13 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type * as schema from '@shared/infrastructure/database/schema';
 import { notifications, pushSubscriptions } from '@shared/infrastructure/database/schema';
 import { eq, desc } from 'drizzle-orm';
+
+export interface NotificationCreateDto {
+  title: string;
+  body?: string;
+  url?: string;
+  icon?: string;
+}
 import { Environment } from '@shared/infrastructure/environment/environment.module';
 
 const LIST_LIMIT = 100;
@@ -37,20 +44,62 @@ export class NotificationsService {
     return this.env.vapidPublicKey ?? null;
   }
 
-  async list() {
-    const rows = await this.db
-      .select()
-      .from(notifications)
-      .orderBy(desc(notifications.createdAt))
-      .limit(LIST_LIMIT);
-    return rows.map((r) => ({
+  private toDto(r: { id: number; title: string; body: string; url: string; icon: string | null; createdAt: Date }) {
+    return {
       id: r.id,
       title: r.title,
       body: r.body,
       url: r.url,
       icon: r.icon,
       at: new Date(r.createdAt).getTime(),
-    }));
+    };
+  }
+
+  async list() {
+    const rows = await this.db
+      .select()
+      .from(notifications)
+      .orderBy(desc(notifications.createdAt))
+      .limit(LIST_LIMIT);
+    return rows.map((r) => this.toDto(r));
+  }
+
+  async findOne(id: number) {
+    const [row] = await this.db.select().from(notifications).where(eq(notifications.id, id)).limit(1);
+    return row ? this.toDto(row) : null;
+  }
+
+  async create(data: NotificationCreateDto) {
+    const [row] = await this.db
+      .insert(notifications)
+      .values({
+        title: data.title,
+        body: data.body ?? '',
+        url: data.url ?? '/',
+        icon: data.icon ?? null,
+      } as any)
+      .returning();
+    return row ? this.toDto(row) : null;
+  }
+
+  async update(id: number, data: Partial<NotificationCreateDto>) {
+    const set: Record<string, unknown> = {};
+    if (data.title !== undefined) set.title = data.title;
+    if (data.body !== undefined) set.body = data.body;
+    if (data.url !== undefined) set.url = data.url;
+    if (data.icon !== undefined) set.icon = data.icon;
+    if (Object.keys(set).length === 0) return this.findOne(id);
+    const [row] = await this.db
+      .update(notifications)
+      .set(set as any)
+      .where(eq(notifications.id, id))
+      .returning();
+    return row ? this.toDto(row) : null;
+  }
+
+  async delete(id: number): Promise<boolean> {
+    const result = await this.db.delete(notifications).where(eq(notifications.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 
   async clearAll() {

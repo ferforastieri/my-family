@@ -34,7 +34,17 @@
     --love-bg-end: #fff0f5;
   }
 
+  /* Azul: todos os tokens que as páginas usam (primary, fundos, bordas) */
   [data-color="azul"] {
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 214 95% 93%;
+    --accent: 214 95% 93%;
+    --muted: 214 32% 91%;
+    --muted-foreground: 217 20% 40%;
+    --border: 214 32% 88%;
+    --input: 214 32% 88%;
+    --ring: 217 91% 60%;
     --love-primary: #3b82f6;
     --love-primary-dark: #2563eb;
     --love-primary-light: #93c5fd;
@@ -42,7 +52,17 @@
     --love-bg-end: #dbeafe;
   }
 
+  /* Vermelho: todos os tokens que as páginas usam */
   [data-color="vermelho"] {
+    --primary: 0 84% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 93% 94%;
+    --accent: 0 93% 94%;
+    --muted: 0 20% 92%;
+    --muted-foreground: 0 20% 40%;
+    --border: 0 30% 88%;
+    --input: 0 30% 88%;
+    --ring: 0 84% 60%;
     --love-primary: #ef4444;
     --love-primary-dark: #dc2626;
     --love-primary-light: #fca5a5;
@@ -74,12 +94,30 @@
     --love-bg-end: #2d151f;
   }
 
+  /* Escuro + Azul: primary e fundos em azul escuro */
   html.dark[data-color="azul"] {
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 33% 17%;
+    --accent: 217 33% 17%;
+    --muted: 217 25% 15%;
+    --border: 217 25% 18%;
+    --input: 217 25% 18%;
+    --ring: 217 91% 60%;
     --love-bg-start: #0f172a;
     --love-bg-end: #1e3a5f;
   }
 
+  /* Escuro + Vermelho: primary e fundos em vermelho escuro */
   html.dark[data-color="vermelho"] {
+    --primary: 0 84% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 30% 15%;
+    --accent: 0 30% 15%;
+    --muted: 0 25% 13%;
+    --border: 0 25% 18%;
+    --input: 0 25% 18%;
+    --ring: 0 84% 60%;
     --love-bg-start: #1c0a0a;
     --love-bg-end: #2d1515;
   }

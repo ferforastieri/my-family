@@ -1,7 +1,7 @@
 const NossaHistoria = () => {
   return (
     <div className="w-full min-h-screen p-8 bg-gradient-to-b from-[var(--love-bg-start)] to-[var(--love-bg-end)]">
-      <h1 className="text-primary text-4xl md:text-5xl font-[Pacifico] text-center mb-8 animate-float animate-glow">
+      <h1 className="text-primary text-4xl md:text-5xl font-[Pacifico] text-center mb-8">
         Nossa História
       </h1>
       <div className="flex flex-col gap-8 max-w-[1000px] mx-auto">
