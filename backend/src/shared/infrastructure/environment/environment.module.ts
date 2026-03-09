@@ -65,7 +65,7 @@ class EnvironmentFactory {
       },
       database: {
         postgres: {
-          url: output.parsed?.DATABASE_URL || '',
+          url: process.env.DATABASE_URL || output.parsed?.DATABASE_URL || '',
         },
       },
       jwt: {
