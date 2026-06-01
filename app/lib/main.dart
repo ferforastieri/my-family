@@ -14,6 +14,7 @@ const _bgStart = Color(0xfffff8fa);
 const _bgEnd = Color(0xfffff0f5);
 const _foreground = Color(0xff26131d);
 const _muted = Color(0xff775b6b);
+const _border = Color(0xffffdce9);
 
 void main() {
   final socket = SocketClient();
@@ -43,8 +44,11 @@ class MyFamilyApp extends StatelessWidget {
               surface: Colors.white,
             ),
             scaffoldBackgroundColor: _bgStart,
-            fontFamily: 'Roboto',
             useMaterial3: true,
+            textTheme: ThemeData.light().textTheme.apply(
+                  bodyColor: _foreground,
+                  displayColor: _foreground,
+                ),
             appBarTheme: const AppBarTheme(
               centerTitle: false,
               elevation: 0,
@@ -53,12 +57,13 @@ class MyFamilyApp extends StatelessWidget {
               surfaceTintColor: Colors.transparent,
             ),
             cardTheme: CardThemeData(
-              color: Colors.white.withValues(alpha: .92),
-              elevation: 0,
+              color: Colors.white.withValues(alpha: .90),
+              elevation: 3,
+              shadowColor: Color(0x1aff69b4),
               margin: const EdgeInsets.symmetric(vertical: 6),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-                side: BorderSide(color: _primary.withValues(alpha: .14)),
+                borderRadius: BorderRadius.circular(16),
+                side: const BorderSide(color: _border),
               ),
             ),
             filledButtonTheme: FilledButtonThemeData(
@@ -106,42 +111,69 @@ class _ShellState extends State<Shell> {
     ];
 
     final destinations = [
-      const NavigationDestination(icon: Icon(Icons.favorite_outline), selectedIcon: Icon(Icons.favorite), label: 'Inicio'),
-      const NavigationDestination(icon: Icon(Icons.menu_book_outlined), selectedIcon: Icon(Icons.menu_book), label: 'Historia'),
-      const NavigationDestination(icon: Icon(Icons.mail_outline), selectedIcon: Icon(Icons.mail), label: 'Mensagens'),
-      const NavigationDestination(icon: Icon(Icons.card_giftcard_outlined), selectedIcon: Icon(Icons.card_giftcard), label: 'Cartas'),
-      const NavigationDestination(icon: Icon(Icons.music_note_outlined), selectedIcon: Icon(Icons.music_note), label: 'Musicas'),
-      const NavigationDestination(icon: Icon(Icons.photo_outlined), selectedIcon: Icon(Icons.photo), label: 'Fotos'),
-      const NavigationDestination(icon: Icon(Icons.sports_esports_outlined), selectedIcon: Icon(Icons.sports_esports), label: 'Jogos'),
+      const NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Nosso Início'),
+      const NavigationDestination(icon: Icon(Icons.menu_book_outlined), selectedIcon: Icon(Icons.menu_book), label: 'Nossa Jornada'),
+      const NavigationDestination(icon: Icon(Icons.mail_outline), selectedIcon: Icon(Icons.mail), label: 'Palavras do Coração'),
+      const NavigationDestination(icon: Icon(Icons.card_giftcard_outlined), selectedIcon: Icon(Icons.card_giftcard), label: 'Carta de Amor'),
+      const NavigationDestination(icon: Icon(Icons.music_note_outlined), selectedIcon: Icon(Icons.music_note), label: 'Nossa Playlist'),
+      const NavigationDestination(icon: Icon(Icons.photo_outlined), selectedIcon: Icon(Icons.photo), label: 'Memórias em Fotos'),
+      const NavigationDestination(icon: Icon(Icons.sports_esports_outlined), selectedIcon: Icon(Icons.sports_esports), label: 'Jogos do Amor'),
       const NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Perfil'),
       if (widget.auth.user?.role == 'admin')
-        const NavigationDestination(icon: Icon(Icons.admin_panel_settings_outlined), selectedIcon: Icon(Icons.admin_panel_settings), label: 'Admin'),
+        const NavigationDestination(icon: Icon(Icons.admin_panel_settings_outlined), selectedIcon: Icon(Icons.admin_panel_settings), label: 'Administração'),
     ];
 
     final selected = index.clamp(0, pages.length - 1);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Nossa Familia',
-          style: TextStyle(color: _primary, fontWeight: FontWeight.w800),
-        ),
-        actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_outlined), tooltip: 'Notificacoes'),
-          if (widget.auth.user == null)
-            TextButton(onPressed: _openLogin, child: const Text('Entrar'))
-          else
-            IconButton(onPressed: widget.auth.signOut, icon: const Icon(Icons.logout), tooltip: 'Sair'),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: pages[selected],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: selected,
-        onDestinationSelected: (value) => setState(() => index = value),
-        indicatorColor: _primary.withValues(alpha: .14),
-        destinations: destinations,
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 860;
+        return Scaffold(
+          appBar: AppBar(
+            titleSpacing: wide ? 28 : 16,
+            title: const Text(
+              '💕 Nossa Família',
+              style: TextStyle(color: _primary, fontWeight: FontWeight.w900, fontSize: 21),
+            ),
+            actions: [
+              IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_outlined), tooltip: 'Notificações'),
+              if (widget.auth.user == null)
+                TextButton.icon(
+                  onPressed: _openLogin,
+                  icon: const Icon(Icons.account_circle_outlined, size: 20),
+                  label: const Text('Entrar'),
+                )
+              else
+                IconButton(onPressed: widget.auth.signOut, icon: const Icon(Icons.logout), tooltip: 'Sair'),
+              const SizedBox(width: 14),
+            ],
+            bottom: PreferredSize(
+              preferredSize: Size.fromHeight(wide ? 58 : 1),
+              child: Column(
+                children: [
+                  const Divider(height: 1, color: _border),
+                  if (wide)
+                    _TopNavigation(
+                      selected: selected,
+                      destinations: destinations,
+                      onSelected: (value) => setState(() => index = value),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          body: pages[selected],
+          bottomNavigationBar: wide
+              ? null
+              : NavigationBar(
+                  selectedIndex: selected,
+                  onDestinationSelected: (value) => setState(() => index = value),
+                  indicatorColor: _primary.withValues(alpha: .14),
+                  backgroundColor: Colors.white,
+                  destinations: destinations,
+                ),
+        );
+      },
     );
   }
 
@@ -154,6 +186,55 @@ class _ShellState extends State<Shell> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) => AuthSheet(auth: widget.auth),
+    );
+  }
+}
+
+class _TopNavigation extends StatelessWidget {
+  const _TopNavigation({
+    required this.selected,
+    required this.destinations,
+    required this.onSelected,
+  });
+
+  final int selected;
+  final List<NavigationDestination> destinations;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 57,
+      color: Colors.white,
+      alignment: Alignment.center,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 22),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (var i = 0; i < destinations.length; i++)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: TextButton.icon(
+                  onPressed: () => onSelected(i),
+                  icon: IconTheme(
+                    data: const IconThemeData(size: 19),
+                    child: i == selected ? (destinations[i].selectedIcon ?? destinations[i].icon) : destinations[i].icon,
+                  ),
+                  label: Text(destinations[i].label),
+                  style: TextButton.styleFrom(
+                    foregroundColor: i == selected ? _primary : _foreground,
+                    backgroundColor: i == selected ? _primary.withValues(alpha: .08) : Colors.transparent,
+                    padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -179,9 +260,10 @@ class LoveBackground extends StatelessWidget {
 }
 
 class SectionTitle extends StatelessWidget {
-  const SectionTitle(this.text, {super.key});
+  const SectionTitle(this.text, {super.key, this.size});
 
   final String text;
+  final double? size;
 
   @override
   Widget build(BuildContext context) {
@@ -190,10 +272,11 @@ class SectionTitle extends StatelessWidget {
       textAlign: TextAlign.center,
       style: const TextStyle(
         color: _primary,
+        fontFamily: 'serif',
         fontSize: 34,
         fontWeight: FontWeight.w800,
         height: 1.1,
-      ),
+      ).copyWith(fontSize: size),
     );
   }
 }
@@ -227,18 +310,18 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final cards = [
-      MenuCardData('Nossa Historia', 'Descubra como tudo comecou e os momentos que nos trouxeram ate aqui.', Icons.menu_book, 1),
+      MenuCardData('Nossa História', 'Descubra como tudo começou e os momentos que nos trouxeram até aqui.', Icons.menu_book, 1),
       MenuCardData('Jogos do Amor', 'Divirta-se com nossos jogos especiais, incluindo o Quiz do Amor.', Icons.sports_esports, 6),
-      MenuCardData('Mensagens do Coracao', 'Palavras de amor e carinho que compartilhamos.', Icons.mail, 2),
-      MenuCardData('Carta de Amor', 'Declaracoes especiais guardadas com carinho.', Icons.card_giftcard, 3),
-      MenuCardData('Uma Flor para Minha Esposa', 'Um jardim especial dedicado a mulher da minha vida.', Icons.local_florist, 2),
+      MenuCardData('Mensagens do Coração', 'Palavras de amor e carinho que compartilhamos.', Icons.mail, 2),
+      MenuCardData('Carta de Amor', 'Uma declaração especial do meu coração para você.', Icons.card_giftcard, 3),
+      MenuCardData('Uma Flor para Minha Esposa', 'Um jardim especial dedicado à mulher da minha vida.', Icons.local_florist, 2),
     ];
 
     return LoveBackground(
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 28, 16, 38),
         children: [
-          const SectionTitle('Para Meu Amor'),
+          const SectionTitle('Para Meu Amor ❤️', size: 38),
           const SizedBox(height: 22),
           LayoutBuilder(
             builder: (context, constraints) {
@@ -256,7 +339,7 @@ class _HomePageState extends State<HomePage> {
           ),
           const SizedBox(height: 22),
           const Text(
-            'Um jardim digital de memorias e amor, onde cada momento representa uma parte especial da nossa historia juntos.',
+            'Um jardim digital de memórias e amor, onde cada momento representa uma parte especial da nossa história juntos.',
             textAlign: TextAlign.center,
             style: TextStyle(color: _muted, fontSize: 16, height: 1.45),
           ),
@@ -280,22 +363,25 @@ class _HomePageState extends State<HomePage> {
                 children: cards
                     .map(
                       (card) => InkWell(
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(16),
                         onTap: () => widget.onNavigate(card.page),
                         child: Card(
                           child: Padding(
-                            padding: const EdgeInsets.all(18),
+                            padding: const EdgeInsets.all(20),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(card.icon, color: _primary, size: 32),
-                                const SizedBox(height: 12),
                                 Text(
                                   card.title,
                                   textAlign: TextAlign.center,
-                                  style: const TextStyle(color: _primary, fontWeight: FontWeight.w700, fontSize: 17),
+                                  style: const TextStyle(
+                                    color: _primary,
+                                    fontFamily: 'serif',
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 20,
+                                  ),
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 12),
                                 Text(
                                   card.description,
                                   textAlign: TextAlign.center,
@@ -337,7 +423,7 @@ class CounterInfo {
   });
 
   final String title;
-  final IconData icon;
+  final String icon;
   final DateTime date;
   final String message;
   final ElapsedTime elapsed;
@@ -363,16 +449,16 @@ class ElapsedTime {
 List<CounterInfo> _buildCounters() {
   return [
     CounterInfo(
-      title: 'Comecamos a Namorar',
-      icon: Icons.favorite,
+      title: 'Começamos a Namorar',
+      icon: '💕',
       date: DateTime(2024, 10, 12),
-      message: 'Desde o primeiro olhar, sabia que voce era especial',
+      message: 'Desde o primeiro olhar, sabia que você era especial',
       elapsed: _elapsed(DateTime(2024, 10, 12)),
       colors: const [_primary, _primaryDark],
     ),
     CounterInfo(
       title: 'Nosso Casamento',
-      icon: Icons.diamond,
+      icon: '💍',
       date: DateTime(2025, 4, 15),
       message: 'O dia mais feliz da minha vida ao seu lado',
       elapsed: _elapsed(DateTime(2025, 4, 15)),
@@ -380,7 +466,7 @@ List<CounterInfo> _buildCounters() {
     ),
     CounterInfo(
       title: 'Nascimento do Fernando',
-      icon: Icons.child_care,
+      icon: '👶',
       date: DateTime(2026, 6, 1),
       message: 'Nosso maior presente de amor chegando',
       elapsed: _elapsed(DateTime(2026, 6, 1)),
@@ -418,8 +504,9 @@ class CounterCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: info.colors),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [BoxShadow(color: info.colors.last.withValues(alpha: .25), blurRadius: 18, offset: const Offset(0, 8))],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: .26)),
+        boxShadow: [BoxShadow(color: info.colors.last.withValues(alpha: .24), blurRadius: 16, offset: const Offset(0, 8))],
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -427,7 +514,7 @@ class CounterCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(info.icon, color: Colors.white, size: 28),
+              Text(info.icon, style: const TextStyle(fontSize: 29)),
               const SizedBox(width: 8),
               Flexible(
                 child: Text(
@@ -450,7 +537,7 @@ class CounterCard extends StatelessWidget {
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 4),
                       padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: .95), borderRadius: BorderRadius.circular(12)),
+                        decoration: BoxDecoration(color: Colors.white.withValues(alpha: .95), borderRadius: BorderRadius.circular(10)),
                       child: Column(
                         children: [
                           Text(value.$1, style: const TextStyle(color: _primary, fontWeight: FontWeight.w900, fontSize: 22)),
@@ -472,7 +559,7 @@ class CounterCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              '${info.elapsed.isFuture ? 'Faltam' : 'Ja se passaram'} ${info.elapsed.totalDays} dias',
+              '${info.elapsed.isFuture ? 'Faltam' : 'Já se passaram'} ${info.elapsed.totalDays} dias',
               textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
             ),
@@ -484,7 +571,7 @@ class CounterCard extends StatelessWidget {
 }
 
 String _formatDate(DateTime date) {
-  const months = ['janeiro', 'fevereiro', 'marco', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  const months = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
   return '${date.day.toString().padLeft(2, '0')} de ${months[date.month - 1]} de ${date.year}';
 }
 
@@ -510,10 +597,12 @@ class StoryPage extends StatelessWidget {
         children: [
           const SectionTitle('Nossa Historia'),
           const SizedBox(height: 24),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1000),
-            child: Column(
-              children: sections.map((section) => LoveTextCard(title: section.$1, body: section.$2)).toList(),
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1000),
+              child: Column(
+                children: sections.map((section) => LoveTextCard(title: section.$1, body: section.$2)).toList(),
+              ),
             ),
           ),
         ],
