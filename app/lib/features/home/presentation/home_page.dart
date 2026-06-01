@@ -9,7 +9,7 @@ import '../../../core/widgets/section_title.dart';
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.onNavigate});
 
-  final ValueChanged<int> onNavigate;
+  final ValueChanged<String> onNavigate;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -35,11 +35,11 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final cards = [
-      MenuCardData('Nossa História', 'Descubra como tudo começou e os momentos que nos trouxeram até aqui.', 1),
-      MenuCardData('Jogos do Amor 🎮', 'Divirta-se com nossos jogos especiais, incluindo o Quiz do Amor!', 6),
-      MenuCardData('Mensagens do Coração', 'Palavras de amor e carinho que compartilhamos.', 2),
-      MenuCardData('Carta de Amor', 'Uma declaração especial do meu coração para você.', 3),
-      MenuCardData('Uma Flor para Minha Esposa', 'Um jardim especial dedicado à mulher da minha vida 🌹', 2),
+      MenuCardData('Nossa História', 'Descubra como tudo começou e os momentos que nos trouxeram até aqui.', '/nossa-historia'),
+      MenuCardData('Jogos do Amor 🎮', 'Divirta-se com nossos jogos especiais, incluindo o Quiz do Amor!', '/jogos'),
+      MenuCardData('Mensagens do Coração', 'Palavras de amor e carinho que compartilhamos.', '/mensagens'),
+      MenuCardData('Carta de Amor', 'Uma declaração especial do meu coração para você.', '/carta-de-amor'),
+      MenuCardData('Uma Flor para Minha Esposa', 'Um jardim especial dedicado à mulher da minha vida 🌹', '/flor-para-esposa'),
     ];
 
     return LoveBackground(
@@ -104,7 +104,7 @@ class _HomePageState extends State<HomePage> {
                         .map(
                           (card) => InkWell(
                             borderRadius: BorderRadius.circular(16),
-                            onTap: () => widget.onNavigate(card.page),
+                            onTap: () => widget.onNavigate(card.path),
                             child: Card(
                               child: Padding(
                                 padding: const EdgeInsets.all(24),
@@ -146,11 +146,11 @@ class _HomePageState extends State<HomePage> {
 }
 
 class MenuCardData {
-  const MenuCardData(this.title, this.description, this.page);
+  const MenuCardData(this.title, this.description, this.path);
 
   final String title;
   final String description;
-  final int page;
+  final String path;
 }
 
 class CounterInfo {
