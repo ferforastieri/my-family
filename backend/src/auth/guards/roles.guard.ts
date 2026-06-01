@@ -1,7 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
-import type { UserRole } from '@shared/infrastructure/database/schema';
+import type { UserRole } from '@shared/domain/entities';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -14,7 +14,10 @@ export class RolesGuard implements CanActivate {
     ]);
     if (!requiredRoles?.length) return true;
 
-    const req = context.switchToHttp().getRequest();
+    const req =
+      context.getType<'http' | 'ws'>() === 'ws'
+        ? { user: context.switchToWs().getClient()?.data?.user }
+        : context.switchToHttp().getRequest();
     const user = req.user as { role?: string } | undefined;
     const role = user?.role as UserRole | undefined;
 

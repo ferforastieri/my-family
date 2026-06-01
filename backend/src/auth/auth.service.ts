@@ -1,72 +1,66 @@
-import { Injectable, Inject, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, ConflictException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { randomBytes } from 'crypto';
-import { DATABASE_CONNECTION } from '@shared/infrastructure/database/database.module';
-import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { users, passwordResets, User, NewUser, UserRole } from '@shared/infrastructure/database/schema';
-import { eq } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
 import { Environment } from '@shared/infrastructure/environment/environment.module';
 import { EmailService } from '@shared/infrastructure/email/email.service';
+import { UserRepository } from './infrastructure/user.repository';
+import { PasswordResetRepository } from './infrastructure/password-reset.repository';
+import type { UserEntity, UserRole } from '@shared/domain/entities';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @Inject(DATABASE_CONNECTION)
-    private db: NodePgDatabase<typeof import('@shared/infrastructure/database/schema')>,
+    private users: UserRepository,
+    private passwordResets: PasswordResetRepository,
     private jwt: JwtService,
     private env: Environment,
     private email: EmailService,
   ) {}
 
   async register(email: string, password: string, name?: string, role?: UserRole) {
-    const existing = await this.db.select().from(users).where(eq(users.email, email)).limit(1);
-    if (existing.length) throw new ConflictException('Email já cadastrado');
+    const existing = await this.users.findByEmail(email);
+    if (existing) throw new ConflictException('Email já cadastrado');
     const passwordHash = await bcrypt.hash(password, 12);
-    const [user] = await this.db.insert(users).values({ email, passwordHash, name, role } as NewUser).returning();
+    const user = await this.users.create({ email, passwordHash, name, role });
     return this.tokenResponse(user);
   }
 
-  async validateUser(email: string, password: string): Promise<User | null> {
-    const [user] = await this.db.select().from(users).where(eq(users.email, email)).limit(1);
+  async validateUser(email: string, password: string): Promise<UserEntity | null> {
+    const user = await this.users.findByEmail(email);
     if (!user?.passwordHash) return null;
     const ok = await bcrypt.compare(password, user.passwordHash);
     return ok ? user : null;
   }
 
-  async findById(id: number): Promise<User | null> {
-    const [user] = await this.db.select().from(users).where(eq(users.id, id)).limit(1);
-    return user ?? null;
+  async findById(id: string): Promise<UserEntity | null> {
+    return this.users.findById(id);
   }
 
-  async updateAvatar(userId: number, avatarPath: string) {
-    const [updated] = await this.db
-      .update(users)
-      .set({ avatarPath, updatedAt: new Date() } as any)
-      .where(eq(users.id, userId))
-      .returning();
-    return updated ?? null;
+  async updateAvatar(userId: string, avatarPath: string) {
+    return this.users.update(userId, { avatarPath });
   }
 
-  tokenResponse(user: User) {
+  tokenResponse(user: UserEntity) {
     const payload = { sub: user.id, email: user.email };
-    const access_token = this.jwt.sign(payload, {
+    const accessToken = this.jwt.sign(payload, {
       secret: this.env.jwt.secret,
       expiresIn: this.env.jwt.expiresIn,
     } as any);
     return {
-      access_token,
+      accessToken,
+      access_token: accessToken,
       user: { id: user.id, email: user.email, name: user.name, role: user.role, avatarPath: user.avatarPath },
     };
   }
 
   async requestPasswordReset(email: string): Promise<void> {
-    const [user] = await this.db.select().from(users).where(eq(users.email, email)).limit(1);
+    const user = await this.users.findByEmail(email);
     if (!user) return;
     const token = randomBytes(32).toString('hex');
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 1);
-    await this.db.insert(passwordResets).values({
+    await this.passwordResets.create({
       userId: user.id,
       token,
       expiresAt,
@@ -77,15 +71,15 @@ export class AuthService {
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
-    const [row] = await this.db.select().from(passwordResets).where(eq(passwordResets.token, token)).limit(1);
+    const row = await this.passwordResets.findByToken(token);
     if (!row) throw new BadRequestException('Token inválido ou expirado');
     if (row.used) throw new BadRequestException('Token já utilizado');
     if (row.expiresAt < new Date()) throw new BadRequestException('Token expirado');
-    const [user] = await this.db.select().from(users).where(eq(users.id, row.userId)).limit(1);
+    const user = await this.users.findById(row.userId);
     if (!user) throw new BadRequestException('Usuário não encontrado');
     if (newPassword.length < 8) throw new BadRequestException('A senha deve ter pelo menos 8 caracteres');
     const passwordHash = await bcrypt.hash(newPassword, 12);
-    await this.db.update(users).set({ passwordHash, updatedAt: new Date() } as any).where(eq(users.id, user.id));
-    await this.db.update(passwordResets).set({ used: new Date() } as Record<string, unknown>).where(eq(passwordResets.id, row.id));
+    await this.users.update(user.id, { passwordHash });
+    await this.passwordResets.markUsed(row.id);
   }
 }

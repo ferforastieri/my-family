@@ -3,23 +3,23 @@ set -e
 
 SERVER_HOST="${SERVER_HOST:-SEU_IP_OU_HOST}"
 SERVER_USER="${SERVER_USER:-SEU_USUARIO}"
-SERVER_PATH="${SERVER_PATH:-/caminho/no/servidor/lovepage}"
+SERVER_PATH="${SERVER_PATH:-/caminho/no/servidor/my-family}"
 SSH_KEY="${SSH_KEY:-~/.ssh/sua_chave}"
 SUDO_PASSWORD="${SUDO_PASSWORD:-}"
 
 COMPOSE_BIN="/caminho/para/docker-compose"
 COMPOSE_FILE="$SERVER_PATH/docker-compose.yml"
-PROJECT_NAME="lovepage"
+PROJECT_NAME="my-family"
 
 echo "🚀 Deploy Nossa Família (LovePage)"
 echo "📁 Preparando arquivos..."
 
-TEMP_DIR="/tmp/lovepage-deploy"
+TEMP_DIR="/tmp/my-family-deploy"
 rm -rf "$TEMP_DIR"
 mkdir -p "$TEMP_DIR"
 
 cp -r backend/ "$TEMP_DIR/"
-cp -r web/ "$TEMP_DIR/"
+cp -r app/ "$TEMP_DIR/"
 cp -r nginx/ "$TEMP_DIR/"
 cp docker-compose.yml "$TEMP_DIR/"
 cp Dockerfile.front "$TEMP_DIR/"
@@ -53,8 +53,9 @@ run_compose() {
 mkdir -p /DATA/.docker/buildx 2>/dev/null || run_sudo mkdir -p /DATA/.docker/buildx || true
 chown -R \$USER:\$USER /DATA/.docker 2>/dev/null || run_sudo chown -R \$USER:\$USER /DATA/.docker || true
 
-export VITE_API_URL="http://$SERVER_HOST:3459/api"
-run_docker rm -f lovepage-front lovepage-backend 2>/dev/null || true
+export API_BASE_URL="http://$SERVER_HOST:3459/api"
+export SOCKET_URL="http://$SERVER_HOST:3459"
+run_docker rm -f my-family-front my-family-backend 2>/dev/null || true
 # Não usar "compose down" para não afetar o Atacte no mesmo servidor
 run_compose up -d --build
 

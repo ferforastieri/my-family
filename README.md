@@ -1,142 +1,58 @@
-# Nossa Família 💝
+# Nossa Familia
 
-Um projeto multiplataforma que consiste em uma aplicação web e mobile desenvolvida com tecnologias modernas.
+Aplicacao familiar privada para rodar em servidor pessoal.
 
-## 🚀 Estrutura do Projeto
+## Estrutura
 
-O projeto está dividido em duas partes principais:
+- `backend/`: API NestJS com MongoDB, Redis/BullMQ, JWT, upload REST tecnico e eventos Socket.IO para acoes de negocio.
+- `app/`: app Flutter para Android e Web.
+- `nginx/`: configs para servir Flutter Web e tunelar API/WebSocket.
+- `docker-compose.yml`: deploy no padrao do projeto `atacte`.
 
-### Web (Frontend) - Descontinuado
-> ⚠️ A versão web deste projeto foi descontinuada. O foco atual está no desenvolvimento mobile.
+## Backend
 
-- Desenvolvido com React + TypeScript + Vite
-- Estilização com Styled Components
-- Integração com Supabase
-- PWA (Progressive Web App) habilitado
+O backend usa MongoDB via Mongoose. As operacoes principais do app passam por WebSocket:
 
-### Mobile (Atual)
-- Desenvolvido com React Native + Expo
-- Navegação com Expo Router
-- Interface nativa para iOS e Android
-- Suporte a gestos e animações
+- `auth.*`
+- `users.*`
+- `fotos.*`
+- `musicas.*`
+- `cartas.*`
+- `notifications.*`
 
-## 🛠️ Tecnologias Utilizadas
+REST fica reservado para:
 
-### Web
-- React 18.3
-- TypeScript
-- Vite
-- Styled Components
-- Supabase
-- PWA (vite-plugin-pwa)
-- React Router DOM
-- Axios
+- `GET /api/health`
+- upload de avatar/fotos/videos
+- download/stream de arquivos salvos
 
-### Mobile
-- React Native
-- Expo
-- Expo Router
-- React Navigation
-- Expo Vector Icons
-- Gesture Handler
-- Reanimated
-- WebView
+## Desenvolvimento
 
-## 📦 Pré-requisitos
-
-- Node.js
-- npm ou yarn
-- Expo CLI (para o mobile)
-
-## 🚀 Como Executar
-
-### Web
-
-1. Clone o repositório
-2. Instale as dependências:
 ```bash
+cd backend
 npm install
-```
-
-3. Configure as variáveis de ambiente:
-- Copie o arquivo `.env.example` para `.env`
-- Preencha as variáveis necessárias
-
-4. Execute o projeto em desenvolvimento:
-```bash
-npm run dev
-```
-
-5. Para build de produção:
-```bash
 npm run build
+npm test -- --runInBand
 ```
 
-### Mobile
+Para o app Flutter, use uma maquina com Flutter SDK:
 
-1. Na pasta `mobile`, instale as dependências:
 ```bash
-cd mobile
-npm install
+cd app
+flutter pub get
+flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:3459/api --dart-define=SOCKET_URL=http://localhost:3459
 ```
 
-2. Execute o projeto:
+## Deploy
+
+Copie as variaveis de `docker-compose.example.yml` para um `.env` real e ajuste senhas/URLs.
+
 ```bash
-npm start
+docker-compose --env-file .env -f docker-compose.yml config
+docker-compose --env-file .env -f docker-compose.yml up -d --build
 ```
 
-3. Use o app Expo Go no seu dispositivo ou um emulador para testar
+Portas padrao:
 
-## 📱 Recursos do Mobile
-
-- Navegação por tabs e drawer
-- Suporte a gestos
-- Área segura e adaptação para diferentes tamanhos de tela
-- Suporte a blur effects
-- Haptic feedback
-- Deep linking configurado
-
-## 💻 Recursos do Web
-
-- PWA com suporte offline
-- Service Worker para cache
-- Roteamento dinâmico
-- Integração com backend via Supabase
-- Interface responsiva
-- Temas claros/escuros
-
-## 🔧 Scripts Disponíveis
-
-### Web
-- `npm run dev` - Inicia o servidor de desenvolvimento
-- `npm run build` - Gera build de produção
-- `npm run preview` - Visualiza a build de produção
-- `npm run lint` - Executa o linter
-
-### Mobile
-- `npm start` - Inicia o servidor Expo
-- `npm run android` - Inicia no Android
-- `npm run ios` - Inicia no iOS
-- `npm run web` - Inicia versão web
-- `npm run test` - Executa testes
-- `npm run lint` - Executa o linter
-
-## 🤝 Contribuindo
-
-1. Faça o fork do projeto
-2. Crie sua feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
-
-## 📝 Licença
-
-Este projeto está sob a licença MIT.
-
-## 👥 Autores
-
-- Fernando Forastieri Neto
-
----
-
-Feito com ❤️
+- Backend: `3459 -> 3001`
+- Flutter Web: `3458 -> 80`

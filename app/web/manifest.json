@@ -1,0 +1,9 @@
+{
+  "name": "Nossa Familia",
+  "short_name": "Familia",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#fff7fb",
+  "theme_color": "#d84f7b",
+  "description": "App privado da familia."
+}

@@ -1,41 +1,28 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { DATABASE_CONNECTION } from '@shared/infrastructure/database/database.module';
-import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { musicasEspeciais, NewMusicaEspecial } from '@shared/infrastructure/database/schema';
-import { eq, desc } from 'drizzle-orm';
+import { Injectable } from '@nestjs/common';
+import { MusicasRepository, MusicaWrite } from './infrastructure/musicas.repository';
 
 @Injectable()
 export class MusicasService {
-  constructor(
-    @Inject(DATABASE_CONNECTION)
-    private db: NodePgDatabase<typeof import('@shared/infrastructure/database/schema')>,
-  ) {}
+  constructor(private musicas: MusicasRepository) {}
 
   async findAll() {
-    return this.db.select().from(musicasEspeciais).orderBy(desc(musicasEspeciais.data));
+    return this.musicas.list();
   }
 
-  async findOne(id: number) {
-    return this.db.select().from(musicasEspeciais).where(eq(musicasEspeciais.id, id)).limit(1);
+  async findOne(id: string) {
+    return this.musicas.findById(id);
   }
 
-  async create(data: NewMusicaEspecial) {
-    const [musica] = await this.db.insert(musicasEspeciais).values(data).returning();
-    return musica;
+  async create(data: MusicaWrite) {
+    return this.musicas.create(data);
   }
 
-  async update(id: number, data: Partial<NewMusicaEspecial>) {
-    const [musica] = await this.db
-      .update(musicasEspeciais)
-      .set({ ...data, updatedAt: new Date() } as typeof musicasEspeciais.$inferInsert)
-      .where(eq(musicasEspeciais.id, id))
-      .returning();
-    return musica;
+  async update(id: string, data: Partial<MusicaWrite>) {
+    return this.musicas.update(id, data);
   }
 
-  async delete(id: number) {
-    await this.db.delete(musicasEspeciais).where(eq(musicasEspeciais.id, id));
+  async delete(id: string) {
+    return this.musicas.delete(id);
   }
 }
-
 

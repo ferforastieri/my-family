@@ -3,9 +3,9 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { StreamableFile } from '@nestjs/common';
 import { createReadStream } from 'fs';
 import { FotosService } from './fotos.service';
-import { NewFoto } from '@shared/infrastructure/database/schema';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { UploadService, UploadContext } from '@shared/infrastructure/upload';
+import type { FotoWrite } from './infrastructure/fotos.repository';
 
 @Controller('fotos')
 export class FotosController {
@@ -46,12 +46,12 @@ export class FotosController {
   }
 
   @Post()
-  async create(@Body() data: NewFoto) {
+  async create(@Body() data: FotoWrite) {
     return this.fotosService.create(data);
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() data: Partial<NewFoto>) {
+  async update(@Param('id') id: string, @Body() data: Partial<FotoWrite>) {
     return this.fotosService.update(id, data);
   }
 
@@ -60,5 +60,4 @@ export class FotosController {
     return this.fotosService.delete(id);
   }
 }
-
 

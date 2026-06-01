@@ -1,12 +1,9 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { DATABASE_CONNECTION } from '@shared/infrastructure/database/database.module';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type * as schema from '@shared/infrastructure/database/schema';
-import { users, UserRole } from '@shared/infrastructure/database/schema';
-import { eq, desc } from 'drizzle-orm';
+import { Injectable } from '@nestjs/common';
+import { UserRepository } from './infrastructure/user.repository';
+import type { UserRole } from '@shared/domain/entities';
 
 export type UserDto = {
-  id: number;
+  id: string;
   email: string;
   name: string | null;
   role: UserRole;
@@ -16,63 +13,39 @@ export type UserDto = {
 
 @Injectable()
 export class UserService {
-  constructor(
-    @Inject(DATABASE_CONNECTION)
-    private db: NodePgDatabase<typeof schema>,
-  ) {}
+  constructor(private users: UserRepository) {}
 
   async list(): Promise<UserDto[]> {
-    const rows = await this.db
-      .select({
-        id: users.id,
-        email: users.email,
-        name: users.name,
-        role: users.role,
-        avatarPath: users.avatarPath,
-        createdAt: users.createdAt,
-      })
-      .from(users)
-      .orderBy(desc(users.createdAt));
-    return rows;
+    return (await this.users.list()).map(({ id, email, name, role, avatarPath, createdAt }) => ({
+      id,
+      email,
+      name: name ?? null,
+      role,
+      avatarPath: avatarPath ?? null,
+      createdAt,
+    }));
   }
 
-  async findOne(id: number): Promise<UserDto | null> {
-    const [row] = await this.db
-      .select({
-        id: users.id,
-        email: users.email,
-        name: users.name,
-        role: users.role,
-        avatarPath: users.avatarPath,
-        createdAt: users.createdAt,
-      })
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1);
-    return row ?? null;
+  async findOne(id: string): Promise<UserDto | null> {
+    const row = await this.users.findById(id);
+    return row
+      ? {
+          id: row.id,
+          email: row.email,
+          name: row.name ?? null,
+          role: row.role,
+          avatarPath: row.avatarPath ?? null,
+          createdAt: row.createdAt,
+        }
+      : null;
   }
 
-  async update(id: number, data: { name?: string; role?: UserRole }): Promise<UserDto | null> {
-    const set: Record<string, unknown> = { updatedAt: new Date() };
-    if (data.name !== undefined) set.name = data.name;
-    if (data.role !== undefined) set.role = data.role;
-    const [updated] = await this.db
-      .update(users)
-      .set(set as any)
-      .where(eq(users.id, id))
-      .returning({
-        id: users.id,
-        email: users.email,
-        name: users.name,
-        role: users.role,
-        avatarPath: users.avatarPath,
-        createdAt: users.createdAt,
-      });
-    return updated ?? null;
+  async update(id: string, data: { name?: string; role?: UserRole }): Promise<UserDto | null> {
+    await this.users.update(id, data);
+    return this.findOne(id);
   }
 
-  async delete(id: number): Promise<boolean> {
-    const result = await this.db.delete(users).where(eq(users.id, id));
-    return (result.rowCount ?? 0) > 0;
+  async delete(id: string): Promise<boolean> {
+    return this.users.delete(id);
   }
 }

@@ -58,8 +58,6 @@ Thumbs.db
 build
 .cache
 
-Dockerfile
-docker-compose.yml
 deploy-local.sh
 entrypoint.sh
 nginx/nginx.conf

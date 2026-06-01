@@ -1,5 +1,5 @@
 import { IsEmail, IsString, MinLength, IsOptional, IsIn } from 'class-validator';
-import { userRoles } from '@shared/infrastructure/database/schema';
+import { userRoles } from '@shared/domain/entities';
 
 export class RegisterDto {
   @IsEmail()
