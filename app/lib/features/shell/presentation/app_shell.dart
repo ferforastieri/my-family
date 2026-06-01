@@ -1,58 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../data/family_repository.dart';
-import '../../admin/presentation/admin_page.dart';
 import '../../auth/presentation/auth_sheet.dart';
-import '../../games/presentation/games_page.dart';
-import '../../home/presentation/home_page.dart';
-import '../../messages/presentation/messages_page.dart';
-import '../../profile/presentation/profile_page.dart';
-import '../../resources/presentation/resource_page.dart';
-import '../../story/presentation/story_page.dart';
 
-class AppShell extends StatefulWidget {
-  const AppShell({super.key, required this.auth, required this.repository});
+class AppShell extends StatelessWidget {
+  const AppShell({
+    super.key,
+    required this.auth,
+    required this.child,
+    required this.currentLocation,
+  });
 
   final AuthController auth;
-  final FamilyRepository repository;
-
-  @override
-  State<AppShell> createState() => _AppShellState();
-}
-
-class _AppShellState extends State<AppShell> {
-  int index = 0;
+  final Widget child;
+  final String currentLocation;
 
   @override
   Widget build(BuildContext context) {
-    final pages = [
-      HomePage(onNavigate: (page) => setState(() => index = page)),
-      const StoryPage(),
-      const MessagesPage(),
-      ResourcePage(title: 'Carta de Amor', resource: 'cartas', repository: widget.repository),
-      ResourcePage(title: 'Nossa Playlist', resource: 'musicas', repository: widget.repository),
-      ResourcePage(title: 'Memórias em Fotos', resource: 'fotos', repository: widget.repository),
-      const GamesPage(),
-      ProfilePage(auth: widget.auth),
-      if (widget.auth.user?.role == 'admin') AdminPage(auth: widget.auth),
+    final items = [
+      const _HeaderItem('Nosso Início', '/', Icons.home_outlined, Icons.home),
+      const _HeaderItem('Nossa Jornada', '/nossa-historia', Icons.menu_book_outlined, Icons.menu_book),
+      const _HeaderItem('Quiz do Amor', '/quiz-do-amor', Icons.favorite_outline, Icons.favorite),
+      const _HeaderItem('Nossa Playlist', '/playlist', Icons.music_note_outlined, Icons.music_note),
+      const _HeaderItem('Palavras do Coração', '/mensagens', Icons.mail_outline, Icons.mail),
+      const _HeaderItem('Carta de Amor', '/carta-de-amor', Icons.card_giftcard_outlined, Icons.card_giftcard),
+      const _HeaderItem('Flor para Minha Esposa', '/flor-para-esposa', Icons.local_florist_outlined, Icons.local_florist),
+      const _HeaderItem('Jogos do Amor', '/jogos', Icons.sports_esports_outlined, Icons.sports_esports),
+      if (auth.user != null) const _HeaderItem('Memórias em Fotos', '/galeria', Icons.photo_outlined, Icons.photo),
+      const _HeaderItem('Perfil', '/perfil', Icons.person_outline, Icons.person),
+      if (auth.user?.role == 'admin') const _HeaderItem('Administração', '/admin', Icons.admin_panel_settings_outlined, Icons.admin_panel_settings),
     ];
-
-    final destinations = [
-      const NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Nosso Início'),
-      const NavigationDestination(icon: Icon(Icons.menu_book_outlined), selectedIcon: Icon(Icons.menu_book), label: 'Nossa Jornada'),
-      const NavigationDestination(icon: Icon(Icons.mail_outline), selectedIcon: Icon(Icons.mail), label: 'Palavras do Coração'),
-      const NavigationDestination(icon: Icon(Icons.card_giftcard_outlined), selectedIcon: Icon(Icons.card_giftcard), label: 'Carta de Amor'),
-      const NavigationDestination(icon: Icon(Icons.music_note_outlined), selectedIcon: Icon(Icons.music_note), label: 'Nossa Playlist'),
-      const NavigationDestination(icon: Icon(Icons.photo_outlined), selectedIcon: Icon(Icons.photo), label: 'Memórias em Fotos'),
-      const NavigationDestination(icon: Icon(Icons.sports_esports_outlined), selectedIcon: Icon(Icons.sports_esports), label: 'Jogos do Amor'),
-      const NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Perfil'),
-      if (widget.auth.user?.role == 'admin')
-        const NavigationDestination(icon: Icon(Icons.admin_panel_settings_outlined), selectedIcon: Icon(Icons.admin_panel_settings), label: 'Administração'),
-    ];
-
-    final selected = index.clamp(0, pages.length - 1);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -60,53 +39,45 @@ class _AppShellState extends State<AppShell> {
         return Scaffold(
           appBar: AppBar(
             titleSpacing: wide ? 28 : 16,
-            title: const Text(
-              '💕 Nossa Família',
-              style: TextStyle(color: primary, fontWeight: FontWeight.w900, fontSize: 21),
+            title: InkWell(
+              onTap: () => context.go('/'),
+              child: const Text(
+                '💕 Nossa Família',
+                style: TextStyle(color: primary, fontWeight: FontWeight.w900, fontSize: 21),
+              ),
             ),
             actions: [
               IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_outlined), tooltip: 'Notificações'),
-              if (widget.auth.user == null)
-                TextButton.icon(
-                  onPressed: _openLogin,
-                  icon: const Icon(Icons.account_circle_outlined, size: 20),
-                  label: const Text('Entrar'),
-                )
-              else
-                IconButton(onPressed: widget.auth.signOut, icon: const Icon(Icons.logout), tooltip: 'Sair'),
-              const SizedBox(width: 14),
+              if (wide) ...[
+                if (auth.user == null)
+                  TextButton.icon(
+                    onPressed: () => _openLogin(context),
+                    icon: const Icon(Icons.account_circle_outlined, size: 20),
+                    label: const Text('Entrar'),
+                  )
+                else
+                  IconButton(onPressed: auth.signOut, icon: const Icon(Icons.logout), tooltip: 'Sair'),
+                const SizedBox(width: 14),
+              ] else
+                _HeaderMenu(items: items, auth: auth, currentLocation: currentLocation, onLogin: () => _openLogin(context)),
             ],
             bottom: PreferredSize(
               preferredSize: Size.fromHeight(wide ? 58 : 1),
               child: Column(
                 children: [
                   const Divider(height: 1, color: border),
-                  if (wide)
-                    _TopNavigation(
-                      selected: selected,
-                      destinations: destinations,
-                      onSelected: (value) => setState(() => index = value),
-                    ),
+                  if (wide) _TopNavigation(items: items, currentLocation: currentLocation),
                 ],
               ),
             ),
           ),
-          body: pages[selected],
-          bottomNavigationBar: wide
-              ? null
-              : NavigationBar(
-                  selectedIndex: selected,
-                  onDestinationSelected: (value) => setState(() => index = value),
-                  indicatorColor: primary.withValues(alpha: .14),
-                  backgroundColor: Colors.white,
-                  destinations: destinations,
-                ),
+          body: child,
         );
       },
     );
   }
 
-  void _openLogin() {
+  void _openLogin(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -114,21 +85,25 @@ class _AppShellState extends State<AppShell> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) => AuthSheet(auth: widget.auth),
+      builder: (context) => AuthSheet(auth: auth),
     );
   }
 }
 
-class _TopNavigation extends StatelessWidget {
-  const _TopNavigation({
-    required this.selected,
-    required this.destinations,
-    required this.onSelected,
-  });
+class _HeaderItem {
+  const _HeaderItem(this.label, this.path, this.icon, this.selectedIcon);
 
-  final int selected;
-  final List<NavigationDestination> destinations;
-  final ValueChanged<int> onSelected;
+  final String label;
+  final String path;
+  final IconData icon;
+  final IconData selectedIcon;
+}
+
+class _TopNavigation extends StatelessWidget {
+  const _TopNavigation({required this.items, required this.currentLocation});
+
+  final List<_HeaderItem> items;
+  final String currentLocation;
 
   @override
   Widget build(BuildContext context) {
@@ -142,19 +117,16 @@ class _TopNavigation extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            for (var i = 0; i < destinations.length; i++)
+            for (final item in items)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 3),
                 child: TextButton.icon(
-                  onPressed: () => onSelected(i),
-                  icon: IconTheme(
-                    data: const IconThemeData(size: 19),
-                    child: i == selected ? (destinations[i].selectedIcon ?? destinations[i].icon) : destinations[i].icon,
-                  ),
-                  label: Text(destinations[i].label),
+                  onPressed: () => context.go(item.path),
+                  icon: Icon(_isSelected(item.path, currentLocation) ? item.selectedIcon : item.icon, size: 19),
+                  label: Text(item.label),
                   style: TextButton.styleFrom(
-                    foregroundColor: i == selected ? primary : foreground,
-                    backgroundColor: i == selected ? primary.withValues(alpha: .08) : Colors.transparent,
+                    foregroundColor: _isSelected(item.path, currentLocation) ? primary : foreground,
+                    backgroundColor: _isSelected(item.path, currentLocation) ? primary.withValues(alpha: .08) : Colors.transparent,
                     padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
@@ -168,3 +140,61 @@ class _TopNavigation extends StatelessWidget {
   }
 }
 
+class _HeaderMenu extends StatelessWidget {
+  const _HeaderMenu({
+    required this.items,
+    required this.auth,
+    required this.currentLocation,
+    required this.onLogin,
+  });
+
+  final List<_HeaderItem> items;
+  final AuthController auth;
+  final String currentLocation;
+  final VoidCallback onLogin;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.menu),
+      tooltip: 'Menu',
+      onSelected: (value) {
+        if (value == '_login') return onLogin();
+        if (value == '_logout') {
+          auth.signOut();
+          return;
+        }
+        context.go(value);
+      },
+      itemBuilder: (context) => [
+        for (final item in items)
+          PopupMenuItem(
+            value: item.path,
+            child: Row(
+              children: [
+                Icon(_isSelected(item.path, currentLocation) ? item.selectedIcon : item.icon, color: primary),
+                const SizedBox(width: 12),
+                Expanded(child: Text(item.label)),
+              ],
+            ),
+          ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          value: auth.user == null ? '_login' : '_logout',
+          child: Row(
+            children: [
+              Icon(auth.user == null ? Icons.account_circle_outlined : Icons.logout, color: primary),
+              const SizedBox(width: 12),
+              Text(auth.user == null ? 'Entrar' : 'Sair'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+bool _isSelected(String itemPath, String currentLocation) {
+  if (itemPath == '/') return currentLocation == '/';
+  return currentLocation == itemPath || currentLocation.startsWith('$itemPath/');
+}

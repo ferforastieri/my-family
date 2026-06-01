@@ -4,6 +4,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/love_background.dart';
 import '../../../core/widgets/love_text_card.dart';
 import '../../../core/widgets/section_title.dart';
+import '../../../core/widgets/skeleton.dart';
 import '../../../data/family_repository.dart';
 import '../../../data/models.dart';
 
@@ -29,7 +30,7 @@ class _ResourcePageState extends State<ResourcePage> {
         child: FutureBuilder<List<FamilyItem>>(
           future: future,
           builder: (context, snapshot) {
-            if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+            if (!snapshot.hasData) return const PageSkeleton();
             final items = snapshot.data!;
             return RefreshIndicator(
               onRefresh: () async => setState(() => future = widget.repository.list(widget.resource)),
@@ -189,7 +190,15 @@ class _PhotoCard extends StatelessWidget {
               width: double.infinity,
               color: primary.withValues(alpha: .08),
               child: item.title.startsWith('http')
-                  ? Image.network(item.title, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.photo, color: primary, size: 48))
+                  ? Image.network(
+                      item.title,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const Center(child: SkeletonBox(width: 120, height: 120, borderRadius: 18));
+                      },
+                      errorBuilder: (_, __, ___) => const Icon(Icons.photo, color: primary, size: 48),
+                    )
                   : const Icon(Icons.photo, color: primary, size: 48),
             ),
           ),
