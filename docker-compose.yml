@@ -9,6 +9,8 @@ services:
       MONGO_INITDB_DATABASE: ${MONGO_DB:-my-family}
     volumes:
       - mongo_data:/data/db
+    ports:
+      - "127.0.0.1:${MONGO_PORT:-27017}:27017"
     networks:
       - my-family-network
     healthcheck:
@@ -21,6 +23,8 @@ services:
     image: redis:7-alpine
     container_name: my-family-redis
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
     networks:
       - my-family-network
 
