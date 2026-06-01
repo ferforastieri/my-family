@@ -81,7 +81,7 @@ jobs:
             printf 'SMTP_USER=%s\n' "${SMTP_USER:-}"
             printf 'SMTP_PASS=%s\n' "${SMTP_PASS:-}"
             printf 'EMAIL_FROM=%s\n' "${EMAIL_FROM:-}"
-            printf 'EMAIL_FROM_NAME=%s\n' "${EMAIL_FROM_NAME:-Nossa Familia}"
+            printf 'EMAIL_FROM_NAME="%s"\n' "${EMAIL_FROM_NAME:-Nossa Familia}"
             printf 'PASSWORD_RESET_URL=%s\n' "${PASSWORD_RESET_URL:-}"
             printf 'VAPID_PUBLIC_KEY=%s\n' "${VAPID_PUBLIC_KEY:-}"
             printf 'VAPID_PRIVATE_KEY=%s\n' "${VAPID_PRIVATE_KEY:-}"

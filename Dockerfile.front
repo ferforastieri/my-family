@@ -9,6 +9,7 @@ ARG SOCKET_URL=http://localhost:3459
 
 COPY app/ ./
 RUN flutter build web --release \
+    --no-wasm-dry-run \
     --dart-define=API_BASE_URL=${API_BASE_URL} \
     --dart-define=SOCKET_URL=${SOCKET_URL}
 
