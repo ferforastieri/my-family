@@ -1,0 +1,86 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: my-family-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-my_family}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-my-family}
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - my-family-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: my-family-redis
+    restart: unless-stopped
+    networks:
+      - my-family-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: my-family-backend
+    restart: unless-stopped
+    environment:
+      MONGO_URI: mongodb://${MONGO_ROOT_USER:-my_family}:${MONGO_ROOT_PASSWORD}@mongo:27017/${MONGO_DB:-my-family}?authSource=admin
+      MONGO_DB: ${MONGO_DB:-my-family}
+      REDIS_URL: redis://redis:6379
+      PORT: 3001
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      UPLOAD_PATH: /data/uploads
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-Nossa Familia}
+      PASSWORD_RESET_URL: ${PASSWORD_RESET_URL:-}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+    ports:
+      - "${BACKEND_PORT:-3459}:3001"
+    volumes:
+      - uploads_data:/data/uploads
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - my-family-network
+
+  front:
+    build:
+      context: .
+      dockerfile: Dockerfile.front
+      args:
+        API_BASE_URL: ${API_BASE_URL:-http://localhost:3459/api}
+        SOCKET_URL: ${SOCKET_URL:-http://localhost:3459}
+    container_name: my-family-front
+    restart: unless-stopped
+    ports:
+      - "${FRONT_PORT:-3458}:80"
+    depends_on:
+      - backend
+    networks:
+      - my-family-network
+
+networks:
+  my-family-network:
+    driver: bridge
+
+volumes:
+  mongo_data:
+  uploads_data:

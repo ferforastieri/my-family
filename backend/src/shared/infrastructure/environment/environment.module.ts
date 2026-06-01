@@ -8,8 +8,9 @@ export class Environment {
     port: number;
   };
   database: {
-    postgres: {
-      url: string;
+    mongo: {
+      uri: string;
+      dbName?: string;
     };
   };
   jwt: {
@@ -64,8 +65,9 @@ class EnvironmentFactory {
         port: +(process.env.PORT || output.parsed?.PORT || 3000),
       },
       database: {
-        postgres: {
-          url: process.env.DATABASE_URL || output.parsed?.DATABASE_URL || '',
+        mongo: {
+          uri: process.env.MONGO_URI || output.parsed?.MONGO_URI || 'mongodb://localhost:27017/my-family',
+          dbName: process.env.MONGO_DB || output.parsed?.MONGO_DB || 'my-family',
         },
       },
       jwt: {
@@ -116,4 +118,3 @@ export class EnvironmentModule {
     };
   }
 }
-

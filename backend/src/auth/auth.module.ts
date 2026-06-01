@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { DatabaseModule } from '@shared/infrastructure/database/database.module';
+import { MongoModelsModule } from '@shared/infrastructure/database/database.providers';
 import { EnvironmentModule } from '@shared/infrastructure/environment/environment.module';
 import { Environment } from '@shared/infrastructure/environment/environment.module';
 import { AuthService } from './auth.service';
@@ -11,10 +12,15 @@ import { UsersController } from './users.controller';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RolesGuard } from './guards/roles.guard';
+import { UserRepository } from './infrastructure/user.repository';
+import { PasswordResetRepository } from './infrastructure/password-reset.repository';
+import { AuthGateway } from './auth.gateway';
+import { WsSessionService } from './ws-session.service';
 
 @Module({
   imports: [
     DatabaseModule,
+    MongoModelsModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [EnvironmentModule],
@@ -26,7 +32,17 @@ import { RolesGuard } from './guards/roles.guard';
     }),
   ],
   controllers: [AuthController, UsersController],
-  providers: [AuthService, UserService, LocalStrategy, JwtStrategy, RolesGuard],
-  exports: [AuthService, UserService, RolesGuard],
+  providers: [
+    AuthService,
+    UserService,
+    UserRepository,
+    PasswordResetRepository,
+    WsSessionService,
+    AuthGateway,
+    LocalStrategy,
+    JwtStrategy,
+    RolesGuard,
+  ],
+  exports: [AuthService, UserService, WsSessionService, RolesGuard],
 })
 export class AuthModule {}

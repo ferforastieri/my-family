@@ -22,13 +22,13 @@ export class AuthController {
 
   @Post('login')
   @UseGuards(LocalAuthGuard)
-  async login(@Req() req: { user: { id: number; email: string; name: string | null } }) {
+  async login(@Req() req: { user: { id: string; email: string; name: string | null } }) {
     return this.auth.tokenResponse(req.user as any);
   }
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  async me(@Req() req: { user: { id: number; email: string; name: string | null; role: string; avatarPath?: string | null } }) {
+  async me(@Req() req: { user: { id: string; email: string; name: string | null; role: string; avatarPath?: string | null } }) {
     const { id, email, name, role, avatarPath } = req.user;
     return { user: { id, email, name, role, avatarPath } };
   }
@@ -37,7 +37,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   async uploadAvatar(
-    @Req() req: { user: { id: number } },
+    @Req() req: { user: { id: string } },
     @UploadedFile() file: Express.Multer.File,
   ) {
     if (!file) throw new BadRequestException('Nenhum arquivo enviado');

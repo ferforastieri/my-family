@@ -12,7 +12,6 @@ import {
   NotFoundException,
   UseGuards,
   BadRequestException,
-  ParseIntPipe,
 } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -44,7 +43,7 @@ export class NotificationsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async subscribe(@Body() body: { subscription: PushSubscriptionDto; userAgent?: string }) {
     if (body.subscription?.endpoint && body.subscription?.keys) {
-      await this.notifications.pushSubscribe(body.subscription);
+      await this.notifications.pushSubscribe(body.subscription, body.userAgent);
     }
   }
 
@@ -63,7 +62,7 @@ export class NotificationsController {
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  async one(@Param('id', ParseIntPipe) id: number) {
+  async one(@Param('id') id: string) {
     const n = await this.notifications.findOne(id);
     if (!n) throw new NotFoundException('Notificação não encontrada');
     return n;
@@ -79,7 +78,7 @@ export class NotificationsController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: Partial<NotificationCreateDto>) {
+  async update(@Param('id') id: string, @Body() dto: Partial<NotificationCreateDto>) {
     const n = await this.notifications.update(id, dto);
     if (!n) throw new NotFoundException('Notificação não encontrada');
     return n;
@@ -89,7 +88,7 @@ export class NotificationsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  async delete(@Param('id', ParseIntPipe) id: number) {
+  async delete(@Param('id') id: string) {
     const ok = await this.notifications.delete(id);
     if (!ok) throw new NotFoundException('Notificação não encontrada');
   }
