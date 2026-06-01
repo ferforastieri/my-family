@@ -38,6 +38,7 @@ class AppShell extends StatelessWidget {
         final wide = constraints.maxWidth >= 860;
         return Scaffold(
           appBar: AppBar(
+            toolbarHeight: 64,
             titleSpacing: wide ? 28 : 16,
             title: InkWell(
               onTap: () => context.go('/'),
@@ -47,6 +48,7 @@ class AppShell extends StatelessWidget {
               ),
             ),
             actions: [
+              if (wide) _TopNavigation(items: items, currentLocation: currentLocation),
               IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_outlined), tooltip: 'Notificações'),
               if (wide) ...[
                 if (auth.user == null)
@@ -61,14 +63,9 @@ class AppShell extends StatelessWidget {
               ] else
                 _HeaderMenu(items: items, auth: auth, currentLocation: currentLocation, onLogin: () => _openLogin(context)),
             ],
-            bottom: PreferredSize(
-              preferredSize: Size.fromHeight(wide ? 58 : 1),
-              child: Column(
-                children: [
-                  const Divider(height: 1, color: border),
-                  if (wide) _TopNavigation(items: items, currentLocation: currentLocation),
-                ],
-              ),
+            bottom: const PreferredSize(
+              preferredSize: Size.fromHeight(1),
+              child: Divider(height: 1, color: border),
             ),
           ),
           body: child,
@@ -108,12 +105,13 @@ class _TopNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 57,
+      height: 64,
       color: Colors.white,
       alignment: Alignment.center,
+      constraints: const BoxConstraints(maxWidth: 980),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 22),
+        padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -127,9 +125,9 @@ class _TopNavigation extends StatelessWidget {
                   style: TextButton.styleFrom(
                     foregroundColor: _isSelected(item.path, currentLocation) ? primary : foreground,
                     backgroundColor: _isSelected(item.path, currentLocation) ? primary.withValues(alpha: .08) : Colors.transparent,
-                    padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
                   ),
                 ),
               ),
