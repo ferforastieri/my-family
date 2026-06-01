@@ -39,16 +39,21 @@ class AppShell extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(
             toolbarHeight: 64,
-            titleSpacing: wide ? 28 : 16,
-            title: InkWell(
-              onTap: () => context.go('/'),
-              child: const Text(
-                '💕 Nossa Família',
-                style: TextStyle(color: primary, fontWeight: FontWeight.w900, fontSize: 21),
-              ),
-            ),
+            titleSpacing: 0,
+            leadingWidth: wide ? 260 : null,
+            leading: wide
+                ? Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 28),
+                      child: _Logo(onTap: () => context.go('/')),
+                    ),
+                  )
+                : null,
+            title: wide
+                ? Center(child: _TopNavigation(items: items, currentLocation: currentLocation))
+                : _Logo(onTap: () => context.go('/')),
             actions: [
-              if (wide) _TopNavigation(items: items, currentLocation: currentLocation),
               IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_outlined), tooltip: 'Notificações'),
               if (wide) ...[
                 if (auth.user == null)
@@ -61,7 +66,11 @@ class AppShell extends StatelessWidget {
                   IconButton(onPressed: auth.signOut, icon: const Icon(Icons.logout), tooltip: 'Sair'),
                 const SizedBox(width: 14),
               ] else
-                _HeaderMenu(items: items, auth: auth, currentLocation: currentLocation, onLogin: () => _openLogin(context)),
+                IconButton(
+                  onPressed: () => _openMenuSheet(context, items),
+                  icon: const Icon(Icons.menu),
+                  tooltip: 'Menu',
+                ),
             ],
             bottom: const PreferredSize(
               preferredSize: Size.fromHeight(1),
@@ -74,6 +83,26 @@ class AppShell extends StatelessWidget {
     );
   }
 
+  void _openMenuSheet(BuildContext context, List<_HeaderItem> items) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => _HeaderMenuSheet(
+        items: items,
+        auth: auth,
+        currentLocation: currentLocation,
+        onLogin: () {
+          Navigator.pop(sheetContext);
+          _openLogin(context);
+        },
+      ),
+    );
+  }
+
   void _openLogin(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
@@ -83,6 +112,102 @@ class AppShell extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) => AuthSheet(auth: auth),
+    );
+  }
+}
+
+class _Logo extends StatelessWidget {
+  const _Logo({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+        child: Text(
+          '💕 Nossa Família',
+          style: TextStyle(color: primary, fontWeight: FontWeight.w900, fontSize: 21),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeaderMenuSheet extends StatelessWidget {
+  const _HeaderMenuSheet({
+    required this.items,
+    required this.auth,
+    required this.currentLocation,
+    required this.onLogin,
+  });
+
+  final List<_HeaderItem> items;
+  final AuthController auth;
+  final String currentLocation;
+  final VoidCallback onLogin;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(16, 10, 16, MediaQuery.of(context).viewInsets.bottom + 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 42,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 14),
+              decoration: BoxDecoration(
+                color: border,
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text('Menu', style: TextStyle(color: primary, fontSize: 22, fontWeight: FontWeight.w900)),
+            ),
+            const SizedBox(height: 8),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  for (final item in items)
+                    ListTile(
+                      leading: Icon(_isSelected(item.path, currentLocation) ? item.selectedIcon : item.icon, color: primary),
+                      title: Text(item.label),
+                      selected: _isSelected(item.path, currentLocation),
+                      selectedTileColor: primary.withValues(alpha: .08),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.go(item.path);
+                      },
+                    ),
+                  const Divider(height: 20, color: border),
+                  ListTile(
+                    leading: Icon(auth.user == null ? Icons.account_circle_outlined : Icons.logout, color: primary),
+                    title: Text(auth.user == null ? 'Entrar' : 'Sair'),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    onTap: () {
+                      if (auth.user == null) {
+                        onLogin();
+                      } else {
+                        Navigator.pop(context);
+                        auth.signOut();
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -134,60 +259,6 @@ class _TopNavigation extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _HeaderMenu extends StatelessWidget {
-  const _HeaderMenu({
-    required this.items,
-    required this.auth,
-    required this.currentLocation,
-    required this.onLogin,
-  });
-
-  final List<_HeaderItem> items;
-  final AuthController auth;
-  final String currentLocation;
-  final VoidCallback onLogin;
-
-  @override
-  Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
-      icon: const Icon(Icons.menu),
-      tooltip: 'Menu',
-      onSelected: (value) {
-        if (value == '_login') return onLogin();
-        if (value == '_logout') {
-          auth.signOut();
-          return;
-        }
-        context.go(value);
-      },
-      itemBuilder: (context) => [
-        for (final item in items)
-          PopupMenuItem(
-            value: item.path,
-            child: Row(
-              children: [
-                Icon(_isSelected(item.path, currentLocation) ? item.selectedIcon : item.icon, color: primary),
-                const SizedBox(width: 12),
-                Expanded(child: Text(item.label)),
-              ],
-            ),
-          ),
-        const PopupMenuDivider(),
-        PopupMenuItem(
-          value: auth.user == null ? '_login' : '_logout',
-          child: Row(
-            children: [
-              Icon(auth.user == null ? Icons.account_circle_outlined : Icons.logout, color: primary),
-              const SizedBox(width: 12),
-              Text(auth.user == null ? 'Entrar' : 'Sair'),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }
