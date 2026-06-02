@@ -35,12 +35,12 @@ class AppShell extends StatelessWidget {
           appBar: AppBar(
             toolbarHeight: 64,
             titleSpacing: 0,
-            leadingWidth: wide ? 260 : null,
+            leadingWidth: wide ? 220 : null,
             leading: wide
                 ? Align(
                     alignment: Alignment.centerLeft,
                     child: Padding(
-                      padding: const EdgeInsets.only(left: 28),
+                      padding: const EdgeInsets.only(left: 22),
                       child: _Logo(onTap: () => context.go('/')),
                     ),
                   )
@@ -48,7 +48,10 @@ class AppShell extends StatelessWidget {
             title: wide
                 ? Center(
                     child: _TopNavigation(
-                        items: items, currentLocation: currentLocation))
+                      items: items,
+                      currentLocation: currentLocation,
+                    ),
+                  )
                 : _Logo(onTap: () => context.go('/')),
             actions: [
               IconButton(
@@ -402,10 +405,9 @@ class _TopNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     return Container(
-      height: 64,
+      height: 48,
       color: palette.card,
       alignment: Alignment.center,
-      constraints: const BoxConstraints(maxWidth: 980),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 8),
