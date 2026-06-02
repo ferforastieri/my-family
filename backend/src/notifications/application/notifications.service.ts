@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import * as webPush from 'web-push';
+import { readFileSync } from 'node:fs';
+import * as admin from 'firebase-admin';
 import { NotificationsRepository } from '../infrastructure/repositories/notifications.repository';
 import { NotificationsRealtimeGateway } from '../interfaces/gateways/notifications-realtime.gateway';
 import { Environment } from '@shared/infrastructure/environment/environment.module';
@@ -13,32 +14,36 @@ export interface NotificationCreateDto {
 
 const LIST_LIMIT = 100;
 
-export interface PushSubscriptionDto {
-  endpoint: string;
-  keys: { p256dh: string; auth: string };
-  expirationTime?: number | null;
+export interface FcmSubscriptionDto {
+  token: string;
+  platform?: 'web' | 'android' | 'ios' | 'unknown';
 }
 
 @Injectable()
 export class NotificationsService {
-  private pushEnabled = false;
+  private fcmEnabled = false;
 
   constructor(
     private repository: NotificationsRepository,
     private env: Environment,
     private realtime: NotificationsRealtimeGateway,
   ) {
-    if (this.env.vapidPublicKey && this.env.vapidPrivateKey) {
-      const wp = (webPush as any).default ?? webPush;
-      if (wp?.setVapidDetails) {
-        wp.setVapidDetails('mailto:nossa-familia@local', this.env.vapidPublicKey, this.env.vapidPrivateKey);
-        this.pushEnabled = true;
-      }
+    const serviceAccount = this.loadFirebaseServiceAccount();
+    if (serviceAccount && admin.apps.length === 0) {
+      admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+      this.fcmEnabled = true;
+    } else if (admin.apps.length > 0) {
+      this.fcmEnabled = true;
     }
   }
 
-  getVapidPublicKey(): string | null {
-    return this.env.vapidPublicKey ?? null;
+  private loadFirebaseServiceAccount(): admin.ServiceAccount | null {
+    const rawJson = this.env.firebase?.serviceAccountJson;
+    if (rawJson) return JSON.parse(rawJson) as admin.ServiceAccount;
+
+    const path = this.env.firebase?.serviceAccountPath;
+    if (!path) return null;
+    return JSON.parse(readFileSync(path, 'utf8')) as admin.ServiceAccount;
   }
 
   private toDto(r: { id: string; title: string; body: string; url: string; icon?: string | null; createdAt: Date }) {
@@ -88,12 +93,16 @@ export class NotificationsService {
     this.realtime.emitNotificationsCleared();
   }
 
-  async pushSubscribe(subscription: PushSubscriptionDto, userAgent?: string) {
-    await this.repository.upsertSubscription({ endpoint: subscription.endpoint, keys: subscription.keys, userAgent });
+  async pushSubscribe(subscription: FcmSubscriptionDto, userAgent?: string) {
+    await this.repository.upsertFcmToken({
+      fcmToken: subscription.token,
+      platform: subscription.platform ?? 'unknown',
+      userAgent,
+    });
   }
 
-  async pushUnsubscribe(endpoint: string) {
-    await this.repository.removeSubscriptionByEndpoint(endpoint);
+  async pushUnsubscribe(token: string) {
+    await this.repository.removeSubscriptionByFcmToken(token);
   }
 
   async send(title: string, body?: string, url?: string): Promise<{ sent: number }> {
@@ -104,23 +113,37 @@ export class NotificationsService {
       icon: '/favicon-192.png',
     });
     this.realtime.emitNotificationCreated(this.toDto(row));
-    if (!this.pushEnabled) return { sent: 0 };
-    const wp = (webPush as any).default ?? webPush;
-    const payload = JSON.stringify({
-      title: title ?? 'Nossa Família',
-      body: body ?? '',
-      url: url ?? '/',
-      icon: '/favicon-192.png',
-    });
+    if (!this.fcmEnabled) return { sent: 0 };
+
     const subs = await this.repository.listSubscriptions();
     let sent = 0;
     for (const sub of subs) {
+      if (!sub.fcmToken) continue;
       try {
-        await wp.sendNotification(
-          { endpoint: sub.endpoint, keys: sub.keys as { p256dh: string; auth: string } },
-          payload,
-          { TTL: 86400 },
-        );
+        await admin.messaging().send({
+          token: sub.fcmToken,
+          notification: {
+            title: title ?? 'Nossa Família',
+            body: body ?? '',
+          },
+          data: {
+            url: url ?? '/',
+          },
+          webpush: {
+            notification: {
+              icon: '/icons/Icon-192.png',
+            },
+            fcmOptions: {
+              link: url ?? '/',
+            },
+          },
+          android: {
+            notification: {
+              icon: 'ic_launcher',
+              clickAction: 'FLUTTER_NOTIFICATION_CLICK',
+            },
+          },
+        });
         sent++;
       } catch {
         try {

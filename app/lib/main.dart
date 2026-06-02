@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'core/auth/auth_controller.dart';
 import 'core/auth/token_store.dart';
+import 'core/notifications/notifications_controller.dart';
 import 'core/socket/socket_client.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
@@ -15,17 +16,32 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   final socket = SocketClient();
   final auth = AuthController(socket, TokenStore());
+  final notifications = NotificationsController(socket);
   final theme = ThemeController();
   final toast = ToastController();
-  runApp(MyFamilyApp(auth: auth, theme: theme, toast: toast, repository: FamilyRepository(socket)));
+  runApp(MyFamilyApp(
+      auth: auth,
+      notifications: notifications,
+      theme: theme,
+      toast: toast,
+      repository: FamilyRepository(socket)));
   auth.bootstrap();
+  notifications.bootstrap();
   theme.bootstrap();
 }
 
 class MyFamilyApp extends StatelessWidget {
-  const MyFamilyApp({super.key, required this.auth, required this.theme, required this.toast, required this.repository});
+  const MyFamilyApp({
+    super.key,
+    required this.auth,
+    required this.notifications,
+    required this.theme,
+    required this.toast,
+    required this.repository,
+  });
 
   final AuthController auth;
+  final NotificationsController notifications;
   final ThemeController theme;
   final ToastController toast;
   final FamilyRepository repository;
@@ -40,15 +56,18 @@ class MyFamilyApp extends StatelessWidget {
             title: 'Nossa Família',
             debugShowCheckedModeBanner: false,
             theme: buildAppTheme(color: theme.color, mode: theme.mode),
-            home: ToastOverlay(controller: toast, child: const PageSkeleton(cards: 3)),
+            home: ToastOverlay(
+                controller: toast, child: const PageSkeleton(cards: 3)),
           );
         }
         return MaterialApp.router(
           title: 'Nossa Família',
           debugShowCheckedModeBanner: false,
           theme: buildAppTheme(color: theme.color, mode: theme.mode),
-          routerConfig: buildRouter(auth, theme, toast, repository),
-          builder: (context, child) => ToastOverlay(controller: toast, child: child ?? const SizedBox.shrink()),
+          routerConfig:
+              buildRouter(auth, notifications, theme, toast, repository),
+          builder: (context, child) => ToastOverlay(
+              controller: toast, child: child ?? const SizedBox.shrink()),
         );
       },
     );

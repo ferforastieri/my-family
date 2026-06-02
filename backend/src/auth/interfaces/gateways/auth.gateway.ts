@@ -34,6 +34,13 @@ export class AuthGateway {
     return { user: { id: user.id, email: user.email, name: user.name, role: user.role, avatarPath: user.avatarPath } };
   }
 
+  @SubscribeMessage('auth.updateMe')
+  async updateMe(@ConnectedSocket() client: Socket, @MessageBody() body: { name?: string; avatarPath?: string }) {
+    const user = await this.session.requireUser(client);
+    const updated = await this.users.update(user.id, { name: body.name, avatarPath: body.avatarPath });
+    return { user: updated ? { id: updated.id, email: updated.email, name: updated.name, role: updated.role, avatarPath: updated.avatarPath } : null };
+  }
+
   @SubscribeMessage('auth.forgotPassword')
   async forgotPassword(@MessageBody() body: { email: string }) {
     await this.auth.requestPasswordReset(body.email);

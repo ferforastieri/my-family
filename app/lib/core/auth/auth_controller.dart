@@ -20,7 +20,8 @@ class AuthController extends ChangeNotifier {
     if (token != null) {
       try {
         final response = await socket.emitAck<Map<String, dynamic>>('auth.me');
-        user = AppUser.fromJson(Map<String, dynamic>.from(response['user'] as Map));
+        user = AppUser.fromJson(
+            Map<String, dynamic>.from(response['user'] as Map));
       } catch (_) {
         await tokenStore.clear();
         token = null;
@@ -39,7 +40,8 @@ class AuthController extends ChangeNotifier {
   }
 
   Future<void> register(String email, String password, String name) async {
-    final response = await socket.emitAck<Map<String, dynamic>>('auth.register', {
+    final response =
+        await socket.emitAck<Map<String, dynamic>>('auth.register', {
       'email': email,
       'password': password,
       'name': name,
@@ -48,7 +50,8 @@ class AuthController extends ChangeNotifier {
   }
 
   Future<void> forgotPassword(String email) {
-    return socket.emitAck<Map<String, dynamic>>('auth.forgotPassword', {'email': email});
+    return socket
+        .emitAck<Map<String, dynamic>>('auth.forgotPassword', {'email': email});
   }
 
   Future<void> resetPassword(String token, String newPassword) {
@@ -56,6 +59,18 @@ class AuthController extends ChangeNotifier {
       'token': token,
       'newPassword': newPassword,
     });
+  }
+
+  Future<void> updateMe({required String name}) async {
+    final response =
+        await socket.emitAck<Map<String, dynamic>>('auth.updateMe', {
+      'name': name,
+    });
+    final rawUser = response['user'];
+    if (rawUser is Map) {
+      user = AppUser.fromJson(Map<String, dynamic>.from(rawUser));
+      notifyListeners();
+    }
   }
 
   Future<void> signOut() async {

@@ -30,8 +30,10 @@ export class Environment {
   emailFrom?: string;
   emailFromName?: string;
   passwordResetUrl?: string;
-  vapidPublicKey?: string;
-  vapidPrivateKey?: string;
+  firebase?: {
+    serviceAccountPath?: string;
+    serviceAccountJson?: string;
+  };
   redis?: { url: string };
 
   isProduction(): boolean {
@@ -90,8 +92,16 @@ class EnvironmentFactory {
       emailFrom: output.parsed?.EMAIL_FROM,
       emailFromName: output.parsed?.EMAIL_FROM_NAME || 'Nossa Família',
       passwordResetUrl: output.parsed?.PASSWORD_RESET_URL || '',
-      vapidPublicKey: output.parsed?.VAPID_PUBLIC_KEY,
-      vapidPrivateKey: output.parsed?.VAPID_PRIVATE_KEY,
+      firebase:
+        process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
+        output.parsed?.FIREBASE_SERVICE_ACCOUNT_PATH ||
+        process.env.FIREBASE_SERVICE_ACCOUNT_JSON ||
+        output.parsed?.FIREBASE_SERVICE_ACCOUNT_JSON
+          ? {
+              serviceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH || output.parsed?.FIREBASE_SERVICE_ACCOUNT_PATH,
+              serviceAccountJson: process.env.FIREBASE_SERVICE_ACCOUNT_JSON || output.parsed?.FIREBASE_SERVICE_ACCOUNT_JSON,
+            }
+          : undefined,
       redis: (process.env.REDIS_URL || output.parsed?.REDIS_URL)
         ? { url: process.env.REDIS_URL || output.parsed?.REDIS_URL! }
         : undefined,

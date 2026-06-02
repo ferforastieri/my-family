@@ -2,16 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/auth/auth_controller.dart';
+import '../../../core/notifications/notifications_controller.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/toast/toast_controller.dart';
+import '../../../core/widgets/app_dropdown.dart';
 import '../../../core/widgets/app_sheet.dart';
 import '../../auth/presentation/auth_sheet.dart';
+import '../../notifications/presentation/notifications_sheet.dart';
+import '../../profile/presentation/edit_profile_sheet.dart';
 
 class AppShell extends StatelessWidget {
   const AppShell({
     super.key,
     required this.auth,
+    required this.notifications,
     required this.theme,
     required this.child,
     required this.currentLocation,
@@ -19,6 +24,7 @@ class AppShell extends StatelessWidget {
   });
 
   final AuthController auth;
+  final NotificationsController notifications;
   final ThemeController theme;
   final Widget child;
   final String currentLocation;
@@ -55,7 +61,7 @@ class AppShell extends StatelessWidget {
                 : _Logo(onTap: () => context.go('/')),
             actions: [
               IconButton(
-                  onPressed: () => toast.info('Notificações em breve.'),
+                  onPressed: () => _openNotificationsSheet(context),
                   icon: const Icon(Icons.notifications_outlined),
                   tooltip: 'Notificações'),
               IconButton(
@@ -67,8 +73,8 @@ class AppShell extends StatelessWidget {
                   auth: auth,
                   wide: true,
                   onLogin: () => _openLogin(context),
-                  onSettings: () => _openThemeSheet(context),
-                  onEditProfile: () => context.go('/perfil'),
+                  onSettings: () {},
+                  onEditProfile: () => _openEditProfileSheet(context),
                   onAdmin: () => context.go('/admin'),
                   onSignOut: () => _signOut(context),
                 ),
@@ -78,8 +84,8 @@ class AppShell extends StatelessWidget {
                   auth: auth,
                   wide: false,
                   onLogin: () => _openLogin(context),
-                  onSettings: () => _openThemeSheet(context),
-                  onEditProfile: () => context.go('/perfil'),
+                  onSettings: () {},
+                  onEditProfile: () => _openEditProfileSheet(context),
                   onAdmin: () => context.go('/admin'),
                   onSignOut: () => _signOut(context),
                 ),
@@ -155,6 +161,20 @@ class AppShell extends StatelessWidget {
       builder: (_) => _ThemeSheet(theme: theme, toast: toast),
     );
   }
+
+  void _openEditProfileSheet(BuildContext context) {
+    showAppSheet<void>(
+      context: context,
+      builder: (_) => EditProfileSheet(auth: auth, toast: toast),
+    );
+  }
+
+  void _openNotificationsSheet(BuildContext context) {
+    showAppSheet<void>(
+      context: context,
+      builder: (_) => NotificationsSheet(notifications: notifications),
+    );
+  }
 }
 
 class _ProfileAction extends StatelessWidget {
@@ -195,9 +215,8 @@ class _ProfileAction extends StatelessWidget {
     }
 
     final palette = Theme.of(context).extension<AppPalette>()!;
-    return PopupMenuButton<_ProfileMenuAction>(
+    return AppDropdown<_ProfileMenuAction>(
       tooltip: 'Perfil',
-      offset: const Offset(0, 12),
       onSelected: (value) {
         switch (value) {
           case _ProfileMenuAction.settings:
@@ -210,41 +229,25 @@ class _ProfileAction extends StatelessWidget {
             onSignOut();
         }
       },
-      itemBuilder: (context) => [
-        const PopupMenuItem(
-          value: _ProfileMenuAction.settings,
-          child: ListTile(
-            leading: Icon(Icons.settings_outlined),
-            title: Text('Configurações'),
-            contentPadding: EdgeInsets.zero,
-          ),
-        ),
-        const PopupMenuItem(
-          value: _ProfileMenuAction.editProfile,
-          child: ListTile(
-            leading: Icon(Icons.person_outline),
-            title: Text('Editar perfil'),
-            contentPadding: EdgeInsets.zero,
-          ),
-        ),
+      actions: [
+        const AppDropdownAction(
+            value: _ProfileMenuAction.settings,
+            label: 'Configurações',
+            icon: Icons.settings_outlined),
+        const AppDropdownAction(
+            value: _ProfileMenuAction.editProfile,
+            label: 'Editar perfil',
+            icon: Icons.person_outline),
         if (user.role == 'admin')
-          const PopupMenuItem(
-            value: _ProfileMenuAction.admin,
-            child: ListTile(
-              leading: Icon(Icons.admin_panel_settings_outlined),
-              title: Text('Administração'),
-              contentPadding: EdgeInsets.zero,
-            ),
-          ),
-        const PopupMenuDivider(),
-        const PopupMenuItem(
-          value: _ProfileMenuAction.signOut,
-          child: ListTile(
-            leading: Icon(Icons.logout),
-            title: Text('Sair'),
-            contentPadding: EdgeInsets.zero,
-          ),
-        ),
+          const AppDropdownAction(
+              value: _ProfileMenuAction.admin,
+              label: 'Administração',
+              icon: Icons.admin_panel_settings_outlined),
+        const AppDropdownAction(
+            value: _ProfileMenuAction.signOut,
+            label: 'Sair',
+            icon: Icons.logout,
+            destructive: true),
       ],
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: wide ? 8 : 4),
