@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_sheet.dart';
 import '../../../core/widgets/love_background.dart';
@@ -11,11 +12,12 @@ import '../../../data/family_repository.dart';
 import '../../../data/models.dart';
 
 class ResourcePage extends StatefulWidget {
-  const ResourcePage({super.key, required this.title, required this.resource, required this.repository});
+  const ResourcePage({super.key, required this.title, required this.resource, required this.repository, required this.toast});
 
   final String title;
   final String resource;
   final FamilyRepository repository;
+  final ToastController toast;
 
   @override
   State<ResourcePage> createState() => _ResourcePageState();
@@ -35,7 +37,10 @@ class _ResourcePageState extends State<ResourcePage> {
             if (!snapshot.hasData) return const PageSkeleton();
             final items = snapshot.data!;
             return RefreshIndicator(
-              onRefresh: () async => setState(() => future = widget.repository.list(widget.resource)),
+              onRefresh: () async {
+                setState(() => future = widget.repository.list(widget.resource));
+                widget.toast.info('Atualizando ${widget.title.toLowerCase()}...');
+              },
               child: ListView(
                 padding: EdgeInsets.fromLTRB(24, widget.resource == 'fotos' ? 32 : 80, 24, 32),
                 children: [
@@ -82,6 +87,7 @@ class _ResourcePageState extends State<ResourcePage> {
         resource: widget.resource,
         onSave: (data) async {
           await widget.repository.create(widget.resource, data);
+          widget.toast.success('Item salvo com sucesso.');
           setState(() => future = widget.repository.list(widget.resource));
         },
       ),

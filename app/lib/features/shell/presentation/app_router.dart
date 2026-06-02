@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/theme/theme_controller.dart';
+import '../../../core/toast/toast_controller.dart';
 import '../../../data/family_repository.dart';
 import '../../admin/presentation/admin_page.dart';
 import '../../games/presentation/games_page.dart';
@@ -13,7 +14,7 @@ import '../../resources/presentation/resource_page.dart';
 import '../../story/presentation/story_page.dart';
 import 'app_shell.dart';
 
-GoRouter buildRouter(AuthController auth, ThemeController theme, FamilyRepository repository) {
+GoRouter buildRouter(AuthController auth, ThemeController theme, ToastController toast, FamilyRepository repository) {
   return GoRouter(
     initialLocation: '/',
     refreshListenable: auth,
@@ -26,13 +27,17 @@ GoRouter buildRouter(AuthController auth, ThemeController theme, FamilyRepositor
         builder: (context, state, child) => AppShell(
           auth: auth,
           theme: theme,
+          toast: toast,
           currentLocation: state.uri.path,
           child: child,
         ),
         routes: [
           GoRoute(
             path: '/',
-            pageBuilder: (context, state) => _page(HomePage(onNavigate: context.go)),
+            pageBuilder: (context, state) => _page(HomePage(onNavigate: (path) {
+              toast.info('Abrindo página...');
+              context.go(path);
+            })),
           ),
           GoRoute(
             path: '/nossa-historia',
@@ -44,15 +49,15 @@ GoRouter buildRouter(AuthController auth, ThemeController theme, FamilyRepositor
           ),
           GoRoute(
             path: '/carta-de-amor',
-            pageBuilder: (context, state) => _page(ResourcePage(title: 'Carta de Amor', resource: 'cartas', repository: repository)),
+            pageBuilder: (context, state) => _page(ResourcePage(title: 'Carta de Amor', resource: 'cartas', repository: repository, toast: toast)),
           ),
           GoRoute(
             path: '/playlist',
-            pageBuilder: (context, state) => _page(ResourcePage(title: 'Nossa Playlist', resource: 'musicas', repository: repository)),
+            pageBuilder: (context, state) => _page(ResourcePage(title: 'Nossa Playlist', resource: 'musicas', repository: repository, toast: toast)),
           ),
           GoRoute(
             path: '/galeria',
-            pageBuilder: (context, state) => _page(ResourcePage(title: 'Memórias em Fotos', resource: 'fotos', repository: repository)),
+            pageBuilder: (context, state) => _page(ResourcePage(title: 'Memórias em Fotos', resource: 'fotos', repository: repository, toast: toast)),
           ),
           GoRoute(
             path: '/jogos',
