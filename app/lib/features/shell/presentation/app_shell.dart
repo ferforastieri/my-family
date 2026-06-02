@@ -2,18 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/auth/auth_controller.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_controller.dart';
+import '../../../core/widgets/app_sheet.dart';
 import '../../auth/presentation/auth_sheet.dart';
 
 class AppShell extends StatelessWidget {
   const AppShell({
     super.key,
     required this.auth,
+    required this.theme,
     required this.child,
     required this.currentLocation,
   });
 
   final AuthController auth;
+  final ThemeController theme;
   final Widget child;
   final String currentLocation;
 
@@ -55,6 +59,7 @@ class AppShell extends StatelessWidget {
                 : _Logo(onTap: () => context.go('/')),
             actions: [
               IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_outlined), tooltip: 'Notificações'),
+              IconButton(onPressed: () => _openThemeSheet(context), icon: const Icon(Icons.palette_outlined), tooltip: 'Cor e tema'),
               if (wide) ...[
                 if (auth.user == null)
                   TextButton.icon(
@@ -74,7 +79,7 @@ class AppShell extends StatelessWidget {
             ],
             bottom: const PreferredSize(
               preferredSize: Size.fromHeight(1),
-              child: Divider(height: 1, color: border),
+              child: Divider(height: 1),
             ),
           ),
           body: child,
@@ -84,13 +89,8 @@ class AppShell extends StatelessWidget {
   }
 
   void _openMenuSheet(BuildContext context, List<_HeaderItem> items) {
-    showModalBottomSheet<void>(
+    showAppSheet<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder: (sheetContext) => _HeaderMenuSheet(
         items: items,
         auth: auth,
@@ -104,14 +104,88 @@ class AppShell extends StatelessWidget {
   }
 
   void _openLogin(BuildContext context) {
-    showModalBottomSheet<void>(
+    showAppSheet<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder: (context) => AuthSheet(auth: auth),
+    );
+  }
+
+  void _openThemeSheet(BuildContext context) {
+    showAppSheet<void>(
+      context: context,
+      builder: (_) => _ThemeSheet(theme: theme),
+    );
+  }
+}
+
+class _ThemeSheet extends StatelessWidget {
+  const _ThemeSheet({required this.theme});
+
+  final ThemeController theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Cor e tema', style: TextStyle(color: palette.primary, fontSize: 22, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 16),
+        const Text('Cor', style: TextStyle(fontWeight: FontWeight.w700)),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            _ColorChoice(theme: theme, value: ThemeColorChoice.rosa, color: const Color(0xffff69b4), label: 'Rosa'),
+            _ColorChoice(theme: theme, value: ThemeColorChoice.azul, color: const Color(0xff3b82f6), label: 'Azul'),
+            _ColorChoice(theme: theme, value: ThemeColorChoice.vermelho, color: const Color(0xffef4444), label: 'Vermelho'),
+          ],
+        ),
+        const SizedBox(height: 18),
+        const Text('Modo', style: TextStyle(fontWeight: FontWeight.w700)),
+        const SizedBox(height: 10),
+        SegmentedButton<ThemeMode>(
+          segments: const [
+            ButtonSegment(value: ThemeMode.light, icon: Icon(Icons.light_mode_outlined), label: Text('Claro')),
+            ButtonSegment(value: ThemeMode.dark, icon: Icon(Icons.dark_mode_outlined), label: Text('Escuro')),
+          ],
+          selected: {theme.mode},
+          onSelectionChanged: (value) => theme.setMode(value.first),
+        ),
+      ],
+    );
+  }
+}
+
+class _ColorChoice extends StatelessWidget {
+  const _ColorChoice({required this.theme, required this.value, required this.color, required this.label});
+
+  final ThemeController theme;
+  final ThemeColorChoice value;
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = theme.color == value;
+    return Padding(
+      padding: const EdgeInsets.only(right: 10),
+      child: Tooltip(
+        message: label,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(999),
+          onTap: () => theme.setColor(value),
+          child: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              border: Border.all(color: selected ? Theme.of(context).extension<AppPalette>()!.foreground : Colors.transparent, width: 3),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -123,14 +197,15 @@ class _Logo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
-      child: const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
         child: Text(
           '💕 Nossa Família',
-          style: TextStyle(color: primary, fontWeight: FontWeight.w900, fontSize: 21),
+          style: TextStyle(color: palette.primary, fontWeight: FontWeight.w900, fontSize: 21),
         ),
       ),
     );
@@ -152,6 +227,7 @@ class _HeaderMenuSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.fromLTRB(16, 10, 16, MediaQuery.of(context).viewInsets.bottom + 16),
@@ -163,13 +239,13 @@ class _HeaderMenuSheet extends StatelessWidget {
               height: 4,
               margin: const EdgeInsets.only(bottom: 14),
               decoration: BoxDecoration(
-                color: border,
+                color: palette.border,
                 borderRadius: BorderRadius.circular(999),
               ),
             ),
-            const Align(
+            Align(
               alignment: Alignment.centerLeft,
-              child: Text('Menu', style: TextStyle(color: primary, fontSize: 22, fontWeight: FontWeight.w900)),
+              child: Text('Menu', style: TextStyle(color: palette.primary, fontSize: 22, fontWeight: FontWeight.w900)),
             ),
             const SizedBox(height: 8),
             Flexible(
@@ -178,19 +254,19 @@ class _HeaderMenuSheet extends StatelessWidget {
                 children: [
                   for (final item in items)
                     ListTile(
-                      leading: Icon(_isSelected(item.path, currentLocation) ? item.selectedIcon : item.icon, color: primary),
+                      leading: Icon(_isSelected(item.path, currentLocation) ? item.selectedIcon : item.icon, color: palette.primary),
                       title: Text(item.label),
                       selected: _isSelected(item.path, currentLocation),
-                      selectedTileColor: primary.withValues(alpha: .08),
+                      selectedTileColor: palette.primary.withValues(alpha: .08),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       onTap: () {
                         Navigator.pop(context);
                         context.go(item.path);
                       },
                     ),
-                  const Divider(height: 20, color: border),
+                  Divider(height: 20, color: palette.border),
                   ListTile(
-                    leading: Icon(auth.user == null ? Icons.account_circle_outlined : Icons.logout, color: primary),
+                    leading: Icon(auth.user == null ? Icons.account_circle_outlined : Icons.logout, color: palette.primary),
                     title: Text(auth.user == null ? 'Entrar' : 'Sair'),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     onTap: () {
@@ -229,9 +305,10 @@ class _TopNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
     return Container(
       height: 64,
-      color: Colors.white,
+      color: palette.card,
       alignment: Alignment.center,
       constraints: const BoxConstraints(maxWidth: 980),
       child: SingleChildScrollView(
@@ -248,8 +325,8 @@ class _TopNavigation extends StatelessWidget {
                   icon: Icon(_isSelected(item.path, currentLocation) ? item.selectedIcon : item.icon, size: 19),
                   label: Text(item.label),
                   style: TextButton.styleFrom(
-                    foregroundColor: _isSelected(item.path, currentLocation) ? primary : foreground,
-                    backgroundColor: _isSelected(item.path, currentLocation) ? primary.withValues(alpha: .08) : Colors.transparent,
+                    foregroundColor: _isSelected(item.path, currentLocation) ? palette.primary : palette.foreground,
+                    backgroundColor: _isSelected(item.path, currentLocation) ? palette.primary.withValues(alpha: .08) : Colors.transparent,
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),

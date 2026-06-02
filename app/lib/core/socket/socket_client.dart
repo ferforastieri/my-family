@@ -7,6 +7,7 @@ import '../config/app_config.dart';
 class SocketClient {
   io.Socket? _socket;
   String? _token;
+  Completer<void>? _connectCompleter;
 
   bool get isConnected => _socket?.connected ?? false;
 
@@ -14,6 +15,7 @@ class SocketClient {
     if (_socket?.connected == true && _token == token) return;
     _token = token;
     _socket?.dispose();
+    _connectCompleter = Completer<void>();
     _socket = io.io(
       AppConfig.socketUrl,
       io.OptionBuilder()
@@ -22,11 +24,20 @@ class SocketClient {
           .setAuth(token == null ? <String, dynamic>{} : {'token': token})
           .build(),
     );
+    _socket!.onConnect((_) {
+      if (_connectCompleter?.isCompleted == false) _connectCompleter!.complete();
+    });
+    _socket!.onConnectError((dynamic error) {
+      if (_connectCompleter?.isCompleted == false) _connectCompleter!.completeError(error ?? 'Erro ao conectar');
+    });
     _socket!.connect();
   }
 
-  Future<T> emitAck<T>(String event, [Object? payload]) {
+  Future<T> emitAck<T>(String event, [Object? payload]) async {
     connect(token: _token);
+    if (_socket?.connected != true) {
+      await (_connectCompleter?.future ?? Future<void>.value()).timeout(const Duration(seconds: 8));
+    }
     final completer = Completer<T>();
     _socket!.emitWithAck(
       event,

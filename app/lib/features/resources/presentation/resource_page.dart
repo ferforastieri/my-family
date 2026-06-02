@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_sheet.dart';
 import '../../../core/widgets/love_background.dart';
 import '../../../core/widgets/love_text_card.dart';
 import '../../../core/widgets/section_title.dart';
@@ -73,7 +75,7 @@ class _ResourcePageState extends State<ResourcePage> {
   }
 
   void _openCreate(BuildContext context) {
-    showDialog<void>(
+    showAppSheet<void>(
       context: context,
       builder: (context) => ResourceDialog(
         title: widget.title,
@@ -235,22 +237,27 @@ class _ResourceDialogState extends State<ResourceDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('Novo item em ${widget.title}'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: title, decoration: const InputDecoration(labelText: 'Título ou URL')),
-            TextField(controller: subtitle, decoration: const InputDecoration(labelText: 'Texto / artista')),
-            TextField(controller: extra, decoration: const InputDecoration(labelText: 'Extra')),
-          ],
-        ),
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Novo item em ${widget.title}', style: const TextStyle(color: primary, fontWeight: FontWeight.w900, fontSize: 22)),
+          const SizedBox(height: 16),
+          TextField(controller: title, decoration: const InputDecoration(labelText: 'Título ou URL')),
+          TextField(controller: subtitle, decoration: const InputDecoration(labelText: 'Texto / artista')),
+          TextField(controller: extra, decoration: const InputDecoration(labelText: 'Extra')),
+          const SizedBox(height: 18),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+              const SizedBox(width: 10),
+              AppButton(onPressed: _save, label: 'Salvar'),
+            ],
+          ),
+        ],
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-        FilledButton(onPressed: _save, child: const Text('Salvar')),
-      ],
     );
   }
 

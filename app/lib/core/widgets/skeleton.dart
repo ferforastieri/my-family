@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
+import '../theme/app_theme.dart';
 import 'love_background.dart';
 
 class SkeletonBox extends StatefulWidget {
@@ -36,13 +36,14 @@ class _SkeletonBoxState extends State<SkeletonBox> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
     return FadeTransition(
       opacity: Tween<double>(begin: .45, end: .9).animate(CurvedAnimation(parent: controller, curve: Curves.easeInOut)),
       child: Container(
         width: widget.width,
         height: widget.height,
         decoration: BoxDecoration(
-          color: primary.withValues(alpha: .10),
+          color: palette.primary.withValues(alpha: .10),
           borderRadius: BorderRadius.circular(widget.borderRadius),
         ),
       ),
@@ -116,4 +117,3 @@ class SkeletonCard extends StatelessWidget {
     );
   }
 }
-

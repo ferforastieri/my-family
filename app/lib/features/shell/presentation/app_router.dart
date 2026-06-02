@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/auth/auth_controller.dart';
+import '../../../core/theme/theme_controller.dart';
 import '../../../data/family_repository.dart';
 import '../../admin/presentation/admin_page.dart';
 import '../../games/presentation/games_page.dart';
@@ -12,7 +13,7 @@ import '../../resources/presentation/resource_page.dart';
 import '../../story/presentation/story_page.dart';
 import 'app_shell.dart';
 
-GoRouter buildRouter(AuthController auth, FamilyRepository repository) {
+GoRouter buildRouter(AuthController auth, ThemeController theme, FamilyRepository repository) {
   return GoRouter(
     initialLocation: '/',
     refreshListenable: auth,
@@ -24,6 +25,7 @@ GoRouter buildRouter(AuthController auth, FamilyRepository repository) {
       ShellRoute(
         builder: (context, state, child) => AppShell(
           auth: auth,
+          theme: theme,
           currentLocation: state.uri.path,
           child: child,
         ),
@@ -85,4 +87,3 @@ GoRouter buildRouter(AuthController auth, FamilyRepository repository) {
 Page<void> _page(Widget child) {
   return NoTransitionPage<void>(child: child);
 }
-
