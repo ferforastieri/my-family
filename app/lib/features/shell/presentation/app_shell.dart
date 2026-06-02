@@ -37,7 +37,7 @@ class AppShell extends StatelessWidget {
       const _HeaderItem('Jogos do Amor', '/jogos', Icons.sports_esports_outlined, Icons.sports_esports),
       if (auth.user != null) const _HeaderItem('Memórias em Fotos', '/galeria', Icons.photo_outlined, Icons.photo),
       const _HeaderItem('Perfil', '/perfil', Icons.person_outline, Icons.person),
-      if (auth.user?.role == 'admin') const _HeaderItem('Administração', '/admin', Icons.admin_panel_settings_outlined, Icons.admin_panel_settings),
+      const _HeaderItem('Administração', '/admin', Icons.admin_panel_settings_outlined, Icons.admin_panel_settings),
     ];
 
     return LayoutBuilder(

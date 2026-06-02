@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/love_background.dart';
@@ -46,8 +47,11 @@ class _FlowerForWifePageState extends State<FlowerForWifePage> with SingleTicker
           ),
           ListView(
             padding: const EdgeInsets.fromLTRB(24, 34, 24, 32),
-            children: const [
-              SectionTitle('Uma Flor para Minha Esposa', size: 44),
+            children: [
+              const SectionTitle('Uma Flor para Minha Esposa', size: 44)
+                  .animate()
+                  .fadeIn(duration: 650.ms)
+                  .scale(begin: const Offset(.94, .94), end: const Offset(1, 1), curve: Curves.easeOutBack),
             ],
           ),
         ],
@@ -68,23 +72,32 @@ class _FlowerPainter extends CustomPainter {
     final scale = shortest / 760;
     final base = Offset(size.width / 2, size.height * .92);
     final grow = Curves.easeOutCubic.transform((t * 1.5).clamp(0, 1));
-    final sway = math.sin(t * math.pi * 2) * .055;
 
     _drawNight(canvas, size);
+    _drawFireflies(canvas, size, scale);
     _drawGrassBed(canvas, size, scale);
 
-    canvas.save();
+    _drawFlower(canvas, base.translate(0, 0), scale, grow, 1, 0, 0);
+    _drawFlower(canvas, base.translate(-135 * scale, 12 * scale), scale * .74, grow, .78, -.24, .35);
+    _drawFlower(canvas, base.translate(132 * scale, 16 * scale), scale * .68, grow, .70, .28, .72);
+
+    _drawLongLeaf(canvas, base, scale, grow);
+    _drawSideGrass(canvas, base, scale, grow);
+  }
+
+  void _drawFlower(Canvas canvas, Offset base, double scale, double grow, double opacity, double tilt, double phase) {
+    final sway = math.sin((t + phase) * math.pi * 2) * .055;
+    final localGrow = Curves.easeOutCubic.transform(((t - phase * .18) * 1.8).clamp(0, 1));
+
+    canvas.saveLayer(null, Paint()..color = Colors.white.withValues(alpha: opacity));
     canvas.translate(base.dx, base.dy);
-    canvas.scale(grow, grow);
-    canvas.rotate(sway);
+    canvas.scale(grow * localGrow, grow * localGrow);
+    canvas.rotate(tilt + sway);
     canvas.translate(0, -280 * scale);
     _drawStem(canvas, scale);
     _drawStemLeaves(canvas, scale);
     _drawFlowerHead(canvas, scale);
     canvas.restore();
-
-    _drawLongLeaf(canvas, base, scale, grow);
-    _drawSideGrass(canvas, base, scale, grow);
   }
 
   void _drawNight(Canvas canvas, Size size) {
@@ -99,6 +112,19 @@ class _FlowerPainter extends CustomPainter {
         ],
       ).createShader(Offset.zero & size);
     canvas.drawRect(Offset.zero & size, paint);
+  }
+
+  void _drawFireflies(Canvas canvas, Size size, double scale) {
+    final paint = Paint()
+      ..color = palette.primary.withValues(alpha: .36)
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 5 * scale);
+    for (var i = 0; i < 18; i++) {
+      final phase = (t + i * .073) % 1;
+      final x = (size.width * ((i * 37) % 100) / 100) + math.sin(phase * math.pi * 2) * 18 * scale;
+      final y = size.height * (.25 + ((i * 19) % 55) / 100) + math.cos(phase * math.pi * 2) * 12 * scale;
+      final radius = (1.8 + (i % 4) * .45) * scale;
+      canvas.drawCircle(Offset(x, y), radius, paint);
+    }
   }
 
   void _drawStem(Canvas canvas, double scale) {
@@ -128,7 +154,7 @@ class _FlowerPainter extends CustomPainter {
         ..maskFilter = MaskFilter.blur(BlurStyle.normal, 24 * scale),
     );
 
-    for (final angle in [-65.0, -22.0, 22.0, 65.0]) {
+    for (final angle in [-70.0, -42.0, -16.0, 16.0, 42.0, 70.0]) {
       _drawPetal(canvas, head, scale, angle, palette.primaryDark, const Color(0xffffb6c1));
     }
 
@@ -147,6 +173,7 @@ class _FlowerPainter extends CustomPainter {
 
   void _drawPetal(Canvas canvas, Offset center, double scale, double degrees, Color dark, Color light) {
     final rect = Rect.fromCenter(center: Offset.zero, width: 58 * scale, height: 88 * scale);
+    final pulse = 1 + math.sin(t * math.pi * 2 + degrees) * .025;
     final path = Path()
       ..moveTo(0, 0)
       ..cubicTo(36 * scale, -34 * scale, 30 * scale, -86 * scale, 0, -96 * scale)
@@ -156,6 +183,7 @@ class _FlowerPainter extends CustomPainter {
     canvas.save();
     canvas.translate(center.dx, center.dy);
     canvas.rotate(degrees * math.pi / 180);
+    canvas.scale(pulse, pulse);
     canvas.drawPath(
       path,
       Paint()
@@ -265,7 +293,7 @@ class _FlowerPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     for (var i = 0; i < 58; i++) {
       final x = size.width * i / 57;
-      final h = (26 + (i % 9) * 5) * scale;
+      final h = (26 + (i % 9) * 5) * scale * (1 + math.sin(t * math.pi * 2 + i) * .07);
       final path = Path()
         ..moveTo(x, size.height)
         ..lineTo(x - 6 * scale, size.height - h)
@@ -280,4 +308,3 @@ class _FlowerPainter extends CustomPainter {
     return oldDelegate.t != t || oldDelegate.palette != palette;
   }
 }
-
