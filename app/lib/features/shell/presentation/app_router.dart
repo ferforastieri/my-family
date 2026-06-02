@@ -7,6 +7,7 @@ import '../../../core/toast/toast_controller.dart';
 import '../../../data/family_repository.dart';
 import '../../admin/presentation/admin_page.dart';
 import '../../games/presentation/games_page.dart';
+import '../../flower/presentation/flower_for_wife_page.dart';
 import '../../home/presentation/home_page.dart';
 import '../../messages/presentation/messages_page.dart';
 import '../../profile/presentation/profile_page.dart';
@@ -73,7 +74,7 @@ GoRouter buildRouter(AuthController auth, ThemeController theme, ToastController
           ),
           GoRoute(
             path: '/flor-para-esposa',
-            pageBuilder: (context, state) => _page(const MessagesPage()),
+            pageBuilder: (context, state) => _page(const FlowerForWifePage()),
           ),
           GoRoute(
             path: '/perfil',
