@@ -30,7 +30,7 @@ void main() {
       toast: toast,
       repository: repository));
   auth.bootstrap().then((_) => chat.bootstrap()).catchError((_) {});
-  notifications.bootstrap();
+  notifications.bootstrap().catchError((_) {});
   theme.bootstrap();
 }
 
