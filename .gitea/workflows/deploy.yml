@@ -37,11 +37,15 @@ jobs:
           MONGO_ROOT_PASSWORD: ${{ secrets.MONGO_ROOT_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           UPLOAD_HOST_PATH: ${{ secrets.UPLOAD_HOST_PATH }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          SOCKET_URL: ${{ secrets.SOCKET_URL }}
         run: |
           set -eu
           test -n "$MONGO_ROOT_PASSWORD" || { echo "Missing secret MONGO_ROOT_PASSWORD"; exit 1; }
           test -n "$JWT_SECRET" || { echo "Missing secret JWT_SECRET"; exit 1; }
           test -n "$UPLOAD_HOST_PATH" || { echo "Missing secret UPLOAD_HOST_PATH"; exit 1; }
+          test -n "$API_BASE_URL" || { echo "Missing secret API_BASE_URL"; exit 1; }
+          test -n "$SOCKET_URL" || { echo "Missing secret SOCKET_URL"; exit 1; }
 
       - name: Create deploy environment
         env:
@@ -88,8 +92,8 @@ jobs:
             printf 'JWT_SECRET=%s\n' "$JWT_SECRET"
             printf 'JWT_EXPIRES_IN=%s\n' "${JWT_EXPIRES_IN:-7d}"
             printf 'CORS_ORIGIN=%s\n' "${CORS_ORIGIN:-*}"
-            printf 'API_BASE_URL=%s\n' "${API_BASE_URL:-http://localhost:3459/api}"
-            printf 'SOCKET_URL=%s\n' "${SOCKET_URL:-http://localhost:3459}"
+            printf 'API_BASE_URL=%s\n' "$API_BASE_URL"
+            printf 'SOCKET_URL=%s\n' "$SOCKET_URL"
             printf 'SMTP_HOST=%s\n' "${SMTP_HOST:-}"
             printf 'SMTP_PORT=%s\n' "${SMTP_PORT:-587}"
             printf 'SMTP_USER=%s\n' "${SMTP_USER:-}"
@@ -127,8 +131,8 @@ jobs:
             -w /app \
             ghcr.io/cirruslabs/flutter:stable \
             flutter build apk --release \
-              --dart-define=API_BASE_URL="${API_BASE_URL:-http://localhost:3459/api}" \
-              --dart-define=SOCKET_URL="${SOCKET_URL:-http://localhost:3459}" \
+              --dart-define=API_BASE_URL="$API_BASE_URL" \
+              --dart-define=SOCKET_URL="$SOCKET_URL" \
               --dart-define=FIREBASE_API_KEY="${FIREBASE_API_KEY:-}" \
               --dart-define=FIREBASE_APP_ID="${FIREBASE_APP_ID:-}" \
               --dart-define=FIREBASE_MESSAGING_SENDER_ID="${FIREBASE_MESSAGING_SENDER_ID:-}" \

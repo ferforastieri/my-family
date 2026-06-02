@@ -1,11 +1,11 @@
 {
-  "name": "Nossa Familia",
-  "short_name": "Familia",
+  "name": "FMF",
+  "short_name": "FMF",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#fff7fb",
   "theme_color": "#d84f7b",
-  "description": "App privado da familia.",
+  "description": "App privado FMF.",
   "gcm_sender_id": "103953800507",
   "icons": [
     {

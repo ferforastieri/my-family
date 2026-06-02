@@ -1,13 +1,9 @@
 class AppConfig {
-  static const apiBaseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://localhost:3459/api',
-  );
+  static const _apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+  static const _socketUrl = String.fromEnvironment('SOCKET_URL');
 
-  static const socketUrl = String.fromEnvironment(
-    'SOCKET_URL',
-    defaultValue: 'http://localhost:3459',
-  );
+  static String get apiBaseUrl => _requiredEnv('API_BASE_URL', _apiBaseUrl);
+  static String get socketUrl => _requiredEnv('SOCKET_URL', _socketUrl);
 
   static const firebaseApiKey = String.fromEnvironment('FIREBASE_API_KEY');
   static const firebaseAppId = String.fromEnvironment('FIREBASE_APP_ID');
@@ -32,5 +28,12 @@ class AppConfig {
   static Uri apiUri(String path) {
     final normalized = path.startsWith('/') ? path : '/$path';
     return Uri.parse('$apiBaseUrl$normalized');
+  }
+
+  static String _requiredEnv(String name, String value) {
+    if (value.trim().isEmpty) {
+      throw StateError('$name não foi configurada no build.');
+    }
+    return value;
   }
 }

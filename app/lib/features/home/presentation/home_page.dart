@@ -78,17 +78,15 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           const SizedBox(height: 28),
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1152),
-              child: SizedBox(
-                height: 620,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: const FlowerGarden(),
-                ),
-              ),
-            ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final height = constraints.maxWidth >= 900 ? 680.0 : 560.0;
+              return SizedBox(
+                width: double.infinity,
+                height: height,
+                child: const FlowerGarden(),
+              );
+            },
           ),
         ],
       ),

@@ -7,6 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/love_background.dart';
 import '../../../core/widgets/section_title.dart';
+import '../../../core/widgets/skeleton.dart';
 import '../../../data/family_repository.dart';
 import '../../../data/models.dart';
 
@@ -353,21 +354,41 @@ class _WordSearchGame extends StatefulWidget {
 
 class _WordSearchGameState extends State<_WordSearchGame> {
   final name = TextEditingController();
+  List<GameWord> gameWords = [];
   late List<String> words;
   late List<String> grid;
   final Set<String> found = {};
+  bool loading = true;
 
   @override
   void initState() {
     super.initState();
-    words = _randomWords();
-    grid = _wordGrid(words);
+    words = [];
+    grid = [];
+    _load();
   }
 
   @override
   void dispose() {
     name.dispose();
     super.dispose();
+  }
+
+  Future<void> _load() async {
+    try {
+      gameWords = await widget.repository.listGameWords();
+      _newGame();
+    } catch (error) {
+      widget.toast.error(error.toString());
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  void _newGame() {
+    words = _randomWords(gameWords);
+    grid = _wordGrid(words);
+    found.clear();
   }
 
   Future<void> _toggle(String word) async {
@@ -402,49 +423,48 @@ class _WordSearchGameState extends State<_WordSearchGame> {
               ),
               child: Padding(
                 padding: const EdgeInsets.all(22),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (widget.auth.user == null) ...[
-                      TextField(
-                        controller: name,
-                        decoration:
-                            const InputDecoration(labelText: 'Seu nome'),
-                      ),
-                      const SizedBox(height: 14),
-                    ],
-                    Text('Encontre as palavras tocando nelas.',
-                        style: TextStyle(color: palette.muted)),
-                    const SizedBox(height: 18),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: [
-                        for (final token in grid)
-                          FilterChip(
-                            selected: found.contains(token),
-                            label: Text(token),
-                            onSelected:
-                                words.contains(token) && !found.contains(token)
-                                    ? (_) => _toggle(token)
-                                    : null,
+                child: loading
+                    ? const SkeletonBox(height: 320, borderRadius: 8)
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (widget.auth.user == null) ...[
+                            TextField(
+                              controller: name,
+                              decoration:
+                                  const InputDecoration(labelText: 'Seu nome'),
+                            ),
+                            const SizedBox(height: 14),
+                          ],
+                          Text('Encontre as palavras tocando nelas.',
+                              style: TextStyle(color: palette.muted)),
+                          const SizedBox(height: 18),
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: [
+                              for (final token in grid)
+                                FilterChip(
+                                  selected: found.contains(token),
+                                  label: Text(token),
+                                  onSelected: words.contains(token) &&
+                                          !found.contains(token)
+                                      ? (_) => _toggle(token)
+                                      : null,
+                                ),
+                            ],
                           ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    Text('Encontradas: ${found.length}/${words.length}',
-                        style: const TextStyle(fontWeight: FontWeight.w900)),
-                    const SizedBox(height: 12),
-                    FilledButton(
-                      onPressed: () => setState(() {
-                        words = _randomWords();
-                        grid = _wordGrid(words);
-                        found.clear();
-                      }),
-                      child: const Text('Novo sorteio'),
-                    ),
-                  ],
-                ),
+                          const SizedBox(height: 20),
+                          Text('Encontradas: ${found.length}/${words.length}',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w900)),
+                          const SizedBox(height: 12),
+                          FilledButton(
+                            onPressed: () => setState(_newGame),
+                            child: const Text('Novo sorteio'),
+                          ),
+                        ],
+                      ),
               ),
             ),
           ),
@@ -471,21 +491,28 @@ class _BackTitle extends StatelessWidget {
   }
 }
 
-List<String> _randomWords() {
-  final all = [
-    'FERNANDO',
-    'MIRIAM',
-    'FAMILIA',
-    'AMOR',
-    'TEMPLO',
-    'FE',
-    'LAR',
-    'ETERNOS',
-    'CARINHO',
-    'FILHO',
-    'JESUS',
-    'ALIanca'.toUpperCase(),
-  ]..shuffle(Random());
+List<String> _randomWords(List<GameWord> gameWords) {
+  final all = gameWords
+      .where((word) => word.active && word.word.trim().isNotEmpty)
+      .map((word) => word.word.trim().toUpperCase())
+      .toList();
+  if (all.isEmpty) {
+    all.addAll([
+      'FERNANDO',
+      'MIRIAM',
+      'FAMILIA',
+      'AMOR',
+      'TEMPLO',
+      'FE',
+      'LAR',
+      'ETERNOS',
+      'CARINHO',
+      'FILHO',
+      'JESUS',
+      'ALIANCA',
+    ]);
+  }
+  all.shuffle(Random());
   return all.take(6).toList();
 }
 

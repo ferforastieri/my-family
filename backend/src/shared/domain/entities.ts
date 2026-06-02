@@ -110,3 +110,11 @@ export interface GameCompletionEntity {
   total?: number | null;
   createdAt: Date;
 }
+
+export interface GameWordEntity {
+  id: string;
+  word: string;
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
