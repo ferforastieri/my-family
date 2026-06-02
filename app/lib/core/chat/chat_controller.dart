@@ -16,29 +16,53 @@ class ChatController extends ChangeNotifier {
   final List<ChatUser> users = [];
   ChatConversation? active;
   bool loading = false;
+  bool bootstrapped = false;
+  String? errorMessage;
 
   Future<void> bootstrap() async {
+    if (bootstrapped) return;
+    bootstrapped = true;
     socket.on('chat.message.created', (data) {
       if (data is! Map) return;
       final message = ChatMessage.fromJson(Map<String, dynamic>.from(data));
       if (message.conversationId == active?.id) {
+        if (messages.any((item) => item.id == message.id)) return;
         messages.add(message);
         notifyListeners();
       }
     });
     socket.on('chat.conversation.created', (_) => refreshConversations());
-    await refreshConversations();
+    await refreshConversations(silent: true);
   }
 
-  Future<void> refreshConversations() async {
-    final rows = await socket.emitAck<List<dynamic>>('chat.conversations');
-    conversations
-      ..clear()
-      ..addAll(rows.map((row) =>
-          ChatConversation.fromJson(Map<String, dynamic>.from(row as Map))));
-    active ??= conversations.isNotEmpty ? conversations.first : null;
-    if (active != null) await loadMessages(active!);
-    notifyListeners();
+  Future<void> refreshConversations({bool silent = false}) async {
+    if (!silent) {
+      loading = true;
+      errorMessage = null;
+      notifyListeners();
+    }
+    try {
+      final rows = await socket.emitAck<List<dynamic>>('chat.conversations');
+      conversations
+        ..clear()
+        ..addAll(rows.map((row) =>
+            ChatConversation.fromJson(Map<String, dynamic>.from(row as Map))));
+      active = active == null
+          ? (conversations.isNotEmpty ? conversations.first : null)
+          : conversations.firstWhere(
+              (conversation) => conversation.id == active!.id,
+              orElse: () =>
+                  conversations.isNotEmpty ? conversations.first : active!,
+            );
+      if (active != null) await loadMessages(active!);
+      errorMessage = null;
+    } catch (error) {
+      errorMessage = error.toString();
+      rethrow;
+    } finally {
+      loading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> refreshUsers() async {
@@ -53,6 +77,7 @@ class ChatController extends ChangeNotifier {
   Future<void> loadMessages(ChatConversation conversation) async {
     active = conversation;
     loading = true;
+    errorMessage = null;
     notifyListeners();
     try {
       final rows = await socket.emitAck<List<dynamic>>(
@@ -61,6 +86,9 @@ class ChatController extends ChangeNotifier {
         ..clear()
         ..addAll(rows.map((row) =>
             ChatMessage.fromJson(Map<String, dynamic>.from(row as Map))));
+    } catch (error) {
+      errorMessage = error.toString();
+      rethrow;
     } finally {
       loading = false;
       notifyListeners();
@@ -80,18 +108,31 @@ class ChatController extends ChangeNotifier {
 
   Future<void> sendText(String text, {String? senderName}) async {
     final conversation = active;
-    if (conversation == null || text.trim().isEmpty) return;
-    await socket.emitAck<Map<String, dynamic>>('chat.message.send', {
+    if (conversation == null) {
+      throw Exception('Nenhuma conversa selecionada.');
+    }
+    if (text.trim().isEmpty) {
+      throw Exception('Escreva uma mensagem.');
+    }
+    final row =
+        await socket.emitAck<Map<String, dynamic>>('chat.message.send', {
       'conversationId': conversation.id,
       'text': text.trim(),
       if (senderName != null && senderName.trim().isNotEmpty)
         'senderName': senderName.trim(),
     });
+    final message = ChatMessage.fromJson(row);
+    if (!messages.any((item) => item.id == message.id)) {
+      messages.add(message);
+      notifyListeners();
+    }
   }
 
   Future<void> sendMedia(String text, XFile file, {String? senderName}) async {
     final conversation = active;
-    if (conversation == null) return;
+    if (conversation == null) {
+      throw Exception('Nenhuma conversa selecionada.');
+    }
     final relativePath = await repository.uploadPhotoFile(file);
     final ext = relativePath.split('.').last.toLowerCase();
     final mediaType = ['mp4', 'webm'].contains(ext) ? 'video' : 'image';
@@ -101,7 +142,8 @@ class ChatController extends ChangeNotifier {
       'texto': text.trim().isEmpty ? 'Imagem enviada no chat' : text.trim(),
       'album': 'Chat',
     });
-    await socket.emitAck<Map<String, dynamic>>('chat.message.send', {
+    final row =
+        await socket.emitAck<Map<String, dynamic>>('chat.message.send', {
       'conversationId': conversation.id,
       'text': text.trim(),
       'mediaUrl': relativePath,
@@ -109,5 +151,10 @@ class ChatController extends ChangeNotifier {
       if (senderName != null && senderName.trim().isNotEmpty)
         'senderName': senderName.trim(),
     });
+    final message = ChatMessage.fromJson(row);
+    if (!messages.any((item) => item.id == message.id)) {
+      messages.add(message);
+      notifyListeners();
+    }
   }
 }

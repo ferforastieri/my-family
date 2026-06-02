@@ -108,7 +108,7 @@ class AppShell extends StatelessWidget {
           body: Stack(
             children: [
               child,
-              ChatFloatingButton(chat: chat, auth: auth, toast: toast),
+              const ChatFloatingButton(),
             ],
           ),
         );
@@ -124,20 +124,16 @@ class AppShell extends StatelessWidget {
       if (isAuthenticated)
         const _HeaderItem(
             'Memórias em Fotos', '/galeria', Icons.photo_outlined, Icons.photo),
-      const _HeaderItem('Quiz do Amor', '/quiz-do-amor', Icons.favorite_outline,
-          Icons.favorite),
       const _HeaderItem('Nossa Playlist', '/playlist',
           Icons.music_note_outlined, Icons.music_note),
       const _HeaderItem(
           'Palavras do Coração', '/mensagens', Icons.mail_outline, Icons.mail),
+      const _HeaderItem(
+          'Chat da Família', '/chat', Icons.chat_bubble_outline, Icons.chat),
       const _HeaderItem('Carta de Amor', '/carta-de-amor',
           Icons.card_giftcard_outlined, Icons.card_giftcard),
-      const _HeaderItem('Flor para Minha Esposa', '/flor-para-esposa',
-          Icons.local_florist_outlined, Icons.local_florist),
       const _HeaderItem('Jogos do Amor', '/jogos',
           Icons.sports_esports_outlined, Icons.sports_esports),
-      const _HeaderItem('Caça Palavras', '/caca-palavras',
-          Icons.grid_on_outlined, Icons.grid_on),
     ];
   }
 

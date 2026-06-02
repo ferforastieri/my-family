@@ -8,6 +8,7 @@ class SocketClient {
   io.Socket? _socket;
   String? _token;
   Completer<void>? _connectCompleter;
+  final Map<String, List<void Function(dynamic data)>> _handlers = {};
 
   bool get isConnected => _socket?.connected ?? false;
   String? get token => _token;
@@ -25,6 +26,11 @@ class SocketClient {
           .setAuth(token == null ? <String, dynamic>{} : {'token': token})
           .build(),
     );
+    for (final entry in _handlers.entries) {
+      for (final handler in entry.value) {
+        _socket!.on(entry.key, handler);
+      }
+    }
     _socket!.onConnect((_) {
       if (_connectCompleter?.isCompleted == false) {
         _connectCompleter!.complete();
@@ -56,14 +62,20 @@ class SocketClient {
         completer.complete(data as T);
       },
     );
-    return completer.future.timeout(const Duration(seconds: 20));
+    return completer.future.timeout(
+      const Duration(seconds: 20),
+      onTimeout: () => throw TimeoutException(
+          'Tempo esgotado aguardando resposta de "$event". Verifique a conexão com ${AppConfig.socketUrl}.'),
+    );
   }
 
   void on(String event, void Function(dynamic data) handler) {
+    _handlers.putIfAbsent(event, () => []).add(handler);
     _socket?.on(event, handler);
   }
 
   void off(String event) {
+    _handlers.remove(event);
     _socket?.off(event);
   }
 

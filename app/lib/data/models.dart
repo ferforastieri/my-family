@@ -143,3 +143,56 @@ class ChatUser {
         email: (json['email'] ?? '').toString(),
       );
 }
+
+class QuizQuestion {
+  const QuizQuestion({
+    required this.id,
+    required this.question,
+    required this.options,
+    this.correctIndex,
+    this.active = true,
+  });
+
+  final String id;
+  final String question;
+  final List<String> options;
+  final int? correctIndex;
+  final bool active;
+
+  factory QuizQuestion.fromJson(Map<String, dynamic> json) => QuizQuestion(
+        id: json['id'].toString(),
+        question: (json['question'] ?? '').toString(),
+        options: ((json['options'] as List?) ?? const [])
+            .map((option) => option.toString())
+            .toList(),
+        correctIndex: (json['correctIndex'] as num?)?.toInt(),
+        active: json['active'] != false,
+      );
+}
+
+class GameStat {
+  const GameStat({
+    required this.game,
+    required this.playerName,
+    required this.count,
+    this.bestScore,
+    this.lastAt,
+  });
+
+  final String game;
+  final String playerName;
+  final int count;
+  final int? bestScore;
+  final DateTime? lastAt;
+
+  factory GameStat.fromJson(Map<String, dynamic> json) => GameStat(
+        game: (json['game'] ?? '').toString(),
+        playerName: (json['playerName'] ?? 'Visitante').toString(),
+        count: (json['count'] as num?)?.toInt() ?? 0,
+        bestScore: (json['bestScore'] as num?)?.toInt(),
+        lastAt: json['lastAt'] is num
+            ? DateTime.fromMillisecondsSinceEpoch(
+                (json['lastAt'] as num).toInt())
+            : null,
+      );
+}

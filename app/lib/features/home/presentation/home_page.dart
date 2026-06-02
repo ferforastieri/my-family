@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/flower_garden.dart';
 import '../../../core/widgets/love_background.dart';
 import '../../../core/widgets/section_title.dart';
 
@@ -35,27 +36,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final cards = [
-      MenuCardData(
-          'Nossa História',
-          'Descubra como tudo começou e os momentos que nos trouxeram até aqui.',
-          '/nossa-historia'),
-      MenuCardData(
-          'Jogos do Amor 🎮',
-          'Divirta-se com nossos jogos especiais, incluindo o Quiz do Amor!',
-          '/jogos'),
-      MenuCardData('Mensagens do Coração',
-          'Palavras de amor e carinho que compartilhamos.', '/mensagens'),
-      MenuCardData(
-          'Carta de Amor',
-          'Uma declaração especial do meu coração para você.',
-          '/carta-de-amor'),
-      MenuCardData(
-          'Uma Flor para Minha Esposa',
-          'Um jardim especial dedicado à mulher da minha vida 🌹',
-          '/flor-para-esposa'),
-    ];
-
     return LoveBackground(
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 32, 16, 40),
@@ -100,62 +80,13 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 28),
           Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1280),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final columns = constraints.maxWidth >= 1280
-                      ? 5
-                      : constraints.maxWidth >= 1024
-                          ? 4
-                          : constraints.maxWidth >= 640
-                              ? 2
-                              : 1;
-                  return GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: columns,
-                    childAspectRatio: columns == 1 ? 1.8 : .95,
-                    crossAxisSpacing: 24,
-                    mainAxisSpacing: 24,
-                    children: cards
-                        .map(
-                          (card) => InkWell(
-                            borderRadius: BorderRadius.circular(16),
-                            onTap: () => widget.onNavigate(card.path),
-                            child: Card(
-                              child: Padding(
-                                padding: const EdgeInsets.all(24),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      card.title,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        color: primary,
-                                        fontFamily: 'serif',
-                                        fontWeight: FontWeight.w800,
-                                        fontSize: 20,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      card.description,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                          color: muted,
-                                          fontSize: 14,
-                                          height: 1.35),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  );
-                },
+              constraints: const BoxConstraints(maxWidth: 1152),
+              child: SizedBox(
+                height: 620,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: const FlowerGarden(),
+                ),
               ),
             ),
           ),
@@ -163,14 +94,6 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-}
-
-class MenuCardData {
-  const MenuCardData(this.title, this.description, this.path);
-
-  final String title;
-  final String description;
-  final String path;
 }
 
 class CounterInfo {
