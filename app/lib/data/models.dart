@@ -5,6 +5,7 @@ class AppUser {
     required this.role,
     this.name,
     this.avatarPath,
+    this.createdAt,
   });
 
   final String id;
@@ -12,6 +13,7 @@ class AppUser {
   final String role;
   final String? name;
   final String? avatarPath;
+  final DateTime? createdAt;
 
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
         id: json['id'].toString(),
@@ -19,6 +21,9 @@ class AppUser {
         role: (json['role'] ?? 'friend') as String,
         name: json['name'] as String?,
         avatarPath: json['avatarPath'] as String?,
+        createdAt: json['createdAt'] == null
+            ? null
+            : DateTime.tryParse(json['createdAt'].toString()),
       );
 }
 
@@ -194,5 +199,23 @@ class GameStat {
             ? DateTime.fromMillisecondsSinceEpoch(
                 (json['lastAt'] as num).toInt())
             : null,
+      );
+}
+
+class GameWord {
+  const GameWord({
+    required this.id,
+    required this.word,
+    this.active = true,
+  });
+
+  final String id;
+  final String word;
+  final bool active;
+
+  factory GameWord.fromJson(Map<String, dynamic> json) => GameWord(
+        id: json['id'].toString(),
+        word: (json['word'] ?? '').toString(),
+        active: json['active'] != false,
       );
 }

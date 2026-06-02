@@ -77,7 +77,6 @@ class AppShell extends StatelessWidget {
                   auth: auth,
                   wide: true,
                   onLogin: () => _openLogin(context),
-                  onSettings: () {},
                   onEditProfile: () => _openEditProfileSheet(context),
                   onAdmin: () => context.go('/admin'),
                   onSignOut: () => _signOut(context),
@@ -88,7 +87,6 @@ class AppShell extends StatelessWidget {
                   auth: auth,
                   wide: false,
                   onLogin: () => _openLogin(context),
-                  onSettings: () {},
                   onEditProfile: () => _openEditProfileSheet(context),
                   onAdmin: () => context.go('/admin'),
                   onSignOut: () => _signOut(context),
@@ -108,7 +106,8 @@ class AppShell extends StatelessWidget {
           body: Stack(
             children: [
               child,
-              const ChatFloatingButton(),
+              if (!_isSelected('/chat', currentLocation))
+                const ChatFloatingButton(),
             ],
           ),
         );
@@ -128,8 +127,6 @@ class AppShell extends StatelessWidget {
           Icons.music_note_outlined, Icons.music_note),
       const _HeaderItem(
           'Palavras do Coração', '/mensagens', Icons.mail_outline, Icons.mail),
-      const _HeaderItem(
-          'Chat da Família', '/chat', Icons.chat_bubble_outline, Icons.chat),
       const _HeaderItem('Carta de Amor', '/carta-de-amor',
           Icons.card_giftcard_outlined, Icons.card_giftcard),
       const _HeaderItem('Jogos do Amor', '/jogos',
@@ -187,7 +184,6 @@ class _ProfileAction extends StatelessWidget {
     required this.auth,
     required this.wide,
     required this.onLogin,
-    required this.onSettings,
     required this.onEditProfile,
     required this.onAdmin,
     required this.onSignOut,
@@ -196,7 +192,6 @@ class _ProfileAction extends StatelessWidget {
   final AuthController auth;
   final bool wide;
   final VoidCallback onLogin;
-  final VoidCallback onSettings;
   final VoidCallback onEditProfile;
   final VoidCallback onAdmin;
   final VoidCallback onSignOut;
@@ -224,8 +219,6 @@ class _ProfileAction extends StatelessWidget {
       tooltip: 'Perfil',
       onSelected: (value) {
         switch (value) {
-          case _ProfileMenuAction.settings:
-            onSettings();
           case _ProfileMenuAction.editProfile:
             onEditProfile();
           case _ProfileMenuAction.admin:
@@ -235,10 +228,6 @@ class _ProfileAction extends StatelessWidget {
         }
       },
       actions: [
-        const AppDropdownAction(
-            value: _ProfileMenuAction.settings,
-            label: 'Configurações',
-            icon: Icons.settings_outlined),
         const AppDropdownAction(
             value: _ProfileMenuAction.editProfile,
             label: 'Editar perfil',
@@ -270,7 +259,7 @@ class _ProfileAction extends StatelessWidget {
   }
 }
 
-enum _ProfileMenuAction { settings, editProfile, admin, signOut }
+enum _ProfileMenuAction { editProfile, admin, signOut }
 
 class _ThemeSheet extends StatelessWidget {
   const _ThemeSheet({required this.theme, required this.toast});

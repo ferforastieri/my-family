@@ -70,8 +70,8 @@ services:
       context: .
       dockerfile: Dockerfile.front
       args:
-        API_BASE_URL: ${API_BASE_URL:-http://localhost:3459/api}
-        SOCKET_URL: ${SOCKET_URL:-http://localhost:3459}
+        API_BASE_URL: ${API_BASE_URL:?API_BASE_URL is required}
+        SOCKET_URL: ${SOCKET_URL:?SOCKET_URL is required}
         FIREBASE_API_KEY: ${FIREBASE_API_KEY:-}
         FIREBASE_APP_ID: ${FIREBASE_APP_ID:-}
         FIREBASE_MESSAGING_SENDER_ID: ${FIREBASE_MESSAGING_SENDER_ID:-}

@@ -93,6 +93,39 @@ class FamilyRepository {
     await socket.emitAck<Map<String, dynamic>>('games.quiz.delete', {'id': id});
   }
 
+  Future<List<GameWord>> listGameWords() async {
+    final rows = await socket.emitAck<List<dynamic>>('games.words.list');
+    return rows
+        .map((row) => GameWord.fromJson(Map<String, dynamic>.from(row as Map)))
+        .toList();
+  }
+
+  Future<List<GameWord>> listGameWordsAdmin() async {
+    final rows = await socket.emitAck<List<dynamic>>('games.words.admin.list');
+    return rows
+        .map((row) => GameWord.fromJson(Map<String, dynamic>.from(row as Map)))
+        .toList();
+  }
+
+  Future<GameWord> createGameWord(Map<String, dynamic> data) async {
+    final row =
+        await socket.emitAck<Map<String, dynamic>>('games.words.create', data);
+    return GameWord.fromJson(Map<String, dynamic>.from(row));
+  }
+
+  Future<GameWord?> updateGameWord(String id, Map<String, dynamic> data) async {
+    final row = await socket.emitAck<Map<String, dynamic>?>(
+        'games.words.update', {'id': id, 'data': data});
+    return row == null
+        ? null
+        : GameWord.fromJson(Map<String, dynamic>.from(row));
+  }
+
+  Future<void> deleteGameWord(String id) async {
+    await socket
+        .emitAck<Map<String, dynamic>>('games.words.delete', {'id': id});
+  }
+
   Future<void> completeGame({
     required String game,
     String? playerName,
@@ -113,5 +146,68 @@ class FamilyRepository {
     return rows
         .map((row) => GameStat.fromJson(Map<String, dynamic>.from(row as Map)))
         .toList();
+  }
+
+  Future<List<AppUser>> listUsers() async {
+    final rows = await socket.emitAck<List<dynamic>>('users.list');
+    return rows
+        .map((row) => AppUser.fromJson(Map<String, dynamic>.from(row as Map)))
+        .toList();
+  }
+
+  Future<AppUser> updateUser(String id, Map<String, dynamic> data) async {
+    final row = await socket
+        .emitAck<Map<String, dynamic>>('users.update', {'id': id, ...data});
+    return AppUser.fromJson(Map<String, dynamic>.from(row));
+  }
+
+  Future<void> deleteUser(String id) async {
+    await socket.emitAck<Map<String, dynamic>>('users.delete', {'id': id});
+  }
+
+  Future<List<AppNotification>> listNotificationsAdmin() async {
+    final rows = await socket.emitAck<List<dynamic>>('notifications.list');
+    return rows
+        .map((row) =>
+            AppNotification.fromJson(Map<String, dynamic>.from(row as Map)))
+        .toList();
+  }
+
+  Future<AppNotification> createNotification(Map<String, dynamic> data) async {
+    final row = await socket.emitAck<Map<String, dynamic>>(
+        'notifications.create', data);
+    return AppNotification.fromJson(Map<String, dynamic>.from(row));
+  }
+
+  Future<AppNotification?> updateNotification(
+      String id, Map<String, dynamic> data) async {
+    final row = await socket.emitAck<Map<String, dynamic>?>(
+        'notifications.update', {'id': id, 'data': data});
+    return row == null
+        ? null
+        : AppNotification.fromJson(Map<String, dynamic>.from(row));
+  }
+
+  Future<void> deleteNotification(String id) async {
+    await socket
+        .emitAck<Map<String, dynamic>>('notifications.delete', {'id': id});
+  }
+
+  Future<void> clearNotifications() async {
+    await socket.emitAck<Map<String, dynamic>>('notifications.clear');
+  }
+
+  Future<int> sendNotification({
+    required String title,
+    String? body,
+    String? url,
+  }) async {
+    final row =
+        await socket.emitAck<Map<String, dynamic>>('notifications.send', {
+      'title': title,
+      if (body != null) 'body': body,
+      if (url != null) 'url': url,
+    });
+    return (row['sent'] as num?)?.toInt() ?? 0;
   }
 }

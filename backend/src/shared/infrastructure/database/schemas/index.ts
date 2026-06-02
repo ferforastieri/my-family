@@ -3,6 +3,7 @@ export * from './chat-conversation.schema';
 export * from './chat-message.schema';
 export * from './foto.schema';
 export * from './game-completion.schema';
+export * from './game-word.schema';
 export * from './musica.schema';
 export * from './notification.schema';
 export * from './password-reset.schema';
@@ -11,16 +12,35 @@ export * from './user.schema';
 export * from './quiz-question.schema';
 
 import { CartaDocument, CartaSchema } from './carta.schema';
-import { ChatConversationDocument, ChatConversationSchema } from './chat-conversation.schema';
+import {
+  ChatConversationDocument,
+  ChatConversationSchema,
+} from './chat-conversation.schema';
 import { ChatMessageDocument, ChatMessageSchema } from './chat-message.schema';
 import { FotoDocument, FotoSchema } from './foto.schema';
-import { GameCompletionDocument, GameCompletionSchema } from './game-completion.schema';
+import {
+  GameCompletionDocument,
+  GameCompletionSchema,
+} from './game-completion.schema';
+import { GameWordDocument, GameWordSchema } from './game-word.schema';
 import { MusicaDocument, MusicaSchema } from './musica.schema';
-import { NotificationDocument, NotificationSchema } from './notification.schema';
-import { PasswordResetDocument, PasswordResetSchema } from './password-reset.schema';
-import { PushSubscriptionDocument, PushSubscriptionSchema } from './push-subscription.schema';
+import {
+  NotificationDocument,
+  NotificationSchema,
+} from './notification.schema';
+import {
+  PasswordResetDocument,
+  PasswordResetSchema,
+} from './password-reset.schema';
+import {
+  PushSubscriptionDocument,
+  PushSubscriptionSchema,
+} from './push-subscription.schema';
 import { UserDocument, UserSchema } from './user.schema';
-import { QuizQuestionDocument, QuizQuestionSchema } from './quiz-question.schema';
+import {
+  QuizQuestionDocument,
+  QuizQuestionSchema,
+} from './quiz-question.schema';
 
 export const mongoModels = [
   { name: UserDocument.name, schema: UserSchema },
@@ -29,6 +49,7 @@ export const mongoModels = [
   { name: ChatMessageDocument.name, schema: ChatMessageSchema },
   { name: FotoDocument.name, schema: FotoSchema },
   { name: GameCompletionDocument.name, schema: GameCompletionSchema },
+  { name: GameWordDocument.name, schema: GameWordSchema },
   { name: MusicaDocument.name, schema: MusicaSchema },
   { name: CartaDocument.name, schema: CartaSchema },
   { name: NotificationDocument.name, schema: NotificationSchema },

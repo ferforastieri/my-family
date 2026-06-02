@@ -96,8 +96,8 @@ Flutter Web:
 cd app
 flutter pub get
 flutter run -d chrome \
-  --dart-define=API_BASE_URL=http://localhost:3001/api \
-  --dart-define=SOCKET_URL=http://localhost:3001
+  --dart-define=API_BASE_URL=<backend-url>/api \
+  --dart-define=SOCKET_URL=<backend-url>
 ```
 
 Builds:

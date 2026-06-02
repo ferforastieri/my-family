@@ -7,6 +7,7 @@ import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_sheet.dart';
+import '../../../core/widgets/skeleton.dart';
 import '../../../data/models.dart';
 
 class ChatPage extends StatefulWidget {
@@ -53,7 +54,7 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _sendText() async {
     setState(() => sending = true);
     try {
-      await widget.chat.sendText(text.text, senderName: name.text);
+      await widget.chat.sendText(text.text, senderName: _senderName);
       text.clear();
     } catch (error) {
       widget.toast.error(error.toString());
@@ -72,7 +73,7 @@ class _ChatPageState extends State<ChatPage> {
     if (file == null) return;
     setState(() => sending = true);
     try {
-      await widget.chat.sendMedia(text.text, file, senderName: name.text);
+      await widget.chat.sendMedia(text.text, file, senderName: _senderName);
       text.clear();
       widget.toast.success('Imagem enviada e salva em Memórias.');
     } catch (error) {
@@ -80,6 +81,15 @@ class _ChatPageState extends State<ChatPage> {
     } finally {
       if (mounted) setState(() => sending = false);
     }
+  }
+
+  String get _senderName {
+    final user = widget.auth.user;
+    if (user != null) {
+      final displayName = user.name?.trim();
+      return displayName?.isNotEmpty == true ? displayName! : user.email;
+    }
+    return name.text.trim();
   }
 
   Future<void> _openPeoplePicker() async {
@@ -237,7 +247,7 @@ class _ConversationList extends StatelessWidget {
           ),
         Expanded(
           child: chat.loading && chat.conversations.isEmpty
-              ? const Center(child: CircularProgressIndicator())
+              ? const _ConversationSkeleton()
               : ListView.separated(
                   itemCount: chat.conversations.length,
                   separatorBuilder: (_, __) =>
@@ -256,7 +266,7 @@ class _ConversationList extends StatelessWidget {
                             : Icons.person_outline),
                       ),
                       title: Text(conversation.type == 'global'
-                          ? 'Chat global'
+                          ? 'Chat'
                           : conversation.title),
                       subtitle: Text(conversation.type == 'global'
                           ? 'Todos podem conversar'
@@ -317,7 +327,10 @@ class _MessagePane extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(active?.title ?? 'Chat',
+                    Text(
+                        active?.type == 'global'
+                            ? 'Chat'
+                            : active?.title ?? 'Chat',
                         style: const TextStyle(
                             fontSize: 18, fontWeight: FontWeight.w900)),
                     Text(
@@ -337,12 +350,18 @@ class _MessagePane extends StatelessWidget {
           child: active == null
               ? const Center(child: Text('Nenhuma conversa disponível.'))
               : chat.loading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const _MessagesSkeleton()
                   : ListView.builder(
                       padding: const EdgeInsets.all(18),
                       itemCount: chat.messages.length,
-                      itemBuilder: (context, index) =>
-                          _MessageBubble(message: chat.messages[index]),
+                      itemBuilder: (context, index) {
+                        final message = chat.messages[index];
+                        return _MessageBubble(
+                          message: message,
+                          isMine: auth.user != null &&
+                              message.senderId == auth.user?.id,
+                        );
+                      },
                     ),
         ),
         Divider(height: 1, color: palette.border),
@@ -397,21 +416,34 @@ class _MessagePane extends StatelessWidget {
 }
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message});
+  const _MessageBubble({required this.message, required this.isMine});
 
   final ChatMessage message;
+  final bool isMine;
 
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     return Align(
-      alignment: Alignment.centerLeft,
+      alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
       child: Padding(
         padding: const EdgeInsets.only(bottom: 10),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: palette.primary.withValues(alpha: .08),
-            borderRadius: BorderRadius.circular(8),
+            color: isMine
+                ? palette.primary.withValues(alpha: .18)
+                : palette.primary.withValues(alpha: .08),
+            border: Border.all(
+              color: isMine
+                  ? palette.primary.withValues(alpha: .26)
+                  : palette.border,
+            ),
+            borderRadius: BorderRadius.only(
+              topLeft: const Radius.circular(14),
+              topRight: const Radius.circular(14),
+              bottomLeft: Radius.circular(isMine ? 14 : 4),
+              bottomRight: Radius.circular(isMine ? 4 : 14),
+            ),
           ),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 560),
@@ -420,11 +452,13 @@ class _MessageBubble extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(message.senderName,
-                      style: TextStyle(
-                          color: palette.primary, fontWeight: FontWeight.w900)),
+                  if (!isMine)
+                    Text(message.senderName,
+                        style: TextStyle(
+                            color: palette.primary,
+                            fontWeight: FontWeight.w900)),
                   if (message.mediaUrl != null) ...[
-                    const SizedBox(height: 8),
+                    SizedBox(height: isMine ? 0 : 8),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: Image.network(_mediaUrl(message.mediaUrl!),
@@ -438,9 +472,12 @@ class _MessageBubble extends StatelessWidget {
                     Text(message.text!),
                   ],
                   const SizedBox(height: 4),
-                  Text(
-                    _timeLabel(message.at),
-                    style: TextStyle(fontSize: 11, color: palette.muted),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      _timeLabel(message.at),
+                      style: TextStyle(fontSize: 11, color: palette.muted),
+                    ),
                   ),
                 ],
               ),
@@ -448,6 +485,62 @@ class _MessageBubble extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ConversationSkeleton extends StatelessWidget {
+  const _ConversationSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.all(12),
+      itemCount: 4,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (_, __) => const Row(
+        children: [
+          SkeletonBox(width: 44, height: 44, borderRadius: 999),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SkeletonBox(width: 160, height: 16),
+                SizedBox(height: 8),
+                SkeletonBox(width: 110, height: 12),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MessagesSkeleton extends StatelessWidget {
+  const _MessagesSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(18),
+      children: const [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: SkeletonBox(width: 260, height: 70, borderRadius: 14),
+        ),
+        SizedBox(height: 14),
+        Align(
+          alignment: Alignment.centerRight,
+          child: SkeletonBox(width: 310, height: 78, borderRadius: 14),
+        ),
+        SizedBox(height: 14),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: SkeletonBox(width: 220, height: 64, borderRadius: 14),
+        ),
+      ],
     );
   }
 }
