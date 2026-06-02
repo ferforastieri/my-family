@@ -20,6 +20,7 @@ GoRouter buildRouter(AuthController auth, ThemeController theme, ToastController
     initialLocation: '/',
     refreshListenable: auth,
     redirect: (context, state) {
+      if (state.uri.path == '/galeria' && auth.user == null) return '/perfil';
       if (state.uri.path == '/admin' && auth.user?.role != 'admin') return '/';
       return null;
     },
