@@ -69,6 +69,7 @@ class AppShell extends StatelessWidget {
                   onLogin: () => _openLogin(context),
                   onSettings: () => _openThemeSheet(context),
                   onEditProfile: () => context.go('/perfil'),
+                  onAdmin: () => context.go('/admin'),
                   onSignOut: () => _signOut(context),
                 ),
                 const SizedBox(width: 14),
@@ -79,6 +80,7 @@ class AppShell extends StatelessWidget {
                   onLogin: () => _openLogin(context),
                   onSettings: () => _openThemeSheet(context),
                   onEditProfile: () => context.go('/perfil'),
+                  onAdmin: () => context.go('/admin'),
                   onSignOut: () => _signOut(context),
                 ),
               if (!wide)
@@ -121,9 +123,6 @@ class AppShell extends StatelessWidget {
           Icons.sports_esports_outlined, Icons.sports_esports),
       const _HeaderItem('Caça Palavras', '/caca-palavras',
           Icons.grid_on_outlined, Icons.grid_on),
-      if (isAuthenticated)
-        const _HeaderItem('Administração', '/admin',
-            Icons.admin_panel_settings_outlined, Icons.admin_panel_settings),
     ];
   }
 
@@ -165,6 +164,7 @@ class _ProfileAction extends StatelessWidget {
     required this.onLogin,
     required this.onSettings,
     required this.onEditProfile,
+    required this.onAdmin,
     required this.onSignOut,
   });
 
@@ -173,6 +173,7 @@ class _ProfileAction extends StatelessWidget {
   final VoidCallback onLogin;
   final VoidCallback onSettings;
   final VoidCallback onEditProfile;
+  final VoidCallback onAdmin;
   final VoidCallback onSignOut;
 
   @override
@@ -203,12 +204,14 @@ class _ProfileAction extends StatelessWidget {
             onSettings();
           case _ProfileMenuAction.editProfile:
             onEditProfile();
+          case _ProfileMenuAction.admin:
+            onAdmin();
           case _ProfileMenuAction.signOut:
             onSignOut();
         }
       },
-      itemBuilder: (context) => const [
-        PopupMenuItem(
+      itemBuilder: (context) => [
+        const PopupMenuItem(
           value: _ProfileMenuAction.settings,
           child: ListTile(
             leading: Icon(Icons.settings_outlined),
@@ -216,7 +219,7 @@ class _ProfileAction extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
           ),
         ),
-        PopupMenuItem(
+        const PopupMenuItem(
           value: _ProfileMenuAction.editProfile,
           child: ListTile(
             leading: Icon(Icons.person_outline),
@@ -224,8 +227,17 @@ class _ProfileAction extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
           ),
         ),
-        PopupMenuDivider(),
-        PopupMenuItem(
+        if (user.role == 'admin')
+          const PopupMenuItem(
+            value: _ProfileMenuAction.admin,
+            child: ListTile(
+              leading: Icon(Icons.admin_panel_settings_outlined),
+              title: Text('Administração'),
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
+        const PopupMenuDivider(),
+        const PopupMenuItem(
           value: _ProfileMenuAction.signOut,
           child: ListTile(
             leading: Icon(Icons.logout),
@@ -250,7 +262,7 @@ class _ProfileAction extends StatelessWidget {
   }
 }
 
-enum _ProfileMenuAction { settings, editProfile, signOut }
+enum _ProfileMenuAction { settings, editProfile, admin, signOut }
 
 class _ThemeSheet extends StatelessWidget {
   const _ThemeSheet({required this.theme, required this.toast});
