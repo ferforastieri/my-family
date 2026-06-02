@@ -63,19 +63,25 @@ class AppShell extends StatelessWidget {
                   icon: const Icon(Icons.palette_outlined),
                   tooltip: 'Cor e tema'),
               if (wide) ...[
-                if (auth.user == null)
-                  TextButton.icon(
-                    onPressed: () => _openLogin(context),
-                    icon: const Icon(Icons.account_circle_outlined, size: 20),
-                    label: const Text('Entrar'),
-                  )
-                else
-                  IconButton(
-                      onPressed: () => _signOut(context),
-                      icon: const Icon(Icons.logout),
-                      tooltip: 'Sair'),
+                _ProfileAction(
+                  auth: auth,
+                  wide: true,
+                  onLogin: () => _openLogin(context),
+                  onSettings: () => _openThemeSheet(context),
+                  onEditProfile: () => context.go('/perfil'),
+                  onSignOut: () => _signOut(context),
+                ),
                 const SizedBox(width: 14),
               ] else
+                _ProfileAction(
+                  auth: auth,
+                  wide: false,
+                  onLogin: () => _openLogin(context),
+                  onSettings: () => _openThemeSheet(context),
+                  onEditProfile: () => context.go('/perfil'),
+                  onSignOut: () => _signOut(context),
+                ),
+              if (!wide)
                 IconButton(
                   onPressed: () => _openMenuSheet(context, items),
                   icon: const Icon(Icons.menu),
@@ -115,8 +121,6 @@ class AppShell extends StatelessWidget {
           Icons.sports_esports_outlined, Icons.sports_esports),
       const _HeaderItem('Caça Palavras', '/caca-palavras',
           Icons.grid_on_outlined, Icons.grid_on),
-      const _HeaderItem(
-          'Perfil', '/perfil', Icons.person_outline, Icons.person),
       if (isAuthenticated)
         const _HeaderItem('Administração', '/admin',
             Icons.admin_panel_settings_outlined, Icons.admin_panel_settings),
@@ -126,15 +130,9 @@ class AppShell extends StatelessWidget {
   void _openMenuSheet(BuildContext context, List<_HeaderItem> items) {
     showAppSheet<void>(
       context: context,
-      builder: (sheetContext) => _HeaderMenuSheet(
+      builder: (_) => _HeaderMenuSheet(
         items: items,
-        auth: auth,
-        toast: toast,
         currentLocation: currentLocation,
-        onLogin: () {
-          Navigator.pop(sheetContext);
-          _openLogin(context);
-        },
       ),
     );
   }
@@ -159,6 +157,100 @@ class AppShell extends StatelessWidget {
     );
   }
 }
+
+class _ProfileAction extends StatelessWidget {
+  const _ProfileAction({
+    required this.auth,
+    required this.wide,
+    required this.onLogin,
+    required this.onSettings,
+    required this.onEditProfile,
+    required this.onSignOut,
+  });
+
+  final AuthController auth;
+  final bool wide;
+  final VoidCallback onLogin;
+  final VoidCallback onSettings;
+  final VoidCallback onEditProfile;
+  final VoidCallback onSignOut;
+
+  @override
+  Widget build(BuildContext context) {
+    final user = auth.user;
+    if (user == null) {
+      if (!wide) {
+        return IconButton(
+          onPressed: onLogin,
+          icon: const Icon(Icons.account_circle_outlined),
+          tooltip: 'Entrar',
+        );
+      }
+      return TextButton.icon(
+        onPressed: onLogin,
+        icon: const Icon(Icons.account_circle_outlined, size: 20),
+        label: const Text('Entrar'),
+      );
+    }
+
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return PopupMenuButton<_ProfileMenuAction>(
+      tooltip: 'Perfil',
+      offset: const Offset(0, 12),
+      onSelected: (value) {
+        switch (value) {
+          case _ProfileMenuAction.settings:
+            onSettings();
+          case _ProfileMenuAction.editProfile:
+            onEditProfile();
+          case _ProfileMenuAction.signOut:
+            onSignOut();
+        }
+      },
+      itemBuilder: (context) => const [
+        PopupMenuItem(
+          value: _ProfileMenuAction.settings,
+          child: ListTile(
+            leading: Icon(Icons.settings_outlined),
+            title: Text('Configurações'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+        PopupMenuItem(
+          value: _ProfileMenuAction.editProfile,
+          child: ListTile(
+            leading: Icon(Icons.person_outline),
+            title: Text('Editar perfil'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+        PopupMenuDivider(),
+        PopupMenuItem(
+          value: _ProfileMenuAction.signOut,
+          child: ListTile(
+            leading: Icon(Icons.logout),
+            title: Text('Sair'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      ],
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: wide ? 8 : 4),
+        child: CircleAvatar(
+          radius: wide ? 18 : 17,
+          backgroundColor: palette.primary.withValues(alpha: .14),
+          foregroundColor: palette.primary,
+          child: Text(
+            _initialFor(user.name ?? user.email),
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+enum _ProfileMenuAction { settings, editProfile, signOut }
 
 class _ThemeSheet extends StatelessWidget {
   const _ThemeSheet({required this.theme, required this.toast});
@@ -304,17 +396,11 @@ class _Logo extends StatelessWidget {
 class _HeaderMenuSheet extends StatelessWidget {
   const _HeaderMenuSheet({
     required this.items,
-    required this.auth,
-    required this.toast,
     required this.currentLocation,
-    required this.onLogin,
   });
 
   final List<_HeaderItem> items;
-  final AuthController auth;
-  final ToastController toast;
   final String currentLocation;
-  final VoidCallback onLogin;
 
   @override
   Widget build(BuildContext context) {
@@ -356,26 +442,6 @@ class _HeaderMenuSheet extends StatelessWidget {
                         context.go(item.path);
                       },
                     ),
-                  Divider(height: 20, color: palette.border),
-                  ListTile(
-                    leading: Icon(
-                        auth.user == null
-                            ? Icons.account_circle_outlined
-                            : Icons.logout,
-                        color: palette.primary),
-                    title: Text(auth.user == null ? 'Entrar' : 'Sair'),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    onTap: () {
-                      if (auth.user == null) {
-                        onLogin();
-                      } else {
-                        Navigator.pop(context);
-                        auth.signOut();
-                        toast.success('Você saiu da conta.');
-                      }
-                    },
-                  ),
                 ],
               ),
             ),
@@ -452,4 +518,10 @@ bool _isSelected(String itemPath, String currentLocation) {
   if (itemPath == '/') return currentLocation == '/';
   return currentLocation == itemPath ||
       currentLocation.startsWith('$itemPath/');
+}
+
+String _initialFor(String value) {
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) return '?';
+  return trimmed.substring(0, 1).toUpperCase();
 }
