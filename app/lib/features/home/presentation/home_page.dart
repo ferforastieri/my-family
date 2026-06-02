@@ -23,7 +23,8 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     counters = _buildCounters();
-    timer = Timer.periodic(const Duration(seconds: 1), (_) => setState(() => counters = _buildCounters()));
+    timer = Timer.periodic(const Duration(seconds: 1),
+        (_) => setState(() => counters = _buildCounters()));
   }
 
   @override
@@ -35,11 +36,24 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final cards = [
-      MenuCardData('Nossa História', 'Descubra como tudo começou e os momentos que nos trouxeram até aqui.', '/nossa-historia'),
-      MenuCardData('Jogos do Amor 🎮', 'Divirta-se com nossos jogos especiais, incluindo o Quiz do Amor!', '/jogos'),
-      MenuCardData('Mensagens do Coração', 'Palavras de amor e carinho que compartilhamos.', '/mensagens'),
-      MenuCardData('Carta de Amor', 'Uma declaração especial do meu coração para você.', '/carta-de-amor'),
-      MenuCardData('Uma Flor para Minha Esposa', 'Um jardim especial dedicado à mulher da minha vida 🌹', '/flor-para-esposa'),
+      MenuCardData(
+          'Nossa História',
+          'Descubra como tudo começou e os momentos que nos trouxeram até aqui.',
+          '/nossa-historia'),
+      MenuCardData(
+          'Jogos do Amor 🎮',
+          'Divirta-se com nossos jogos especiais, incluindo o Quiz do Amor!',
+          '/jogos'),
+      MenuCardData('Mensagens do Coração',
+          'Palavras de amor e carinho que compartilhamos.', '/mensagens'),
+      MenuCardData(
+          'Carta de Amor',
+          'Uma declaração especial do meu coração para você.',
+          '/carta-de-amor'),
+      MenuCardData(
+          'Uma Flor para Minha Esposa',
+          'Um jardim especial dedicado à mulher da minha vida 🌹',
+          '/flor-para-esposa'),
     ];
 
     return LoveBackground(
@@ -60,10 +74,12 @@ class _HomePageState extends State<HomePage> {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         crossAxisCount: wide ? 3 : 1,
-                        childAspectRatio: wide ? 1.12 : 1.55,
+                        childAspectRatio: wide ? 1.05 : 1.22,
                         crossAxisSpacing: 20,
                         mainAxisSpacing: 20,
-                        children: counters.map((counter) => CounterCard(counter)).toList(),
+                        children: counters
+                            .map((counter) => CounterCard(counter))
+                            .toList(),
                       );
                     },
                   ),
@@ -73,7 +89,8 @@ class _HomePageState extends State<HomePage> {
                     child: Text(
                       'Um jardim digital de memórias e amor, onde cada momento representa uma parte especial da nossa história juntos.',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: muted, fontSize: 16, height: 1.5),
+                      style: const TextStyle(
+                          color: muted, fontSize: 16, height: 1.5),
                     ),
                   ),
                 ],
@@ -125,7 +142,10 @@ class _HomePageState extends State<HomePage> {
                                     Text(
                                       card.description,
                                       textAlign: TextAlign.center,
-                                      style: const TextStyle(color: muted, fontSize: 14, height: 1.35),
+                                      style: const TextStyle(
+                                          color: muted,
+                                          fontSize: 14,
+                                          height: 1.35),
                                     ),
                                   ],
                                 ),
@@ -244,10 +264,18 @@ class CounterCard extends StatelessWidget {
     ];
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: info.colors),
+        gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: info.colors),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withValues(alpha: .26)),
-        boxShadow: [BoxShadow(color: info.colors.last.withValues(alpha: .24), blurRadius: 16, offset: const Offset(0, 8))],
+        boxShadow: [
+          BoxShadow(
+              color: info.colors.last.withValues(alpha: .24),
+              blurRadius: 16,
+              offset: const Offset(0, 8))
+        ],
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -261,15 +289,25 @@ class CounterCard extends StatelessWidget {
                 child: Text(
                   info.title,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18),
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
-          Text(_formatDate(info.date), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
+          Text(_formatDate(info.date),
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13)),
           const SizedBox(height: 8),
-          Text(info.message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.3)),
+          Text(info.message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                  color: Colors.white70, fontSize: 12, height: 1.3)),
           const Spacer(),
           Row(
             children: values
@@ -278,11 +316,21 @@ class CounterCard extends StatelessWidget {
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 4),
                       padding: const EdgeInsets.symmetric(vertical: 10),
-                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: .95), borderRadius: BorderRadius.circular(10)),
+                      decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: .95),
+                          borderRadius: BorderRadius.circular(10)),
                       child: Column(
                         children: [
-                          Text(value.$1, style: const TextStyle(color: primary, fontWeight: FontWeight.w900, fontSize: 24)),
-                          Text(value.$2, style: const TextStyle(color: muted, fontWeight: FontWeight.w600, fontSize: 11)),
+                          Text(value.$1,
+                              style: const TextStyle(
+                                  color: primary,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 24)),
+                          Text(value.$2,
+                              style: const TextStyle(
+                                  color: muted,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 11)),
                         ],
                       ),
                     ),
@@ -302,7 +350,10 @@ class CounterCard extends StatelessWidget {
             child: Text(
               '${info.elapsed.isFuture ? 'Faltam' : 'Já se passaram'}\n${info.elapsed.totalDays} dias',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, height: 1.25),
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  height: 1.25),
             ),
           ),
         ],
@@ -312,6 +363,19 @@ class CounterCard extends StatelessWidget {
 }
 
 String _formatDate(DateTime date) {
-  const months = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  const months = [
+    'janeiro',
+    'fevereiro',
+    'março',
+    'abril',
+    'maio',
+    'junho',
+    'julho',
+    'agosto',
+    'setembro',
+    'outubro',
+    'novembro',
+    'dezembro'
+  ];
   return '${date.day.toString().padLeft(2, '0')} de ${months[date.month - 1]} de ${date.year}';
 }
