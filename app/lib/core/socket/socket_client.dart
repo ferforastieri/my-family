@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
 import '../config/app_config.dart';
@@ -18,12 +19,17 @@ class SocketClient {
     _token = token;
     _socket?.dispose();
     _connectCompleter = Completer<void>();
+    final auth = token == null ? <String, dynamic>{} : {'token': token};
+    final headers = token == null
+        ? <String, dynamic>{}
+        : {'Authorization': 'Bearer $token'};
     _socket = io.io(
       AppConfig.socketUrl,
       io.OptionBuilder()
-          .setTransports(['polling', 'websocket'])
+          .setTransports(kIsWeb ? ['polling', 'websocket'] : ['websocket'])
           .disableAutoConnect()
-          .setAuth(token == null ? <String, dynamic>{} : {'token': token})
+          .setAuth(auth)
+          .setExtraHeaders(headers)
           .build(),
     );
     for (final entry in _handlers.entries) {
@@ -38,7 +44,14 @@ class SocketClient {
     });
     _socket!.onConnectError((dynamic error) {
       if (_connectCompleter?.isCompleted == false) {
-        _connectCompleter!.completeError(error ?? 'Erro ao conectar');
+        _connectCompleter!.completeError(
+            'Erro ao conectar em ${AppConfig.socketUrl}: ${_socketErrorMessage(error)}');
+      }
+    });
+    _socket!.onError((dynamic error) {
+      if (_connectCompleter?.isCompleted == false) {
+        _connectCompleter!.completeError(
+            'Erro no socket em ${AppConfig.socketUrl}: ${_socketErrorMessage(error)}');
       }
     });
     _socket!.connect();
