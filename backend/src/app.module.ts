@@ -12,6 +12,7 @@ import { CartasModule } from '@cartas/cartas.module';
 import { HealthModule } from './health/health.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ChatModule } from './chat/chat.module';
+import { GamesModule } from './games/games.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { ChatModule } from './chat/chat.module';
     CartasModule,
     NotificationsModule,
     ChatModule,
+    GamesModule,
   ],
 })
 export class AppModule {}

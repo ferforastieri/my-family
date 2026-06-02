@@ -59,4 +59,59 @@ class FamilyRepository {
     }
     return relativePath;
   }
+
+  Future<List<QuizQuestion>> listQuizQuestions() async {
+    final rows = await socket.emitAck<List<dynamic>>('games.quiz.list');
+    return rows
+        .map((row) =>
+            QuizQuestion.fromJson(Map<String, dynamic>.from(row as Map)))
+        .toList();
+  }
+
+  Future<List<QuizQuestion>> listQuizQuestionsAdmin() async {
+    final rows = await socket.emitAck<List<dynamic>>('games.quiz.admin.list');
+    return rows
+        .map((row) =>
+            QuizQuestion.fromJson(Map<String, dynamic>.from(row as Map)))
+        .toList();
+  }
+
+  Future<QuizQuestion> createQuizQuestion(Map<String, dynamic> data) async {
+    final row =
+        await socket.emitAck<Map<String, dynamic>>('games.quiz.create', data);
+    return QuizQuestion.fromJson(Map<String, dynamic>.from(row));
+  }
+
+  Future<QuizQuestion> updateQuizQuestion(
+      String id, Map<String, dynamic> data) async {
+    final row = await socket.emitAck<Map<String, dynamic>>(
+        'games.quiz.update', {'id': id, 'data': data});
+    return QuizQuestion.fromJson(Map<String, dynamic>.from(row));
+  }
+
+  Future<void> deleteQuizQuestion(String id) async {
+    await socket.emitAck<Map<String, dynamic>>('games.quiz.delete', {'id': id});
+  }
+
+  Future<void> completeGame({
+    required String game,
+    String? playerName,
+    int? score,
+    int? total,
+  }) async {
+    await socket.emitAck<Map<String, dynamic>>('games.complete', {
+      'game': game,
+      if (playerName != null && playerName.trim().isNotEmpty)
+        'playerName': playerName.trim(),
+      if (score != null) 'score': score,
+      if (total != null) 'total': total,
+    });
+  }
+
+  Future<List<GameStat>> gameStats() async {
+    final rows = await socket.emitAck<List<dynamic>>('games.stats');
+    return rows
+        .map((row) => GameStat.fromJson(Map<String, dynamic>.from(row as Map)))
+        .toList();
+  }
 }

@@ -8,13 +8,12 @@ import '../../../core/theme/theme_controller.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../data/family_repository.dart';
 import '../../admin/presentation/admin_page.dart';
+import '../../chat/presentation/chat_page.dart';
+import '../../content/presentation/editable_text_collection_page.dart';
 import '../../games/presentation/games_page.dart';
-import '../../flower/presentation/flower_for_wife_page.dart';
 import '../../home/presentation/home_page.dart';
-import '../../messages/presentation/messages_page.dart';
 import '../../profile/presentation/profile_page.dart';
 import '../../resources/presentation/resource_page.dart';
-import '../../story/presentation/story_page.dart';
 import 'app_shell.dart';
 
 GoRouter buildRouter(
@@ -54,11 +53,28 @@ GoRouter buildRouter(
           ),
           GoRoute(
             path: '/nossa-historia',
-            pageBuilder: (context, state) => _page(const StoryPage()),
+            pageBuilder: (context, state) => _page(EditableTextCollectionPage(
+              title: 'Nossa Jornada',
+              prefix: 'journey',
+              repository: repository,
+              toast: toast,
+              auth: auth,
+            )),
           ),
           GoRoute(
             path: '/mensagens',
-            pageBuilder: (context, state) => _page(const MessagesPage()),
+            pageBuilder: (context, state) => _page(EditableTextCollectionPage(
+              title: 'Palavras do Coração',
+              prefix: 'heart_words',
+              repository: repository,
+              toast: toast,
+              auth: auth,
+            )),
+          ),
+          GoRoute(
+            path: '/chat',
+            pageBuilder: (context, state) =>
+                _page(ChatPage(chat: chat, auth: auth, toast: toast)),
           ),
           GoRoute(
             path: '/carta-de-amor',
@@ -86,19 +102,8 @@ GoRouter buildRouter(
           ),
           GoRoute(
             path: '/jogos',
-            pageBuilder: (context, state) => _page(const GamesPage()),
-          ),
-          GoRoute(
-            path: '/quiz-do-amor',
-            pageBuilder: (context, state) => _page(const GamesPage()),
-          ),
-          GoRoute(
-            path: '/caca-palavras',
-            pageBuilder: (context, state) => _page(const GamesPage()),
-          ),
-          GoRoute(
-            path: '/flor-para-esposa',
-            pageBuilder: (context, state) => _page(const FlowerForWifePage()),
+            pageBuilder: (context, state) => _page(
+                GamesPage(repository: repository, toast: toast, auth: auth)),
           ),
           GoRoute(
             path: '/perfil',
@@ -106,7 +111,8 @@ GoRouter buildRouter(
           ),
           GoRoute(
             path: '/admin',
-            pageBuilder: (context, state) => _page(AdminPage(auth: auth)),
+            pageBuilder: (context, state) => _page(
+                AdminPage(auth: auth, repository: repository, toast: toast)),
           ),
         ],
       ),
