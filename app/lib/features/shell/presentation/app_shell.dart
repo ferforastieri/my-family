@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_controller.dart';
+import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_sheet.dart';
 import '../../auth/presentation/auth_sheet.dart';
 
@@ -14,12 +15,14 @@ class AppShell extends StatelessWidget {
     required this.theme,
     required this.child,
     required this.currentLocation,
+    required this.toast,
   });
 
   final AuthController auth;
   final ThemeController theme;
   final Widget child;
   final String currentLocation;
+  final ToastController toast;
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +61,7 @@ class AppShell extends StatelessWidget {
                 ? Center(child: _TopNavigation(items: items, currentLocation: currentLocation))
                 : _Logo(onTap: () => context.go('/')),
             actions: [
-              IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_outlined), tooltip: 'Notificações'),
+              IconButton(onPressed: () => toast.info('Notificações em breve.'), icon: const Icon(Icons.notifications_outlined), tooltip: 'Notificações'),
               IconButton(onPressed: () => _openThemeSheet(context), icon: const Icon(Icons.palette_outlined), tooltip: 'Cor e tema'),
               if (wide) ...[
                 if (auth.user == null)
@@ -68,7 +71,7 @@ class AppShell extends StatelessWidget {
                     label: const Text('Entrar'),
                   )
                 else
-                  IconButton(onPressed: auth.signOut, icon: const Icon(Icons.logout), tooltip: 'Sair'),
+                  IconButton(onPressed: () => _signOut(context), icon: const Icon(Icons.logout), tooltip: 'Sair'),
                 const SizedBox(width: 14),
               ] else
                 IconButton(
@@ -94,6 +97,7 @@ class AppShell extends StatelessWidget {
       builder: (sheetContext) => _HeaderMenuSheet(
         items: items,
         auth: auth,
+        toast: toast,
         currentLocation: currentLocation,
         onLogin: () {
           Navigator.pop(sheetContext);
@@ -106,22 +110,29 @@ class AppShell extends StatelessWidget {
   void _openLogin(BuildContext context) {
     showAppSheet<void>(
       context: context,
-      builder: (context) => AuthSheet(auth: auth),
+      builder: (context) => AuthSheet(auth: auth, toast: toast),
     );
+  }
+
+  Future<void> _signOut(BuildContext context) async {
+    await auth.signOut();
+    toast.success('Você saiu da conta.');
+    if (context.mounted) context.go('/');
   }
 
   void _openThemeSheet(BuildContext context) {
     showAppSheet<void>(
       context: context,
-      builder: (_) => _ThemeSheet(theme: theme),
+      builder: (_) => _ThemeSheet(theme: theme, toast: toast),
     );
   }
 }
 
 class _ThemeSheet extends StatelessWidget {
-  const _ThemeSheet({required this.theme});
+  const _ThemeSheet({required this.theme, required this.toast});
 
   final ThemeController theme;
+  final ToastController toast;
 
   @override
   Widget build(BuildContext context) {
@@ -136,9 +147,9 @@ class _ThemeSheet extends StatelessWidget {
         const SizedBox(height: 10),
         Row(
           children: [
-            _ColorChoice(theme: theme, value: ThemeColorChoice.rosa, color: const Color(0xffff69b4), label: 'Rosa'),
-            _ColorChoice(theme: theme, value: ThemeColorChoice.azul, color: const Color(0xff3b82f6), label: 'Azul'),
-            _ColorChoice(theme: theme, value: ThemeColorChoice.vermelho, color: const Color(0xffef4444), label: 'Vermelho'),
+            _ColorChoice(theme: theme, toast: toast, value: ThemeColorChoice.rosa, color: const Color(0xffff69b4), label: 'Rosa'),
+            _ColorChoice(theme: theme, toast: toast, value: ThemeColorChoice.azul, color: const Color(0xff3b82f6), label: 'Azul'),
+            _ColorChoice(theme: theme, toast: toast, value: ThemeColorChoice.vermelho, color: const Color(0xffef4444), label: 'Vermelho'),
           ],
         ),
         const SizedBox(height: 18),
@@ -150,7 +161,10 @@ class _ThemeSheet extends StatelessWidget {
             ButtonSegment(value: ThemeMode.dark, icon: Icon(Icons.dark_mode_outlined), label: Text('Escuro')),
           ],
           selected: {theme.mode},
-          onSelectionChanged: (value) => theme.setMode(value.first),
+          onSelectionChanged: (value) {
+            theme.setMode(value.first);
+            toast.success(value.first == ThemeMode.dark ? 'Modo escuro ativado.' : 'Modo claro ativado.');
+          },
         ),
       ],
     );
@@ -158,9 +172,10 @@ class _ThemeSheet extends StatelessWidget {
 }
 
 class _ColorChoice extends StatelessWidget {
-  const _ColorChoice({required this.theme, required this.value, required this.color, required this.label});
+  const _ColorChoice({required this.theme, required this.toast, required this.value, required this.color, required this.label});
 
   final ThemeController theme;
+  final ToastController toast;
   final ThemeColorChoice value;
   final Color color;
   final String label;
@@ -174,7 +189,10 @@ class _ColorChoice extends StatelessWidget {
         message: label,
         child: InkWell(
           borderRadius: BorderRadius.circular(999),
-          onTap: () => theme.setColor(value),
+          onTap: () {
+            theme.setColor(value);
+            toast.success('Cor $label aplicada.');
+          },
           child: Container(
             width: 42,
             height: 42,
@@ -216,12 +234,14 @@ class _HeaderMenuSheet extends StatelessWidget {
   const _HeaderMenuSheet({
     required this.items,
     required this.auth,
+    required this.toast,
     required this.currentLocation,
     required this.onLogin,
   });
 
   final List<_HeaderItem> items;
   final AuthController auth;
+  final ToastController toast;
   final String currentLocation;
   final VoidCallback onLogin;
 
@@ -234,15 +254,6 @@ class _HeaderMenuSheet extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 42,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 14),
-              decoration: BoxDecoration(
-                color: palette.border,
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
             Align(
               alignment: Alignment.centerLeft,
               child: Text('Menu', style: TextStyle(color: palette.primary, fontSize: 22, fontWeight: FontWeight.w900)),
@@ -275,6 +286,7 @@ class _HeaderMenuSheet extends StatelessWidget {
                       } else {
                         Navigator.pop(context);
                         auth.signOut();
+                        toast.success('Você saiu da conta.');
                       }
                     },
                   ),
