@@ -114,8 +114,9 @@ class AppShell extends StatelessWidget {
           Icons.grid_on_outlined, Icons.grid_on),
       const _HeaderItem(
           'Perfil', '/perfil', Icons.person_outline, Icons.person),
-      const _HeaderItem('Administração', '/admin',
-          Icons.admin_panel_settings_outlined, Icons.admin_panel_settings),
+      if (isAuthenticated)
+        const _HeaderItem('Administração', '/admin',
+            Icons.admin_panel_settings_outlined, Icons.admin_panel_settings),
     ];
   }
 
