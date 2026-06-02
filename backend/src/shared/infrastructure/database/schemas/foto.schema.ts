@@ -9,8 +9,14 @@ export class FotoDocument {
   @Prop()
   texto?: string;
 
+  @Prop()
+  album?: string;
+
   @Prop({ required: true, enum: ['imagem', 'video'] })
   tipo: 'imagem' | 'video';
+
+  @Prop()
+  data?: Date;
 
   createdAt: Date;
   updatedAt: Date;
@@ -18,4 +24,3 @@ export class FotoDocument {
 
 export type FotoMongoDocument = HydratedDocument<FotoDocument>;
 export const FotoSchema = SchemaFactory.createForClass(FotoDocument);
-

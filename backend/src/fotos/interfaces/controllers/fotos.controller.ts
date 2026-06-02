@@ -46,18 +46,20 @@ export class FotosController {
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   async create(@Body() data: FotoWrite) {
     return this.fotosService.create(data);
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard)
   async update(@Param('id') id: string, @Body() data: Partial<FotoWrite>) {
     return this.fotosService.update(id, data);
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   async delete(@Param('id') id: string) {
     return this.fotosService.delete(id);
   }
 }
-

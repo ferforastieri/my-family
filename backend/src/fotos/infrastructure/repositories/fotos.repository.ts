@@ -5,7 +5,7 @@ import { FotoDocument, FotoMongoDocument } from '@shared/infrastructure/database
 import { cleanUndefined, toId } from '@shared/infrastructure/database/mongo.utils';
 import type { FotoEntity } from '@shared/domain/entities';
 
-export type FotoWrite = Pick<FotoEntity, 'url' | 'tipo'> & Partial<Pick<FotoEntity, 'texto'>>;
+export type FotoWrite = Pick<FotoEntity, 'url' | 'tipo'> & Partial<Pick<FotoEntity, 'texto' | 'album' | 'data'>>;
 
 @Injectable()
 export class FotosRepository {
@@ -17,14 +17,16 @@ export class FotosRepository {
       id: toId(doc),
       url: doc.url,
       texto: doc.texto ?? null,
+      album: doc.album ?? null,
       tipo: doc.tipo,
+      data: doc.data ?? null,
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
     };
   }
 
   async list() {
-    return (await this.model.find().sort({ createdAt: 1 }).exec()).map((doc) => this.toEntity(doc)!);
+    return (await this.model.find().sort({ data: -1, createdAt: -1 }).exec()).map((doc) => this.toEntity(doc)!);
   }
 
   async findById(id: string) {
@@ -32,11 +34,12 @@ export class FotosRepository {
   }
 
   async create(data: FotoWrite) {
-    return this.toEntity(await this.model.create(data))!;
+    return this.toEntity(await this.model.create({ ...data, data: data.data ? new Date(data.data) : undefined }))!;
   }
 
   async update(id: string, data: Partial<FotoWrite>) {
-    return this.toEntity(await this.model.findByIdAndUpdate(id, { $set: cleanUndefined(data) }, { new: true }).exec());
+    const normalized = { ...data, data: data.data ? new Date(data.data) : undefined };
+    return this.toEntity(await this.model.findByIdAndUpdate(id, { $set: cleanUndefined(normalized) }, { new: true }).exec());
   }
 
   async delete(id: string) {

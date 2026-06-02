@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { FotosRepository, FotoWrite } from '../infrastructure/repositories/fotos.repository';
+import { UploadService } from '@shared/infrastructure/upload';
 
 @Injectable()
 export class FotosService {
-  constructor(private fotos: FotosRepository) {}
+  constructor(
+    private fotos: FotosRepository,
+    private upload: UploadService,
+  ) {}
 
   async findAll() {
     return this.fotos.list();
@@ -22,7 +26,11 @@ export class FotosService {
   }
 
   async delete(id: string) {
-    return this.fotos.delete(id);
+    const foto = await this.fotos.findById(id);
+    const deleted = await this.fotos.delete(id);
+    if (deleted && foto?.url?.startsWith('fotos/')) {
+      await this.upload.removeFile(foto.url);
+    }
+    return deleted;
   }
 }
-
