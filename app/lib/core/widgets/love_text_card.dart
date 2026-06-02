@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:mix/mix.dart' hide primary;
 
 import '../theme/app_colors.dart';
+import '../theme/app_mix_styles.dart';
+import '../theme/app_theme.dart';
 
 class LoveTextCard extends StatelessWidget {
   const LoveTextCard({
@@ -18,20 +21,24 @@ class LoveTextCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final card = Card(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
+    final card = DecoratedBox(
+      decoration: BoxDecoration(
+        border: loveCardBorder,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [BoxShadow(color: Color(0x1aff69b4), blurRadius: 12, offset: Offset(0, 3))],
+      ),
+      child: Box(
+        style: loveCardStyle,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               title,
-              style: const TextStyle(
+              style: Theme.of(context).extension<AppTextThemes>()!.display.merge(TextStyle(
                 color: primary,
-                fontFamily: 'serif',
                 fontWeight: FontWeight.w800,
                 fontSize: 24,
-              ),
+              )),
             ),
             const SizedBox(height: 14),
             Text(body, style: const TextStyle(color: muted, fontSize: 17, height: 1.5)),
@@ -39,7 +46,7 @@ class LoveTextCard extends StatelessWidget {
               const Spacer(),
               Align(
                 alignment: Alignment.centerRight,
-                child: Text(footer!, style: const TextStyle(color: primary, fontStyle: FontStyle.italic)),
+                child: Text(footer!, style: TextStyle(color: primary, fontStyle: FontStyle.italic)),
               ),
             ],
           ],
@@ -51,4 +58,3 @@ class LoveTextCard extends StatelessWidget {
     return InkWell(borderRadius: BorderRadius.circular(16), onTap: onTap, child: card);
   }
 }
-

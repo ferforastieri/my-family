@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
@@ -11,10 +12,10 @@ ThemeData buildAppTheme() {
     ),
     scaffoldBackgroundColor: bgStart,
     useMaterial3: true,
-    textTheme: ThemeData.light().textTheme.apply(
-          bodyColor: foreground,
-          displayColor: foreground,
-        ),
+    textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme).apply(
+      bodyColor: foreground,
+      displayColor: foreground,
+    ),
     appBarTheme: const AppBarTheme(
       centerTitle: false,
       elevation: 0,
@@ -22,6 +23,12 @@ ThemeData buildAppTheme() {
       foregroundColor: foreground,
       surfaceTintColor: Colors.transparent,
     ),
+    extensions: <ThemeExtension<dynamic>>[
+      AppTextThemes(
+        display: GoogleFonts.playfairDisplay(),
+        body: GoogleFonts.inter(),
+      ),
+    ],
     cardTheme: CardThemeData(
       color: Colors.white.withValues(alpha: .90),
       elevation: 3,
@@ -40,5 +47,26 @@ ThemeData buildAppTheme() {
       ),
     ),
   );
+}
+
+class AppTextThemes extends ThemeExtension<AppTextThemes> {
+  const AppTextThemes({required this.display, required this.body});
+
+  final TextStyle display;
+  final TextStyle body;
+
+  @override
+  AppTextThemes copyWith({TextStyle? display, TextStyle? body}) {
+    return AppTextThemes(display: display ?? this.display, body: body ?? this.body);
+  }
+
+  @override
+  AppTextThemes lerp(ThemeExtension<AppTextThemes>? other, double t) {
+    if (other is! AppTextThemes) return this;
+    return AppTextThemes(
+      display: TextStyle.lerp(display, other.display, t)!,
+      body: TextStyle.lerp(body, other.body, t)!,
+    );
+  }
 }
 

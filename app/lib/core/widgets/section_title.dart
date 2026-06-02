@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_theme.dart';
 
 class SectionTitle extends StatelessWidget {
   const SectionTitle(this.text, {super.key, this.size});
@@ -13,14 +14,12 @@ class SectionTitle extends StatelessWidget {
     return Text(
       text,
       textAlign: TextAlign.center,
-      style: const TextStyle(
+      style: Theme.of(context).extension<AppTextThemes>()!.display.merge(const TextStyle(
         color: primary,
-        fontFamily: 'serif',
         fontSize: 34,
         fontWeight: FontWeight.w800,
         height: 1.1,
-      ).copyWith(fontSize: size),
+      )).copyWith(fontSize: size),
     );
   }
 }
-
