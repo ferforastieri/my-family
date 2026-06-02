@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
+import '../theme/app_theme.dart';
 
 class LoveBackground extends StatelessWidget {
   const LoveBackground({super.key, required this.child});
@@ -9,16 +9,16 @@ class LoveBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
     return DecoratedBox(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [bgStart, bgEnd],
+          colors: [palette.bgStart, palette.bgEnd],
         ),
       ),
       child: child,
     );
   }
 }
-

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mix/mix.dart' hide primary;
 
-import '../theme/app_colors.dart';
 import '../theme/app_mix_styles.dart';
 import '../theme/app_theme.dart';
 
@@ -21,9 +20,10 @@ class LoveTextCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
     final card = DecoratedBox(
       decoration: BoxDecoration(
-        border: loveCardBorder,
+        border: Border.all(color: palette.border),
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [BoxShadow(color: Color(0x1aff69b4), blurRadius: 12, offset: Offset(0, 3))],
       ),
@@ -35,18 +35,18 @@ class LoveTextCard extends StatelessWidget {
             Text(
               title,
               style: Theme.of(context).extension<AppTextThemes>()!.display.merge(TextStyle(
-                color: primary,
+                color: palette.primary,
                 fontWeight: FontWeight.w800,
                 fontSize: 24,
               )),
             ),
             const SizedBox(height: 14),
-            Text(body, style: const TextStyle(color: muted, fontSize: 17, height: 1.5)),
+            Text(body, style: TextStyle(color: palette.muted, fontSize: 17, height: 1.5)),
             if (footer != null) ...[
               const Spacer(),
               Align(
                 alignment: Alignment.centerRight,
-                child: Text(footer!, style: TextStyle(color: primary, fontStyle: FontStyle.italic)),
+                child: Text(footer!, style: TextStyle(color: palette.primary, fontStyle: FontStyle.italic)),
               ),
             ],
           ],

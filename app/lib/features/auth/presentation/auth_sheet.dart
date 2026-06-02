@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_button.dart';
 
 class AuthSheet extends StatefulWidget {
   const AuthSheet({super.key, required this.auth});
@@ -18,6 +19,7 @@ class _AuthSheetState extends State<AuthSheet> {
   final name = TextEditingController();
   bool register = false;
   bool loading = false;
+  String? error;
 
   @override
   Widget build(BuildContext context) {
@@ -31,16 +33,24 @@ class _AuthSheetState extends State<AuthSheet> {
           if (register) TextField(controller: name, decoration: const InputDecoration(labelText: 'Nome')),
           TextField(controller: email, decoration: const InputDecoration(labelText: 'Email')),
           TextField(controller: password, decoration: const InputDecoration(labelText: 'Senha'), obscureText: true),
+          if (error != null) ...[
+            const SizedBox(height: 12),
+            Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          ],
           const SizedBox(height: 16),
-          FilledButton(onPressed: loading ? null : _submit, child: Text(register ? 'Cadastrar' : 'Entrar')),
+          AppButton(onPressed: _submit, loading: loading, label: register ? 'Cadastrar' : 'Entrar'),
           TextButton(onPressed: () => setState(() => register = !register), child: Text(register ? 'Já tenho conta' : 'Criar conta')),
+          TextButton(onPressed: loading ? null : _forgotPassword, child: const Text('Esqueci minha senha')),
         ],
       ),
     );
   }
 
   Future<void> _submit() async {
-    setState(() => loading = true);
+    setState(() {
+      loading = true;
+      error = null;
+    });
     try {
       if (register) {
         await widget.auth.register(email.text, password.text, name.text);
@@ -48,9 +58,25 @@ class _AuthSheetState extends State<AuthSheet> {
         await widget.auth.signIn(email.text, password.text);
       }
       if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) setState(() => error = e.toString());
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> _forgotPassword() async {
+    setState(() {
+      loading = true;
+      error = null;
+    });
+    try {
+      await widget.auth.forgotPassword(email.text);
+      if (mounted) setState(() => error = 'Se o email existir, você receberá instruções.');
+    } catch (e) {
+      if (mounted) setState(() => error = e.toString());
     } finally {
       if (mounted) setState(() => loading = false);
     }
   }
 }
-
