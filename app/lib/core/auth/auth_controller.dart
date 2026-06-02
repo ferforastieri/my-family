@@ -85,7 +85,7 @@ class AuthController extends ChangeNotifier {
     token = (response['accessToken'] ?? response['access_token']) as String;
     user = AppUser.fromJson(Map<String, dynamic>.from(response['user'] as Map));
     await tokenStore.write(token!);
-    socket.connect(token: token);
+    await socket.ensureConnected(token: token);
     notifyListeners();
   }
 }

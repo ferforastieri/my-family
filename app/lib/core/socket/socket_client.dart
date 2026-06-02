@@ -44,17 +44,27 @@ class SocketClient {
     _socket!.connect();
   }
 
+  Future<void> ensureConnected({String? token}) async {
+    connect(token: token ?? _token);
+    if (_socket?.connected == true) return;
+    await (_connectCompleter?.future ?? Future<void>.value())
+        .timeout(const Duration(seconds: 8));
+  }
+
   Future<T> emitAck<T>(String event, [Object? payload]) async {
-    connect(token: _token);
-    if (_socket?.connected != true) {
-      await (_connectCompleter?.future ?? Future<void>.value())
-          .timeout(const Duration(seconds: 8));
-    }
+    await ensureConnected();
     final completer = Completer<T>();
+    void exceptionHandler(dynamic error) {
+      if (completer.isCompleted) return;
+      completer.completeError(_socketErrorMessage(error));
+    }
+
+    _socket!.once('exception', exceptionHandler);
     _socket!.emitWithAck(
       event,
       payload,
       ack: (dynamic data) {
+        _socket?.off('exception', exceptionHandler);
         if (data is Map && data['status'] == 'error') {
           completer.completeError(data['message'] ?? 'Erro no servidor');
           return;
@@ -67,6 +77,15 @@ class SocketClient {
       onTimeout: () => throw TimeoutException(
           'Tempo esgotado aguardando resposta de "$event". Verifique a conexão com ${AppConfig.socketUrl}.'),
     );
+  }
+
+  String _socketErrorMessage(dynamic error) {
+    if (error is Map) {
+      final message = error['message'] ?? error['error'];
+      if (message is List && message.isNotEmpty) return message.join(', ');
+      if (message != null) return message.toString();
+    }
+    return error?.toString() ?? 'Erro no servidor';
   }
 
   void on(String event, void Function(dynamic data) handler) {

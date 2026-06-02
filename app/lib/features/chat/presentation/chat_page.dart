@@ -358,8 +358,7 @@ class _MessagePane extends StatelessWidget {
                         final message = chat.messages[index];
                         return _MessageBubble(
                           message: message,
-                          isMine: auth.user != null &&
-                              message.senderId == auth.user?.id,
+                          isMine: _isMine(message, auth.user),
                         );
                       },
                     ),
@@ -487,6 +486,14 @@ class _MessageBubble extends StatelessWidget {
       ),
     );
   }
+}
+
+bool _isMine(ChatMessage message, AppUser? user) {
+  if (user == null) return false;
+  if (message.senderId == user.id) return true;
+  final displayName = user.name?.trim();
+  final expected = displayName?.isNotEmpty == true ? displayName! : user.email;
+  return message.senderId == null && message.senderName == expected;
 }
 
 class _ConversationSkeleton extends StatelessWidget {

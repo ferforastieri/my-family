@@ -38,9 +38,13 @@ void main() {
       theme: theme,
       toast: toast,
       repository: repository));
-  auth.bootstrap().catchError((_) {});
-  chat.bootstrap().catchError((_) {});
-  notifications.bootstrap().catchError((_) {});
+  Future<void>(() async {
+    await auth.bootstrap();
+    await Future.wait([
+      chat.bootstrap(),
+      notifications.bootstrap(),
+    ]);
+  }).catchError((_) {});
   theme.bootstrap();
 }
 
