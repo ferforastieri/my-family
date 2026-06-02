@@ -40,7 +40,7 @@ export class UserService {
       : null;
   }
 
-  async update(id: string, data: { name?: string; role?: UserRole }): Promise<UserDto | null> {
+  async update(id: string, data: { name?: string; role?: UserRole; avatarPath?: string }): Promise<UserDto | null> {
     await this.users.update(id, data);
     return this.findOne(id);
   }

@@ -4,10 +4,10 @@ import { HydratedDocument } from 'mongoose';
 @Schema({ timestamps: { createdAt: true, updatedAt: false }, collection: 'push_subscriptions' })
 export class PushSubscriptionDocument {
   @Prop({ required: true, unique: true })
-  endpoint: string;
+  fcmToken?: string;
 
-  @Prop({ type: Object, required: true })
-  keys: { p256dh: string; auth: string };
+  @Prop({ default: 'unknown' })
+  platform?: 'web' | 'android' | 'ios' | 'unknown';
 
   @Prop()
   userAgent?: string;
@@ -17,4 +17,3 @@ export class PushSubscriptionDocument {
 
 export type PushSubscriptionMongoDocument = HydratedDocument<PushSubscriptionDocument>;
 export const PushSubscriptionSchema = SchemaFactory.createForClass(PushSubscriptionDocument);
-

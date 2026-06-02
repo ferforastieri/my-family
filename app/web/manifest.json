@@ -5,5 +5,6 @@
   "display": "standalone",
   "background_color": "#fff7fb",
   "theme_color": "#d84f7b",
-  "description": "App privado da familia."
+  "description": "App privado da familia.",
+  "gcm_sender_id": "103953800507"
 }

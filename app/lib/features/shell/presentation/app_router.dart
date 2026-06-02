@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/auth/auth_controller.dart';
+import '../../../core/notifications/notifications_controller.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../data/family_repository.dart';
@@ -15,7 +16,13 @@ import '../../resources/presentation/resource_page.dart';
 import '../../story/presentation/story_page.dart';
 import 'app_shell.dart';
 
-GoRouter buildRouter(AuthController auth, ThemeController theme, ToastController toast, FamilyRepository repository) {
+GoRouter buildRouter(
+  AuthController auth,
+  NotificationsController notifications,
+  ThemeController theme,
+  ToastController toast,
+  FamilyRepository repository,
+) {
   return GoRouter(
     initialLocation: '/',
     refreshListenable: auth,
@@ -28,6 +35,7 @@ GoRouter buildRouter(AuthController auth, ThemeController theme, ToastController
       ShellRoute(
         builder: (context, state, child) => AppShell(
           auth: auth,
+          notifications: notifications,
           theme: theme,
           toast: toast,
           currentLocation: state.uri.path,
@@ -51,15 +59,27 @@ GoRouter buildRouter(AuthController auth, ThemeController theme, ToastController
           ),
           GoRoute(
             path: '/carta-de-amor',
-            pageBuilder: (context, state) => _page(ResourcePage(title: 'Carta de Amor', resource: 'cartas', repository: repository, toast: toast)),
+            pageBuilder: (context, state) => _page(ResourcePage(
+                title: 'Carta de Amor',
+                resource: 'cartas',
+                repository: repository,
+                toast: toast)),
           ),
           GoRoute(
             path: '/playlist',
-            pageBuilder: (context, state) => _page(ResourcePage(title: 'Nossa Playlist', resource: 'musicas', repository: repository, toast: toast)),
+            pageBuilder: (context, state) => _page(ResourcePage(
+                title: 'Nossa Playlist',
+                resource: 'musicas',
+                repository: repository,
+                toast: toast)),
           ),
           GoRoute(
             path: '/galeria',
-            pageBuilder: (context, state) => _page(ResourcePage(title: 'Memórias em Fotos', resource: 'fotos', repository: repository, toast: toast)),
+            pageBuilder: (context, state) => _page(ResourcePage(
+                title: 'Memórias em Fotos',
+                resource: 'fotos',
+                repository: repository,
+                toast: toast)),
           ),
           GoRoute(
             path: '/jogos',

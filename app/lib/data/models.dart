@@ -27,6 +27,38 @@ class FamilyItem {
   final Map<String, dynamic> data;
 
   String get id => data['id'].toString();
-  String get title => (data['titulo'] ?? data['title'] ?? data['url'] ?? 'Item').toString();
-  String get subtitle => (data['conteudo'] ?? data['artista'] ?? data['body'] ?? data['texto'] ?? '').toString();
+  String get title =>
+      (data['titulo'] ?? data['title'] ?? data['url'] ?? 'Item').toString();
+  String get subtitle => (data['conteudo'] ??
+          data['artista'] ??
+          data['body'] ??
+          data['texto'] ??
+          '')
+      .toString();
+}
+
+class AppNotification {
+  const AppNotification({
+    required this.id,
+    required this.title,
+    required this.body,
+    required this.url,
+    required this.at,
+  });
+
+  final String id;
+  final String title;
+  final String body;
+  final String url;
+  final DateTime at;
+
+  factory AppNotification.fromJson(Map<String, dynamic> json) =>
+      AppNotification(
+        id: json['id'].toString(),
+        title: (json['title'] ?? 'Nossa Família').toString(),
+        body: (json['body'] ?? '').toString(),
+        url: (json['url'] ?? '/').toString(),
+        at: DateTime.fromMillisecondsSinceEpoch((json['at'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch),
+      );
 }

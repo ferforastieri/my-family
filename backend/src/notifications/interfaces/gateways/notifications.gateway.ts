@@ -66,16 +66,16 @@ export class NotificationsGateway {
   }
 
   @SubscribeMessage('notifications.subscribe')
-  async subscribe(@MessageBody() body: { subscription: { endpoint: string; keys: { p256dh: string; auth: string } }; userAgent?: string }) {
-    if (body.subscription?.endpoint && body.subscription?.keys) {
+  async subscribe(@MessageBody() body: { subscription: { token: string; platform?: 'web' | 'android' | 'ios' | 'unknown' }; userAgent?: string }) {
+    if (body.subscription?.token) {
       await this.notifications.pushSubscribe(body.subscription, body.userAgent);
     }
     return { ok: true };
   }
 
   @SubscribeMessage('notifications.unsubscribe')
-  async unsubscribe(@MessageBody() body: { endpoint: string }) {
-    if (body.endpoint) await this.notifications.pushUnsubscribe(body.endpoint);
+  async unsubscribe(@MessageBody() body: { token: string }) {
+    if (body.token) await this.notifications.pushUnsubscribe(body.token);
     return { ok: true };
   }
 }

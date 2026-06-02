@@ -8,14 +8,13 @@ import {
   Param,
   HttpCode,
   HttpStatus,
-  ServiceUnavailableException,
   NotFoundException,
   UseGuards,
   BadRequestException,
 } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import { NotificationsService, PushSubscriptionDto, NotificationCreateDto } from '../../application/notifications.service';
+import { NotificationsService, FcmSubscriptionDto, NotificationCreateDto } from '../../application/notifications.service';
 import { NOTIFICATION_QUEUE_NAME, NotificationJobPayload } from '../../infrastructure/queues/notification-queue.processor';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@auth/guards/roles.guard';
@@ -32,25 +31,18 @@ export class NotificationsController {
     return this.notifications.list();
   }
 
-  @Get('vapid-public')
-  vapidPublic(): { publicKey: string } {
-    const key = this.notifications.getVapidPublicKey();
-    if (!key) throw new ServiceUnavailableException('Push não configurado');
-    return { publicKey: key };
-  }
-
   @Post('subscribe')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async subscribe(@Body() body: { subscription: PushSubscriptionDto; userAgent?: string }) {
-    if (body.subscription?.endpoint && body.subscription?.keys) {
+  async subscribe(@Body() body: { subscription: FcmSubscriptionDto; userAgent?: string }) {
+    if (body.subscription?.token) {
       await this.notifications.pushSubscribe(body.subscription, body.userAgent);
     }
   }
 
   @Post('unsubscribe')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async unsubscribe(@Body() body: { endpoint: string }) {
-    if (body.endpoint) await this.notifications.pushUnsubscribe(body.endpoint);
+  async unsubscribe(@Body() body: { token: string }) {
+    if (body.token) await this.notifications.pushUnsubscribe(body.token);
   }
 
   @Delete()

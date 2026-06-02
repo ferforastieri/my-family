@@ -40,8 +40,8 @@ export class NotificationsRepository {
     if (!doc) return null;
     return {
       id: toId(doc),
-      endpoint: doc.endpoint,
-      keys: doc.keys,
+      fcmToken: doc.fcmToken ?? null,
+      platform: doc.platform ?? 'unknown',
       userAgent: doc.userAgent ?? null,
       createdAt: doc.createdAt,
     };
@@ -80,14 +80,14 @@ export class NotificationsRepository {
     await this.notifications.deleteMany({}).exec();
   }
 
-  async upsertSubscription(data: { endpoint: string; keys: { p256dh: string; auth: string }; userAgent?: string }) {
+  async upsertFcmToken(data: { fcmToken: string; platform?: 'web' | 'android' | 'ios' | 'unknown'; userAgent?: string }) {
     await this.subscriptions
-      .findOneAndUpdate({ endpoint: data.endpoint }, { $set: data, $setOnInsert: { createdAt: new Date() } }, { upsert: true })
+      .findOneAndUpdate({ fcmToken: data.fcmToken }, { $set: data, $setOnInsert: { createdAt: new Date() } }, { upsert: true })
       .exec();
   }
 
-  async removeSubscriptionByEndpoint(endpoint: string) {
-    await this.subscriptions.deleteOne({ endpoint }).exec();
+  async removeSubscriptionByFcmToken(fcmToken: string) {
+    await this.subscriptions.deleteOne({ fcmToken }).exec();
   }
 
   async listSubscriptions() {

@@ -18,6 +18,9 @@ dependencies:
   mix: ^2.0.3
   google_fonts: ^6.3.2
   flutter_animate: ^4.5.2
+  firebase_core: ^4.10.0
+  firebase_messaging: ^16.3.0
+  flutter_local_notifications: ^21.0.0
 
 dev_dependencies:
   flutter_test:
