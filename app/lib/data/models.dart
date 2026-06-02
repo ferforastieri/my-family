@@ -35,6 +35,13 @@ class FamilyItem {
           data['texto'] ??
           '')
       .toString();
+  String get url => (data['url'] ?? '').toString();
+  String get album {
+    final value = (data['album'] ?? 'Geral').toString().trim();
+    return value.isEmpty ? 'Geral' : value;
+  }
+
+  String get tipo => (data['tipo'] ?? 'imagem').toString();
 }
 
 class AppNotification {

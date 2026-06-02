@@ -10,6 +10,7 @@ class SocketClient {
   Completer<void>? _connectCompleter;
 
   bool get isConnected => _socket?.connected ?? false;
+  String? get token => _token;
 
   void connect({String? token}) {
     if (_socket?.connected == true && _token == token) return;
@@ -25,10 +26,14 @@ class SocketClient {
           .build(),
     );
     _socket!.onConnect((_) {
-      if (_connectCompleter?.isCompleted == false) _connectCompleter!.complete();
+      if (_connectCompleter?.isCompleted == false) {
+        _connectCompleter!.complete();
+      }
     });
     _socket!.onConnectError((dynamic error) {
-      if (_connectCompleter?.isCompleted == false) _connectCompleter!.completeError(error ?? 'Erro ao conectar');
+      if (_connectCompleter?.isCompleted == false) {
+        _connectCompleter!.completeError(error ?? 'Erro ao conectar');
+      }
     });
     _socket!.connect();
   }
@@ -36,7 +41,8 @@ class SocketClient {
   Future<T> emitAck<T>(String event, [Object? payload]) async {
     connect(token: _token);
     if (_socket?.connected != true) {
-      await (_connectCompleter?.future ?? Future<void>.value()).timeout(const Duration(seconds: 8));
+      await (_connectCompleter?.future ?? Future<void>.value())
+          .timeout(const Duration(seconds: 8));
     }
     final completer = Completer<T>();
     _socket!.emitWithAck(
