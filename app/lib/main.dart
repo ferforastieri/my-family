@@ -11,7 +11,6 @@ import 'core/toast/toast_controller.dart';
 import 'core/toast/toast_overlay.dart';
 import 'core/widgets/skeleton.dart';
 import 'data/family_repository.dart';
-import 'features/chat/presentation/chat_floating_button.dart';
 import 'features/shell/presentation/app_router.dart';
 
 void main() {
@@ -72,15 +71,10 @@ class MyFamilyApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           theme: buildAppTheme(color: theme.color, mode: theme.mode),
           routerConfig:
-              buildRouter(auth, notifications, theme, toast, repository),
+              buildRouter(auth, notifications, chat, theme, toast, repository),
           builder: (context, child) => ToastOverlay(
             controller: toast,
-            child: Stack(
-              children: [
-                child ?? const SizedBox.shrink(),
-                ChatFloatingButton(chat: chat, auth: auth, toast: toast),
-              ],
-            ),
+            child: child ?? const SizedBox.shrink(),
           ),
         );
       },

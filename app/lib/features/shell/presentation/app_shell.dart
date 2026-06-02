@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/auth/auth_controller.dart';
+import '../../../core/chat/chat_controller.dart';
 import '../../../core/notifications/notifications_controller.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_controller.dart';
@@ -9,6 +10,7 @@ import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_dropdown.dart';
 import '../../../core/widgets/app_sheet.dart';
 import '../../auth/presentation/auth_sheet.dart';
+import '../../chat/presentation/chat_floating_button.dart';
 import '../../notifications/presentation/notifications_sheet.dart';
 import '../../profile/presentation/edit_profile_sheet.dart';
 
@@ -17,6 +19,7 @@ class AppShell extends StatelessWidget {
     super.key,
     required this.auth,
     required this.notifications,
+    required this.chat,
     required this.theme,
     required this.child,
     required this.currentLocation,
@@ -25,6 +28,7 @@ class AppShell extends StatelessWidget {
 
   final AuthController auth;
   final NotificationsController notifications;
+  final ChatController chat;
   final ThemeController theme;
   final Widget child;
   final String currentLocation;
@@ -101,7 +105,12 @@ class AppShell extends StatelessWidget {
               child: Divider(height: 1),
             ),
           ),
-          body: child,
+          body: Stack(
+            children: [
+              child,
+              ChatFloatingButton(chat: chat, auth: auth, toast: toast),
+            ],
+          ),
         );
       },
     );

@@ -142,6 +142,8 @@ Compose/deploy (`.env` ou Gitea secrets):
 - `MONGO_DB`
 - `BACKEND_PORT`
 - `FRONT_PORT`
+- `MONGO_PORT`
+- `REDIS_PORT`
 - `JWT_SECRET`
 - `JWT_EXPIRES_IN`
 - `CORS_ORIGIN`
@@ -182,7 +184,8 @@ Portas padrao:
 
 - Backend: `3459 -> 3001`
 - Frontend Web: `3458 -> 80`
-- Mongo e Redis ficam bindados em `127.0.0.1` quando expostos.
+- Mongo: `127.0.0.1:27019 -> 27017`
+- Redis: `127.0.0.1:6389 -> 6379`
 
 ## Secrets Do Gitea
 
@@ -198,6 +201,8 @@ Secrets recomendados:
 - `MONGO_DB`
 - `BACKEND_PORT`
 - `FRONT_PORT`
+- `MONGO_PORT`
+- `REDIS_PORT`
 - `JWT_EXPIRES_IN`
 - `CORS_ORIGIN`
 - `API_BASE_URL`
