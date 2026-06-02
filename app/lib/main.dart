@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'core/auth/auth_controller.dart';
 import 'core/chat/chat_controller.dart';
@@ -15,6 +16,14 @@ import 'features/shell/presentation/app_router.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarDividerColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.dark,
+    systemNavigationBarIconBrightness: Brightness.dark,
+  ));
   final socket = SocketClient();
   final auth = AuthController(socket, TokenStore());
   final repository = FamilyRepository(socket);
@@ -63,7 +72,8 @@ class MyFamilyApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             theme: buildAppTheme(color: theme.color, mode: theme.mode),
             home: ToastOverlay(
-                controller: toast, child: const PageSkeleton(cards: 3)),
+                controller: toast,
+                child: const _SystemSafeArea(child: PageSkeleton(cards: 3))),
           );
         }
         return MaterialApp.router(
@@ -74,10 +84,43 @@ class MyFamilyApp extends StatelessWidget {
               buildRouter(auth, notifications, chat, theme, toast, repository),
           builder: (context, child) => ToastOverlay(
             controller: toast,
-            child: child ?? const SizedBox.shrink(),
+            child: _SystemSafeArea(child: child ?? const SizedBox.shrink()),
           ),
         );
       },
+    );
+  }
+}
+
+class _SystemSafeArea extends StatelessWidget {
+  const _SystemSafeArea({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final overlayStyle = brightness == Brightness.dark
+        ? SystemUiOverlayStyle.light.copyWith(
+            statusBarColor: Colors.transparent,
+            systemNavigationBarColor: Colors.transparent,
+            systemNavigationBarDividerColor: Colors.transparent,
+          )
+        : SystemUiOverlayStyle.dark.copyWith(
+            statusBarColor: Colors.transparent,
+            systemNavigationBarColor: Colors.transparent,
+            systemNavigationBarDividerColor: Colors.transparent,
+          );
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: overlayStyle,
+      child: SafeArea(
+        top: true,
+        bottom: true,
+        left: false,
+        right: false,
+        child: child,
+      ),
     );
   }
 }
