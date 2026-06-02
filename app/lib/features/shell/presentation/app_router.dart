@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/auth/auth_controller.dart';
+import '../../../core/chat/chat_controller.dart';
 import '../../../core/notifications/notifications_controller.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/toast/toast_controller.dart';
@@ -19,6 +20,7 @@ import 'app_shell.dart';
 GoRouter buildRouter(
   AuthController auth,
   NotificationsController notifications,
+  ChatController chat,
   ThemeController theme,
   ToastController toast,
   FamilyRepository repository,
@@ -36,6 +38,7 @@ GoRouter buildRouter(
         builder: (context, state, child) => AppShell(
           auth: auth,
           notifications: notifications,
+          chat: chat,
           theme: theme,
           toast: toast,
           currentLocation: state.uri.path,

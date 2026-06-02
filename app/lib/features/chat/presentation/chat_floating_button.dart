@@ -46,7 +46,10 @@ class _ChatFloatingButtonState extends State<ChatFloatingButton> {
             onPressed: () {
               final next = !open;
               setState(() => open = next);
-              if (next) widget.chat.refreshConversations();
+              if (next) {
+                widget.chat.refreshConversations().catchError(
+                    (error) => widget.toast.error(error.toString()));
+              }
             },
             backgroundColor: palette.primary,
             foregroundColor: Colors.white,
@@ -123,8 +126,10 @@ class _ChatPanelState extends State<_ChatPanel> {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     final size = MediaQuery.of(context).size;
-    final panelWidth = size.width < 520 ? size.width - 36 : 420.0;
-    final panelHeight = size.height < 700 ? size.height - 120 : 560.0;
+    final panelWidth = (size.width < 520 ? size.width - 36 : 420.0)
+        .clamp(300.0, 420.0)
+        .toDouble();
+    final panelHeight = (size.height - 120).clamp(260.0, 560.0).toDouble();
     return Material(
       elevation: 18,
       shadowColor: palette.primary.withValues(alpha: .25),
