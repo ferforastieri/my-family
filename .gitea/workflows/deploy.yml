@@ -138,7 +138,7 @@ jobs:
               --dart-define=FIREBASE_WEB_PUSH_CERTIFICATE_KEY="${FIREBASE_WEB_PUSH_CERTIFICATE_KEY:-}"
 
       - name: Upload Android APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: my-family-android-apk
           path: app/build/app/outputs/flutter-apk/app-release.apk
