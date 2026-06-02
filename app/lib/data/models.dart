@@ -69,3 +69,77 @@ class AppNotification {
             DateTime.now().millisecondsSinceEpoch),
       );
 }
+
+class ChatConversation {
+  const ChatConversation({
+    required this.id,
+    required this.type,
+    required this.title,
+    required this.participantIds,
+  });
+
+  final String id;
+  final String type;
+  final String title;
+  final List<String> participantIds;
+
+  factory ChatConversation.fromJson(Map<String, dynamic> json) =>
+      ChatConversation(
+        id: json['id'].toString(),
+        type: (json['type'] ?? 'global').toString(),
+        title: (json['title'] ?? 'Chat').toString(),
+        participantIds: ((json['participantIds'] as List?) ?? const [])
+            .map((id) => id.toString())
+            .toList(),
+      );
+}
+
+class ChatMessage {
+  const ChatMessage({
+    required this.id,
+    required this.conversationId,
+    required this.senderName,
+    required this.at,
+    this.senderId,
+    this.text,
+    this.mediaUrl,
+    this.mediaType,
+  });
+
+  final String id;
+  final String conversationId;
+  final String? senderId;
+  final String senderName;
+  final String? text;
+  final String? mediaUrl;
+  final String? mediaType;
+  final DateTime at;
+
+  factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
+        id: json['id'].toString(),
+        conversationId: json['conversationId'].toString(),
+        senderId: json['senderId']?.toString(),
+        senderName: (json['senderName'] ?? 'Visitante').toString(),
+        text: json['text']?.toString(),
+        mediaUrl: json['mediaUrl']?.toString(),
+        mediaType: json['mediaType']?.toString(),
+        at: DateTime.fromMillisecondsSinceEpoch((json['at'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch),
+      );
+}
+
+class ChatUser {
+  const ChatUser({required this.id, required this.name, required this.email});
+
+  final String id;
+  final String? name;
+  final String email;
+
+  String get label => name?.isNotEmpty == true ? name! : email;
+
+  factory ChatUser.fromJson(Map<String, dynamic> json) => ChatUser(
+        id: json['id'].toString(),
+        name: json['name']?.toString(),
+        email: (json['email'] ?? '').toString(),
+      );
+}

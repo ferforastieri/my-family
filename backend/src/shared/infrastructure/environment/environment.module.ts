@@ -58,10 +58,14 @@ class EnvironmentFactory {
     const output = configDotenv({
       path,
     });
+    const uploadPath = process.env.UPLOAD_PATH || output.parsed?.UPLOAD_PATH;
+    if (!uploadPath) {
+      throw new Error('UPLOAD_PATH é obrigatório');
+    }
 
     return new Environment({
       type:
-        (output.parsed?.NODE_ENV as 'development' | 'production' | 'staging') ||
+        ((process.env.NODE_ENV || output.parsed?.NODE_ENV) as 'development' | 'production' | 'staging') ||
         'development',
       http: {
         port: +(process.env.PORT || output.parsed?.PORT || 3000),
@@ -73,25 +77,27 @@ class EnvironmentFactory {
         },
       },
       jwt: {
-        secret: output.parsed?.JWT_SECRET || 'change-me',
-        expiresIn: output.parsed?.JWT_EXPIRES_IN || '7d',
+        secret: process.env.JWT_SECRET || output.parsed?.JWT_SECRET || 'change-me',
+        expiresIn: process.env.JWT_EXPIRES_IN || output.parsed?.JWT_EXPIRES_IN || '7d',
       },
-      uploadPath: output.parsed?.UPLOAD_PATH || 'sda1/Aplicativos/Family',
+      uploadPath,
       cors: {
-        origin: output.parsed?.CORS_ORIGIN || '*',
+        origin: process.env.CORS_ORIGIN || output.parsed?.CORS_ORIGIN || '*',
       },
       smtp:
-        output.parsed?.SMTP_HOST && output.parsed?.SMTP_USER && output.parsed?.SMTP_PASS
+        (process.env.SMTP_HOST || output.parsed?.SMTP_HOST) &&
+        (process.env.SMTP_USER || output.parsed?.SMTP_USER) &&
+        (process.env.SMTP_PASS || output.parsed?.SMTP_PASS)
           ? {
-              host: output.parsed.SMTP_HOST,
-              port: +(output.parsed.SMTP_PORT || '587'),
-              user: output.parsed.SMTP_USER,
-              pass: output.parsed.SMTP_PASS,
+              host: process.env.SMTP_HOST || output.parsed!.SMTP_HOST,
+              port: +(process.env.SMTP_PORT || output.parsed?.SMTP_PORT || '587'),
+              user: process.env.SMTP_USER || output.parsed!.SMTP_USER,
+              pass: process.env.SMTP_PASS || output.parsed!.SMTP_PASS,
             }
           : undefined,
-      emailFrom: output.parsed?.EMAIL_FROM,
-      emailFromName: output.parsed?.EMAIL_FROM_NAME || 'Nossa Família',
-      passwordResetUrl: output.parsed?.PASSWORD_RESET_URL || '',
+      emailFrom: process.env.EMAIL_FROM || output.parsed?.EMAIL_FROM,
+      emailFromName: process.env.EMAIL_FROM_NAME || output.parsed?.EMAIL_FROM_NAME || 'Nossa Família',
+      passwordResetUrl: process.env.PASSWORD_RESET_URL || output.parsed?.PASSWORD_RESET_URL || '',
       firebase:
         process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
         output.parsed?.FIREBASE_SERVICE_ACCOUNT_PATH ||

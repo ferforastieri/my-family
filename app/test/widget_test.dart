@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_family/core/auth/auth_controller.dart';
 import 'package:my_family/core/auth/token_store.dart';
+import 'package:my_family/core/chat/chat_controller.dart';
 import 'package:my_family/core/notifications/notifications_controller.dart';
 import 'package:my_family/core/socket/socket_client.dart';
 import 'package:my_family/core/theme/theme_controller.dart';
@@ -12,13 +13,15 @@ import 'package:my_family/main.dart';
 void main() {
   testWidgets('shows loading while auth bootstraps', (tester) async {
     final socket = SocketClient();
+    final repository = FamilyRepository(socket);
     await tester.pumpWidget(
       MyFamilyApp(
         auth: AuthController(socket, TokenStore()),
         notifications: NotificationsController(socket),
+        chat: ChatController(socket, repository),
         theme: ThemeController(),
         toast: ToastController(),
-        repository: FamilyRepository(socket),
+        repository: repository,
       ),
     );
 
