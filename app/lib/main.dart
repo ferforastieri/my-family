@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'core/auth/auth_controller.dart';
+import 'core/chat/chat_controller.dart';
 import 'core/auth/token_store.dart';
 import 'core/notifications/notifications_controller.dart';
 import 'core/socket/socket_client.dart';
@@ -10,22 +11,26 @@ import 'core/toast/toast_controller.dart';
 import 'core/toast/toast_overlay.dart';
 import 'core/widgets/skeleton.dart';
 import 'data/family_repository.dart';
+import 'features/chat/presentation/chat_floating_button.dart';
 import 'features/shell/presentation/app_router.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   final socket = SocketClient();
   final auth = AuthController(socket, TokenStore());
+  final repository = FamilyRepository(socket);
+  final chat = ChatController(socket, repository);
   final notifications = NotificationsController(socket);
   final theme = ThemeController();
   final toast = ToastController();
   runApp(MyFamilyApp(
       auth: auth,
       notifications: notifications,
+      chat: chat,
       theme: theme,
       toast: toast,
-      repository: FamilyRepository(socket)));
-  auth.bootstrap();
+      repository: repository));
+  auth.bootstrap().then((_) => chat.bootstrap()).catchError((_) {});
   notifications.bootstrap();
   theme.bootstrap();
 }
@@ -35,6 +40,7 @@ class MyFamilyApp extends StatelessWidget {
     super.key,
     required this.auth,
     required this.notifications,
+    required this.chat,
     required this.theme,
     required this.toast,
     required this.repository,
@@ -42,6 +48,7 @@ class MyFamilyApp extends StatelessWidget {
 
   final AuthController auth;
   final NotificationsController notifications;
+  final ChatController chat;
   final ThemeController theme;
   final ToastController toast;
   final FamilyRepository repository;
@@ -67,7 +74,14 @@ class MyFamilyApp extends StatelessWidget {
           routerConfig:
               buildRouter(auth, notifications, theme, toast, repository),
           builder: (context, child) => ToastOverlay(
-              controller: toast, child: child ?? const SizedBox.shrink()),
+            controller: toast,
+            child: Stack(
+              children: [
+                child ?? const SizedBox.shrink(),
+                ChatFloatingButton(chat: chat, auth: auth, toast: toast),
+              ],
+            ),
+          ),
         );
       },
     );

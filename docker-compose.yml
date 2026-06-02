@@ -56,7 +56,7 @@ services:
     ports:
       - "${BACKEND_PORT:-3459}:3001"
     volumes:
-      - uploads_data:/data/uploads
+      - ${UPLOAD_HOST_PATH:?UPLOAD_HOST_PATH is required}:/data/uploads
     depends_on:
       mongo:
         condition: service_healthy
@@ -94,4 +94,3 @@ networks:
 
 volumes:
   mongo_data:
-  uploads_data:

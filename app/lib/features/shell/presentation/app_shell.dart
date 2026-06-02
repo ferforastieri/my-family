@@ -390,18 +390,16 @@ class _Logo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(999),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-        child: Text(
-          '💕 Nossa Família',
-          style: TextStyle(
-              color: palette.primary,
-              fontWeight: FontWeight.w900,
-              fontSize: 21),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+        child: Image.asset(
+          'assets/brand/family-logo.png',
+          width: 46,
+          height: 46,
+          fit: BoxFit.contain,
         ),
       ),
     );

@@ -20,7 +20,7 @@ class SocketClient {
     _socket = io.io(
       AppConfig.socketUrl,
       io.OptionBuilder()
-          .setTransports(['websocket'])
+          .setTransports(['polling', 'websocket'])
           .disableAutoConnect()
           .setAuth(token == null ? <String, dynamic>{} : {'token': token})
           .build(),
