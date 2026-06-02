@@ -43,9 +43,9 @@ class AppShell extends StatelessWidget {
         final wide = constraints.maxWidth >= 860;
         return Scaffold(
           appBar: AppBar(
-            toolbarHeight: 64,
+            toolbarHeight: 92,
             titleSpacing: 0,
-            leadingWidth: wide ? 220 : null,
+            leadingWidth: wide ? 128 : null,
             leading: wide
                 ? Align(
                     alignment: Alignment.centerLeft,
@@ -403,11 +403,11 @@ class _Logo extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(999),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         child: Image.asset(
           'assets/brand/family-logo.png',
-          width: 46,
-          height: 46,
+          width: 78,
+          height: 78,
           fit: BoxFit.contain,
         ),
       ),
