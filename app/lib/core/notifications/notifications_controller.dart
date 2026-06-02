@@ -86,7 +86,7 @@ class NotificationsController extends ChangeNotifier {
       if (!kIsWeb) {
         await _localNotifications.initialize(
           settings: const InitializationSettings(
-              android: AndroidInitializationSettings('@mipmap/ic_launcher')),
+              android: AndroidInitializationSettings('ic_notification')),
         );
       }
 
@@ -111,6 +111,7 @@ class NotificationsController extends ChangeNotifier {
               android: AndroidNotificationDetails(
                 'my_family_notifications',
                 'Nossa Família',
+                icon: 'ic_notification',
                 importance: Importance.high,
                 priority: Priority.high,
               ),
