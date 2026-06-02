@@ -75,7 +75,9 @@ class _FlowerPainter extends CustomPainter {
 
     _drawNight(canvas, size);
     _drawFireflies(canvas, size, scale);
+    _drawTrees(canvas, size, scale);
     _drawGrassBed(canvas, size, scale);
+    _drawGardenFlowers(canvas, size, scale);
 
     _drawFlower(canvas, base.translate(0, 0), scale, grow, 1, 0, 0);
     _drawFlower(canvas, base.translate(-135 * scale, 12 * scale), scale * .74, grow, .78, -.24, .35);
@@ -154,16 +156,17 @@ class _FlowerPainter extends CustomPainter {
         ..maskFilter = MaskFilter.blur(BlurStyle.normal, 24 * scale),
     );
 
-    for (final angle in [-70.0, -42.0, -16.0, 16.0, 42.0, 70.0]) {
-      _drawPetal(canvas, head, scale, angle, palette.primaryDark, const Color(0xffffb6c1));
+    for (var i = 0; i < 12; i++) {
+      final angle = i * 30.0;
+      _drawRadialPetal(canvas, head, scale, angle, palette.primaryDark, const Color(0xffffb6c1));
     }
 
-    _drawPetal(canvas, head.translate(4 * scale, 10 * scale), scale * .82, 132, const Color(0xff39c6d6), const Color(0xffa7ffee));
+    _drawRadialPetal(canvas, head.translate(26 * scale, 34 * scale), scale * .72, 142, const Color(0xff39c6d6), const Color(0xffa7ffee));
 
     final white = Paint()..color = Colors.white.withValues(alpha: .96);
-    canvas.drawOval(Rect.fromCenter(center: head.translate(0, 8 * scale), width: 70 * scale, height: 34 * scale), white);
+    canvas.drawOval(Rect.fromCenter(center: head, width: 72 * scale, height: 44 * scale), white);
     canvas.drawOval(
-      Rect.fromCenter(center: head.translate(0, 7 * scale), width: 42 * scale, height: 21 * scale),
+      Rect.fromCenter(center: head, width: 43 * scale, height: 24 * scale),
       Paint()
         ..shader = LinearGradient(colors: [const Color(0xffffb6c1), palette.primary]).createShader(
           Rect.fromCenter(center: head, width: 42 * scale, height: 21 * scale),
@@ -171,31 +174,25 @@ class _FlowerPainter extends CustomPainter {
     );
   }
 
-  void _drawPetal(Canvas canvas, Offset center, double scale, double degrees, Color dark, Color light) {
-    final rect = Rect.fromCenter(center: Offset.zero, width: 58 * scale, height: 88 * scale);
-    final pulse = 1 + math.sin(t * math.pi * 2 + degrees) * .025;
-    final path = Path()
-      ..moveTo(0, 0)
-      ..cubicTo(36 * scale, -34 * scale, 30 * scale, -86 * scale, 0, -96 * scale)
-      ..cubicTo(-30 * scale, -86 * scale, -36 * scale, -34 * scale, 0, 0)
-      ..close();
+  void _drawRadialPetal(Canvas canvas, Offset center, double scale, double degrees, Color dark, Color light) {
+    final pulse = 1 + math.sin(t * math.pi * 2 + degrees * .07) * .025;
+    final rect = Rect.fromCenter(center: Offset(0, -50 * scale), width: 42 * scale, height: 82 * scale);
 
     canvas.save();
     canvas.translate(center.dx, center.dy);
     canvas.rotate(degrees * math.pi / 180);
     canvas.scale(pulse, pulse);
-    canvas.drawPath(
-      path,
+    canvas.drawOval(
+      rect,
       Paint()
-        ..shader = LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: [dark, light]).createShader(rect)
-        ..style = PaintingStyle.fill,
+        ..shader = LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: [dark, light]).createShader(rect),
     );
-    canvas.drawPath(
-      path,
+    canvas.drawOval(
+      rect,
       Paint()
-        ..color = Colors.white.withValues(alpha: .22)
+        ..color = Colors.white.withValues(alpha: .20)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.4 * scale,
+        ..strokeWidth = 1.2 * scale,
     );
     canvas.restore();
   }
@@ -301,6 +298,92 @@ class _FlowerPainter extends CustomPainter {
         ..close();
       canvas.drawPath(path, paint);
     }
+  }
+
+  void _drawTrees(Canvas canvas, Size size, double scale) {
+    final ground = size.height - 62 * scale;
+    _drawTree(canvas, Offset(size.width * .10, ground), scale * 1.08, -.05);
+    _drawTree(canvas, Offset(size.width * .88, ground + 4 * scale), scale * .92, .08);
+  }
+
+  void _drawTree(Canvas canvas, Offset base, double scale, double lean) {
+    canvas.save();
+    canvas.translate(base.dx, base.dy);
+    canvas.rotate(lean);
+
+    final trunk = RRect.fromRectAndRadius(
+      Rect.fromLTWH(-13 * scale, -170 * scale, 26 * scale, 180 * scale),
+      Radius.circular(12 * scale),
+    );
+    canvas.drawRRect(
+      trunk,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: [Color(0xff6b3f2a), Color(0xff9a623d)],
+        ).createShader(trunk.outerRect),
+    );
+
+    final leafPaint = Paint()..color = palette.primary.withValues(alpha: .22);
+    final darkLeafPaint = Paint()..color = palette.primaryDark.withValues(alpha: .20);
+    for (final blob in [
+      (Offset(-42 * scale, -190 * scale), 64 * scale, leafPaint),
+      (Offset(28 * scale, -205 * scale), 72 * scale, darkLeafPaint),
+      (Offset(0, -246 * scale), 78 * scale, leafPaint),
+      (Offset(58 * scale, -168 * scale), 58 * scale, leafPaint),
+      (Offset(-72 * scale, -150 * scale), 54 * scale, darkLeafPaint),
+    ]) {
+      canvas.drawCircle(blob.$1, blob.$2, blob.$3);
+    }
+
+    canvas.restore();
+  }
+
+  void _drawGardenFlowers(Canvas canvas, Size size, double scale) {
+    final ground = size.height - 80 * scale;
+    final colors = [
+      (const Color(0xffff69b4), const Color(0xffffb6c1)),
+      (const Color(0xffef4444), const Color(0xfffca5a5)),
+      (const Color(0xffa855f7), const Color(0xffd8b4fe)),
+      (const Color(0xff3b82f6), const Color(0xff93c5fd)),
+      (const Color(0xffffb703), const Color(0xffffe08a)),
+    ];
+    for (var i = 0; i < 22; i++) {
+      final x = size.width * (.04 + i * .044);
+      final y = ground + math.sin(i * 1.7) * 12 * scale;
+      final flowerScale = scale * (.30 + (i % 5) * .035);
+      final pair = colors[i % colors.length];
+      _drawSmallFlower(canvas, Offset(x, y), flowerScale, pair.$1, pair.$2, i * .21);
+    }
+  }
+
+  void _drawSmallFlower(Canvas canvas, Offset base, double scale, Color dark, Color light, double phase) {
+    final sway = math.sin((t + phase) * math.pi * 2) * .10;
+    final stemPaint = Paint()
+      ..color = const Color(0xff3f7a38).withValues(alpha: .75)
+      ..strokeWidth = 4 * scale
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    final top = base.translate(math.sin(phase) * 10 * scale + sway * 18 * scale, -86 * scale);
+    canvas.drawLine(base, top, stemPaint);
+    _drawLeaf(canvas, base.translate(0, -38 * scale), scale * .34, phase.isNegative ? -40 : 42, phase % 2 < 1);
+
+    for (var i = 0; i < 8; i++) {
+      final angle = i * math.pi / 4;
+      final center = top.translate(math.cos(angle) * 18 * scale, math.sin(angle) * 18 * scale);
+      final rect = Rect.fromCenter(center: center, width: 20 * scale, height: 30 * scale);
+      canvas.save();
+      canvas.translate(center.dx, center.dy);
+      canvas.rotate(angle + math.pi / 2);
+      canvas.translate(-center.dx, -center.dy);
+      canvas.drawOval(
+        rect,
+        Paint()..shader = LinearGradient(colors: [dark, light]).createShader(rect),
+      );
+      canvas.restore();
+    }
+    canvas.drawCircle(top, 10 * scale, Paint()..color = const Color(0xffffd166));
   }
 
   @override
