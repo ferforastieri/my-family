@@ -191,7 +191,8 @@ class _DesktopMainNavigation extends StatelessWidget {
             label: 'Mais',
             selected: _isSelected('/atalhos/mais', currentLocation) ||
                 currentLocation == '/jogos' ||
-                currentLocation == '/listas',
+                currentLocation == '/listas' ||
+                currentLocation == '/localizacao',
             onTap: () => context.go('/atalhos/mais'),
           ),
           _DesktopNavPill(
@@ -473,7 +474,8 @@ class _MobileBottomNavigation extends StatelessWidget {
                 label: 'Mais',
                 selected: _isSelected('/atalhos/mais', currentLocation) ||
                     currentLocation == '/jogos' ||
-                    currentLocation == '/listas',
+                    currentLocation == '/listas' ||
+                    currentLocation == '/localizacao',
                 onTap: () => context.go('/atalhos/mais'),
               ),
               _MobileNavButton(

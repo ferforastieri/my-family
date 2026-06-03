@@ -6,7 +6,12 @@ import { cleanUndefined, toId } from '@shared/infrastructure/database/mongo.util
 import type { LocationUpdateEntity } from '@shared/domain/entities';
 
 export type LocationUpdateWrite = Pick<LocationUpdateEntity, 'latitude' | 'longitude'> &
-  Partial<Pick<LocationUpdateEntity, 'userId' | 'userName' | 'accuracy' | 'altitude' | 'speed' | 'heading' | 'platform'>>;
+  Partial<
+    Pick<
+      LocationUpdateEntity,
+      'userId' | 'userName' | 'accuracy' | 'altitude' | 'speed' | 'heading' | 'batteryLevel' | 'isCharging' | 'platform'
+    >
+  >;
 
 @Injectable()
 export class LocationRepository {
@@ -24,6 +29,8 @@ export class LocationRepository {
       altitude: doc.altitude ?? null,
       speed: doc.speed ?? null,
       heading: doc.heading ?? null,
+      batteryLevel: doc.batteryLevel ?? null,
+      isCharging: doc.isCharging ?? null,
       platform: doc.platform ?? 'unknown',
       createdAt: doc.createdAt,
     };
@@ -36,5 +43,15 @@ export class LocationRepository {
   async latest(limit = 50) {
     return (await this.model.find().sort({ createdAt: -1 }).limit(limit).exec()).map((doc) => this.toEntity(doc)!);
   }
-}
 
+  async latestByPerson(limit = 100) {
+    const rows = await this.latest(limit);
+    const seen = new Set<string>();
+    return rows.filter((row) => {
+      const key = row.userId || row.userName || `${row.latitude},${row.longitude}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+}

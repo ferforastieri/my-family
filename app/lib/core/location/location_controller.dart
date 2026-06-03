@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:battery_plus/battery_plus.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../socket/socket_client.dart';
@@ -9,6 +10,7 @@ class LocationController {
   LocationController(this.socket);
 
   final SocketClient socket;
+  final Battery _battery = Battery();
   StreamSubscription<Position>? _positionSubscription;
   Timer? _timer;
   bool _started = false;
@@ -60,6 +62,8 @@ class LocationController {
 
   Future<void> _sendPosition(Position position) async {
     try {
+      final batteryLevel = await _safeBatteryLevel();
+      final batteryState = await _safeBatteryState();
       await socket.emitAck<Map<String, dynamic>>('location.update', {
         'latitude': position.latitude,
         'longitude': position.longitude,
@@ -67,10 +71,30 @@ class LocationController {
         'altitude': position.altitude,
         'speed': position.speed,
         'heading': position.heading,
+        if (batteryLevel != null) 'batteryLevel': batteryLevel,
+        if (batteryState != null)
+          'isCharging': batteryState == BatteryState.charging ||
+              batteryState == BatteryState.full,
         'platform': _platform,
       });
     } catch (_) {
       //
+    }
+  }
+
+  Future<int?> _safeBatteryLevel() async {
+    try {
+      return await _battery.batteryLevel;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<BatteryState?> _safeBatteryState() async {
+    try {
+      return await _battery.batteryState;
+    } catch (_) {
+      return null;
     }
   }
 
@@ -86,4 +110,3 @@ class LocationController {
     _positionSubscription?.cancel();
   }
 }
-

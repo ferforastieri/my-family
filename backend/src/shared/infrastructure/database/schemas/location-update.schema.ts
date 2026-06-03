@@ -27,6 +27,12 @@ export class LocationUpdateDocument {
   @Prop()
   heading?: number;
 
+  @Prop()
+  batteryLevel?: number;
+
+  @Prop()
+  isCharging?: boolean;
+
   @Prop({ default: 'unknown', enum: ['web', 'android', 'ios', 'unknown'] })
   platform?: 'web' | 'android' | 'ios' | 'unknown';
 
@@ -35,4 +41,3 @@ export class LocationUpdateDocument {
 
 export type LocationUpdateMongoDocument = HydratedDocument<LocationUpdateDocument>;
 export const LocationUpdateSchema = SchemaFactory.createForClass(LocationUpdateDocument);
-
