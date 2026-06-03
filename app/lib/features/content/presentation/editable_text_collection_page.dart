@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/auth/auth_controller.dart';
+import '../../../core/api/query_keys.dart';
+import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_pagination.dart';
@@ -39,7 +41,6 @@ class _EditableTextCollectionPageState
   static const _pageLimit = 12;
 
   int page = 1;
-  late Future<PaginatedResult<FamilyItem>> future = _load();
 
   @override
   void initState() {
@@ -59,7 +60,11 @@ class _EditableTextCollectionPageState
 
   void _handleRealtimeChange(dynamic _) {
     if (!mounted) return;
-    setState(() => future = _load());
+    _invalidate();
+  }
+
+  void _invalidate() {
+    invalidateQueries(context, QueryKeys.textCollectionScope(widget.prefix));
   }
 
   Future<PaginatedResult<FamilyItem>> _load() async {
@@ -92,15 +97,15 @@ class _EditableTextCollectionPageState
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: LoveBackground(
-        child: FutureBuilder<PaginatedResult<FamilyItem>>(
-          future: future,
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) return const PageSkeleton(cards: 3);
-            final result = snapshot.data!;
+        child: AppQuery<PaginatedResult<FamilyItem>>(
+          queryKey: QueryKeys.textCollection(widget.prefix, page, _pageLimit),
+          queryFn: _load,
+          loading: const PageSkeleton(cards: 3),
+          builder: (context, result, refetch) {
             final items = result.items;
             return RefreshIndicator(
               onRefresh: () async {
-                setState(() => future = _load());
+                await refetch();
               },
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -196,7 +201,6 @@ class _EditableTextCollectionPageState
                                                     ? () {
                                                         setState(() {
                                                           page -= 1;
-                                                          future = _load();
                                                         });
                                                       }
                                                     : null,
@@ -204,7 +208,6 @@ class _EditableTextCollectionPageState
                                                     ? () {
                                                         setState(() {
                                                           page += 1;
-                                                          future = _load();
                                                         });
                                                       }
                                                     : null,
@@ -246,7 +249,7 @@ class _EditableTextCollectionPageState
             await widget.repository.update('cartas', item.id, payload);
           }
           widget.toast.success('Texto salvo.');
-          setState(() => future = _load());
+          _invalidate();
         },
       ),
     );
@@ -255,7 +258,7 @@ class _EditableTextCollectionPageState
   Future<void> _delete(FamilyItem item) async {
     await widget.repository.delete('cartas', item.id);
     widget.toast.success('Texto removido.');
-    setState(() => future = _load());
+    _invalidate();
   }
 }
 

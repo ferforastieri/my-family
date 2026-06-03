@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../data/family_repository.dart';
 import '../../data/models.dart';
+import '../api/socket_api_client.dart';
 import '../socket/socket_client.dart';
 
 class ChatController extends ChangeNotifier {
@@ -10,6 +11,7 @@ class ChatController extends ChangeNotifier {
 
   final SocketClient socket;
   final FamilyRepository repository;
+  late final SocketApiClient api = SocketApiClient(socket);
 
   final List<ChatConversation> conversations = [];
   final List<ChatMessage> messages = [];
@@ -42,8 +44,8 @@ class ChatController extends ChangeNotifier {
       notifyListeners();
     }
     try {
-      final data = await socket.emitAck<dynamic>(
-          'chat.conversations', {'page': 1, 'limit': 30});
+      final data = await api
+          .query<dynamic>('chat.conversations', {'page': 1, 'limit': 30});
       final rows = data is List
           ? data
           : ((Map<String, dynamic>.from(data as Map)['items'] as List?) ??
@@ -71,7 +73,7 @@ class ChatController extends ChangeNotifier {
   }
 
   Future<void> refreshUsers() async {
-    final rows = await socket.emitAck<List<dynamic>>('chat.users');
+    final rows = await api.query<List<dynamic>>('chat.users');
     users
       ..clear()
       ..addAll(rows.map(
@@ -85,7 +87,7 @@ class ChatController extends ChangeNotifier {
     errorMessage = null;
     notifyListeners();
     try {
-      final data = await socket.emitAck<dynamic>('chat.messages',
+      final data = await api.query<dynamic>('chat.messages',
           {'conversationId': conversation.id, 'page': 1, 'limit': 80});
       final rows = data is List
           ? data
@@ -106,7 +108,7 @@ class ChatController extends ChangeNotifier {
 
   Future<void> createConversation(ChatUser user) async {
     final row =
-        await socket.emitAck<Map<String, dynamic>>('chat.conversation.create', {
+        await api.mutate<Map<String, dynamic>>('chat.conversation.create', {
       'title': user.label,
       'participantIds': [user.id],
     });
@@ -123,8 +125,7 @@ class ChatController extends ChangeNotifier {
     if (text.trim().isEmpty) {
       throw Exception('Escreva uma mensagem.');
     }
-    final row =
-        await socket.emitAck<Map<String, dynamic>>('chat.message.send', {
+    final row = await api.mutate<Map<String, dynamic>>('chat.message.send', {
       'conversationId': conversation.id,
       'text': text.trim(),
       if (senderName != null && senderName.trim().isNotEmpty)
@@ -151,8 +152,7 @@ class ChatController extends ChangeNotifier {
       'texto': text.trim().isEmpty ? 'Imagem enviada no chat' : text.trim(),
       'album': 'Chat',
     });
-    final row =
-        await socket.emitAck<Map<String, dynamic>>('chat.message.send', {
+    final row = await api.mutate<Map<String, dynamic>>('chat.message.send', {
       'conversationId': conversation.id,
       'text': text.trim(),
       'mediaUrl': relativePath,

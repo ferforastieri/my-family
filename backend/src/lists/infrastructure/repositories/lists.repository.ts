@@ -7,8 +7,17 @@ import {
   FamilyListItemMongoDocument,
   FamilyListMongoDocument,
 } from '@shared/infrastructure/database/schemas';
-import { cleanUndefined, normalizePagination, paginated, PaginationQuery, toId } from '@shared/infrastructure/database/mongo.utils';
-import type { FamilyListEntity, FamilyListItemEntity } from '@shared/domain/entities';
+import {
+  cleanUndefined,
+  normalizePagination,
+  paginated,
+  PaginationQuery,
+  toId,
+} from '@shared/infrastructure/database/mongo.utils';
+import type {
+  FamilyListEntity,
+  FamilyListItemEntity,
+} from '@shared/domain/entities';
 
 export type FamilyListWrite = {
   title: string;
@@ -26,8 +35,10 @@ export type FamilyListItemWrite = {
 @Injectable()
 export class ListsRepository {
   constructor(
-    @InjectModel(FamilyListDocument.name) private lists: Model<FamilyListMongoDocument>,
-    @InjectModel(FamilyListItemDocument.name) private items: Model<FamilyListItemMongoDocument>,
+    @InjectModel(FamilyListDocument.name)
+    private lists: Model<FamilyListMongoDocument>,
+    @InjectModel(FamilyListItemDocument.name)
+    private items: Model<FamilyListItemMongoDocument>,
   ) {}
 
   private toList(doc: FamilyListMongoDocument | null): FamilyListEntity | null {
@@ -42,7 +53,9 @@ export class ListsRepository {
     };
   }
 
-  private toItem(doc: FamilyListItemMongoDocument | null): FamilyListItemEntity | null {
+  private toItem(
+    doc: FamilyListItemMongoDocument | null,
+  ): FamilyListItemEntity | null {
     if (!doc) return null;
     return {
       id: toId(doc),
@@ -56,12 +69,21 @@ export class ListsRepository {
   }
 
   async listLists(query?: PaginationQuery) {
-    const { page, limit, skip } = normalizePagination(query, { page: 1, limit: 20, maxLimit: 100 });
+    const { page, limit, skip } = normalizePagination(query, {
+      page: 1,
+      limit: 20,
+      maxLimit: 100,
+    });
     const [docs, total] = await Promise.all([
       this.lists.find().sort({ updatedAt: -1 }).skip(skip).limit(limit).exec(),
       this.lists.countDocuments().exec(),
     ]);
-    return paginated(docs.map((doc) => this.toList(doc)!), total, page, limit);
+    return paginated(
+      docs.map((doc) => this.toList(doc)!),
+      total,
+      page,
+      limit,
+    );
   }
 
   async findList(id: string) {
@@ -69,7 +91,11 @@ export class ListsRepository {
   }
 
   async findListByTitle(title: string) {
-    return this.toList(await this.lists.findOne({ title: new RegExp(`^${escapeRegExp(title)}$`, 'i') }).exec());
+    return this.toList(
+      await this.lists
+        .findOne({ title: new RegExp(`^${escapeRegExp(title)}$`, 'i') })
+        .exec(),
+    );
   }
 
   async createList(data: FamilyListWrite) {
@@ -77,7 +103,11 @@ export class ListsRepository {
   }
 
   async updateList(id: string, data: Partial<FamilyListWrite>) {
-    return this.toList(await this.lists.findByIdAndUpdate(id, { $set: cleanUndefined(data) }, { new: true }).exec());
+    return this.toList(
+      await this.lists
+        .findByIdAndUpdate(id, { $set: cleanUndefined(data) }, { new: true })
+        .exec(),
+    );
   }
 
   async deleteList(id: string) {
@@ -86,31 +116,57 @@ export class ListsRepository {
   }
 
   async listItems(listId: string, query?: PaginationQuery) {
-    const { page, limit, skip } = normalizePagination(query, { page: 1, limit: 50, maxLimit: 100 });
+    const { page, limit, skip } = normalizePagination(query, {
+      page: 1,
+      limit: 50,
+      maxLimit: 100,
+    });
     const filter = { listId };
     const [docs, total] = await Promise.all([
-      this.items.find(filter).sort({ checked: 1, createdAt: -1 }).skip(skip).limit(limit).exec(),
+      this.items
+        .find(filter)
+        .sort({ checked: 1, createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
       this.items.countDocuments(filter).exec(),
     ]);
-    return paginated(docs.map((doc) => this.toItem(doc)!), total, page, limit);
+    return paginated(
+      docs.map((doc) => this.toItem(doc)!),
+      total,
+      page,
+      limit,
+    );
   }
 
   async createItem(data: FamilyListItemWrite) {
     const item = this.toItem(await this.items.create(cleanUndefined(data)))!;
-    await this.lists.findByIdAndUpdate(data.listId, { $set: { updatedAt: new Date() } }).exec();
+    await this.lists
+      .findByIdAndUpdate(data.listId, { $set: { updatedAt: new Date() } })
+      .exec();
     return item;
   }
 
   async updateItem(id: string, data: Partial<FamilyListItemWrite>) {
-    const item = this.toItem(await this.items.findByIdAndUpdate(id, { $set: cleanUndefined(data) }, { new: true }).exec());
-    if (item) await this.lists.findByIdAndUpdate(item.listId, { $set: { updatedAt: new Date() } }).exec();
+    const item = this.toItem(
+      await this.items
+        .findByIdAndUpdate(id, { $set: cleanUndefined(data) }, { new: true })
+        .exec(),
+    );
+    if (item)
+      await this.lists
+        .findByIdAndUpdate(item.listId, { $set: { updatedAt: new Date() } })
+        .exec();
     return item;
   }
 
   async deleteItem(id: string) {
     const item = await this.items.findById(id).exec();
     const ok = !!(await this.items.findByIdAndDelete(id).exec());
-    if (ok && item) await this.lists.findByIdAndUpdate(item.listId, { $set: { updatedAt: new Date() } }).exec();
+    if (ok && item)
+      await this.lists
+        .findByIdAndUpdate(item.listId, { $set: { updatedAt: new Date() } })
+        .exec();
     return { ok, listId: item?.listId };
   }
 }

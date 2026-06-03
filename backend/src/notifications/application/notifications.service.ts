@@ -6,18 +6,13 @@ import { NotificationsRealtimeGateway } from '../interfaces/gateways/notificatio
 import { Environment } from '@shared/infrastructure/environment/environment.module';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 import { JobsService } from '@shared/infrastructure/queue';
-
-export interface NotificationCreateDto {
-  title: string;
-  body?: string;
-  url?: string;
-  icon?: string;
-}
-
-export interface FcmSubscriptionDto {
-  token: string;
-  platform?: 'web' | 'android' | 'ios' | 'unknown';
-}
+import {
+  FcmSubscriptionDto,
+  NotificationCreateDto,
+  NotificationSendDto,
+} from '../interfaces/dto/notification.dto';
+import { notificationFactory } from './notification.factory';
+import { notificationMapper } from './notification.mapper';
 
 @Injectable()
 export class NotificationsService {
@@ -49,37 +44,22 @@ export class NotificationsService {
     return JSON.parse(readFileSync(path, 'utf8')) as admin.ServiceAccount;
   }
 
-  private toDto(r: {
-    id: string;
-    title: string;
-    body: string;
-    url: string;
-    icon?: string | null;
-    createdAt: Date;
-  }) {
-    return {
-      id: r.id,
-      title: r.title,
-      body: r.body,
-      url: r.url,
-      icon: r.icon,
-      at: new Date(r.createdAt).getTime(),
-    };
-  }
-
   async list(query?: PaginationQuery) {
     const page = await this.repository.list(query);
-    return { ...page, items: page.items.map((r) => this.toDto(r)) };
+    return {
+      ...page,
+      items: page.items.map((r) => notificationMapper.toDto(r)),
+    };
   }
 
   async findOne(id: string) {
     const row = await this.repository.findById(id);
-    return row ? this.toDto(row) : null;
+    return row ? notificationMapper.toDto(row) : null;
   }
 
   async create(data: NotificationCreateDto) {
-    const row = await this.repository.create(data);
-    const dto = this.toDto(row);
+    const row = await this.repository.create(notificationFactory.create(data));
+    const dto = notificationMapper.toDto(row);
     this.realtime.emitNotificationCreated(dto);
     return dto;
   }
@@ -87,7 +67,7 @@ export class NotificationsService {
   async update(id: string, data: Partial<NotificationCreateDto>) {
     if (Object.keys(data).length === 0) return this.findOne(id);
     const row = await this.repository.update(id, data);
-    const dto = row ? this.toDto(row) : null;
+    const dto = row ? notificationMapper.toDto(row) : null;
     if (dto) this.realtime.emitNotificationUpdated(dto);
     return dto;
   }
@@ -120,13 +100,11 @@ export class NotificationsService {
     body?: string,
     url?: string,
   ): Promise<{ sent: number }> {
-    const row = await this.repository.create({
-      title: title ?? 'Nossa Família',
-      body: body ?? '',
-      url: url ?? '/',
-      icon: '/favicon-192.png',
-    });
-    this.realtime.emitNotificationCreated(this.toDto(row));
+    const dto: NotificationSendDto = { title, body, url };
+    const row = await this.repository.create(
+      notificationFactory.createPush(dto),
+    );
+    this.realtime.emitNotificationCreated(notificationMapper.toDto(row));
     await this.jobs.enqueueNotification({ title, body, url });
     return { sent: 0 };
   }

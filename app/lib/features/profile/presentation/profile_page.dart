@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../core/navigation/app_navigation.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/auth/auth_controller.dart';
@@ -71,7 +73,7 @@ class ProfilePage extends StatelessWidget {
                                   builder: (_) => EditProfileSheet(
                                       auth: auth, toast: toast),
                                 ),
-                                onAdmin: () => context.go('/admin'),
+                                onAdmin: () => context.openAppRoute('/admin'),
                                 onSignOut: () async {
                                   await auth.signOut();
                                   toast.success('Você saiu da conta.');

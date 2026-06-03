@@ -9,8 +9,12 @@ import { ListsRealtimeGateway } from './interfaces/gateways/lists-realtime.gatew
 
 @Module({
   imports: [DatabaseModule, MongoModelsModule, AuthModule],
-  providers: [ListsService, ListsRepository, ListsGateway, ListsRealtimeGateway],
+  providers: [
+    ListsService,
+    ListsRepository,
+    ListsGateway,
+    ListsRealtimeGateway,
+  ],
   exports: [ListsService, ListsRealtimeGateway],
 })
 export class ListsModule {}
-

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 import '../core/config/app_config.dart';
+import '../core/api/socket_api_client.dart';
 import '../core/socket/socket_client.dart';
 import 'models.dart';
 
@@ -11,6 +12,7 @@ class FamilyRepository {
   FamilyRepository(this.socket);
 
   final SocketClient socket;
+  late final SocketApiClient api = SocketApiClient(socket);
 
   Future<PaginatedResult<FamilyItem>> listPage(
     String resource,
@@ -18,7 +20,7 @@ class FamilyRepository {
     int limit, {
     String? titlePrefix,
   }) async {
-    final data = await socket.emitAck<dynamic>('$resource.list', {
+    final data = await api.query<dynamic>('$resource.list', {
       'page': page,
       'limit': limit,
       if (titlePrefix != null) 'titlePrefix': titlePrefix,
@@ -33,19 +35,19 @@ class FamilyRepository {
 
   Future<FamilyItem> create(String resource, Map<String, dynamic> data) async {
     final row =
-        await socket.emitAck<Map<String, dynamic>>('$resource.create', data);
+        await api.mutate<Map<String, dynamic>>('$resource.create', data);
     return FamilyItem(Map<String, dynamic>.from(row));
   }
 
   Future<FamilyItem> update(
       String resource, String id, Map<String, dynamic> data) async {
-    final row = await socket.emitAck<Map<String, dynamic>>(
+    final row = await api.mutate<Map<String, dynamic>>(
         '$resource.update', {'id': id, 'data': data});
     return FamilyItem(Map<String, dynamic>.from(row));
   }
 
   Future<void> delete(String resource, String id) async {
-    await socket.emitAck<Map<String, dynamic>>('$resource.delete', {'id': id});
+    await api.mutate<Map<String, dynamic>>('$resource.delete', {'id': id});
   }
 
   Future<String> uploadPhotoFile(XFile file) async {
@@ -78,8 +80,8 @@ class FamilyRepository {
 
   Future<PaginatedResult<QuizQuestion>> listQuizQuestionsPage(
       int page, int limit) async {
-    final data = await socket
-        .emitAck<dynamic>('games.quiz.list', {'page': page, 'limit': limit});
+    final data = await api
+        .query<dynamic>('games.quiz.list', {'page': page, 'limit': limit});
     return _paginated(
         data, (row) => QuizQuestion.fromJson(Map<String, dynamic>.from(row)));
   }
@@ -90,7 +92,7 @@ class FamilyRepository {
 
   Future<PaginatedResult<QuizQuestion>> listQuizQuestionsAdminPage(
       int page, int limit) async {
-    final data = await socket.emitAck<dynamic>(
+    final data = await api.query<dynamic>(
         'games.quiz.admin.list', {'page': page, 'limit': limit});
     return _paginated(
         data, (row) => QuizQuestion.fromJson(Map<String, dynamic>.from(row)));
@@ -98,19 +100,19 @@ class FamilyRepository {
 
   Future<QuizQuestion> createQuizQuestion(Map<String, dynamic> data) async {
     final row =
-        await socket.emitAck<Map<String, dynamic>>('games.quiz.create', data);
+        await api.mutate<Map<String, dynamic>>('games.quiz.create', data);
     return QuizQuestion.fromJson(Map<String, dynamic>.from(row));
   }
 
   Future<QuizQuestion> updateQuizQuestion(
       String id, Map<String, dynamic> data) async {
-    final row = await socket.emitAck<Map<String, dynamic>>(
+    final row = await api.mutate<Map<String, dynamic>>(
         'games.quiz.update', {'id': id, 'data': data});
     return QuizQuestion.fromJson(Map<String, dynamic>.from(row));
   }
 
   Future<void> deleteQuizQuestion(String id) async {
-    await socket.emitAck<Map<String, dynamic>>('games.quiz.delete', {'id': id});
+    await api.mutate<Map<String, dynamic>>('games.quiz.delete', {'id': id});
   }
 
   Future<List<GameWord>> listGameWords() async {
@@ -119,8 +121,8 @@ class FamilyRepository {
 
   Future<PaginatedResult<GameWord>> listGameWordsPage(
       int page, int limit) async {
-    final data = await socket
-        .emitAck<dynamic>('games.words.list', {'page': page, 'limit': limit});
+    final data = await api
+        .query<dynamic>('games.words.list', {'page': page, 'limit': limit});
     return _paginated(
         data, (row) => GameWord.fromJson(Map<String, dynamic>.from(row)));
   }
@@ -131,7 +133,7 @@ class FamilyRepository {
 
   Future<PaginatedResult<GameWord>> listGameWordsAdminPage(
       int page, int limit) async {
-    final data = await socket.emitAck<dynamic>(
+    final data = await api.query<dynamic>(
         'games.words.admin.list', {'page': page, 'limit': limit});
     return _paginated(
         data, (row) => GameWord.fromJson(Map<String, dynamic>.from(row)));
@@ -139,12 +141,12 @@ class FamilyRepository {
 
   Future<GameWord> createGameWord(Map<String, dynamic> data) async {
     final row =
-        await socket.emitAck<Map<String, dynamic>>('games.words.create', data);
+        await api.mutate<Map<String, dynamic>>('games.words.create', data);
     return GameWord.fromJson(Map<String, dynamic>.from(row));
   }
 
   Future<GameWord?> updateGameWord(String id, Map<String, dynamic> data) async {
-    final row = await socket.emitAck<Map<String, dynamic>?>(
+    final row = await api.mutate<Map<String, dynamic>?>(
         'games.words.update', {'id': id, 'data': data});
     return row == null
         ? null
@@ -152,8 +154,7 @@ class FamilyRepository {
   }
 
   Future<void> deleteGameWord(String id) async {
-    await socket
-        .emitAck<Map<String, dynamic>>('games.words.delete', {'id': id});
+    await api.mutate<Map<String, dynamic>>('games.words.delete', {'id': id});
   }
 
   Future<void> completeGame({
@@ -162,7 +163,7 @@ class FamilyRepository {
     int? score,
     int? total,
   }) async {
-    await socket.emitAck<Map<String, dynamic>>('games.complete', {
+    await api.mutate<Map<String, dynamic>>('games.complete', {
       'game': game,
       if (playerName != null && playerName.trim().isNotEmpty)
         'playerName': playerName.trim(),
@@ -176,8 +177,8 @@ class FamilyRepository {
   }
 
   Future<PaginatedResult<GameStat>> gameStatsPage(int page, int limit) async {
-    final data = await socket
-        .emitAck<dynamic>('games.stats', {'page': page, 'limit': limit});
+    final data =
+        await api.query<dynamic>('games.stats', {'page': page, 'limit': limit});
     return _paginated(
       data,
       (row) => GameStat.fromJson(Map<String, dynamic>.from(row)),
@@ -189,20 +190,20 @@ class FamilyRepository {
   }
 
   Future<PaginatedResult<AppUser>> listUsersPage(int page, int limit) async {
-    final data = await socket
-        .emitAck<dynamic>('users.list', {'page': page, 'limit': limit});
+    final data =
+        await api.query<dynamic>('users.list', {'page': page, 'limit': limit});
     return _paginated(
         data, (row) => AppUser.fromJson(Map<String, dynamic>.from(row)));
   }
 
   Future<AppUser> updateUser(String id, Map<String, dynamic> data) async {
-    final row = await socket
-        .emitAck<Map<String, dynamic>>('users.update', {'id': id, ...data});
+    final row = await api
+        .mutate<Map<String, dynamic>>('users.update', {'id': id, ...data});
     return AppUser.fromJson(Map<String, dynamic>.from(row));
   }
 
   Future<void> deleteUser(String id) async {
-    await socket.emitAck<Map<String, dynamic>>('users.delete', {'id': id});
+    await api.mutate<Map<String, dynamic>>('users.delete', {'id': id});
   }
 
   Future<List<AppNotification>> listNotificationsAdmin() async {
@@ -211,21 +212,21 @@ class FamilyRepository {
 
   Future<PaginatedResult<AppNotification>> listNotificationsAdminPage(
       int page, int limit) async {
-    final data = await socket
-        .emitAck<dynamic>('notifications.list', {'page': page, 'limit': limit});
+    final data = await api
+        .query<dynamic>('notifications.list', {'page': page, 'limit': limit});
     return _paginated(data,
         (row) => AppNotification.fromJson(Map<String, dynamic>.from(row)));
   }
 
   Future<AppNotification> createNotification(Map<String, dynamic> data) async {
-    final row = await socket.emitAck<Map<String, dynamic>>(
-        'notifications.create', data);
+    final row =
+        await api.mutate<Map<String, dynamic>>('notifications.create', data);
     return AppNotification.fromJson(Map<String, dynamic>.from(row));
   }
 
   Future<AppNotification?> updateNotification(
       String id, Map<String, dynamic> data) async {
-    final row = await socket.emitAck<Map<String, dynamic>?>(
+    final row = await api.mutate<Map<String, dynamic>?>(
         'notifications.update', {'id': id, 'data': data});
     return row == null
         ? null
@@ -233,12 +234,11 @@ class FamilyRepository {
   }
 
   Future<void> deleteNotification(String id) async {
-    await socket
-        .emitAck<Map<String, dynamic>>('notifications.delete', {'id': id});
+    await api.mutate<Map<String, dynamic>>('notifications.delete', {'id': id});
   }
 
   Future<void> clearNotifications() async {
-    await socket.emitAck<Map<String, dynamic>>('notifications.clear');
+    await api.mutate<Map<String, dynamic>>('notifications.clear');
   }
 
   Future<int> sendNotification({
@@ -246,8 +246,7 @@ class FamilyRepository {
     String? body,
     String? url,
   }) async {
-    final row =
-        await socket.emitAck<Map<String, dynamic>>('notifications.send', {
+    final row = await api.mutate<Map<String, dynamic>>('notifications.send', {
       'title': title,
       if (body != null) 'body': body,
       if (url != null) 'url': url,
@@ -261,7 +260,7 @@ class FamilyRepository {
     String? url,
     required DateTime scheduledAt,
   }) async {
-    await socket.emitAck<Map<String, dynamic>>('notifications.schedule', {
+    await api.mutate<Map<String, dynamic>>('notifications.schedule', {
       'title': title,
       if (body != null) 'body': body,
       if (url != null) 'url': url,
@@ -275,21 +274,20 @@ class FamilyRepository {
 
   Future<PaginatedResult<FamilyList>> listFamilyListsPage(
       int page, int limit) async {
-    final data = await socket
-        .emitAck<dynamic>('lists.list', {'page': page, 'limit': limit});
+    final data =
+        await api.query<dynamic>('lists.list', {'page': page, 'limit': limit});
     return _paginated(
         data, (row) => FamilyList.fromJson(Map<String, dynamic>.from(row)));
   }
 
   Future<FamilyList> createFamilyList(Map<String, dynamic> data) async {
-    final row =
-        await socket.emitAck<Map<String, dynamic>>('lists.create', data);
+    final row = await api.mutate<Map<String, dynamic>>('lists.create', data);
     return FamilyList.fromJson(Map<String, dynamic>.from(row));
   }
 
   Future<FamilyList?> updateFamilyList(
       String id, Map<String, dynamic> data) async {
-    final row = await socket.emitAck<Map<String, dynamic>?>(
+    final row = await api.mutate<Map<String, dynamic>?>(
         'lists.update', {'id': id, 'data': data});
     return row == null
         ? null
@@ -297,7 +295,7 @@ class FamilyRepository {
   }
 
   Future<void> deleteFamilyList(String id) async {
-    await socket.emitAck<Map<String, dynamic>>('lists.delete', {'id': id});
+    await api.mutate<Map<String, dynamic>>('lists.delete', {'id': id});
   }
 
   Future<List<FamilyListItem>> listFamilyListItems(String listId) async {
@@ -306,7 +304,7 @@ class FamilyRepository {
 
   Future<PaginatedResult<FamilyListItem>> listFamilyListItemsPage(
       String listId, int page, int limit) async {
-    final data = await socket.emitAck<dynamic>(
+    final data = await api.query<dynamic>(
         'lists.items', {'listId': listId, 'page': page, 'limit': limit});
     return _paginated(
         data, (row) => FamilyListItem.fromJson(Map<String, dynamic>.from(row)));
@@ -314,8 +312,7 @@ class FamilyRepository {
 
   Future<FamilyListItem> createFamilyListItem(
       String listId, String text) async {
-    final row =
-        await socket.emitAck<Map<String, dynamic>>('lists.items.create', {
+    final row = await api.mutate<Map<String, dynamic>>('lists.items.create', {
       'listId': listId,
       'text': text,
     });
@@ -324,7 +321,7 @@ class FamilyRepository {
 
   Future<FamilyListItem?> updateFamilyListItem(
       String id, Map<String, dynamic> data) async {
-    final row = await socket.emitAck<Map<String, dynamic>?>(
+    final row = await api.mutate<Map<String, dynamic>?>(
         'lists.items.update', {'id': id, 'data': data});
     return row == null
         ? null
@@ -332,13 +329,12 @@ class FamilyRepository {
   }
 
   Future<void> deleteFamilyListItem(String id) async {
-    await socket
-        .emitAck<Map<String, dynamic>>('lists.items.delete', {'id': id});
+    await api.mutate<Map<String, dynamic>>('lists.items.delete', {'id': id});
   }
 
   Future<List<LocationSnapshot>> listLocations() async {
-    final data = await socket
-        .emitAck<dynamic>('location.latest', {'page': 1, 'limit': 50});
+    final data =
+        await api.query<dynamic>('location.latest', {'page': 1, 'limit': 50});
     return _paginated(data,
             (row) => LocationSnapshot.fromJson(Map<String, dynamic>.from(row)))
         .items;

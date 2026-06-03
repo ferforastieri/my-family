@@ -1,31 +1,46 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import type { UserEntity } from '@shared/domain/entities';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
-import { FamilyListItemWrite, FamilyListWrite, ListsRepository } from '../infrastructure/repositories/lists.repository';
+import {
+  FamilyListItemWrite,
+  FamilyListWrite,
+  ListsRepository,
+} from '../infrastructure/repositories/lists.repository';
+import { familyListFactory, familyListItemFactory } from './list.factory';
+import { familyListItemMapper, familyListMapper } from './list.mapper';
+import type {
+  FamilyListItemWriteDto,
+  FamilyListWriteDto,
+} from '../interfaces/dto/list.dto';
 
 @Injectable()
 export class ListsService {
   constructor(private lists: ListsRepository) {}
 
   async listLists(query?: PaginationQuery) {
-    return this.lists.listLists(query);
+    const result = await this.lists.listLists(query);
+    return {
+      ...result,
+      items: result.items.map((item) => familyListMapper.toDto(item)),
+    };
   }
 
-  async createList(data: FamilyListWrite, user?: UserEntity | null) {
-    const title = data.title?.trim();
+  async createList(data: FamilyListWriteDto, user?: UserEntity | null) {
+    const normalized = familyListFactory.create(data);
+    const title = normalized.title;
     if (!title) throw new BadRequestException('title é obrigatório');
-    return this.lists.createList({
-      title,
-      description: data.description?.trim() || null,
-      createdBy: user?.id ?? data.createdBy ?? null,
-    });
+    return familyListMapper.toDto(
+      await this.lists.createList({
+        title,
+        description: normalized.description ?? null,
+        createdBy: user?.id ?? null,
+      }),
+    );
   }
 
-  async updateList(id: string, data: Partial<FamilyListWrite>) {
-    return this.lists.updateList(id, {
-      title: data.title?.trim(),
-      description: data.description?.trim(),
-    });
+  async updateList(id: string, data: Partial<FamilyListWriteDto>) {
+    const row = await this.lists.updateList(id, familyListFactory.create(data));
+    return row ? familyListMapper.toDto(row) : null;
   }
 
   async deleteList(id: string) {
@@ -33,26 +48,35 @@ export class ListsService {
   }
 
   async listItems(listId: string, query?: PaginationQuery) {
-    return this.lists.listItems(listId, query);
+    const result = await this.lists.listItems(listId, query);
+    return {
+      ...result,
+      items: result.items.map((item) => familyListItemMapper.toDto(item)),
+    };
   }
 
-  async createItem(data: FamilyListItemWrite, user?: UserEntity | null) {
-    const text = data.text?.trim();
-    if (!data.listId) throw new BadRequestException('listId é obrigatório');
+  async createItem(data: FamilyListItemWriteDto, user?: UserEntity | null) {
+    const normalized = familyListItemFactory.create(data);
+    const text = normalized.text;
+    if (!normalized.listId)
+      throw new BadRequestException('listId é obrigatório');
     if (!text) throw new BadRequestException('text é obrigatório');
-    return this.lists.createItem({
-      listId: data.listId,
-      text,
-      checked: data.checked ?? false,
-      createdBy: user?.id ?? data.createdBy ?? null,
-    });
+    return familyListItemMapper.toDto(
+      await this.lists.createItem({
+        listId: normalized.listId,
+        text,
+        checked: normalized.checked ?? false,
+        createdBy: user?.id ?? null,
+      }),
+    );
   }
 
-  async updateItem(id: string, data: Partial<FamilyListItemWrite>) {
-    return this.lists.updateItem(id, {
-      text: data.text?.trim(),
-      checked: data.checked,
-    });
+  async updateItem(id: string, data: Partial<FamilyListItemWriteDto>) {
+    const row = await this.lists.updateItem(
+      id,
+      familyListItemFactory.create(data),
+    );
+    return row ? familyListItemMapper.toDto(row) : null;
   }
 
   async deleteItem(id: string) {
@@ -63,12 +87,17 @@ export class ListsService {
     const parsed = parseListMessage(text);
     if (!parsed) return null;
     let list = await this.lists.findListByTitle(parsed.title);
-    list ??= await this.createList({ title: parsed.title }, user);
+    list ??= await this.lists.createList({
+      title: parsed.title,
+      createdBy: user?.id ?? null,
+    });
     const createdItems = [];
     for (const itemText of parsed.items) {
-      createdItems.push(await this.createItem({ listId: list.id, text: itemText }, user));
+      createdItems.push(
+        await this.createItem({ listId: list.id, text: itemText }, user),
+      );
     }
-    return { list, items: createdItems };
+    return { list: familyListMapper.toDto(list), items: createdItems };
   }
 }
 
@@ -77,7 +106,10 @@ function parseListMessage(text: string) {
   const match = /^lista\s*:\s*(.*)$/i.exec(trimmed);
   if (!match) return null;
   const rest = match[1].trim();
-  const lines = rest.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const lines = rest
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
   const first = lines.shift() ?? '';
   const inline = first.includes(':') ? first.split(':') : null;
   const title = (inline ? inline.shift() : first)?.trim() || 'Lista';

@@ -1,6 +1,14 @@
-import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+} from '@nestjs/common';
 import { CartasService } from '../../application/cartas.service';
-import type { CartaWrite } from '../../infrastructure/repositories/cartas.repository';
+import type { CartaWriteDto } from '../dto/carta.dto';
 
 @Controller('cartas')
 export class CartasController {
@@ -17,12 +25,12 @@ export class CartasController {
   }
 
   @Post()
-  async create(@Body() data: CartaWrite) {
+  async create(@Body() data: CartaWriteDto) {
     return this.cartasService.create(data);
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() data: Partial<CartaWrite>) {
+  async update(@Param('id') id: string, @Body() data: Partial<CartaWriteDto>) {
     return this.cartasService.update(id, data);
   }
 
@@ -31,4 +39,3 @@ export class CartasController {
     return this.cartasService.delete(id);
   }
 }
-

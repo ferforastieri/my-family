@@ -1,15 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { FotoDocument, FotoMongoDocument } from '@shared/infrastructure/database/schemas';
-import { cleanUndefined, normalizePagination, paginated, PaginationQuery, toId } from '@shared/infrastructure/database/mongo.utils';
+import {
+  FotoDocument,
+  FotoMongoDocument,
+} from '@shared/infrastructure/database/schemas';
+import {
+  cleanUndefined,
+  normalizePagination,
+  paginated,
+  PaginationQuery,
+  toId,
+} from '@shared/infrastructure/database/mongo.utils';
 import type { FotoEntity } from '@shared/domain/entities';
 
-export type FotoWrite = Pick<FotoEntity, 'url' | 'tipo'> & Partial<Pick<FotoEntity, 'texto' | 'album' | 'data'>>;
+export type FotoWrite = Pick<FotoEntity, 'url' | 'tipo'> &
+  Partial<Pick<FotoEntity, 'texto' | 'album' | 'data'>>;
 
 @Injectable()
 export class FotosRepository {
-  constructor(@InjectModel(FotoDocument.name) private model: Model<FotoMongoDocument>) {}
+  constructor(
+    @InjectModel(FotoDocument.name) private model: Model<FotoMongoDocument>,
+  ) {}
 
   private toEntity(doc: FotoMongoDocument | null): FotoEntity | null {
     if (!doc) return null;
@@ -28,10 +40,20 @@ export class FotosRepository {
   async list(query?: PaginationQuery) {
     const { page, limit, skip } = normalizePagination(query);
     const [docs, total] = await Promise.all([
-      this.model.find().sort({ data: -1, createdAt: -1 }).skip(skip).limit(limit).exec(),
+      this.model
+        .find()
+        .sort({ data: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
       this.model.countDocuments().exec(),
     ]);
-    return paginated(docs.map((doc) => this.toEntity(doc)!), total, page, limit);
+    return paginated(
+      docs.map((doc) => this.toEntity(doc)!),
+      total,
+      page,
+      limit,
+    );
   }
 
   async findById(id: string) {
@@ -48,12 +70,28 @@ export class FotosRepository {
   }
 
   async create(data: FotoWrite) {
-    return this.toEntity(await this.model.create({ ...data, data: data.data ? new Date(data.data) : undefined }))!;
+    return this.toEntity(
+      await this.model.create({
+        ...data,
+        data: data.data ? new Date(data.data) : undefined,
+      }),
+    )!;
   }
 
   async update(id: string, data: Partial<FotoWrite>) {
-    const normalized = { ...data, data: data.data ? new Date(data.data) : undefined };
-    return this.toEntity(await this.model.findByIdAndUpdate(id, { $set: cleanUndefined(normalized) }, { new: true }).exec());
+    const normalized = {
+      ...data,
+      data: data.data ? new Date(data.data) : undefined,
+    };
+    return this.toEntity(
+      await this.model
+        .findByIdAndUpdate(
+          id,
+          { $set: cleanUndefined(normalized) },
+          { new: true },
+        )
+        .exec(),
+    );
   }
 
   async delete(id: string) {

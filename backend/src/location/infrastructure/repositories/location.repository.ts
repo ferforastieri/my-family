@@ -9,6 +9,7 @@ import {
   cleanUndefined,
   normalizePagination,
   paginated,
+  PaginatedResult,
   PaginationQuery,
   toId,
 } from '@shared/infrastructure/database/mongo.utils';
@@ -65,7 +66,7 @@ export class LocationRepository {
     return this.toEntity(await this.model.create(cleanUndefined(data)))!;
   }
 
-  async latestByPerson(query?: PaginationQuery) {
+  async latestByPerson(query?: PaginationQuery): Promise<PaginatedResult<LocationUpdateEntity>> {
     const { page, limit, skip } = normalizePagination(query, {
       page: 1,
       limit: 50,

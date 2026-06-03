@@ -12,8 +12,9 @@ import {
   UseGuards,
   BadRequestException,
 } from '@nestjs/common';
-import { NotificationsService, FcmSubscriptionDto, NotificationCreateDto } from '../../application/notifications.service';
+import { NotificationsService } from '../../application/notifications.service';
 import { NotificationSchedulerService } from '../../application/notification-scheduler.service';
+import { FcmSubscriptionDto, NotificationCreateDto, NotificationSendDto } from '../dto/notification.dto';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@auth/guards/roles.guard';
 import { Roles } from '@auth/decorators/roles.decorator';
@@ -86,7 +87,7 @@ export class NotificationsController {
   @Post('send')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  async sendNow(@Body() body: { title: string; body?: string; url?: string }) {
+  async sendNow(@Body() body: NotificationSendDto) {
     if (!body?.title) throw new BadRequestException('title é obrigatório');
     return this.notifications.send(body.title, body.body, body.url);
   }

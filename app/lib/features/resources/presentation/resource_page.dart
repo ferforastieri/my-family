@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/config/app_config.dart';
+import '../../../core/api/query_keys.dart';
+import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
@@ -35,8 +37,6 @@ class ResourcePage extends StatefulWidget {
 class _ResourcePageState extends State<ResourcePage> {
   static const _pageLimit = 24;
   int page = 1;
-  late Future<PaginatedResult<FamilyItem>> future =
-      widget.repository.listPage(widget.resource, page, _pageLimit);
 
   @override
   void initState() {
@@ -56,14 +56,18 @@ class _ResourcePageState extends State<ResourcePage> {
 
   void _handleRealtimeChange(dynamic _) {
     if (!mounted) return;
-    _reload();
+    _invalidate();
   }
 
   void _reload({int? nextPage}) {
     setState(() {
       page = nextPage ?? page;
-      future = widget.repository.listPage(widget.resource, page, _pageLimit);
     });
+    _invalidate();
+  }
+
+  void _invalidate() {
+    invalidateQueries(context, QueryKeys.resourceScope(widget.resource));
   }
 
   @override
@@ -71,15 +75,17 @@ class _ResourcePageState extends State<ResourcePage> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: LoveBackground(
-        child: FutureBuilder<PaginatedResult<FamilyItem>>(
-          future: future,
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) return const PageSkeleton();
-            final result = snapshot.data!;
+        child: AppQuery<PaginatedResult<FamilyItem>>(
+          queryKey: QueryKeys.resource(widget.resource, page, _pageLimit),
+          queryFn: () =>
+              widget.repository.listPage(widget.resource, page, _pageLimit),
+          loading: const PageSkeleton(),
+          builder: (context, result, refetch) {
             final items = result.items;
             return RefreshIndicator(
               onRefresh: () async {
-                _reload(nextPage: 1);
+                setState(() => page = 1);
+                await refetch();
                 widget.toast
                     .info('Atualizando ${widget.title.toLowerCase()}...');
               },
@@ -102,12 +108,12 @@ class _ResourcePageState extends State<ResourcePage> {
                             onPressed: () => _openCreate(context),
                           ),
                           const SizedBox(height: 14),
-	                          _ResourceMetrics(
-	                            resource: widget.resource,
-	                            total: result.total,
-	                            visible: items.length,
-	                            albums: 0,
-	                          ),
+                          _ResourceMetrics(
+                            resource: widget.resource,
+                            total: result.total,
+                            visible: items.length,
+                            albums: 0,
+                          ),
                           const SizedBox(height: 16),
                           items.isEmpty
                               ? _EmptyResourceState(
@@ -155,18 +161,18 @@ class _ResourcePageState extends State<ResourcePage> {
               repository: widget.repository,
               toast: widget.toast,
               onSave: (data) async {
-	                await widget.repository.create(widget.resource, data);
-	                widget.toast.success('Memória salva com sucesso.');
-	                _reload(nextPage: 1);
+                await widget.repository.create(widget.resource, data);
+                widget.toast.success('Memória salva com sucesso.');
+                _reload(nextPage: 1);
               },
             )
           : ResourceDialog(
               title: widget.title,
               resource: widget.resource,
               onSave: (data) async {
-	                await widget.repository.create(widget.resource, data);
-	                widget.toast.success('Item salvo com sucesso.');
-	                _reload(nextPage: 1);
+                await widget.repository.create(widget.resource, data);
+                widget.toast.success('Item salvo com sucesso.');
+                _reload(nextPage: 1);
               },
             ),
     );
@@ -181,9 +187,9 @@ class _ResourcePageState extends State<ResourcePage> {
               toast: widget.toast,
               item: item,
               onSave: (data) async {
-	                await widget.repository.update(widget.resource, item.id, data);
-	                widget.toast.success('Memória atualizada.');
-	                _reload();
+                await widget.repository.update(widget.resource, item.id, data);
+                widget.toast.success('Memória atualizada.');
+                _reload();
               },
             )
           : ResourceDialog(
@@ -191,20 +197,20 @@ class _ResourcePageState extends State<ResourcePage> {
               resource: widget.resource,
               initial: item,
               onSave: (data) async {
-	                await widget.repository.update(widget.resource, item.id, data);
-	                widget.toast.success('Item atualizado.');
-	                _reload();
+                await widget.repository.update(widget.resource, item.id, data);
+                widget.toast.success('Item atualizado.');
+                _reload();
               },
             ),
     );
   }
 
   Future<void> _deleteItem(FamilyItem item) async {
-	    await widget.repository.delete(widget.resource, item.id);
-	    widget.toast.success(
-	        widget.resource == 'fotos' ? 'Memória removida.' : 'Item removido.');
-	    _reload();
-	  }
+    await widget.repository.delete(widget.resource, item.id);
+    widget.toast.success(
+        widget.resource == 'fotos' ? 'Memória removida.' : 'Item removido.');
+    _reload();
+  }
 
   void _openPhotoViewer(FamilyItem item) {
     showAppSheet<void>(

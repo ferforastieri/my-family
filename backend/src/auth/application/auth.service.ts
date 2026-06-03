@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { randomBytes } from 'crypto';
 import * as bcrypt from 'bcrypt';
@@ -18,7 +22,12 @@ export class AuthService {
     private email: EmailService,
   ) {}
 
-  async register(email: string, password: string, name?: string, role?: UserRole) {
+  async register(
+    email: string,
+    password: string,
+    name?: string,
+    role?: UserRole,
+  ) {
     const existing = await this.users.findByEmail(email);
     if (existing) throw new ConflictException('Email já cadastrado');
     const passwordHash = await bcrypt.hash(password, 12);
@@ -26,7 +35,10 @@ export class AuthService {
     return this.tokenResponse(user);
   }
 
-  async validateUser(email: string, password: string): Promise<UserEntity | null> {
+  async validateUser(
+    email: string,
+    password: string,
+  ): Promise<UserEntity | null> {
     const user = await this.users.findByEmail(email);
     if (!user?.passwordHash) return null;
     const ok = await bcrypt.compare(password, user.passwordHash);
@@ -50,7 +62,13 @@ export class AuthService {
     return {
       accessToken,
       access_token: accessToken,
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, avatarPath: user.avatarPath },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        avatarPath: user.avatarPath,
+      },
     };
   }
 
@@ -74,10 +92,12 @@ export class AuthService {
     const row = await this.passwordResets.findByToken(token);
     if (!row) throw new BadRequestException('Token inválido ou expirado');
     if (row.used) throw new BadRequestException('Token já utilizado');
-    if (row.expiresAt < new Date()) throw new BadRequestException('Token expirado');
+    if (row.expiresAt < new Date())
+      throw new BadRequestException('Token expirado');
     const user = await this.users.findById(row.userId);
     if (!user) throw new BadRequestException('Usuário não encontrado');
-    if (newPassword.length < 8) throw new BadRequestException('A senha deve ter pelo menos 8 caracteres');
+    if (newPassword.length < 8)
+      throw new BadRequestException('A senha deve ter pelo menos 8 caracteres');
     const passwordHash = await bcrypt.hash(newPassword, 12);
     await this.users.update(user.id, { passwordHash });
     await this.passwordResets.markUsed(row.id);

@@ -6,105 +6,132 @@ import {
   QuizQuestionWrite,
 } from '../infrastructure/repositories/games.repository';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
+import {
+  gameCompletionFactory,
+  gameWordFactory,
+  quizQuestionFactory,
+} from './game.factory';
+import {
+  gameCompletionMapper,
+  gameStatMapper,
+  gameWordMapper,
+  quizQuestionMapper,
+} from './game.mapper';
+import type {
+  GameCompletionWriteDto,
+  GameStatResponseDto,
+  GameWordWriteDto,
+  QuizQuestionWriteDto,
+} from '../interfaces/dto/game.dto';
 
 @Injectable()
 export class GamesService {
   constructor(private games: GamesRepository) {}
 
-  quizPublic(query?: PaginationQuery) {
-    return this.games.listQuestions(false, query);
+  async quizPublic(query?: PaginationQuery) {
+    const result = await this.games.listQuestions(false, query);
+    return {
+      ...result,
+      items: result.items.map((item) => quizQuestionMapper.toDto(item)),
+    };
   }
 
-  quizAdmin(query?: PaginationQuery) {
-    return this.games.listQuestions(true, query);
+  async quizAdmin(query?: PaginationQuery) {
+    const result = await this.games.listQuestions(true, query);
+    return {
+      ...result,
+      items: result.items.map((item) => quizQuestionMapper.toDto(item)),
+    };
   }
 
-  createQuestion(data: QuizQuestionWrite) {
-    return this.games.createQuestion(this.normalizeQuestion(data));
+  async createQuestion(data: QuizQuestionWriteDto) {
+    return quizQuestionMapper.toDto(
+      await this.games.createQuestion(
+        this.normalizeQuestion(data) as QuizQuestionWrite,
+      ),
+    );
   }
 
-  updateQuestion(id: string, data: Partial<QuizQuestionWrite>) {
-    return this.games.updateQuestion(id, {
-      ...data,
-      question: data.question?.trim(),
-      options: data.options?.map((option) => option.trim()).filter(Boolean),
-      correctIndex:
-        data.correctIndex == null ? undefined : Number(data.correctIndex),
-    });
+  async updateQuestion(id: string, data: Partial<QuizQuestionWriteDto>) {
+    const row = await this.games.updateQuestion(
+      id,
+      quizQuestionFactory.create(data),
+    );
+    return row ? quizQuestionMapper.toDto(row) : null;
   }
 
   deleteQuestion(id: string) {
     return this.games.deleteQuestion(id);
   }
 
-  wordsPublic(query?: PaginationQuery) {
-    return this.games.listWords(false, query);
+  async wordsPublic(query?: PaginationQuery) {
+    const result = await this.games.listWords(false, query);
+    return {
+      ...result,
+      items: result.items.map((item) => gameWordMapper.toDto(item)),
+    };
   }
 
-  wordsAdmin(query?: PaginationQuery) {
-    return this.games.listWords(true, query);
+  async wordsAdmin(query?: PaginationQuery) {
+    const result = await this.games.listWords(true, query);
+    return {
+      ...result,
+      items: result.items.map((item) => gameWordMapper.toDto(item)),
+    };
   }
 
-  createWord(data: GameWordWrite) {
-    return this.games.createWord(this.normalizeWord(data));
+  async createWord(data: GameWordWriteDto) {
+    return gameWordMapper.toDto(
+      await this.games.createWord(this.normalizeWord(data) as GameWordWrite),
+    );
   }
 
-  updateWord(id: string, data: Partial<GameWordWrite>) {
-    return this.games.updateWord(id, {
-      ...data,
-      word: data.word == null ? undefined : this.normalizeWordText(data.word),
-    });
+  async updateWord(id: string, data: Partial<GameWordWriteDto>) {
+    const row = await this.games.updateWord(id, gameWordFactory.create(data));
+    return row ? gameWordMapper.toDto(row) : null;
   }
 
   deleteWord(id: string) {
     return this.games.deleteWord(id);
   }
 
-  complete(
-    body: {
-      game: 'quiz' | 'word_search';
-      playerName?: string;
-      score?: number;
-      total?: number;
-    },
-    user?: UserEntity | null,
-  ) {
-    return this.games.createCompletion({
-      game: body.game,
-      playerName:
-        user?.name || user?.email || body.playerName?.trim() || 'Visitante',
-      userId: user?.id ?? null,
-      score: body.score ?? null,
-      total: body.total ?? null,
-    });
+  complete(body: GameCompletionWriteDto, user?: UserEntity | null) {
+    const playerName =
+      user?.name || user?.email || body.playerName?.trim() || 'Visitante';
+    return this.games
+      .createCompletion(
+        gameCompletionFactory.create({
+          ...body,
+          playerName,
+          userId: user?.id ?? null,
+        }),
+      )
+      .then((row) => gameCompletionMapper.toDto(row));
   }
 
-  stats(query?: PaginationQuery) {
-    return this.games.stats(query);
-  }
-
-  private normalizeQuestion(data: QuizQuestionWrite) {
+  async stats(query?: PaginationQuery) {
+    const result = await this.games.stats(query);
     return {
-      ...data,
-      question: data.question.trim(),
-      options: data.options.map((option) => option.trim()).filter(Boolean),
-      correctIndex: Number(data.correctIndex),
-      active: data.active ?? true,
+      ...result,
+      items: result.items.map((item) =>
+        gameStatMapper.toDto(item as GameStatResponseDto),
+      ),
     };
   }
 
-  private normalizeWord(data: GameWordWrite) {
+  private normalizeQuestion(data: Partial<QuizQuestionWriteDto>) {
+    const normalized = quizQuestionFactory.create(data);
     return {
-      word: this.normalizeWordText(data.word),
-      active: data.active ?? true,
+      ...normalized,
+      active: normalized.active ?? true,
     };
   }
 
-  private normalizeWordText(word: string) {
-    return word
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-zA-Z]/g, '')
-      .toUpperCase();
+  private normalizeWord(data: Partial<GameWordWriteDto>) {
+    const normalized = gameWordFactory.create(data);
+    return {
+      ...normalized,
+      active: normalized.active ?? true,
+    };
   }
 }

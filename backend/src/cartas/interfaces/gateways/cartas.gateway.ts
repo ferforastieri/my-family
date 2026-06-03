@@ -1,8 +1,14 @@
-import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import {
+  ConnectedSocket,
+  MessageBody,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
+} from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/ws-session.service';
 import { CartasService } from '../../application/cartas.service';
-import type { CartaWrite } from '../../infrastructure/repositories/cartas.repository';
+import type { CartaWriteDto } from '../dto/carta.dto';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 @WebSocketGateway({ cors: { origin: '*' } })
@@ -21,7 +27,10 @@ export class CartasGateway {
   }
 
   @SubscribeMessage('cartas.create')
-  async create(@ConnectedSocket() client: Socket, @MessageBody() data: CartaWrite) {
+  async create(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: CartaWriteDto,
+  ) {
     await this.session.requireUser(client);
     const row = await this.cartas.create(data);
     this.server.emit('cartas.created', row);
@@ -29,7 +38,10 @@ export class CartasGateway {
   }
 
   @SubscribeMessage('cartas.update')
-  async update(@ConnectedSocket() client: Socket, @MessageBody() body: { id: string; data: Partial<CartaWrite> }) {
+  async update(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { id: string; data: Partial<CartaWriteDto> },
+  ) {
     await this.session.requireUser(client);
     const row = await this.cartas.update(body.id, body.data);
     if (row) this.server.emit('cartas.updated', row);
@@ -37,7 +49,10 @@ export class CartasGateway {
   }
 
   @SubscribeMessage('cartas.delete')
-  async delete(@ConnectedSocket() client: Socket, @MessageBody() body: { id: string }) {
+  async delete(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { id: string },
+  ) {
     await this.session.requireUser(client);
     const ok = await this.cartas.delete(body.id);
     if (ok) this.server.emit('cartas.deleted', { id: body.id });

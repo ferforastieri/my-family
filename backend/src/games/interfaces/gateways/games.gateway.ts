@@ -9,9 +9,10 @@ import { Server, Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/ws-session.service';
 import { GamesService } from '../../application/games.service';
 import type {
-  GameWordWrite,
-  QuizQuestionWrite,
-} from '../../infrastructure/repositories/games.repository';
+  GameCompletionWriteDto,
+  GameWordWriteDto,
+  QuizQuestionWriteDto,
+} from '../dto/game.dto';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 @WebSocketGateway({ cors: { origin: '*' } })
@@ -41,7 +42,7 @@ export class GamesGateway {
   @SubscribeMessage('games.quiz.create')
   async createQuestion(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: QuizQuestionWrite,
+    @MessageBody() body: QuizQuestionWriteDto,
   ) {
     await this.session.requireRole(client, ['admin']);
     const row = await this.games.createQuestion(body);
@@ -52,7 +53,7 @@ export class GamesGateway {
   @SubscribeMessage('games.quiz.update')
   async updateQuestion(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string; data: Partial<QuizQuestionWrite> },
+    @MessageBody() body: { id: string; data: Partial<QuizQuestionWriteDto> },
   ) {
     await this.session.requireRole(client, ['admin']);
     const row = await this.games.updateQuestion(body.id, body.data);
@@ -88,7 +89,7 @@ export class GamesGateway {
   @SubscribeMessage('games.words.create')
   async createWord(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: GameWordWrite,
+    @MessageBody() body: GameWordWriteDto,
   ) {
     await this.session.requireRole(client, ['admin']);
     const row = await this.games.createWord(body);
@@ -99,7 +100,7 @@ export class GamesGateway {
   @SubscribeMessage('games.words.update')
   async updateWord(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string; data: Partial<GameWordWrite> },
+    @MessageBody() body: { id: string; data: Partial<GameWordWriteDto> },
   ) {
     await this.session.requireRole(client, ['admin']);
     const row = await this.games.updateWord(body.id, body.data);
@@ -121,13 +122,7 @@ export class GamesGateway {
   @SubscribeMessage('games.complete')
   async complete(
     @ConnectedSocket() client: Socket,
-    @MessageBody()
-    body: {
-      game: 'quiz' | 'word_search';
-      playerName?: string;
-      score?: number;
-      total?: number;
-    },
+    @MessageBody() body: GameCompletionWriteDto,
   ) {
     const user = await this.session.getUser(client);
     const row = await this.games.complete(body, user);

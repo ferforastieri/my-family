@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../core/api/query_keys.dart';
+import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_page_header.dart';
@@ -25,14 +27,10 @@ class LocationPage extends StatefulWidget {
 }
 
 class _LocationPageState extends State<LocationPage> {
-  final locations = <LocationSnapshot>[];
-  bool loading = true;
-
   @override
   void initState() {
     super.initState();
     widget.repository.socket.on('location.updated', _handleLocationUpdated);
-    Future.microtask(_load);
   }
 
   @override
@@ -41,32 +39,9 @@ class _LocationPageState extends State<LocationPage> {
     super.dispose();
   }
 
-  Future<void> _load() async {
-    setState(() => loading = true);
-    try {
-      final rows = await widget.repository.listLocations();
-      locations
-        ..clear()
-        ..addAll(rows);
-    } catch (error) {
-      widget.toast.error(error.toString());
-    } finally {
-      if (mounted) setState(() => loading = false);
-    }
-  }
-
-  void _handleLocationUpdated(dynamic data) {
-    if (data is! Map) return;
-    final row = LocationSnapshot.fromJson(Map<String, dynamic>.from(data));
-    final key = row.userName ?? row.id;
-    final index = locations.indexWhere((item) => (item.userName ?? item.id) == key);
-    setState(() {
-      if (index >= 0) {
-        locations[index] = row;
-      } else {
-        locations.insert(0, row);
-      }
-    });
+  void _handleLocationUpdated(dynamic _) {
+    if (!mounted) return;
+    invalidateQueries(context, QueryKeys.locations);
   }
 
   @override
@@ -81,7 +56,7 @@ class _LocationPageState extends State<LocationPage> {
         ),
       ),
       child: RefreshIndicator(
-        onRefresh: _load,
+        onRefresh: () async => invalidateQueries(context, QueryKeys.locations),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
@@ -100,20 +75,23 @@ class _LocationPageState extends State<LocationPage> {
             Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 1040),
-                child: loading && locations.isEmpty
-                    ? const PageSkeleton(cards: 4)
-                    : Column(
-                        children: [
-                          SizedBox(
-                            height: MediaQuery.of(context).size.width >= 840
-                                ? 620
-                                : 420,
-                            child: _LocationMap(locations: locations),
-                          ),
-                          const SizedBox(height: 16),
-                          _LocationList(locations: locations),
-                        ],
+                child: AppQuery<List<LocationSnapshot>>(
+                  queryKey: QueryKeys.locations,
+                  queryFn: widget.repository.listLocations,
+                  loading: const PageSkeleton(cards: 4),
+                  builder: (context, locations, refetch) => Column(
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.of(context).size.width >= 840
+                            ? 620
+                            : 420,
+                        child: _LocationMap(locations: locations),
                       ),
+                      const SizedBox(height: 16),
+                      _LocationList(locations: locations),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
@@ -171,8 +149,7 @@ class _LocationMap extends StatelessWidget {
                                   decoration: BoxDecoration(
                                     color: palette.card,
                                     borderRadius: BorderRadius.circular(999),
-                                    border:
-                                        Border.all(color: palette.primary),
+                                    border: Border.all(color: palette.primary),
                                   ),
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(
@@ -225,7 +202,8 @@ class _LocationList extends StatelessWidget {
           if (locations.isEmpty)
             const Padding(
               padding: EdgeInsets.all(18),
-              child: Text('Quando alguém abrir o app e permitir localização, aparece aqui.'),
+              child: Text(
+                  'Quando alguém abrir o app e permitir localização, aparece aqui.'),
             )
           else
             for (final location in locations) _LocationTile(location: location),
@@ -298,7 +276,8 @@ class _LocationTile extends StatelessWidget {
         foregroundColor: palette.primary,
         child: const Icon(Icons.person_pin_circle_outlined),
       ),
-      title: Text(_shortName(location), style: const TextStyle(fontWeight: FontWeight.w900)),
+      title: Text(_shortName(location),
+          style: const TextStyle(fontWeight: FontWeight.w900)),
       subtitle: Text(
         '${location.latitude.toStringAsFixed(5)}, ${location.longitude.toStringAsFixed(5)}',
       ),
@@ -307,7 +286,9 @@ class _LocationTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Icon(
-            location.isCharging == true ? Icons.battery_charging_full : Icons.battery_std,
+            location.isCharging == true
+                ? Icons.battery_charging_full
+                : Icons.battery_std,
             color: batteryColor,
           ),
           Text(

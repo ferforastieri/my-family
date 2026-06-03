@@ -14,4 +14,3 @@ export class MediaQueueProcessor extends WorkerHost {
     return this.upload.processMedia(job.data.relativePath);
   }
 }
-

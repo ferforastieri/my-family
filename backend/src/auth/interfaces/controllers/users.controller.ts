@@ -1,20 +1,18 @@
-import { Controller, Get, Patch, Delete, Param, Body, UseGuards, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+  NotFoundException,
+} from '@nestjs/common';
 import { UserService } from '@auth/application/user.service';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@auth/guards/roles.guard';
 import { Roles } from '@auth/decorators/roles.decorator';
-import { userRoles, type UserRole } from '@shared/domain/entities';
-import { IsOptional, IsString, IsIn } from 'class-validator';
-
-class UpdateUserDto {
-  @IsOptional()
-  @IsString()
-  name?: string;
-
-  @IsOptional()
-  @IsIn(userRoles)
-  role?: UserRole;
-}
+import { UpdateUserDto } from '../dto/user.dto';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -36,7 +34,7 @@ export class UsersController {
 
   @Patch(':id')
   async update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
-    const user = await this.user.update(id, { name: dto.name, role: dto.role });
+    const user = await this.user.update(id, dto);
     if (!user) throw new NotFoundException('Usuário não encontrado');
     return user;
   }

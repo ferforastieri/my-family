@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-
+import '../../../core/navigation/app_navigation.dart';
 import '../../../core/notifications/notifications_controller.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_button.dart';
@@ -86,7 +85,7 @@ class NotificationsSheet extends StatelessWidget {
                                       : Text(item.body),
                                   onTap: () {
                                     Navigator.pop(context);
-                                    context.go(item.url);
+                                    context.openAppRoute(item.url);
                                   },
                                 );
                               },

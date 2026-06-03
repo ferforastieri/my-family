@@ -6,6 +6,12 @@ import { ChatRepository } from '../infrastructure/repositories/chat.repository';
 import { ListsService } from '../../lists/application/lists.service';
 import { ListsRealtimeGateway } from '../../lists/interfaces/gateways/lists-realtime.gateway';
 import { FotosService } from '../../fotos/application/fotos.service';
+import { chatConversationFactory, chatMessageFactory } from './chat.factory';
+import { chatConversationMapper, chatMessageMapper } from './chat.mapper';
+import type {
+  ChatConversationCreateDto,
+  ChatMessageSendDto,
+} from '../interfaces/dto/chat.dto';
 
 @Injectable()
 export class ChatService {
@@ -17,21 +23,6 @@ export class ChatService {
     private fotos: FotosService,
   ) {}
 
-  private messageDto(
-    message: Awaited<ReturnType<ChatRepository['createMessage']>>,
-  ) {
-    return {
-      id: message.id,
-      conversationId: message.conversationId,
-      senderId: message.senderId,
-      senderName: message.senderName,
-      text: message.text,
-      mediaUrl: message.mediaUrl,
-      mediaType: message.mediaType,
-      at: new Date(message.createdAt).getTime(),
-    };
-  }
-
   async usersForChat(currentUser: UserEntity) {
     const page = await this.users.list({ page: 1, limit: 100 });
     return page.items
@@ -40,23 +31,31 @@ export class ChatService {
   }
 
   async listConversations(user?: UserEntity | null, query?: PaginationQuery) {
-    return this.chat.listForUser(user?.id, query);
+    const result = await this.chat.listForUser(user?.id, query);
+    return {
+      ...result,
+      items: result.items.map((item) => chatConversationMapper.toDto(item)),
+    };
   }
 
   async createDirectConversation(
     currentUser: UserEntity,
-    body: { title?: string; participantIds: string[] },
+    body: ChatConversationCreateDto,
   ) {
     const ids = Array.from(
       new Set([currentUser.id, ...(body.participantIds ?? [])]),
     );
     if (ids.length < 2)
       throw new ForbiddenException('Escolha pelo menos uma pessoa.');
-    return this.chat.createDirectConversation({
-      title: body.title?.trim() || 'Conversa',
-      participantIds: ids,
-      createdBy: currentUser.id,
-    });
+    return chatConversationMapper.toDto(
+      await this.chat.createDirectConversation(
+        chatConversationFactory.create({
+          ...body,
+          participantIds: ids,
+          createdBy: currentUser.id,
+        }),
+      ),
+    );
   }
 
   async listMessages(
@@ -75,18 +74,13 @@ export class ChatService {
     const page = await this.chat.listMessages(conversationId, query);
     return {
       ...page,
-      items: page.items.map((message) => this.messageDto(message)),
+      items: page.items.map((message) => chatMessageMapper.toDto(message)),
     };
   }
 
   async sendMessage(
     conversationId: string,
-    body: {
-      text?: string;
-      mediaUrl?: string;
-      mediaType?: 'image' | 'video';
-      senderName?: string;
-    },
+    body: Omit<ChatMessageSendDto, 'conversationId'>,
     user?: UserEntity | null,
   ) {
     const conversation = await this.chat.findConversation(conversationId);
@@ -99,14 +93,16 @@ export class ChatService {
     }
     const senderName =
       user?.name || user?.email || body.senderName?.trim() || 'Visitante';
-    const message = await this.chat.createMessage({
-      conversationId,
-      senderId: user?.id ?? null,
-      senderName,
-      text: body.text?.trim(),
-      mediaUrl: body.mediaUrl,
-      mediaType: body.mediaType,
-    });
+    const message = await this.chat.createMessage(
+      chatMessageFactory.create({
+        conversationId,
+        senderId: user?.id ?? null,
+        senderName,
+        text: body.text?.trim(),
+        mediaUrl: body.mediaUrl,
+        mediaType: body.mediaType,
+      }),
+    );
     if (body.text?.trim()) {
       const listResult = await this.lists.addFromChat(body.text, user);
       if (listResult) {
@@ -125,6 +121,6 @@ export class ChatService {
       });
       await this.fotos.processUpload(body.mediaUrl);
     }
-    return this.messageDto(message);
+    return chatMessageMapper.toDto(message);
   }
 }

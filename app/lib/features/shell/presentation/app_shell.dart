@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/chat/chat_controller.dart';
 import '../../../core/notifications/notifications_controller.dart';
+import '../../../core/navigation/app_navigation.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/toast/toast_controller.dart';
@@ -132,7 +131,7 @@ class _DesktopMainNavigation extends StatelessWidget {
             selectedIcon: Icons.home,
             label: 'Início',
             selected: currentLocation == '/',
-            onTap: () => context.go('/'),
+            onTap: () => context.openAppRoute('/'),
           ),
           _DesktopNavPill(
             icon: Icons.photo_library_outlined,
@@ -147,14 +146,14 @@ class _DesktopMainNavigation extends StatelessWidget {
               if (auth.user == null) {
                 onLogin();
               } else {
-                context.go('/atalhos/memorias');
+                context.openAppRoute('/atalhos/memorias');
               }
             },
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: InkWell(
-              onTap: () => context.go('/chat'),
+              onTap: () => context.openAppRoute('/chat'),
               customBorder: const CircleBorder(),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
@@ -193,7 +192,7 @@ class _DesktopMainNavigation extends StatelessWidget {
                 currentLocation == '/jogos' ||
                 currentLocation == '/listas' ||
                 currentLocation == '/localizacao',
-            onTap: () => context.go('/atalhos/mais'),
+            onTap: () => context.openAppRoute('/atalhos/mais'),
           ),
           _DesktopNavPill(
             icon: Icons.person_outline,
@@ -205,7 +204,7 @@ class _DesktopMainNavigation extends StatelessWidget {
               if (auth.user == null) {
                 onLogin();
               } else {
-                context.go('/perfil');
+                context.openAppRoute('/perfil');
               }
             },
           ),
@@ -411,7 +410,7 @@ class _MobileBottomNavigation extends StatelessWidget {
                 selectedIcon: Icons.home,
                 label: 'Início',
                 selected: currentLocation == '/',
-                onTap: () => context.go('/'),
+                onTap: () => context.openAppRoute('/'),
               ),
               _MobileNavButton(
                 icon: Icons.photo_library_outlined,
@@ -426,7 +425,7 @@ class _MobileBottomNavigation extends StatelessWidget {
                   if (auth.user == null) {
                     onLogin();
                   } else {
-                    context.go('/atalhos/memorias');
+                    context.openAppRoute('/atalhos/memorias');
                   }
                 },
               ),
@@ -435,7 +434,7 @@ class _MobileBottomNavigation extends StatelessWidget {
                   child: Transform.translate(
                     offset: const Offset(0, -16),
                     child: InkWell(
-                      onTap: () => context.go('/chat'),
+                      onTap: () => context.openAppRoute('/chat'),
                       customBorder: const CircleBorder(),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 180),
@@ -476,7 +475,7 @@ class _MobileBottomNavigation extends StatelessWidget {
                     currentLocation == '/jogos' ||
                     currentLocation == '/listas' ||
                     currentLocation == '/localizacao',
-                onTap: () => context.go('/atalhos/mais'),
+                onTap: () => context.openAppRoute('/atalhos/mais'),
               ),
               _MobileNavButton(
                 icon: Icons.person_outline,
@@ -488,7 +487,7 @@ class _MobileBottomNavigation extends StatelessWidget {
                   if (auth.user == null) {
                     onLogin();
                   } else {
-                    context.go('/perfil');
+                    context.openAppRoute('/perfil');
                   }
                 },
               ),
@@ -593,7 +592,7 @@ class MobileOptionsPage extends StatelessWidget {
                     title: item.label,
                     description: item.description,
                     icon: item.icon,
-                    onTap: () => context.go(item.path),
+                    onTap: () => context.openAppRoute(item.path),
                     maxWidth: 720,
                   ),
                 ),
