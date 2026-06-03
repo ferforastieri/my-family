@@ -32,4 +32,3 @@ class ToastController extends ChangeNotifier {
     notifyListeners();
   }
 }
-

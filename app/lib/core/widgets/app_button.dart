@@ -17,7 +17,10 @@ class AppButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final child = loading
-        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+        ? const SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2))
         : Text(label);
     if (icon == null) {
       return FilledButton(onPressed: loading ? null : onPressed, child: child);
@@ -29,4 +32,3 @@ class AppButton extends StatelessWidget {
     );
   }
 }
-

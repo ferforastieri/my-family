@@ -35,6 +35,13 @@ export class Environment {
     serviceAccountJson?: string;
   };
   redis?: { url: string };
+  log: {
+    level: string;
+  };
+  security: {
+    throttleTtlMs: number;
+    throttleLimit: number;
+  };
 
   isProduction(): boolean {
     return this.type === 'production';
@@ -62,6 +69,9 @@ class EnvironmentFactory {
     if (!uploadPath) {
       throw new Error('UPLOAD_PATH é obrigatório');
     }
+    const logLevel = readEnv('LOG_LEVEL', output.parsed);
+    const throttleTtlMs = readNumberEnv('THROTTLE_TTL_MS', output.parsed);
+    const throttleLimit = readNumberEnv('THROTTLE_LIMIT', output.parsed);
 
     return new Environment({
       type:
@@ -134,8 +144,31 @@ class EnvironmentFactory {
         process.env.REDIS_URL || output.parsed?.REDIS_URL
           ? { url: process.env.REDIS_URL || output.parsed?.REDIS_URL! }
           : undefined,
+      log: {
+        level: logLevel,
+      },
+      security: {
+        throttleTtlMs,
+        throttleLimit,
+      },
     });
   }
+}
+
+function readEnv(name: string, parsed?: Record<string, string>): string {
+  const value = process.env[name] || parsed?.[name];
+  if (!value) {
+    throw new Error(`${name} é obrigatório`);
+  }
+  return value;
+}
+
+function readNumberEnv(name: string, parsed?: Record<string, string>): number {
+  const value = Number(readEnv(name, parsed));
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error(`${name} deve ser um número positivo`);
+  }
+  return value;
 }
 
 @Global()

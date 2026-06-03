@@ -19,13 +19,16 @@ class SkeletonBox extends StatefulWidget {
   State<SkeletonBox> createState() => _SkeletonBoxState();
 }
 
-class _SkeletonBoxState extends State<SkeletonBox> with SingleTickerProviderStateMixin {
+class _SkeletonBoxState extends State<SkeletonBox>
+    with SingleTickerProviderStateMixin {
   late final AnimationController controller;
 
   @override
   void initState() {
     super.initState();
-    controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))..repeat(reverse: true);
+    controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1100))
+      ..repeat(reverse: true);
   }
 
   @override
@@ -38,7 +41,8 @@ class _SkeletonBoxState extends State<SkeletonBox> with SingleTickerProviderStat
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     return FadeTransition(
-      opacity: Tween<double>(begin: .45, end: .9).animate(CurvedAnimation(parent: controller, curve: Curves.easeInOut)),
+      opacity: Tween<double>(begin: .45, end: .9).animate(
+          CurvedAnimation(parent: controller, curve: Curves.easeInOut)),
       child: Container(
         width: widget.width,
         height: widget.height,
@@ -62,7 +66,8 @@ class PageSkeleton extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(32),
         children: [
-          const Center(child: SkeletonBox(width: 320, height: 44, borderRadius: 18)),
+          const Center(
+              child: SkeletonBox(width: 320, height: 44, borderRadius: 18)),
           const SizedBox(height: 32),
           Center(
             child: ConstrainedBox(
@@ -110,7 +115,9 @@ class SkeletonCard extends StatelessWidget {
             SizedBox(height: 10),
             SkeletonBox(width: 220, height: 16),
             Spacer(),
-            Align(alignment: Alignment.centerRight, child: SkeletonBox(width: 110, height: 14)),
+            Align(
+                alignment: Alignment.centerRight,
+                child: SkeletonBox(width: 110, height: 14)),
           ],
         ),
       ),

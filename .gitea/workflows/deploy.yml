@@ -36,6 +36,9 @@ jobs:
         env:
           MONGO_ROOT_PASSWORD: ${{ secrets.MONGO_ROOT_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
+          THROTTLE_TTL_MS: ${{ secrets.THROTTLE_TTL_MS }}
+          THROTTLE_LIMIT: ${{ secrets.THROTTLE_LIMIT }}
           UPLOAD_HOST_PATH: ${{ secrets.UPLOAD_HOST_PATH }}
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
           SOCKET_URL: ${{ secrets.SOCKET_URL }}
@@ -52,6 +55,9 @@ jobs:
           set -eu
           test -n "$MONGO_ROOT_PASSWORD" || { echo "Missing secret MONGO_ROOT_PASSWORD"; exit 1; }
           test -n "$JWT_SECRET" || { echo "Missing secret JWT_SECRET"; exit 1; }
+          test -n "$LOG_LEVEL" || { echo "Missing secret LOG_LEVEL"; exit 1; }
+          test -n "$THROTTLE_TTL_MS" || { echo "Missing secret THROTTLE_TTL_MS"; exit 1; }
+          test -n "$THROTTLE_LIMIT" || { echo "Missing secret THROTTLE_LIMIT"; exit 1; }
           test -n "$UPLOAD_HOST_PATH" || { echo "Missing secret UPLOAD_HOST_PATH"; exit 1; }
           test -n "$API_BASE_URL" || { echo "Missing secret API_BASE_URL"; exit 1; }
           test -n "$SOCKET_URL" || { echo "Missing secret SOCKET_URL"; exit 1; }
@@ -75,6 +81,9 @@ jobs:
           MONGO_PORT: ${{ secrets.MONGO_PORT }}
           REDIS_PORT: ${{ secrets.REDIS_PORT }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
+          THROTTLE_TTL_MS: ${{ secrets.THROTTLE_TTL_MS }}
+          THROTTLE_LIMIT: ${{ secrets.THROTTLE_LIMIT }}
           JWT_EXPIRES_IN: ${{ secrets.JWT_EXPIRES_IN }}
           CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
@@ -108,6 +117,9 @@ jobs:
             printf 'MONGO_PORT=%s\n' "${MONGO_PORT:-27019}"
             printf 'REDIS_PORT=%s\n' "${REDIS_PORT:-6389}"
             printf 'JWT_SECRET=%s\n' "$JWT_SECRET"
+            printf 'LOG_LEVEL=%s\n' "$LOG_LEVEL"
+            printf 'THROTTLE_TTL_MS=%s\n' "$THROTTLE_TTL_MS"
+            printf 'THROTTLE_LIMIT=%s\n' "$THROTTLE_LIMIT"
             printf 'JWT_EXPIRES_IN=%s\n' "${JWT_EXPIRES_IN:-7d}"
             printf 'CORS_ORIGIN=%s\n' "${CORS_ORIGIN:-*}"
             printf 'API_BASE_URL=%s\n' "$API_BASE_URL"

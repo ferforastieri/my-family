@@ -120,10 +120,7 @@ class ChatController extends ChangeNotifier {
   Future<void> sendText(String text, {String? senderName}) async {
     final conversation = active;
     if (conversation == null) {
-      throw Exception('Nenhuma conversa selecionada.');
-    }
-    if (text.trim().isEmpty) {
-      throw Exception('Escreva uma mensagem.');
+      return;
     }
     final row = await api.mutate<Map<String, dynamic>>('chat.message.send', {
       'conversationId': conversation.id,
@@ -141,7 +138,7 @@ class ChatController extends ChangeNotifier {
   Future<void> sendMedia(String text, XFile file, {String? senderName}) async {
     final conversation = active;
     if (conversation == null) {
-      throw Exception('Nenhuma conversa selecionada.');
+      return;
     }
     final relativePath = await repository.uploadPhotoFile(file);
     final ext = relativePath.split('.').last.toLowerCase();

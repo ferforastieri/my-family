@@ -103,7 +103,6 @@ GoRouter buildRouter(
           GoRoute(
             path: '/',
             pageBuilder: (context, state) => _page(HomePage(onNavigate: (path) {
-              toast.info('Abrindo página...');
               context.openAppRoute(path);
             })),
           ),

@@ -7,4 +7,3 @@ const bgEnd = Color(0xfffff0f5);
 const foreground = Color(0xff26131d);
 const muted = Color(0xff775b6b);
 const border = Color(0xffffdce9);
-

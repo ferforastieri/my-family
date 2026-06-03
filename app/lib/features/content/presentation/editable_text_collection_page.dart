@@ -248,7 +248,7 @@ class _EditableTextCollectionPageState
           } else {
             await widget.repository.update('cartas', item.id, payload);
           }
-          widget.toast.success('Texto salvo.');
+          widget.toast.success(widget.repository.takeMessage());
           _invalidate();
         },
       ),
@@ -257,7 +257,7 @@ class _EditableTextCollectionPageState
 
   Future<void> _delete(FamilyItem item) async {
     await widget.repository.delete('cartas', item.id);
-    widget.toast.success('Texto removido.');
+    widget.toast.success(widget.repository.takeMessage());
     _invalidate();
   }
 }

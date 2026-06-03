@@ -3,7 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'theme_controller.dart';
 
-ThemeData buildAppTheme({ThemeColorChoice color = ThemeColorChoice.rosa, ThemeMode mode = ThemeMode.light}) {
+ThemeData buildAppTheme(
+    {ThemeColorChoice color = ThemeColorChoice.rosa,
+    ThemeMode mode = ThemeMode.light}) {
   final palette = AppPalette.from(color, mode);
   return ThemeData(
     brightness: mode == ThemeMode.dark ? Brightness.dark : Brightness.light,
@@ -77,9 +79,30 @@ class AppPalette extends ThemeExtension<AppPalette> {
   factory AppPalette.from(ThemeColorChoice color, ThemeMode mode) {
     final isDark = mode == ThemeMode.dark;
     final base = switch (color) {
-      ThemeColorChoice.rosa => (const Color(0xffff69b4), const Color(0xffd4488e), const Color(0xfffff8fa), const Color(0xfffff0f5), const Color(0xff1a0a12), const Color(0xff2d151f)),
-      ThemeColorChoice.azul => (const Color(0xff3b82f6), const Color(0xff2563eb), const Color(0xffeff6ff), const Color(0xffdbeafe), const Color(0xff0f172a), const Color(0xff1e3a5f)),
-      ThemeColorChoice.vermelho => (const Color(0xffef4444), const Color(0xffdc2626), const Color(0xfffef2f2), const Color(0xfffee2e2), const Color(0xff1c0a0a), const Color(0xff2d1515)),
+      ThemeColorChoice.rosa => (
+          const Color(0xffff69b4),
+          const Color(0xffd4488e),
+          const Color(0xfffff8fa),
+          const Color(0xfffff0f5),
+          const Color(0xff1a0a12),
+          const Color(0xff2d151f)
+        ),
+      ThemeColorChoice.azul => (
+          const Color(0xff3b82f6),
+          const Color(0xff2563eb),
+          const Color(0xffeff6ff),
+          const Color(0xffdbeafe),
+          const Color(0xff0f172a),
+          const Color(0xff1e3a5f)
+        ),
+      ThemeColorChoice.vermelho => (
+          const Color(0xffef4444),
+          const Color(0xffdc2626),
+          const Color(0xfffef2f2),
+          const Color(0xfffee2e2),
+          const Color(0xff1c0a0a),
+          const Color(0xff2d1515)
+        ),
     };
     return AppPalette(
       primary: base.$1,
@@ -88,7 +111,9 @@ class AppPalette extends ThemeExtension<AppPalette> {
       bgEnd: isDark ? base.$6 : base.$4,
       foreground: isDark ? const Color(0xfff7edf2) : const Color(0xff26131d),
       muted: isDark ? const Color(0xffc9aeba) : const Color(0xff775b6b),
-      border: isDark ? base.$1.withValues(alpha: .22) : base.$1.withValues(alpha: .22),
+      border: isDark
+          ? base.$1.withValues(alpha: .22)
+          : base.$1.withValues(alpha: .22),
       card: isDark ? const Color(0xff1f1118) : Colors.white,
     );
   }
@@ -140,7 +165,8 @@ class AppTextThemes extends ThemeExtension<AppTextThemes> {
 
   @override
   AppTextThemes copyWith({TextStyle? display, TextStyle? body}) {
-    return AppTextThemes(display: display ?? this.display, body: body ?? this.body);
+    return AppTextThemes(
+        display: display ?? this.display, body: body ?? this.body);
   }
 
   @override

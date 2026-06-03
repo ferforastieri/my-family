@@ -4,7 +4,8 @@ import '../theme/app_theme.dart';
 import 'toast_controller.dart';
 
 class ToastOverlay extends StatelessWidget {
-  const ToastOverlay({super.key, required this.controller, required this.child});
+  const ToastOverlay(
+      {super.key, required this.controller, required this.child});
 
   final ToastController controller;
   final Widget child;
@@ -22,14 +23,19 @@ class ToastOverlay extends StatelessWidget {
               child: AnimatedAlign(
                 duration: const Duration(milliseconds: 220),
                 curve: Curves.easeOut,
-                alignment: toast == null ? const Alignment(0, -1.25) : Alignment.topCenter,
+                alignment: toast == null
+                    ? const Alignment(0, -1.25)
+                    : Alignment.topCenter,
                 child: AnimatedOpacity(
                   duration: const Duration(milliseconds: 180),
                   opacity: toast == null ? 0 : 1,
                   child: SafeArea(
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 14, left: 16, right: 16),
-                      child: toast == null ? const SizedBox.shrink() : _ToastCard(toast: toast),
+                      padding:
+                          const EdgeInsets.only(top: 14, left: 16, right: 16),
+                      child: toast == null
+                          ? const SizedBox.shrink()
+                          : _ToastCard(toast: toast),
                     ),
                   ),
                 ),
@@ -81,7 +87,8 @@ class _ToastCard extends StatelessWidget {
               Flexible(
                 child: Text(
                   toast.message,
-                  style: TextStyle(color: palette.foreground, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                      color: palette.foreground, fontWeight: FontWeight.w700),
                 ),
               ),
             ],
@@ -91,4 +98,3 @@ class _ToastCard extends StatelessWidget {
     );
   }
 }
-

@@ -65,10 +65,6 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _sendImage() async {
-    if (widget.auth.user == null) {
-      widget.toast.info('Entre para enviar imagens para Memórias.');
-      return;
-    }
     final picker = ImagePicker();
     final file = await picker.pickImage(source: ImageSource.gallery);
     if (file == null) return;
@@ -76,7 +72,7 @@ class _ChatPageState extends State<ChatPage> {
     try {
       await widget.chat.sendMedia(text.text, file, senderName: _senderName);
       text.clear();
-      widget.toast.success('Imagem enviada e salva em Memórias.');
+      widget.toast.success(widget.chat.repository.takeMessage());
     } catch (error) {
       widget.toast.error(error.toString());
     } finally {

@@ -101,7 +101,7 @@ class _ListsPageState extends State<ListsPage> {
           });
           setState(() => selectedListId = row.id);
           _invalidateLists();
-          widget.toast.success('Lista criada.');
+          widget.toast.success(widget.repository.takeMessage());
         },
       ),
     );
@@ -120,7 +120,7 @@ class _ListsPageState extends State<ListsPage> {
           await widget.repository
               .createFamilyListItem(listId, text.text.trim());
           _invalidateItems(listId);
-          widget.toast.success('Item adicionado.');
+          widget.toast.success(widget.repository.takeMessage());
         },
       ),
     );
@@ -128,7 +128,6 @@ class _ListsPageState extends State<ListsPage> {
 
   bool _ensureLogged() {
     if (widget.auth.user != null) return true;
-    widget.toast.info('Entre para alterar listas.');
     return false;
   }
 
