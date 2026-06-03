@@ -21,14 +21,24 @@ class FamilyRepository {
     int page,
     int limit, {
     String? titlePrefix,
+    String? album,
   }) async {
     final data = await api.query<dynamic>('$resource.list', {
       'page': page,
       'limit': limit,
       if (titlePrefix != null) 'titlePrefix': titlePrefix,
+      if (album != null && album.trim().isNotEmpty) 'album': album.trim(),
     });
     return _paginated(
         data, (row) => FamilyItem(Map<String, dynamic>.from(row)));
+  }
+
+  Future<List<PhotoAlbumSummary>> listPhotoAlbums() async {
+    final rows = await api.query<List<dynamic>>('fotos.albums');
+    return rows
+        .map((row) =>
+            PhotoAlbumSummary.fromJson(Map<String, dynamic>.from(row as Map)))
+        .toList();
   }
 
   Future<List<FamilyItem>> list(String resource) async {
@@ -345,6 +355,34 @@ class FamilyRepository {
     return _paginated(data,
             (row) => LocationSnapshot.fromJson(Map<String, dynamic>.from(row)))
         .items;
+  }
+
+  Future<List<LocationPlace>> listLocationPlaces() async {
+    final data = await api.query<List<dynamic>>('location.places');
+    return data
+        .map((row) =>
+            LocationPlace.fromJson(Map<String, dynamic>.from(row as Map)))
+        .toList();
+  }
+
+  Future<LocationPlace> createLocationPlace(Map<String, dynamic> data) async {
+    final row =
+        await api.mutate<Map<String, dynamic>>('location.places.create', data);
+    return LocationPlace.fromJson(Map<String, dynamic>.from(row));
+  }
+
+  Future<LocationPlace?> updateLocationPlace(
+      String id, Map<String, dynamic> data) async {
+    final row = await api.mutate<Map<String, dynamic>?>(
+        'location.places.update', {'id': id, 'data': data});
+    return row == null
+        ? null
+        : LocationPlace.fromJson(Map<String, dynamic>.from(row));
+  }
+
+  Future<void> deleteLocationPlace(String id) async {
+    await api
+        .mutate<Map<String, dynamic>>('location.places.delete', {'id': id});
   }
 
   PaginatedResult<T> _paginated<T>(

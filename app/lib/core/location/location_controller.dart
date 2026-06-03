@@ -4,20 +4,25 @@ import 'package:flutter/foundation.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../auth/auth_controller.dart';
 import '../api/socket_api_client.dart';
 import '../socket/socket_client.dart';
 
 class LocationController {
-  LocationController(this.socket);
+  LocationController(this.socket, this.auth);
 
   final SocketClient socket;
+  final AuthController auth;
   late final SocketApiClient api = SocketApiClient(socket);
   final Battery _battery = Battery();
   StreamSubscription<Position>? _positionSubscription;
   Timer? _timer;
   bool _started = false;
+  bool _authListenerBound = false;
 
   Future<void> bootstrap() async {
+    _bindAuthListener();
+    if (auth.user == null || socket.token == null) return;
     if (_started) return;
     _started = true;
     final permission = await _ensurePermission();
@@ -39,6 +44,20 @@ class LocationController {
     ).listen((position) => unawaited(_sendPosition(position)));
   }
 
+  void _bindAuthListener() {
+    if (_authListenerBound) return;
+    auth.addListener(_handleAuthChanged);
+    _authListenerBound = true;
+  }
+
+  void _handleAuthChanged() {
+    if (auth.user != null && socket.token != null) {
+      unawaited(bootstrap());
+    } else {
+      stop();
+    }
+  }
+
   Future<LocationPermission> _ensurePermission() async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) return LocationPermission.denied;
@@ -50,6 +69,7 @@ class LocationController {
   }
 
   Future<void> _sendCurrentPosition() async {
+    if (auth.user == null || socket.token == null) return;
     try {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
@@ -63,6 +83,7 @@ class LocationController {
   }
 
   Future<void> _sendPosition(Position position) async {
+    if (auth.user == null || socket.token == null) return;
     try {
       final batteryLevel = await _safeBatteryLevel();
       final batteryState = await _safeBatteryState();
@@ -107,8 +128,19 @@ class LocationController {
     return 'unknown';
   }
 
-  void dispose() {
+  void stop() {
     _timer?.cancel();
+    _timer = null;
     _positionSubscription?.cancel();
+    _positionSubscription = null;
+    _started = false;
+  }
+
+  void dispose() {
+    stop();
+    if (_authListenerBound) {
+      auth.removeListener(_handleAuthChanged);
+      _authListenerBound = false;
+    }
   }
 }

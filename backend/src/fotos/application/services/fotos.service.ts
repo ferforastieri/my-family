@@ -26,6 +26,10 @@ export class FotosService {
     };
   }
 
+  async findAlbums() {
+    return this.fotos.listAlbums();
+  }
+
   async findOne(id: string) {
     const item = await this.fotos.findById(id);
     return item ? fotoMapper.toDto(item) : null;

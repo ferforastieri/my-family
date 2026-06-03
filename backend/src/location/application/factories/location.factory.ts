@@ -1,8 +1,14 @@
 import { BadRequestException } from '@nestjs/common';
 import type { UserEntity } from '@auth/domain/entities/user.entity';
 import type { Factory } from '@shared/application/mapper';
-import { LocationUpdateDto } from '../../interfaces/dto/location.dto';
-import type { LocationUpdateWrite } from '../../infrastructure/repositories/location.repository';
+import {
+  LocationPlaceWriteDto,
+  LocationUpdateDto,
+} from '../../interfaces/dto/location.dto';
+import type {
+  LocationPlaceWrite,
+  LocationUpdateWrite,
+} from '../../infrastructure/repositories/location.repository';
 
 export type LocationFactoryInput = {
   dto: LocationUpdateDto;
@@ -38,6 +44,38 @@ export class LocationUpdateFactory implements Factory<
 }
 
 export const locationUpdateFactory = new LocationUpdateFactory();
+
+export class LocationPlaceFactory implements Factory<
+  LocationPlaceWriteDto,
+  LocationPlaceWrite
+> {
+  create(dto: LocationPlaceWriteDto): LocationPlaceWrite {
+    const latitude = Number(dto.latitude);
+    const longitude = Number(dto.longitude);
+    const radiusMeters = Number(dto.radiusMeters);
+    if (!dto.name?.trim()) {
+      throw new BadRequestException('Nome do local é obrigatório.');
+    }
+    if (
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude) ||
+      !Number.isFinite(radiusMeters)
+    ) {
+      throw new BadRequestException('Dados do local inválidos.');
+    }
+
+    return {
+      name: dto.name.trim(),
+      description: dto.description?.trim(),
+      latitude,
+      longitude,
+      radiusMeters: Math.max(20, Math.min(5000, Math.round(radiusMeters))),
+      active: dto.active ?? true,
+    };
+  }
+}
+
+export const locationPlaceFactory = new LocationPlaceFactory();
 
 function toOptionalNumber(value: unknown) {
   if (value === null || value === undefined) return undefined;

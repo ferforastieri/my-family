@@ -13,3 +13,26 @@ export interface LocationUpdateEntity {
   platform?: 'web' | 'android' | 'ios' | 'unknown' | null;
   createdAt: Date;
 }
+
+export interface LocationPlaceEntity {
+  id: string;
+  name: string;
+  description?: string | null;
+  latitude: number;
+  longitude: number;
+  radiusMeters: number;
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface LocationPresenceEntity {
+  id: string;
+  userId: string;
+  placeId: string;
+  inside: boolean;
+  userName?: string | null;
+  placeName?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}

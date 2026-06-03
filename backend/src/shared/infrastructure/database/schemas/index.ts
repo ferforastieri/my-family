@@ -7,6 +7,8 @@ export * from './family-list-item.schema';
 export * from './game-completion.schema';
 export * from './game-word.schema';
 export * from './location-update.schema';
+export * from './location-place.schema';
+export * from './location-presence.schema';
 export * from './musica.schema';
 export * from './notification.schema';
 export * from './password-reset.schema';
@@ -36,6 +38,14 @@ import {
   LocationUpdateDocument,
   LocationUpdateSchema,
 } from './location-update.schema';
+import {
+  LocationPlaceDocument,
+  LocationPlaceSchema,
+} from './location-place.schema';
+import {
+  LocationPresenceDocument,
+  LocationPresenceSchema,
+} from './location-presence.schema';
 import { MusicaDocument, MusicaSchema } from './musica.schema';
 import {
   NotificationDocument,
@@ -70,6 +80,8 @@ export const mongoModels = [
   { name: GameCompletionDocument.name, schema: GameCompletionSchema },
   { name: GameWordDocument.name, schema: GameWordSchema },
   { name: LocationUpdateDocument.name, schema: LocationUpdateSchema },
+  { name: LocationPlaceDocument.name, schema: LocationPlaceSchema },
+  { name: LocationPresenceDocument.name, schema: LocationPresenceSchema },
   { name: MusicaDocument.name, schema: MusicaSchema },
   { name: CartaDocument.name, schema: CartaSchema },
   { name: NotificationDocument.name, schema: NotificationSchema },

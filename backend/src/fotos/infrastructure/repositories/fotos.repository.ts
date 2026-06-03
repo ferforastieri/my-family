@@ -39,14 +39,15 @@ export class FotosRepository {
 
   async list(query?: PaginationQuery) {
     const { page, limit, skip } = normalizePagination(query);
+    const filter = this.albumFilter(query?.album);
     const [docs, total] = await Promise.all([
       this.model
-        .find()
+        .find(filter)
         .sort({ data: -1, createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .exec(),
-      this.model.countDocuments().exec(),
+      this.model.countDocuments(filter).exec(),
     ]);
     return paginated(
       docs.map((doc) => this.toEntity(doc)!),
@@ -54,6 +55,36 @@ export class FotosRepository {
       page,
       limit,
     );
+  }
+
+  async listAlbums() {
+    const rows = await this.model
+      .aggregate<{ album?: string | null; count: number }>([
+        {
+          $group: {
+            _id: '$album',
+            count: { $sum: 1 },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            album: '$_id',
+            count: 1,
+          },
+        },
+      ])
+      .exec();
+
+    const counts = new Map<string, number>();
+    for (const row of rows) {
+      const album = this.normalizeAlbum(row.album);
+      counts.set(album, (counts.get(album) ?? 0) + row.count);
+    }
+
+    return [...counts.entries()]
+      .map(([album, count]) => ({ album, count }))
+      .sort((a, b) => a.album.localeCompare(b.album, 'pt-BR'));
   }
 
   async findById(id: string) {
@@ -96,5 +127,26 @@ export class FotosRepository {
 
   async delete(id: string) {
     return !!(await this.model.findByIdAndDelete(id).exec());
+  }
+
+  private normalizeAlbum(album?: string | null) {
+    const value = album?.trim();
+    return value ? value : 'Geral';
+  }
+
+  private albumFilter(album?: string) {
+    const value = album?.trim();
+    if (!value) return {};
+    if (value === 'Geral') {
+      return {
+        $or: [
+          { album: 'Geral' },
+          { album: null },
+          { album: '' },
+          { album: { $exists: false } },
+        ],
+      };
+    }
+    return { album: value };
   }
 }

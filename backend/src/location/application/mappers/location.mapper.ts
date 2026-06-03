@@ -1,6 +1,12 @@
 import type { Mapper } from '@shared/application/mapper';
-import type { LocationUpdateEntity } from '@location/domain/entities/location.entity';
-import { LocationResponseDto } from '../../interfaces/dto/location.dto';
+import type {
+  LocationPlaceEntity,
+  LocationUpdateEntity,
+} from '@location/domain/entities/location.entity';
+import {
+  LocationPlaceResponseDto,
+  LocationResponseDto,
+} from '../../interfaces/dto/location.dto';
 
 export class LocationMapper implements Mapper<
   LocationUpdateEntity,
@@ -26,3 +32,24 @@ export class LocationMapper implements Mapper<
 }
 
 export const locationMapper = new LocationMapper();
+
+export class LocationPlaceMapper implements Mapper<
+  LocationPlaceEntity,
+  LocationPlaceResponseDto
+> {
+  toDto(source: LocationPlaceEntity): LocationPlaceResponseDto {
+    return {
+      id: source.id,
+      name: source.name,
+      description: source.description ?? null,
+      latitude: source.latitude,
+      longitude: source.longitude,
+      radiusMeters: source.radiusMeters,
+      active: source.active,
+      createdAt: source.createdAt,
+      updatedAt: source.updatedAt,
+    };
+  }
+}
+
+export const locationPlaceMapper = new LocationPlaceMapper();

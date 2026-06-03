@@ -5,6 +5,7 @@ class QueryKeys {
   static const notifications = ['notifications'];
   static const chatConversations = ['chat', 'conversations'];
   static const locations = ['location', 'latest'];
+  static const locationPlaces = ['location', 'places'];
   static const familyLists = ['lists'];
   static const admin = ['admin'];
 
@@ -33,8 +34,15 @@ class QueryKeys {
 
   static List<Object?> resourceScope(String resource) => ['resource', resource];
 
-  static List<Object?> resource(String resource, int page, int limit) =>
-      [...resourceScope(resource), page, limit];
+  static List<Object?> resource(
+    String resource,
+    int page,
+    int limit, {
+    String? album,
+  }) =>
+      [...resourceScope(resource), page, limit, if (album != null) album];
+
+  static List<Object?> photoAlbums() => [...resourceScope('fotos'), 'albums'];
 
   static List<Object?> textCollection(String prefix, int page, int limit) =>
       ['text-collection', prefix, page, limit];

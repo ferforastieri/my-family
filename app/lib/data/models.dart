@@ -68,6 +68,24 @@ class FamilyItem {
   String get tipo => (data['tipo'] ?? 'imagem').toString();
 }
 
+class PhotoAlbumSummary {
+  const PhotoAlbumSummary({
+    required this.album,
+    required this.count,
+  });
+
+  final String album;
+  final int count;
+
+  factory PhotoAlbumSummary.fromJson(Map<String, dynamic> json) {
+    final value = (json['album'] ?? 'Geral').toString().trim();
+    return PhotoAlbumSummary(
+      album: value.isEmpty ? 'Geral' : value,
+      count: (json['count'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
 class AppNotification {
   const AppNotification({
     required this.id,
@@ -314,5 +332,35 @@ class LocationSnapshot {
         at: json['createdAt'] is String
             ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
             : DateTime.now(),
+      );
+}
+
+class LocationPlace {
+  const LocationPlace({
+    required this.id,
+    required this.name,
+    required this.latitude,
+    required this.longitude,
+    required this.radiusMeters,
+    required this.active,
+    this.description,
+  });
+
+  final String id;
+  final String name;
+  final String? description;
+  final double latitude;
+  final double longitude;
+  final int radiusMeters;
+  final bool active;
+
+  factory LocationPlace.fromJson(Map<String, dynamic> json) => LocationPlace(
+        id: json['id'].toString(),
+        name: (json['name'] ?? 'Local').toString(),
+        description: json['description']?.toString(),
+        latitude: (json['latitude'] as num).toDouble(),
+        longitude: (json['longitude'] as num).toDouble(),
+        radiusMeters: (json['radiusMeters'] as num?)?.toInt() ?? 120,
+        active: json['active'] != false,
       );
 }

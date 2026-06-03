@@ -26,6 +26,11 @@ export class FotosGateway {
     return this.fotos.findAll(query);
   }
 
+  @SubscribeMessage('fotos.albums')
+  albums() {
+    return this.fotos.findAlbums();
+  }
+
   @SubscribeMessage('fotos.create')
   async create(
     @ConnectedSocket() client: Socket,

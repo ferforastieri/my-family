@@ -241,208 +241,254 @@ class _ListsLayout extends StatelessWidget {
           ? Future.value(<FamilyListItem>[])
           : repository.listFamilyListItems(selectedListId!),
       loading: const PageSkeleton(cards: 2),
-      builder: (context, selectedItems, _) {
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final wide = constraints.maxWidth >= 760;
-            final listPanel = _ListsPanel(
-              lists: lists,
-              selectedListId: selectedListId,
-              onSelect: onSelect,
-              onCreate: onCreate,
-            );
-            final itemPanel = _ItemsPanel(
-              list: selected,
-              items: selectedItems,
-              onAdd: onAdd,
-              onToggle: (item) async {
-                if (!ensureLogged()) return;
-                await repository
-                    .updateFamilyListItem(item.id, {'checked': !item.checked});
-                invalidateItems(item.listId);
-              },
-              onDelete: (item) async {
-                if (!ensureLogged()) return;
-                await repository.deleteFamilyListItem(item.id);
-                invalidateItems(item.listId);
-              },
-            );
-            if (!wide) {
-              return Column(
-                children: [
-                  listPanel,
-                  const SizedBox(height: 14),
-                  itemPanel,
-                ],
-              );
-            }
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(width: 330, child: listPanel),
-                const SizedBox(width: 16),
-                Expanded(child: itemPanel),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-}
-
-class _ListsPanel extends StatelessWidget {
-  const _ListsPanel({
-    required this.lists,
-    required this.selectedListId,
-    required this.onSelect,
-    required this.onCreate,
-  });
-
-  final List<FamilyList> lists;
-  final String? selectedListId;
-  final ValueChanged<FamilyList> onSelect;
-  final VoidCallback onCreate;
-
-  @override
-  Widget build(BuildContext context) {
-    return LovePanel(
-      maxWidth: 980,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const _PanelTitle(
-            title: 'Minhas listas',
-            description: 'Compras, tarefas e combinados.',
-            icon: Icons.list_alt_outlined,
-          ),
-          const SizedBox(height: 16),
-          AppButton(onPressed: onCreate, label: 'Nova lista', icon: Icons.add),
-          const SizedBox(height: 12),
-          for (final list in lists)
-            ListTile(
-              selected: list.id == selectedListId,
-              leading: const Icon(Icons.checklist_outlined),
-              title: Text(list.title,
-                  style: const TextStyle(fontWeight: FontWeight.w900)),
-              subtitle: list.description?.isNotEmpty == true
-                  ? Text(list.description!)
-                  : null,
-              onTap: () => onSelect(list),
-            ),
-        ],
+      builder: (context, selectedItems, _) => _SimpleListsPanel(
+        lists: lists,
+        selectedListId: selectedListId,
+        selected: selected,
+        items: selectedItems,
+        onSelect: onSelect,
+        onCreate: onCreate,
+        onAdd: onAdd,
+        onToggle: (item) async {
+          if (!ensureLogged()) return;
+          await repository
+              .updateFamilyListItem(item.id, {'checked': !item.checked});
+          invalidateItems(item.listId);
+        },
+        onDelete: (item) async {
+          if (!ensureLogged()) return;
+          await repository.deleteFamilyListItem(item.id);
+          invalidateItems(item.listId);
+        },
       ),
     );
   }
 }
 
-class _ItemsPanel extends StatelessWidget {
-  const _ItemsPanel({
-    required this.list,
+class _SimpleListsPanel extends StatelessWidget {
+  const _SimpleListsPanel({
+    required this.lists,
+    required this.selectedListId,
+    required this.selected,
     required this.items,
+    required this.onSelect,
+    required this.onCreate,
     required this.onAdd,
     required this.onToggle,
     required this.onDelete,
   });
 
-  final FamilyList? list;
+  final List<FamilyList> lists;
+  final String? selectedListId;
+  final FamilyList? selected;
   final List<FamilyListItem> items;
+  final ValueChanged<FamilyList> onSelect;
+  final VoidCallback onCreate;
   final VoidCallback onAdd;
   final ValueChanged<FamilyListItem> onToggle;
   final ValueChanged<FamilyListItem> onDelete;
 
   @override
   Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final pending = items.where((item) => !item.checked).length;
     return LovePanel(
       maxWidth: 980,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _PanelTitle(
-            title: list?.title ?? 'Itens',
-            description: list == null
-                ? 'Selecione ou crie uma lista.'
-                : '${items.where((item) => !item.checked).length} pendentes.',
-            icon: Icons.task_alt_outlined,
-          ),
-          const SizedBox(height: 16),
-          AppButton(
-            onPressed: list == null ? null : onAdd,
-            label: 'Adicionar item',
-            icon: Icons.add_task_outlined,
-          ),
-          const SizedBox(height: 12),
-          if (list == null)
-            const Padding(
-              padding: EdgeInsets.all(18),
-              child: Text('Nenhuma lista selecionada.'),
-            )
-          else if (items.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(18),
-              child: Text('Nenhum item por enquanto.'),
-            )
-          else
-            for (final item in items)
-              CheckboxListTile(
-                value: item.checked,
-                onChanged: (_) => onToggle(item),
-                title: Text(
-                  item.text,
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Listas da família',
                   style: TextStyle(
-                    decoration:
-                        item.checked ? TextDecoration.lineThrough : null,
-                    fontWeight: FontWeight.w800,
+                    color: palette.foreground,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
-                secondary: IconButton(
-                  onPressed: () => onDelete(item),
-                  icon: const Icon(Icons.delete_outline),
-                  tooltip: 'Excluir',
-                ),
               ),
+              IconButton.filledTonal(
+                onPressed: onCreate,
+                icon: const Icon(Icons.add),
+                tooltip: 'Nova lista',
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (lists.isEmpty)
+            const _EmptyState(
+              icon: Icons.playlist_add_outlined,
+              title: 'Nenhuma lista ainda',
+              text: 'Crie uma lista para compras, tarefas ou combinados.',
+            )
+          else
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (final list in lists) ...[
+                    ChoiceChip(
+                      selected: list.id == selectedListId,
+                      label: Text(list.title),
+                      avatar: const Icon(Icons.checklist_outlined, size: 18),
+                      onSelected: (_) => onSelect(list),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                ],
+              ),
+            ),
+          const SizedBox(height: 20),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: palette.card.withValues(alpha: .72),
+              border: Border.all(color: palette.border),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              selected?.title ?? 'Itens',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              selected == null
+                                  ? 'Selecione ou crie uma lista.'
+                                  : selected?.description?.isNotEmpty == true
+                                      ? selected!.description!
+                                      : '$pending pendentes.',
+                              style: TextStyle(
+                                color: palette.muted,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton.filled(
+                        onPressed: selected == null ? null : onAdd,
+                        icon: const Icon(Icons.add_task_outlined),
+                        tooltip: 'Adicionar item',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  if (selected == null)
+                    const _EmptyState(
+                      icon: Icons.touch_app_outlined,
+                      title: 'Escolha uma lista',
+                      text: 'Toque em uma lista acima para ver os itens.',
+                    )
+                  else if (items.isEmpty)
+                    const _EmptyState(
+                      icon: Icons.check_circle_outline,
+                      title: 'Lista vazia',
+                      text: 'Adicione o primeiro item quando quiser.',
+                    )
+                  else
+                    for (final item in items)
+                      _ListItemRow(
+                        item: item,
+                        onToggle: () => onToggle(item),
+                        onDelete: () => onDelete(item),
+                      ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _PanelTitle extends StatelessWidget {
-  const _PanelTitle({
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({
     required this.title,
-    required this.description,
+    required this.text,
     required this.icon,
   });
 
   final String title;
-  final String description;
+  final String text;
   final IconData icon;
 
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    return Row(
-      children: [
-        CircleAvatar(
-          backgroundColor: palette.primary.withValues(alpha: .14),
-          foregroundColor: palette.primary,
-          child: Icon(icon),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title,
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w900)),
-              Text(description,
-                  style: TextStyle(
-                      color: palette.muted, fontWeight: FontWeight.w700)),
-            ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 18),
+      child: Column(
+        children: [
+          Icon(icon, color: palette.primary, size: 32),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
           ),
-        ),
-      ],
+          const SizedBox(height: 4),
+          Text(
+            text,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: palette.muted),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ListItemRow extends StatelessWidget {
+  const _ListItemRow({
+    required this.item,
+    required this.onToggle,
+    required this.onDelete,
+  });
+
+  final FamilyListItem item;
+  final VoidCallback onToggle;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          Checkbox(value: item.checked, onChanged: (_) => onToggle()),
+          Expanded(
+            child: Text(
+              item.text,
+              style: TextStyle(
+                decoration: item.checked ? TextDecoration.lineThrough : null,
+                color: item.checked ? palette.muted : palette.foreground,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          IconButton(
+            onPressed: onDelete,
+            icon: const Icon(Icons.delete_outline),
+            tooltip: 'Excluir',
+          ),
+        ],
+      ),
     );
   }
 }
