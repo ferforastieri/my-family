@@ -5,9 +5,10 @@ import { MongoModelsModule } from '@shared/infrastructure/database/database.prov
 import { ChatService } from './application/chat.service';
 import { ChatRepository } from './infrastructure/repositories/chat.repository';
 import { ChatGateway } from './interfaces/gateways/chat.gateway';
+import { ListsModule } from '../lists/lists.module';
 
 @Module({
-  imports: [DatabaseModule, MongoModelsModule, AuthModule],
+  imports: [DatabaseModule, MongoModelsModule, AuthModule, ListsModule],
   providers: [ChatService, ChatRepository, ChatGateway],
 })
 export class ChatModule {}

@@ -219,3 +219,42 @@ class GameWord {
         active: json['active'] != false,
       );
 }
+
+class FamilyList {
+  const FamilyList({
+    required this.id,
+    required this.title,
+    this.description,
+  });
+
+  final String id;
+  final String title;
+  final String? description;
+
+  factory FamilyList.fromJson(Map<String, dynamic> json) => FamilyList(
+        id: json['id'].toString(),
+        title: (json['title'] ?? 'Lista').toString(),
+        description: json['description']?.toString(),
+      );
+}
+
+class FamilyListItem {
+  const FamilyListItem({
+    required this.id,
+    required this.listId,
+    required this.text,
+    required this.checked,
+  });
+
+  final String id;
+  final String listId;
+  final String text;
+  final bool checked;
+
+  factory FamilyListItem.fromJson(Map<String, dynamic> json) => FamilyListItem(
+        id: json['id'].toString(),
+        listId: json['listId'].toString(),
+        text: (json['text'] ?? '').toString(),
+        checked: json['checked'] == true,
+      );
+}

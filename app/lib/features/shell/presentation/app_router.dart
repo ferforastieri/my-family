@@ -12,6 +12,7 @@ import '../../chat/presentation/chat_page.dart';
 import '../../content/presentation/editable_text_collection_page.dart';
 import '../../games/presentation/games_page.dart';
 import '../../home/presentation/home_page.dart';
+import '../../lists/presentation/lists_page.dart';
 import '../../profile/presentation/profile_page.dart';
 import '../../resources/presentation/resource_page.dart';
 import 'app_shell.dart';
@@ -82,6 +83,12 @@ GoRouter buildRouter(
                   path: '/jogos',
                   icon: Icons.sports_esports_outlined,
                 ),
+                MobileOptionItem(
+                  label: 'Listas',
+                  description: 'Compras, tarefas e combinados.',
+                  path: '/listas',
+                  icon: Icons.checklist_outlined,
+                ),
               ],
             )),
           ),
@@ -135,6 +142,14 @@ GoRouter buildRouter(
             path: '/jogos',
             pageBuilder: (context, state) => _page(
                 GamesPage(repository: repository, toast: toast, auth: auth)),
+          ),
+          GoRoute(
+            path: '/listas',
+            pageBuilder: (context, state) => _page(ListsPage(
+              repository: repository,
+              auth: auth,
+              toast: toast,
+            )),
           ),
           GoRoute(
             path: '/perfil',
