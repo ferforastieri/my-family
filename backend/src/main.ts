@@ -3,6 +3,8 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
+import { doubleCsrf } from 'csrf-csrf';
 import { AppModule } from './app.module';
 import { Environment } from '@shared/infrastructure/environment/environment.module';
 
@@ -21,6 +23,34 @@ async function bootstrap() {
       crossOriginResourcePolicy: { policy: 'cross-origin' },
     }),
   );
+  app.use(cookieParser());
+  const { doubleCsrfProtection } = doubleCsrf({
+    getSecret: () => environment.security.csrfSecret,
+    getSessionIdentifier: (request) =>
+      request.headers.authorization ||
+      request.headers['x-forwarded-for']?.toString() ||
+      request.ip ||
+      'anonymous',
+    cookieName: environment.isProduction()
+      ? '__Host-fmf.x-csrf-token'
+      : 'fmf.x-csrf-token',
+    cookieOptions: {
+      httpOnly: true,
+      path: '/',
+      sameSite: environment.isProduction() ? 'none' : 'lax',
+      secure: environment.isProduction(),
+    },
+    getCsrfTokenFromRequest: (request) => request.headers['x-csrf-token'],
+    errorConfig: {
+      statusCode: 403,
+      message: 'Token CSRF inválido ou ausente.',
+      code: 'EBADCSRFTOKEN',
+    },
+    skipCsrfProtection: (request) =>
+      hasBearerToken(request.headers.authorization) ||
+      request.path.startsWith('/socket.io'),
+  });
+  app.use(doubleCsrfProtection);
   app.setGlobalPrefix('api');
   app.enableCors({
     origin: parseCorsOrigin(environment.cors.origin),
@@ -46,4 +76,8 @@ function parseCorsOrigin(origin: string): string | string[] {
     .map((item) => item.trim())
     .filter(Boolean);
   return items.length > 1 ? items : items[0];
+}
+
+function hasBearerToken(authorization?: string): boolean {
+  return authorization?.trim().toLowerCase().startsWith('bearer ') === true;
 }
