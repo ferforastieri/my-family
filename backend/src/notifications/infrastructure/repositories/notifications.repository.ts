@@ -7,8 +7,17 @@ import {
   PushSubscriptionDocument,
   PushSubscriptionMongoDocument,
 } from '@shared/infrastructure/database/schemas';
-import { cleanUndefined, normalizePagination, paginated, PaginationQuery, toId } from '@shared/infrastructure/database/mongo.utils';
-import type { NotificationEntity, PushSubscriptionEntity } from '@shared/domain/entities';
+import {
+  cleanUndefined,
+  normalizePagination,
+  paginated,
+  PaginationQuery,
+  toId,
+} from '@shared/infrastructure/database/mongo.utils';
+import type {
+  NotificationEntity,
+  PushSubscriptionEntity,
+} from '@notifications/domain/entities/notification.entity';
 
 export type NotificationWrite = {
   title: string;
@@ -20,11 +29,15 @@ export type NotificationWrite = {
 @Injectable()
 export class NotificationsRepository {
   constructor(
-    @InjectModel(NotificationDocument.name) private notifications: Model<NotificationMongoDocument>,
-    @InjectModel(PushSubscriptionDocument.name) private subscriptions: Model<PushSubscriptionMongoDocument>,
+    @InjectModel(NotificationDocument.name)
+    private notifications: Model<NotificationMongoDocument>,
+    @InjectModel(PushSubscriptionDocument.name)
+    private subscriptions: Model<PushSubscriptionMongoDocument>,
   ) {}
 
-  private toNotification(doc: NotificationMongoDocument | null): NotificationEntity | null {
+  private toNotification(
+    doc: NotificationMongoDocument | null,
+  ): NotificationEntity | null {
     if (!doc) return null;
     return {
       id: toId(doc),
@@ -36,7 +49,9 @@ export class NotificationsRepository {
     };
   }
 
-  private toSubscription(doc: PushSubscriptionMongoDocument | null): PushSubscriptionEntity | null {
+  private toSubscription(
+    doc: PushSubscriptionMongoDocument | null,
+  ): PushSubscriptionEntity | null {
     if (!doc) return null;
     return {
       id: toId(doc),
@@ -48,12 +63,26 @@ export class NotificationsRepository {
   }
 
   async list(query?: PaginationQuery) {
-    const { page, limit, skip } = normalizePagination(query, { page: 1, limit: 30, maxLimit: 100 });
+    const { page, limit, skip } = normalizePagination(query, {
+      page: 1,
+      limit: 30,
+      maxLimit: 100,
+    });
     const [docs, total] = await Promise.all([
-      this.notifications.find().sort({ createdAt: -1 }).skip(skip).limit(limit).exec(),
+      this.notifications
+        .find()
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
       this.notifications.countDocuments().exec(),
     ]);
-    return paginated(docs.map((doc) => this.toNotification(doc)!), total, page, limit);
+    return paginated(
+      docs.map((doc) => this.toNotification(doc)!),
+      total,
+      page,
+      limit,
+    );
   }
 
   async findById(id: string) {
@@ -73,7 +102,9 @@ export class NotificationsRepository {
 
   async update(id: string, data: Partial<NotificationWrite>) {
     return this.toNotification(
-      await this.notifications.findByIdAndUpdate(id, { $set: cleanUndefined(data) }, { new: true }).exec(),
+      await this.notifications
+        .findByIdAndUpdate(id, { $set: cleanUndefined(data) }, { new: true })
+        .exec(),
     );
   }
 
@@ -85,9 +116,17 @@ export class NotificationsRepository {
     await this.notifications.deleteMany({}).exec();
   }
 
-  async upsertFcmToken(data: { fcmToken: string; platform?: 'web' | 'android' | 'ios' | 'unknown'; userAgent?: string }) {
+  async upsertFcmToken(data: {
+    fcmToken: string;
+    platform?: 'web' | 'android' | 'ios' | 'unknown';
+    userAgent?: string;
+  }) {
     await this.subscriptions
-      .findOneAndUpdate({ fcmToken: data.fcmToken }, { $set: data, $setOnInsert: { createdAt: new Date() } }, { upsert: true })
+      .findOneAndUpdate(
+        { fcmToken: data.fcmToken },
+        { $set: data, $setOnInsert: { createdAt: new Date() } },
+        { upsert: true },
+      )
       .exec();
   }
 
@@ -96,7 +135,9 @@ export class NotificationsRepository {
   }
 
   async listSubscriptions() {
-    return (await this.subscriptions.find().exec()).map((doc) => this.toSubscription(doc)!);
+    return (await this.subscriptions.find().exec()).map(
+      (doc) => this.toSubscription(doc)!,
+    );
   }
 
   async deleteSubscription(id: string) {

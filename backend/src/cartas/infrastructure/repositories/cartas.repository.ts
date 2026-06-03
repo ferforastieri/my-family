@@ -12,7 +12,7 @@ import {
   PaginationQuery,
   toId,
 } from '@shared/infrastructure/database/mongo.utils';
-import type { CartaEntity } from '@shared/domain/entities';
+import type { CartaEntity } from '@cartas/domain/entities/carta.entity';
 
 export type CartaWrite = Pick<CartaEntity, 'titulo' | 'conteudo'> &
   Partial<Pick<CartaEntity, 'data'>>;

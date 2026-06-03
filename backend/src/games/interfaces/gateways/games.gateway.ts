@@ -6,8 +6,8 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { WsSessionService } from '@auth/application/ws-session.service';
-import { GamesService } from '../../application/games.service';
+import { WsSessionService } from '@auth/application/services/ws-session.service';
+import { GamesService } from '../../application/services/games.service';
 import type {
   GameCompletionWriteDto,
   GameWordWriteDto,

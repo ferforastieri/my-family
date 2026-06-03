@@ -1,8 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { ScheduledNotificationDocument, ScheduledNotificationMongoDocument } from '@shared/infrastructure/database/schemas';
-import { cleanUndefined, toId } from '@shared/infrastructure/database/mongo.utils';
+import {
+  ScheduledNotificationDocument,
+  ScheduledNotificationMongoDocument,
+} from '@shared/infrastructure/database/schemas';
+import {
+  cleanUndefined,
+  toId,
+} from '@shared/infrastructure/database/mongo.utils';
 
 export type ScheduledNotificationWrite = {
   title: string;
@@ -13,7 +19,10 @@ export type ScheduledNotificationWrite = {
 
 @Injectable()
 export class ScheduledNotificationsRepository {
-  constructor(@InjectModel(ScheduledNotificationDocument.name) private model: Model<ScheduledNotificationMongoDocument>) {}
+  constructor(
+    @InjectModel(ScheduledNotificationDocument.name)
+    private model: Model<ScheduledNotificationMongoDocument>,
+  ) {}
 
   private toDto(doc: ScheduledNotificationMongoDocument | null) {
     if (!doc) return null;
@@ -36,19 +45,40 @@ export class ScheduledNotificationsRepository {
   }
 
   async pending() {
-    return (await this.model.find({ status: 'pending' }).sort({ scheduledAt: 1 }).exec()).map((doc) => this.toDto(doc)!);
+    return (
+      await this.model
+        .find({ status: 'pending' })
+        .sort({ scheduledAt: 1 })
+        .exec()
+    ).map((doc) => this.toDto(doc)!);
   }
 
   async markSent(id: string) {
-    return this.toDto(await this.model.findByIdAndUpdate(id, { $set: { status: 'sent', sentAt: new Date() } }, { new: true }).exec());
+    return this.toDto(
+      await this.model
+        .findByIdAndUpdate(
+          id,
+          { $set: { status: 'sent', sentAt: new Date() } },
+          { new: true },
+        )
+        .exec(),
+    );
   }
 
   async markFailed(id: string, error: string) {
     return this.toDto(
       await this.model
-        .findByIdAndUpdate(id, { $set: cleanUndefined({ status: 'failed', error: error.slice(0, 500) }) }, { new: true })
+        .findByIdAndUpdate(
+          id,
+          {
+            $set: cleanUndefined({
+              status: 'failed',
+              error: error.slice(0, 500),
+            }),
+          },
+          { new: true },
+        )
         .exec(),
     );
   }
 }
-

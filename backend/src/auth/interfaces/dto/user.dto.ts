@@ -1,5 +1,5 @@
 import { IsIn, IsOptional, IsString } from 'class-validator';
-import { userRoles, type UserRole } from '@shared/domain/entities';
+import { userRoles, type UserRole } from '@auth/domain/entities/user.entity';
 
 export class UpdateUserDto {
   @IsOptional()

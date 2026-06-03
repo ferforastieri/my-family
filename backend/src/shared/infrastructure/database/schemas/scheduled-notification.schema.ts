@@ -15,7 +15,11 @@ export class ScheduledNotificationDocument {
   @Prop({ required: true })
   scheduledAt: Date;
 
-  @Prop({ required: true, default: 'pending', enum: ['pending', 'sent', 'failed', 'cancelled'] })
+  @Prop({
+    required: true,
+    default: 'pending',
+    enum: ['pending', 'sent', 'failed', 'cancelled'],
+  })
   status: 'pending' | 'sent' | 'failed' | 'cancelled';
 
   @Prop()
@@ -28,6 +32,8 @@ export class ScheduledNotificationDocument {
   updatedAt: Date;
 }
 
-export type ScheduledNotificationMongoDocument = HydratedDocument<ScheduledNotificationDocument>;
-export const ScheduledNotificationSchema = SchemaFactory.createForClass(ScheduledNotificationDocument);
-
+export type ScheduledNotificationMongoDocument =
+  HydratedDocument<ScheduledNotificationDocument>;
+export const ScheduledNotificationSchema = SchemaFactory.createForClass(
+  ScheduledNotificationDocument,
+);

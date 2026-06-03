@@ -15,7 +15,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { StreamableFile } from '@nestjs/common';
 import { createReadStream } from 'fs';
-import { FotosService } from '../../application/fotos.service';
+import { FotosService } from '../../application/services/fotos.service';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { UploadService, UploadContext } from '@shared/infrastructure/upload';
 import type { FotoWriteDto } from '../dto/foto.dto';

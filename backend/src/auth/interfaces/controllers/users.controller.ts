@@ -8,7 +8,7 @@ import {
   UseGuards,
   NotFoundException,
 } from '@nestjs/common';
-import { UserService } from '@auth/application/user.service';
+import { UserService } from '@auth/application/services/user.service';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@auth/guards/roles.guard';
 import { Roles } from '@auth/decorators/roles.decorator';

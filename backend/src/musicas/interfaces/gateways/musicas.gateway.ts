@@ -6,8 +6,8 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { WsSessionService } from '@auth/application/ws-session.service';
-import { MusicasService } from '../../application/musicas.service';
+import { WsSessionService } from '@auth/application/services/ws-session.service';
+import { MusicasService } from '../../application/services/musicas.service';
 import type { MusicaWriteDto } from '../dto/musica.dto';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 

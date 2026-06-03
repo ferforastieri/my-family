@@ -6,8 +6,8 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { WsSessionService } from '@auth/application/ws-session.service';
-import { CartasService } from '../../application/cartas.service';
+import { WsSessionService } from '@auth/application/services/ws-session.service';
+import { CartasService } from '../../application/services/cartas.service';
 import type { CartaWriteDto } from '../dto/carta.dto';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 

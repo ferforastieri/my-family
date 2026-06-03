@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { FotosController } from './interfaces/controllers/fotos.controller';
-import { FotosService } from './application/fotos.service';
+import { FotosService } from './application/services/fotos.service';
 import { DatabaseModule } from '@shared/infrastructure/database/database.module';
 import { MongoModelsModule } from '@shared/infrastructure/database/database.providers';
 import { UploadModule } from '@shared/infrastructure/upload';

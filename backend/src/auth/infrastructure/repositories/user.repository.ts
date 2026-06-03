@@ -1,9 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { UserDocument, UserMongoDocument } from '@shared/infrastructure/database/schemas';
-import { cleanUndefined, normalizePagination, paginated, PaginationQuery, toId } from '@shared/infrastructure/database/mongo.utils';
-import type { UserEntity, UserRole } from '@shared/domain/entities';
+import {
+  UserDocument,
+  UserMongoDocument,
+} from '@shared/infrastructure/database/schemas';
+import {
+  cleanUndefined,
+  normalizePagination,
+  paginated,
+  PaginationQuery,
+  toId,
+} from '@shared/infrastructure/database/mongo.utils';
+import type { UserEntity, UserRole } from '@auth/domain/entities/user.entity';
 
 export type CreateUserData = {
   email: string;
@@ -14,7 +23,9 @@ export type CreateUserData = {
 
 @Injectable()
 export class UserRepository {
-  constructor(@InjectModel(UserDocument.name) private model: Model<UserMongoDocument>) {}
+  constructor(
+    @InjectModel(UserDocument.name) private model: Model<UserMongoDocument>,
+  ) {}
 
   toEntity(doc: UserMongoDocument | null): UserEntity | null {
     if (!doc) return null;
@@ -31,12 +42,21 @@ export class UserRepository {
   }
 
   async list(query?: PaginationQuery) {
-    const { page, limit, skip } = normalizePagination(query, { page: 1, limit: 20, maxLimit: 100 });
+    const { page, limit, skip } = normalizePagination(query, {
+      page: 1,
+      limit: 20,
+      maxLimit: 100,
+    });
     const [docs, total] = await Promise.all([
       this.model.find().sort({ createdAt: -1 }).skip(skip).limit(limit).exec(),
       this.model.countDocuments().exec(),
     ]);
-    return paginated(docs.map((doc) => this.toEntity(doc)!), total, page, limit);
+    return paginated(
+      docs.map((doc) => this.toEntity(doc)!),
+      total,
+      page,
+      limit,
+    );
   }
 
   async findById(id: string): Promise<UserEntity | null> {
@@ -44,7 +64,9 @@ export class UserRepository {
   }
 
   async findByEmail(email: string): Promise<UserEntity | null> {
-    return this.toEntity(await this.model.findOne({ email: email.toLowerCase() }).exec());
+    return this.toEntity(
+      await this.model.findOne({ email: email.toLowerCase() }).exec(),
+    );
   }
 
   async create(data: CreateUserData): Promise<UserEntity> {
@@ -52,7 +74,15 @@ export class UserRepository {
     return this.toEntity(doc)!;
   }
 
-  async update(id: string, data: { name?: string; role?: UserRole; avatarPath?: string; passwordHash?: string }): Promise<UserEntity | null> {
+  async update(
+    id: string,
+    data: {
+      name?: string;
+      role?: UserRole;
+      avatarPath?: string;
+      passwordHash?: string;
+    },
+  ): Promise<UserEntity | null> {
     const doc = await this.model
       .findByIdAndUpdate(id, { $set: cleanUndefined(data) }, { new: true })
       .exec();

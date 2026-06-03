@@ -17,7 +17,7 @@ import {
 import type {
   FamilyListEntity,
   FamilyListItemEntity,
-} from '@shared/domain/entities';
+} from '@lists/domain/entities/list.entity';
 
 export type FamilyListWrite = {
   title: string;

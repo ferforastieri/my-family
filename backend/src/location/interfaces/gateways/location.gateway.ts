@@ -6,8 +6,8 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { WsSessionService } from '@auth/application/ws-session.service';
-import { LocationService } from '../../application/location.service';
+import { WsSessionService } from '@auth/application/services/ws-session.service';
+import { LocationService } from '../../application/services/location.service';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 import { LocationUpdateDto } from '../dto/location.dto';
 

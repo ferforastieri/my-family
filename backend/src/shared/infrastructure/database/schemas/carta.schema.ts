@@ -18,4 +18,3 @@ export class CartaDocument {
 
 export type CartaMongoDocument = HydratedDocument<CartaDocument>;
 export const CartaSchema = SchemaFactory.createForClass(CartaDocument);
-

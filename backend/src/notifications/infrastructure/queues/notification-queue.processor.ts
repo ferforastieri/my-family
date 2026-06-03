@@ -4,7 +4,7 @@ import {
   QUEUE_NAMES,
   type NotificationJob,
 } from '@shared/infrastructure/queue';
-import { NotificationsService } from '../../application/notifications.service';
+import { NotificationsService } from '../../application/services/notifications.service';
 
 @Processor(QUEUE_NAMES.notifications)
 export class NotificationQueueProcessor extends WorkerHost {
