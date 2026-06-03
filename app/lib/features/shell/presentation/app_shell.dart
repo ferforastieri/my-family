@@ -10,7 +10,6 @@ import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_dropdown.dart';
 import '../../../core/widgets/app_sheet.dart';
 import '../../auth/presentation/auth_sheet.dart';
-import '../../chat/presentation/chat_floating_button.dart';
 import '../../notifications/presentation/notifications_sheet.dart';
 import '../../profile/presentation/edit_profile_sheet.dart';
 
@@ -42,76 +41,62 @@ class AppShell extends StatelessWidget {
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 860;
         return Scaffold(
-          appBar: AppBar(
-            toolbarHeight: 92,
-            titleSpacing: 0,
-            leadingWidth: wide ? 128 : null,
-            leading: wide
-                ? Align(
-                    alignment: Alignment.centerLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 22),
-                      child: _Logo(onTap: () => context.go('/')),
-                    ),
-                  )
-                : null,
-            title: wide
-                ? Center(
-                    child: _TopNavigation(
-                      items: items,
-                      currentLocation: currentLocation,
-                    ),
-                  )
-                : _Logo(onTap: () => context.go('/')),
-            actions: [
-              IconButton(
-                  onPressed: () => _openNotificationsSheet(context),
-                  icon: const Icon(Icons.notifications_outlined),
-                  tooltip: 'Notificações'),
-              IconButton(
-                  onPressed: () => _openThemeSheet(context),
-                  icon: const Icon(Icons.palette_outlined),
-                  tooltip: 'Cor e tema'),
-              if (wide) ...[
-                _ProfileAction(
+          appBar: wide ? _buildDesktopAppBar(context, items) : null,
+          body: child,
+          bottomNavigationBar: wide
+              ? null
+              : _MobileBottomNavigation(
                   auth: auth,
-                  wide: true,
+                  currentLocation: currentLocation,
                   onLogin: () => _openLogin(context),
-                  onEditProfile: () => _openEditProfileSheet(context),
-                  onAdmin: () => context.go('/admin'),
-                  onSignOut: () => _signOut(context),
                 ),
-                const SizedBox(width: 14),
-              ] else
-                _ProfileAction(
-                  auth: auth,
-                  wide: false,
-                  onLogin: () => _openLogin(context),
-                  onEditProfile: () => _openEditProfileSheet(context),
-                  onAdmin: () => context.go('/admin'),
-                  onSignOut: () => _signOut(context),
-                ),
-              if (!wide)
-                IconButton(
-                  onPressed: () => _openMenuSheet(context, items),
-                  icon: const Icon(Icons.menu),
-                  tooltip: 'Menu',
-                ),
-            ],
-            bottom: const PreferredSize(
-              preferredSize: Size.fromHeight(1),
-              child: Divider(height: 1),
-            ),
-          ),
-          body: Stack(
-            children: [
-              child,
-              if (!_isSelected('/chat', currentLocation))
-                const ChatFloatingButton(),
-            ],
-          ),
         );
       },
+    );
+  }
+
+  PreferredSizeWidget _buildDesktopAppBar(
+      BuildContext context, List<_HeaderItem> items) {
+    return AppBar(
+      toolbarHeight: 92,
+      titleSpacing: 0,
+      leadingWidth: 128,
+      leading: Align(
+        alignment: Alignment.centerLeft,
+        child: Padding(
+          padding: const EdgeInsets.only(left: 22),
+          child: _Logo(onTap: () => context.go('/')),
+        ),
+      ),
+      title: Center(
+        child: _TopNavigation(
+          items: items,
+          currentLocation: currentLocation,
+        ),
+      ),
+      actions: [
+        IconButton(
+            onPressed: () => _openNotificationsSheet(context),
+            icon: const Icon(Icons.notifications_outlined),
+            tooltip: 'Notificações'),
+        IconButton(
+            onPressed: () => _openThemeSheet(context),
+            icon: const Icon(Icons.palette_outlined),
+            tooltip: 'Cor e tema'),
+        _ProfileAction(
+          auth: auth,
+          wide: true,
+          onLogin: () => _openLogin(context),
+          onEditProfile: () => _openEditProfileSheet(context),
+          onAdmin: () => context.go('/admin'),
+          onSignOut: () => _signOut(context),
+        ),
+        const SizedBox(width: 14),
+      ],
+      bottom: const PreferredSize(
+        preferredSize: Size.fromHeight(1),
+        child: Divider(height: 1),
+      ),
     );
   }
 
@@ -132,16 +117,6 @@ class AppShell extends StatelessWidget {
       const _HeaderItem('Jogos do Amor', '/jogos',
           Icons.sports_esports_outlined, Icons.sports_esports),
     ];
-  }
-
-  void _openMenuSheet(BuildContext context, List<_HeaderItem> items) {
-    showAppSheet<void>(
-      context: context,
-      builder: (_) => _HeaderMenuSheet(
-        items: items,
-        currentLocation: currentLocation,
-      ),
-    );
   }
 
   void _openLogin(BuildContext context) {
@@ -400,63 +375,272 @@ class _Logo extends StatelessWidget {
   }
 }
 
-class _HeaderMenuSheet extends StatelessWidget {
-  const _HeaderMenuSheet({
-    required this.items,
+class _MobileBottomNavigation extends StatelessWidget {
+  const _MobileBottomNavigation({
+    required this.auth,
     required this.currentLocation,
+    required this.onLogin,
   });
 
-  final List<_HeaderItem> items;
+  final AuthController auth;
   final String currentLocation;
+  final VoidCallback onLogin;
 
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-            16, 10, 16, MediaQuery.of(context).viewInsets.bottom + 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text('Menu',
-                  style: TextStyle(
-                      color: palette.primary,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900)),
-            ),
-            const SizedBox(height: 8),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  for (final item in items)
-                    ListTile(
-                      leading: Icon(
-                          _isSelected(item.path, currentLocation)
-                              ? item.selectedIcon
-                              : item.icon,
-                          color: palette.primary),
-                      title: Text(item.label),
-                      selected: _isSelected(item.path, currentLocation),
-                      selectedTileColor: palette.primary.withValues(alpha: .08),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
-                      onTap: () {
-                        Navigator.pop(context);
-                        context.go(item.path);
-                      },
-                    ),
-                ],
-              ),
+      top: false,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: palette.card,
+          border: Border(top: BorderSide(color: palette.border)),
+          boxShadow: [
+            BoxShadow(
+              color: palette.primary.withValues(alpha: .12),
+              blurRadius: 18,
+              offset: const Offset(0, -6),
             ),
           ],
+        ),
+        child: SizedBox(
+          height: 76,
+          child: Row(
+            children: [
+              _MobileNavButton(
+                icon: Icons.home_outlined,
+                selectedIcon: Icons.home,
+                label: 'Início',
+                selected: _isSelected('/atalhos/inicio', currentLocation) ||
+                    currentLocation == '/' ||
+                    currentLocation == '/nossa-historia' ||
+                    currentLocation == '/mensagens',
+                onTap: () => context.go('/atalhos/inicio'),
+              ),
+              _MobileNavButton(
+                icon: Icons.photo_library_outlined,
+                selectedIcon: Icons.photo_library,
+                label: 'Memórias',
+                selected: _isSelected('/atalhos/memorias', currentLocation) ||
+                    currentLocation == '/galeria' ||
+                    currentLocation == '/playlist' ||
+                    currentLocation == '/carta-de-amor',
+                onTap: () => context.go('/atalhos/memorias'),
+              ),
+              Expanded(
+                child: Center(
+                  child: Transform.translate(
+                    offset: const Offset(0, -16),
+                    child: InkWell(
+                      onTap: () => context.go('/chat'),
+                      customBorder: const CircleBorder(),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        width: 72,
+                        height: 72,
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: palette.card,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: _isSelected('/chat', currentLocation)
+                                ? palette.primary
+                                : palette.border,
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: palette.primary.withValues(alpha: .20),
+                              blurRadius: 18,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Image.asset(
+                          'assets/brand/family-logo.png',
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              _MobileNavButton(
+                icon: Icons.apps_outlined,
+                selectedIcon: Icons.apps,
+                label: 'Mais',
+                selected: _isSelected('/atalhos/mais', currentLocation) ||
+                    currentLocation == '/jogos',
+                onTap: () => context.go('/atalhos/mais'),
+              ),
+              _MobileNavButton(
+                icon: Icons.person_outline,
+                selectedIcon: Icons.person,
+                label: 'Perfil',
+                selected: _isSelected('/perfil', currentLocation) ||
+                    _isSelected('/admin', currentLocation),
+                onTap: () {
+                  if (auth.user == null) {
+                    onLogin();
+                  } else {
+                    context.go('/perfil');
+                  }
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
+
+class _MobileNavButton extends StatelessWidget {
+  const _MobileNavButton({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final color = selected ? palette.primary : palette.muted;
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox(
+          height: double.infinity,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(selected ? selectedIcon : icon, color: color, size: 23),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class MobileOptionsPage extends StatelessWidget {
+  const MobileOptionsPage({
+    super.key,
+    required this.title,
+    required this.items,
+  });
+
+  final String title;
+  final List<MobileOptionItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [palette.bgStart, palette.bgEnd],
+        ),
+      ),
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(18, 28, 18, 112),
+        children: [
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: palette.primary,
+              fontSize: 30,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 22),
+          for (final item in items)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Material(
+                color: palette.card,
+                borderRadius: BorderRadius.circular(8),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () => context.go(item.path),
+                  child: Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: palette.border),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor:
+                              palette.primary.withValues(alpha: .14),
+                          foregroundColor: palette.primary,
+                          child: Icon(item.icon),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.label,
+                                style: const TextStyle(
+                                    fontSize: 17, fontWeight: FontWeight.w900),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(item.description,
+                                  style: TextStyle(color: palette.muted)),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class MobileOptionItem {
+  const MobileOptionItem({
+    required this.label,
+    required this.description,
+    required this.path,
+    required this.icon,
+  });
+
+  final String label;
+  final String description;
+  final String path;
+  final IconData icon;
 }
 
 class _HeaderItem {
