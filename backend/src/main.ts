@@ -1,9 +1,11 @@
+import { EventEmitter } from 'node:events';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { Environment } from '@shared/infrastructure/environment/environment.module';
 
 async function bootstrap() {
+  EventEmitter.defaultMaxListeners = 50;
   const app = await NestFactory.create(AppModule, { cors: false });
   const environment = app.get(Environment);
   

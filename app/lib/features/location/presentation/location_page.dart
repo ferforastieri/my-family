@@ -102,29 +102,17 @@ class _LocationPageState extends State<LocationPage> {
                 constraints: const BoxConstraints(maxWidth: 1040),
                 child: loading && locations.isEmpty
                     ? const PageSkeleton(cards: 4)
-                    : LayoutBuilder(
-                        builder: (context, constraints) {
-                          final wide = constraints.maxWidth >= 840;
-                          final map = _LocationMap(locations: locations);
-                          final list = _LocationList(locations: locations);
-                          if (!wide) {
-                            return Column(
-                              children: [
-                                SizedBox(height: 360, child: map),
-                                const SizedBox(height: 14),
-                                list,
-                              ],
-                            );
-                          }
-                          return Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(flex: 3, child: SizedBox(height: 560, child: map)),
-                              const SizedBox(width: 16),
-                              Expanded(flex: 2, child: list),
-                            ],
-                          );
-                        },
+                    : Column(
+                        children: [
+                          SizedBox(
+                            height: MediaQuery.of(context).size.width >= 840
+                                ? 620
+                                : 420,
+                            child: _LocationMap(locations: locations),
+                          ),
+                          const SizedBox(height: 16),
+                          _LocationList(locations: locations),
+                        ],
                       ),
               ),
             ),
@@ -156,49 +144,58 @@ class _LocationMap extends StatelessWidget {
         ),
         child: locations.isEmpty
             ? const Center(child: Text('Nenhuma localização recebida ainda.'))
-            : FlutterMap(
-                options: MapOptions(
-                  initialCenter: center,
-                  initialZoom: 14,
-                ),
-                children: [
-                  TileLayer(
-                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.viciofer.my_family',
+            : IgnorePointer(
+                child: FlutterMap(
+                  options: MapOptions(
+                    initialCenter: center,
+                    initialZoom: 14,
                   ),
-                  MarkerLayer(
-                    markers: [
-                      for (final location in locations)
-                        Marker(
-                          point: LatLng(location.latitude, location.longitude),
-                          width: 96,
-                          height: 74,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color: palette.card,
-                                  borderRadius: BorderRadius.circular(999),
-                                  border: Border.all(color: palette.primary),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  child: Text(
-                                    _shortName(location),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.viciofer.my_family',
+                    ),
+                    MarkerLayer(
+                      markers: [
+                        for (final location in locations)
+                          Marker(
+                            point:
+                                LatLng(location.latitude, location.longitude),
+                            width: 96,
+                            height: 74,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    color: palette.card,
+                                    borderRadius: BorderRadius.circular(999),
+                                    border:
+                                        Border.all(color: palette.primary),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 3),
+                                    child: Text(
+                                      _shortName(location),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w900),
+                                    ),
                                   ),
                                 ),
-                              ),
-                              Icon(Icons.location_on, color: palette.primary, size: 38),
-                            ],
+                                Icon(Icons.location_on,
+                                    color: palette.primary, size: 38),
+                              ],
+                            ),
                           ),
-                        ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
       ),
     );

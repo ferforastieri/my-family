@@ -211,6 +211,20 @@ class FamilyRepository {
     return (row['sent'] as num?)?.toInt() ?? 0;
   }
 
+  Future<void> scheduleNotification({
+    required String title,
+    String? body,
+    String? url,
+    required DateTime scheduledAt,
+  }) async {
+    await socket.emitAck<Map<String, dynamic>>('notifications.schedule', {
+      'title': title,
+      if (body != null) 'body': body,
+      if (url != null) 'url': url,
+      'scheduledAt': scheduledAt.toIso8601String(),
+    });
+  }
+
   Future<List<FamilyList>> listFamilyLists() async {
     final rows = await socket.emitAck<List<dynamic>>('lists.list');
     return rows
