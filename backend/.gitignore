@@ -41,6 +41,9 @@ lerna-debug.log*
 .env.production
 .env.development
 .env.staging
+*firebase-adminsdk*.json
+service-account*.json
+google-services.json
 
 # Drizzle
 /drizzle
@@ -53,5 +56,3 @@ lerna-debug.log*
 .cache
 .temp
 .tmp
-
-

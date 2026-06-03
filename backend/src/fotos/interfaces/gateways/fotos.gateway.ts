@@ -1,11 +1,14 @@
-import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
-import { Socket } from 'socket.io';
+import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { Server, Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/ws-session.service';
 import { FotosService } from '../../application/fotos.service';
 import type { FotoWrite } from '../../infrastructure/repositories/fotos.repository';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class FotosGateway {
+  @WebSocketServer()
+  server!: Server;
+
   constructor(
     private fotos: FotosService,
     private session: WsSessionService,
@@ -19,18 +22,24 @@ export class FotosGateway {
   @SubscribeMessage('fotos.create')
   async create(@ConnectedSocket() client: Socket, @MessageBody() data: FotoWrite) {
     await this.session.requireUser(client);
-    return this.fotos.create(data);
+    const row = await this.fotos.create(data);
+    this.server.emit('fotos.created', row);
+    return row;
   }
 
   @SubscribeMessage('fotos.update')
   async update(@ConnectedSocket() client: Socket, @MessageBody() body: { id: string; data: Partial<FotoWrite> }) {
     await this.session.requireUser(client);
-    return this.fotos.update(body.id, body.data);
+    const row = await this.fotos.update(body.id, body.data);
+    if (row) this.server.emit('fotos.updated', row);
+    return row;
   }
 
   @SubscribeMessage('fotos.delete')
   async delete(@ConnectedSocket() client: Socket, @MessageBody() body: { id: string }) {
     await this.session.requireUser(client);
-    return { ok: await this.fotos.delete(body.id) };
+    const ok = await this.fotos.delete(body.id);
+    if (ok) this.server.emit('fotos.deleted', { id: body.id });
+    return { ok };
   }
 }

@@ -12,42 +12,76 @@ class FlowerGarden extends StatefulWidget {
 }
 
 class _FlowerGardenState extends State<FlowerGarden>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController controller;
+    with TickerProviderStateMixin {
+  late final AnimationController windController;
+  late final AnimationController growController;
+  final plantedFlowers = <Offset>[];
 
   @override
   void initState() {
     super.initState();
-    controller =
+    windController =
         AnimationController(vsync: this, duration: const Duration(seconds: 5))
           ..repeat();
+    growController =
+        AnimationController(vsync: this, duration: const Duration(seconds: 2))
+          ..forward();
   }
 
   @override
   void dispose() {
-    controller.dispose();
+    windController.dispose();
+    growController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: controller,
-      builder: (context, _) => CustomPaint(
-        painter: _FlowerPainter(
-          t: controller.value,
-          palette: Theme.of(context).extension<AppPalette>()!,
+    return LayoutBuilder(
+      builder: (context, constraints) => GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (details) {
+          final width = constraints.maxWidth;
+          final height = constraints.maxHeight;
+          if (width <= 0 || height <= 0) return;
+          setState(() {
+            plantedFlowers.add(Offset(
+              (details.localPosition.dx / width).clamp(.04, .96),
+              (details.localPosition.dy / height).clamp(.50, .92),
+            ));
+            if (plantedFlowers.length > 16) {
+              plantedFlowers.removeAt(0);
+            }
+          });
+        },
+        child: AnimatedBuilder(
+          animation: Listenable.merge([windController, growController]),
+          builder: (context, _) => CustomPaint(
+            painter: _FlowerPainter(
+              t: windController.value,
+              grow: growController.value,
+              plantedFlowers: plantedFlowers,
+              palette: Theme.of(context).extension<AppPalette>()!,
+            ),
+            child: const SizedBox.expand(),
+          ),
         ),
-        child: const SizedBox.expand(),
       ),
     );
   }
 }
 
 class _FlowerPainter extends CustomPainter {
-  const _FlowerPainter({required this.t, required this.palette});
+  const _FlowerPainter({
+    required this.t,
+    required this.grow,
+    required this.plantedFlowers,
+    required this.palette,
+  });
 
   final double t;
+  final double grow;
+  final List<Offset> plantedFlowers;
   final AppPalette palette;
 
   @override
@@ -55,39 +89,75 @@ class _FlowerPainter extends CustomPainter {
     final shortest = math.min(size.width, size.height);
     final scale = shortest / 760;
     final base = Offset(size.width / 2, size.height * .92);
-    final grow = Curves.easeOutCubic.transform((t * 1.5).clamp(0, 1));
+    final flowerGrow = Curves.easeOutCubic.transform(grow);
 
     _drawNight(canvas, size);
-    _drawFireflies(canvas, size, scale);
+    _drawSoftSparkles(canvas, size, scale);
     _drawTrees(canvas, size, scale);
     _drawGrassBed(canvas, size, scale);
     _drawGardenFlowers(canvas, size, scale);
+    _drawPlantedFlowers(canvas, size, scale);
 
-    _drawFlower(canvas, base.translate(0, 0), scale, grow, 1, 0, 0);
-    _drawFlower(canvas, base.translate(-135 * scale, 12 * scale), scale * .74,
-        grow, .78, -.24, .35);
-    _drawFlower(canvas, base.translate(132 * scale, 16 * scale), scale * .68,
-        grow, .70, .28, .72);
+    final miriamGrow = flowerGrow * _growthSince(DateTime(2025, 4, 15), 365);
+    final fernandoGrow = flowerGrow * _growthSince(DateTime(2024, 10, 12), 365);
+    final sonGrow = flowerGrow * _growthSince(DateTime(2026, 6, 15), 1825);
 
-    _drawLongLeaf(canvas, base, scale, grow);
-    _drawSideGrass(canvas, base, scale, grow);
+    _drawFlower(
+      canvas,
+      base.translate(-86 * scale, 0),
+      scale * .96,
+      fernandoGrow,
+      1,
+      -.10,
+      .12,
+      'F',
+    );
+    _drawFlower(
+      canvas,
+      base.translate(86 * scale, 0),
+      scale * .96,
+      miriamGrow,
+      1,
+      .10,
+      .36,
+      'M',
+    );
+    _drawFlower(
+      canvas,
+      base.translate(0, 34 * scale),
+      scale * .62,
+      sonGrow,
+      .92,
+      0,
+      .72,
+      'F',
+    );
+
+    _drawSideGrass(canvas, base, scale, flowerGrow);
+  }
+
+  double _growthSince(DateTime start, int adultDays) {
+    final now = DateTime.now();
+    final days = now.difference(start).inDays;
+    if (days <= 0) return .36;
+    final progress = (days / adultDays).clamp(0.0, 1.0);
+    return .36 + Curves.easeOutCubic.transform(progress) * .64;
   }
 
   void _drawFlower(Canvas canvas, Offset base, double scale, double grow,
-      double opacity, double tilt, double phase) {
+      double opacity, double tilt, double phase, String initial) {
     final sway = math.sin((t + phase) * math.pi * 2) * .055;
-    final localGrow =
-        Curves.easeOutCubic.transform(((t - phase * .18) * 1.8).clamp(0, 1));
+    final safeGrow = grow.clamp(.08, 1.0).toDouble();
 
     canvas.saveLayer(
         null, Paint()..color = Colors.white.withValues(alpha: opacity));
     canvas.translate(base.dx, base.dy);
-    canvas.scale(grow * localGrow, grow * localGrow);
+    canvas.scale(safeGrow, safeGrow);
     canvas.rotate(tilt + sway);
     canvas.translate(0, -280 * scale);
     _drawStem(canvas, scale);
     _drawStemLeaves(canvas, scale);
-    _drawFlowerHead(canvas, scale);
+    _drawFlowerHead(canvas, scale, initial);
     canvas.restore();
   }
 
@@ -105,18 +175,20 @@ class _FlowerPainter extends CustomPainter {
     canvas.drawRect(Offset.zero & size, paint);
   }
 
-  void _drawFireflies(Canvas canvas, Size size, double scale) {
+  void _drawSoftSparkles(Canvas canvas, Size size, double scale) {
     final paint = Paint()
-      ..color = palette.primary.withValues(alpha: .36)
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 5 * scale);
-    for (var i = 0; i < 18; i++) {
+      ..color = palette.primary.withValues(alpha: .18)
+      ..strokeWidth = 1.4 * scale
+      ..strokeCap = StrokeCap.round;
+    for (var i = 0; i < 10; i++) {
       final phase = (t + i * .073) % 1;
       final x = (size.width * ((i * 37) % 100) / 100) +
           math.sin(phase * math.pi * 2) * 18 * scale;
       final y = size.height * (.25 + ((i * 19) % 55) / 100) +
           math.cos(phase * math.pi * 2) * 12 * scale;
-      final radius = (1.8 + (i % 4) * .45) * scale;
-      canvas.drawCircle(Offset(x, y), radius, paint);
+      final len = (3 + i % 3) * scale;
+      canvas.drawLine(Offset(x - len, y), Offset(x + len, y), paint);
+      canvas.drawLine(Offset(x, y - len), Offset(x, y + len), paint);
     }
   }
 
@@ -140,7 +212,7 @@ class _FlowerPainter extends CustomPainter {
     );
   }
 
-  void _drawFlowerHead(Canvas canvas, double scale) {
+  void _drawFlowerHead(Canvas canvas, double scale, String initial) {
     final head = Offset(0, -12 * scale);
 
     canvas.drawCircle(
@@ -172,6 +244,25 @@ class _FlowerPainter extends CustomPainter {
                 .createShader(
           Rect.fromCenter(center: head, width: 42 * scale, height: 21 * scale),
         ),
+    );
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: initial,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 20 * scale,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    textPainter.paint(
+      canvas,
+      Offset(
+        head.dx - textPainter.width / 2,
+        head.dy - textPainter.height / 2,
+      ),
     );
   }
 
@@ -238,28 +329,6 @@ class _FlowerPainter extends CustomPainter {
           Rect.fromLTWH(-100 * scale, -45 * scale, 200 * scale, 90 * scale),
         ),
     );
-    canvas.restore();
-  }
-
-  void _drawLongLeaf(Canvas canvas, Offset base, double scale, double grow) {
-    final sway = math.sin(t * math.pi * 2 + 1.3) * .05;
-    canvas.save();
-    canvas.translate(base.dx - 58 * scale, base.dy - 52 * scale);
-    canvas.scale(grow, grow);
-    canvas.rotate(-.88 + sway);
-
-    final stemPaint = Paint()
-      ..color = palette.primaryDark
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = 9 * scale;
-    final path = Path()
-      ..moveTo(0, 0)
-      ..quadraticBezierTo(30 * scale, -90 * scale, 88 * scale, -126 * scale);
-    canvas.drawPath(path, stemPaint);
-
-    _drawLeaf(
-        canvas, Offset(76 * scale, -116 * scale), scale * .85, -18, false);
     canvas.restore();
   }
 
@@ -345,17 +414,48 @@ class _FlowerPainter extends CustomPainter {
         ).createShader(trunk.outerRect),
     );
 
-    final leafPaint = Paint()..color = palette.primary.withValues(alpha: .22);
-    final darkLeafPaint = Paint()
-      ..color = palette.primaryDark.withValues(alpha: .20);
-    for (final blob in [
-      (Offset(-42 * scale, -190 * scale), 64 * scale, leafPaint),
-      (Offset(28 * scale, -205 * scale), 72 * scale, darkLeafPaint),
-      (Offset(0, -246 * scale), 78 * scale, leafPaint),
-      (Offset(58 * scale, -168 * scale), 58 * scale, leafPaint),
-      (Offset(-72 * scale, -150 * scale), 54 * scale, darkLeafPaint),
-    ]) {
-      canvas.drawCircle(blob.$1, blob.$2, blob.$3);
+    final canopy = Path()
+      ..moveTo(-112 * scale, -154 * scale)
+      ..cubicTo(-104 * scale, -218 * scale, -58 * scale, -272 * scale,
+          2 * scale, -278 * scale)
+      ..cubicTo(72 * scale, -286 * scale, 118 * scale, -226 * scale,
+          110 * scale, -164 * scale)
+      ..cubicTo(88 * scale, -110 * scale, 26 * scale, -102 * scale, -18 * scale,
+          -112 * scale)
+      ..cubicTo(-68 * scale, -102 * scale, -108 * scale, -116 * scale,
+          -112 * scale, -154 * scale)
+      ..close();
+    canvas.drawPath(
+      canopy,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            palette.primary.withValues(alpha: .20),
+            palette.primaryDark.withValues(alpha: .16),
+          ],
+        ).createShader(
+          Rect.fromLTWH(-120 * scale, -286 * scale, 240 * scale, 190 * scale),
+        ),
+    );
+    final highlight = Paint()
+      ..color = Colors.white.withValues(alpha: .10)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2 * scale;
+    for (var i = 0; i < 5; i++) {
+      final y = (-235 + i * 24) * scale;
+      canvas.drawArc(
+        Rect.fromCenter(
+          center: Offset((i.isEven ? -18 : 16) * scale, y),
+          width: (116 - i * 9) * scale,
+          height: 34 * scale,
+        ),
+        math.pi * 1.08,
+        math.pi * .82,
+        false,
+        highlight,
+      );
     }
 
     canvas.restore();
@@ -377,6 +477,28 @@ class _FlowerPainter extends CustomPainter {
       final pair = colors[i % colors.length];
       _drawSmallFlower(
           canvas, Offset(x, y), flowerScale, pair.$1, pair.$2, i * .21);
+    }
+  }
+
+  void _drawPlantedFlowers(Canvas canvas, Size size, double scale) {
+    final colors = [
+      (palette.primaryDark, const Color(0xffffb6c1)),
+      (const Color(0xffa855f7), const Color(0xffddd6fe)),
+      (const Color(0xffef4444), const Color(0xfffecaca)),
+      (const Color(0xff22c55e), const Color(0xffbbf7d0)),
+    ];
+    for (var i = 0; i < plantedFlowers.length; i++) {
+      final point = plantedFlowers[i];
+      final pair = colors[i % colors.length];
+      final flowerScale = scale * (.38 + (i % 4) * .05);
+      _drawSmallFlower(
+        canvas,
+        Offset(point.dx * size.width, point.dy * size.height),
+        flowerScale,
+        pair.$1,
+        pair.$2,
+        i * .31,
+      );
     }
   }
 
@@ -417,6 +539,9 @@ class _FlowerPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _FlowerPainter oldDelegate) {
-    return oldDelegate.t != t || oldDelegate.palette != palette;
+    return oldDelegate.t != t ||
+        oldDelegate.grow != grow ||
+        oldDelegate.plantedFlowers.length != plantedFlowers.length ||
+        oldDelegate.palette != palette;
   }
 }

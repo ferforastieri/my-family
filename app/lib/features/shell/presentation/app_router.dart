@@ -28,7 +28,7 @@ GoRouter buildRouter(
     initialLocation: '/',
     refreshListenable: auth,
     redirect: (context, state) {
-      if (state.uri.path == '/galeria' && auth.user == null) return '/perfil';
+      if (_requiresAuth(state.uri.path) && auth.user == null) return '/perfil';
       if (state.uri.path == '/admin' && auth.user?.role != 'admin') return '/';
       return null;
     },
@@ -44,32 +44,6 @@ GoRouter buildRouter(
           child: child,
         ),
         routes: [
-          GoRoute(
-            path: '/atalhos/inicio',
-            pageBuilder: (context, state) => _page(const MobileOptionsPage(
-              title: 'Nossa Família',
-              items: [
-                MobileOptionItem(
-                  label: 'Nosso Início',
-                  description: 'Voltar para a página principal.',
-                  path: '/',
-                  icon: Icons.home_outlined,
-                ),
-                MobileOptionItem(
-                  label: 'Nossa Jornada',
-                  description: 'Textos e lembranças da caminhada da família.',
-                  path: '/nossa-historia',
-                  icon: Icons.menu_book_outlined,
-                ),
-                MobileOptionItem(
-                  label: 'Palavras do Coração',
-                  description: 'Mensagens escritas com carinho.',
-                  path: '/mensagens',
-                  icon: Icons.mail_outline,
-                ),
-              ],
-            )),
-          ),
           GoRoute(
             path: '/atalhos/memorias',
             pageBuilder: (context, state) => _page(MobileOptionsPage(
@@ -129,16 +103,6 @@ GoRouter buildRouter(
             )),
           ),
           GoRoute(
-            path: '/mensagens',
-            pageBuilder: (context, state) => _page(EditableTextCollectionPage(
-              title: 'Palavras do Coração',
-              prefix: 'heart_words',
-              repository: repository,
-              toast: toast,
-              auth: auth,
-            )),
-          ),
-          GoRoute(
             path: '/chat',
             pageBuilder: (context, state) =>
                 _page(ChatPage(chat: chat, auth: auth, toast: toast)),
@@ -188,6 +152,13 @@ GoRouter buildRouter(
       ),
     ],
   );
+}
+
+bool _requiresAuth(String path) {
+  return path == '/atalhos/memorias' ||
+      path == '/galeria' ||
+      path == '/playlist' ||
+      path == '/carta-de-amor';
 }
 
 Page<void> _page(Widget child) {

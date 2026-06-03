@@ -1,6 +1,6 @@
 import { Body, UsePipes, ValidationPipe } from '@nestjs/common';
-import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
-import { Socket } from 'socket.io';
+import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { Server, Socket } from 'socket.io';
 import { AuthService } from '../../application/auth.service';
 import { UserService } from '../../application/user.service';
 import { LoginDto, RegisterDto } from '../../auth.dto';
@@ -10,6 +10,9 @@ import type { UserRole } from '@shared/domain/entities';
 @WebSocketGateway({ cors: { origin: '*' } })
 @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
 export class AuthGateway {
+  @WebSocketServer()
+  server!: Server;
+
   constructor(
     private auth: AuthService,
     private users: UserService,
@@ -24,8 +27,10 @@ export class AuthGateway {
   }
 
   @SubscribeMessage('auth.register')
-  register(@MessageBody() dto: RegisterDto) {
-    return this.auth.register(dto.email, dto.password, dto.name, dto.role);
+  async register(@MessageBody() dto: RegisterDto) {
+    const response = await this.auth.register(dto.email, dto.password, dto.name, dto.role);
+    this.server.emit('users.created', response.user);
+    return response;
   }
 
   @SubscribeMessage('auth.me')
@@ -38,6 +43,7 @@ export class AuthGateway {
   async updateMe(@ConnectedSocket() client: Socket, @MessageBody() body: { name?: string; avatarPath?: string }) {
     const user = await this.session.requireUser(client);
     const updated = await this.users.update(user.id, { name: body.name, avatarPath: body.avatarPath });
+    if (updated) this.server.emit('users.updated', updated);
     return { user: updated ? { id: updated.id, email: updated.email, name: updated.name, role: updated.role, avatarPath: updated.avatarPath } : null };
   }
 
@@ -62,12 +68,16 @@ export class AuthGateway {
   @SubscribeMessage('users.update')
   async updateUser(@ConnectedSocket() client: Socket, @MessageBody() body: { id: string; name?: string; role?: UserRole }) {
     await this.session.requireRole(client, ['admin']);
-    return this.users.update(body.id, { name: body.name, role: body.role });
+    const row = await this.users.update(body.id, { name: body.name, role: body.role });
+    if (row) this.server.emit('users.updated', row);
+    return row;
   }
 
   @SubscribeMessage('users.delete')
   async deleteUser(@ConnectedSocket() client: Socket, @MessageBody() body: { id: string }) {
     await this.session.requireRole(client, ['admin']);
-    return { ok: await this.users.delete(body.id) };
+    const ok = await this.users.delete(body.id);
+    if (ok) this.server.emit('users.deleted', { id: body.id });
+    return { ok };
   }
 }

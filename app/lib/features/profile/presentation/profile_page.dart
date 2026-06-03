@@ -4,10 +4,13 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/config/app_config.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
+import '../../../core/widgets/love_action_card.dart';
 import '../../../core/widgets/love_background.dart';
 import '../../auth/presentation/auth_sheet.dart';
 import 'edit_profile_sheet.dart';
@@ -29,42 +32,58 @@ class ProfilePage extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final compact = constraints.maxWidth < 620;
-          return ListView(
-            padding: EdgeInsets.fromLTRB(
-              compact ? 16 : 28,
-              compact ? 22 : 34,
-              compact ? 16 : 28,
-              116,
-            ),
-            children: [
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 760),
-                  child: user == null
-                      ? _GuestProfileCard(
-                          onLogin: () => showAppSheet<void>(
-                            context: context,
-                            builder: (_) => AuthSheet(auth: auth, toast: toast),
-                          ),
-                        )
-                      : _SignedProfileCard(
-                          auth: auth,
-                          toast: toast,
-                          onEditProfile: () => showAppSheet<void>(
-                            context: context,
-                            builder: (_) =>
-                                EditProfileSheet(auth: auth, toast: toast),
-                          ),
-                          onAdmin: () => context.go('/admin'),
-                          onSignOut: () async {
-                            await auth.signOut();
-                            toast.success('Você saiu da conta.');
-                            if (context.mounted) context.go('/');
-                          },
-                        ),
-                ),
+          return RefreshIndicator(
+            onRefresh: auth.refreshMe,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(
+                compact ? 16 : 28,
+                compact ? 10 : 14,
+                compact ? 16 : 28,
+                116,
               ),
-            ],
+              children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 760),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const AppPageHeader(
+                          title: 'Perfil',
+                          subtitle: 'Conta, avatar e opções do app.',
+                          icon: Icons.person_outline,
+                        ),
+                        const SizedBox(height: 14),
+                        user == null
+                            ? _GuestProfileCard(
+                                onLogin: () => showAppSheet<void>(
+                                  context: context,
+                                  builder: (_) =>
+                                      AuthSheet(auth: auth, toast: toast),
+                                ),
+                              )
+                            : _SignedProfileCard(
+                                auth: auth,
+                                toast: toast,
+                                onEditProfile: () => showAppSheet<void>(
+                                  context: context,
+                                  builder: (_) => EditProfileSheet(
+                                      auth: auth, toast: toast),
+                                ),
+                                onAdmin: () => context.go('/admin'),
+                                onSignOut: () async {
+                                  await auth.signOut();
+                                  toast.success('Você saiu da conta.');
+                                  if (context.mounted) context.go('/');
+                                },
+                              ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           );
         },
       ),
@@ -118,19 +137,8 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
     final user = widget.auth.user!;
     final displayName =
         user.name?.trim().isNotEmpty == true ? user.name!.trim() : 'Sem nome';
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: palette.card,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: palette.border),
-        boxShadow: [
-          BoxShadow(
-            color: palette.primary.withValues(alpha: .12),
-            blurRadius: 22,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
+    return LovePanel(
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -225,21 +233,10 @@ class _GuestProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: palette.card,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: palette.border),
-        boxShadow: [
-          BoxShadow(
-            color: palette.primary.withValues(alpha: .12),
-            blurRadius: 22,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
+    return LovePanel(
+      padding: const EdgeInsets.all(24),
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.zero,
         child: Column(
           children: [
             Container(
@@ -265,7 +262,7 @@ class _GuestProfileCard extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: palette.primary,
-                fontSize: 28,
+                fontSize: 22,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -524,62 +521,14 @@ class _ProfileActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
-    final color = destructive ? Colors.redAccent : palette.primary;
-    return Material(
-      color: destructive
-          ? Colors.redAccent.withValues(alpha: .08)
-          : palette.primary.withValues(alpha: .06),
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: destructive
-                  ? Colors.redAccent.withValues(alpha: .20)
-                  : palette.border,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: .12),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: color),
-              ),
-              const SizedBox(width: 13),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: TextStyle(
-                        color: destructive ? color : palette.foreground,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      description,
-                      style: TextStyle(color: palette.muted, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right, color: color),
-            ],
-          ),
-        ),
-      ),
+    final color = destructive ? Colors.redAccent : primary;
+    return LoveActionCard(
+      title: label,
+      description: description,
+      icon: icon,
+      onTap: onTap,
+      padding: const EdgeInsets.all(14),
+      trailing: Icon(Icons.chevron_right, color: color),
     );
   }
 }

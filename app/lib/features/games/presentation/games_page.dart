@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
+import '../../../core/widgets/app_page_header.dart';
+import '../../../core/widgets/love_action_card.dart';
 import '../../../core/widgets/love_background.dart';
-import '../../../core/widgets/section_title.dart';
 import '../../../core/widgets/skeleton.dart';
 import '../../../data/family_repository.dart';
 import '../../../data/models.dart';
@@ -31,20 +32,46 @@ class GamesPage extends StatefulWidget {
 
 class _GamesPageState extends State<GamesPage> {
   _GameView view = _GameView.hub;
+  int version = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    for (final event in _gameRealtimeEvents) {
+      widget.repository.socket.on(event, _handleRealtimeChange);
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final event in _gameRealtimeEvents) {
+      widget.repository.socket.off(event, _handleRealtimeChange);
+    }
+    super.dispose();
+  }
+
+  void _handleRealtimeChange(dynamic _) {
+    if (!mounted) return;
+    setState(() => version++);
+  }
 
   @override
   Widget build(BuildContext context) {
     return LoveBackground(
       child: switch (view) {
-        _GameView.hub =>
-          _GamesHub(onOpen: (next) => setState(() => view = next)),
+        _GameView.hub => _GamesHub(
+            key: ValueKey('hub-$version'),
+            onOpen: (next) => setState(() => view = next),
+          ),
         _GameView.quiz => _QuizGame(
+            key: ValueKey('quiz-$version'),
             repository: widget.repository,
             toast: widget.toast,
             auth: widget.auth,
             onBack: () => setState(() => view = _GameView.hub),
           ),
         _GameView.wordSearch => _WordSearchGame(
+            key: ValueKey('words-$version'),
             repository: widget.repository,
             toast: widget.toast,
             auth: widget.auth,
@@ -55,46 +82,89 @@ class _GamesPageState extends State<GamesPage> {
   }
 }
 
+const _gameRealtimeEvents = [
+  'games.quiz.created',
+  'games.quiz.updated',
+  'games.quiz.deleted',
+  'games.words.created',
+  'games.words.updated',
+  'games.words.deleted',
+];
+
 class _GamesHub extends StatelessWidget {
-  const _GamesHub({required this.onOpen});
+  const _GamesHub({super.key, required this.onOpen});
 
   final ValueChanged<_GameView> onOpen;
 
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    return ListView(
-      padding: const EdgeInsets.all(28),
-      children: [
-        const SectionTitle('Jogos do Amor', size: 38),
-        const SizedBox(height: 26),
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 980),
-            child: Wrap(
-              spacing: 18,
-              runSpacing: 18,
-              children: [
-                _GameCard(
-                  icon: Icons.favorite,
-                  title: 'Quiz do Amor',
-                  body: 'Perguntas dinâmicas que um admin pode mudar no banco.',
-                  color: palette.primary,
-                  onTap: () => onOpen(_GameView.quiz),
-                ),
-                _GameCard(
-                  icon: Icons.grid_on,
-                  title: 'Caça Palavras',
-                  body:
-                      'Palavras familiares e românticas sorteadas a cada partida.',
-                  color: palette.primaryDark,
-                  onTap: () => onOpen(_GameView.wordSearch),
-                ),
-              ],
+    return RefreshIndicator(
+      onRefresh: () async {},
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
+        children: [
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1120),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const _GamesHero(),
+                  const SizedBox(height: 14),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final wide = constraints.maxWidth >= 820;
+                      return GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: wide ? 2 : 1,
+                        childAspectRatio: wide ? 1.55 : 1.38,
+                        crossAxisSpacing: 14,
+                        mainAxisSpacing: 14,
+                        children: [
+                          _GameCard(
+                            icon: Icons.favorite,
+                            title: 'Quiz do Amor',
+                            body:
+                                'Perguntas dinâmicas para testar carinho, memória e pequenos detalhes da família.',
+                            color: palette.primary,
+                            footer: 'Perguntas editáveis pelo admin',
+                            onTap: () => onOpen(_GameView.quiz),
+                          ),
+                          _GameCard(
+                            icon: Icons.grid_on,
+                            title: 'Caça Palavras',
+                            body:
+                                'Palavras familiares e românticas sorteadas a cada partida.',
+                            color: palette.primaryDark,
+                            footer: 'Sorteio novo a cada rodada',
+                            onTap: () => onOpen(_GameView.wordSearch),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
+    );
+  }
+}
+
+class _GamesHero extends StatelessWidget {
+  const _GamesHero();
+
+  @override
+  Widget build(BuildContext context) {
+    return const AppPageHeader(
+      title: 'Jogos do Amor',
+      subtitle: 'Quiz e caça-palavras em um só lugar.',
+      icon: Icons.sports_esports_outlined,
     );
   }
 }
@@ -105,6 +175,7 @@ class _GameCard extends StatelessWidget {
     required this.title,
     required this.body,
     required this.color,
+    required this.footer,
     required this.onTap,
   });
 
@@ -112,58 +183,52 @@ class _GameCard extends StatelessWidget {
   final String title;
   final String body;
   final Color color;
+  final String footer;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
-    return SizedBox(
-      width: 470,
-      child: Material(
-        color: palette.card,
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(8),
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: palette.border),
-            ),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: color.withValues(alpha: .14),
-                  foregroundColor: color,
-                  child: Icon(icon, size: 28),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title,
-                          style: const TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.w900)),
-                      const SizedBox(height: 8),
-                      Text(body, style: TextStyle(color: palette.muted)),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.chevron_right),
-              ],
-            ),
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: LoveActionCard(
+            title: title,
+            description: body,
+            icon: icon,
+            onTap: onTap,
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 56),
           ),
         ),
-      ),
+        Positioned(
+          left: 20,
+          right: 16,
+          bottom: 14,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  footer,
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Icon(Icons.chevron_right, color: color),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
 
 class _QuizGame extends StatefulWidget {
   const _QuizGame({
+    super.key,
     required this.repository,
     required this.toast,
     required this.auth,
@@ -200,6 +265,12 @@ class _QuizGameState extends State<_QuizGame> {
   }
 
   Future<void> _load() async {
+    setState(() {
+      loading = true;
+      index = 0;
+      score = 0;
+      finished = false;
+    });
     try {
       questions = await widget.repository.listQuizQuestions();
     } catch (error) {
@@ -228,61 +299,56 @@ class _QuizGameState extends State<_QuizGame> {
 
   @override
   Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        _BackTitle(title: 'Quiz do Amor', onBack: widget.onBack),
-        const SizedBox(height: 18),
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 760),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: palette.card,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: palette.border),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(22),
-                child: loading
-                    ? const Center(child: CircularProgressIndicator())
-                    : questions.isEmpty
-                        ? const Text('Nenhuma pergunta ativa no momento.')
-                        : finished
-                            ? Column(
-                                children: [
-                                  const Icon(Icons.celebration, size: 54),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                      'Você acertou $score de ${questions.length}.',
-                                      style: const TextStyle(
-                                          fontSize: 22,
-                                          fontWeight: FontWeight.w900)),
-                                  const SizedBox(height: 14),
-                                  FilledButton(
-                                    onPressed: () => setState(() {
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
+        children: [
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 840),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _GamePlayHeader(
+                    title: 'Quiz do Amor',
+                    subtitle: 'Responda uma pergunta por vez.',
+                    icon: Icons.favorite_outline,
+                    onBack: widget.onBack,
+                  ),
+                  const SizedBox(height: 14),
+                  _GamePanel(
+                    child: loading
+                        ? const Center(child: CircularProgressIndicator())
+                        : questions.isEmpty
+                            ? const _GameEmptyState(
+                                text: 'Nenhuma pergunta ativa no momento.')
+                            : finished
+                                ? _QuizFinished(
+                                    score: score,
+                                    total: questions.length,
+                                    onRestart: () => setState(() {
                                       index = 0;
                                       score = 0;
                                       finished = false;
                                     }),
-                                    child: const Text('Jogar novamente'),
+                                  )
+                                : _QuizQuestionView(
+                                    question: questions[index],
+                                    index: index,
+                                    total: questions.length,
+                                    name: name,
+                                    showName: widget.auth.user == null,
+                                    onAnswer: _answer,
                                   ),
-                                ],
-                              )
-                            : _QuizQuestionView(
-                                question: questions[index],
-                                index: index,
-                                total: questions.length,
-                                name: name,
-                                showName: widget.auth.user == null,
-                                onAnswer: _answer,
-                              ),
+                  ),
+                ],
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -306,12 +372,25 @@ class _QuizQuestionView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Pergunta ${index + 1} de $total',
-            style: const TextStyle(fontWeight: FontWeight.w700)),
-        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: LinearProgressIndicator(
+                value: total == 0 ? 0 : (index + 1) / total,
+                minHeight: 8,
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text('${index + 1}/$total',
+                style: const TextStyle(fontWeight: FontWeight.w900)),
+          ],
+        ),
+        const SizedBox(height: 18),
         Text(question.question,
             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
         const SizedBox(height: 18),
@@ -319,15 +398,25 @@ class _QuizQuestionView extends StatelessWidget {
           TextField(
             controller: name,
             decoration: const InputDecoration(labelText: 'Seu nome'),
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => FocusScope.of(context).unfocus(),
           ),
           const SizedBox(height: 12),
         ],
         for (var i = 0; i < question.options.length; i++)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: OutlinedButton(
+            child: OutlinedButton.icon(
               onPressed: () => onAnswer(i),
-              child: Text(question.options[i]),
+              icon: Icon(Icons.favorite_border, color: palette.primary),
+              label: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(question.options[i]),
+              ),
+              style: OutlinedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              ),
             ),
           ),
       ],
@@ -337,6 +426,7 @@ class _QuizQuestionView extends StatelessWidget {
 
 class _WordSearchGame extends StatefulWidget {
   const _WordSearchGame({
+    super.key,
     required this.repository,
     required this.toast,
     required this.auth,
@@ -375,6 +465,7 @@ class _WordSearchGameState extends State<_WordSearchGame> {
   }
 
   Future<void> _load() async {
+    setState(() => loading = true);
     try {
       gameWords = await widget.repository.listGameWords();
       _newGame();
@@ -407,85 +498,174 @@ class _WordSearchGameState extends State<_WordSearchGame> {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        _BackTitle(title: 'Caça Palavras', onBack: widget.onBack),
-        const SizedBox(height: 18),
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 820),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: palette.card,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: palette.border),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(22),
-                child: loading
-                    ? const SkeletonBox(height: 320, borderRadius: 8)
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          if (widget.auth.user == null) ...[
-                            TextField(
-                              controller: name,
-                              decoration:
-                                  const InputDecoration(labelText: 'Seu nome'),
-                            ),
-                            const SizedBox(height: 14),
-                          ],
-                          Text('Encontre as palavras tocando nelas.',
-                              style: TextStyle(color: palette.muted)),
-                          const SizedBox(height: 18),
-                          Wrap(
-                            spacing: 10,
-                            runSpacing: 10,
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
+        children: [
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 900),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _GamePlayHeader(
+                    title: 'Caça Palavras',
+                    subtitle: 'Toque nas palavras escondidas.',
+                    icon: Icons.grid_on_outlined,
+                    onBack: widget.onBack,
+                  ),
+                  const SizedBox(height: 14),
+                  _GamePanel(
+                    child: loading
+                        ? const SkeletonBox(height: 320, borderRadius: 8)
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              for (final token in grid)
-                                FilterChip(
-                                  selected: found.contains(token),
-                                  label: Text(token),
-                                  onSelected: words.contains(token) &&
-                                          !found.contains(token)
-                                      ? (_) => _toggle(token)
-                                      : null,
+                              if (widget.auth.user == null) ...[
+                                TextField(
+                                  controller: name,
+                                  decoration: const InputDecoration(
+                                      labelText: 'Seu nome'),
+                                  textInputAction: TextInputAction.done,
+                                  onSubmitted: (_) =>
+                                      FocusScope.of(context).unfocus(),
                                 ),
+                                const SizedBox(height: 14),
+                              ],
+                              Text('Encontre as palavras tocando nelas.',
+                                  style: TextStyle(color: palette.muted)),
+                              const SizedBox(height: 18),
+                              Wrap(
+                                spacing: 10,
+                                runSpacing: 10,
+                                children: [
+                                  for (final token in grid)
+                                    FilterChip(
+                                      selected: found.contains(token),
+                                      label: Text(token),
+                                      onSelected: words.contains(token) &&
+                                              !found.contains(token)
+                                          ? (_) => _toggle(token)
+                                          : null,
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              LinearProgressIndicator(
+                                value: words.isEmpty
+                                    ? 0
+                                    : found.length / words.length,
+                                minHeight: 8,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                  'Encontradas: ${found.length}/${words.length}',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w900)),
+                              const SizedBox(height: 12),
+                              FilledButton.icon(
+                                onPressed: () => setState(_newGame),
+                                icon: const Icon(Icons.shuffle),
+                                label: const Text('Novo sorteio'),
+                              ),
                             ],
                           ),
-                          const SizedBox(height: 20),
-                          Text('Encontradas: ${found.length}/${words.length}',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w900)),
-                          const SizedBox(height: 12),
-                          FilledButton(
-                            onPressed: () => setState(_newGame),
-                            child: const Text('Novo sorteio'),
-                          ),
-                        ],
-                      ),
+                  ),
+                ],
               ),
             ),
           ),
-        ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GamePlayHeader extends StatelessWidget {
+  const _GamePlayHeader({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.onBack,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppPageHeader(
+      title: title,
+      subtitle: subtitle,
+      icon: icon,
+      onBack: onBack,
+    );
+  }
+}
+
+class _GamePanel extends StatelessWidget {
+  const _GamePanel({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return LovePanel(
+      padding: const EdgeInsets.all(22),
+      child: child,
+    );
+  }
+}
+
+class _GameEmptyState extends StatelessWidget {
+  const _GameEmptyState({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Column(
+      children: [
+        Icon(Icons.info_outline, color: palette.primary, size: 42),
+        const SizedBox(height: 10),
+        Text(text, textAlign: TextAlign.center),
       ],
     );
   }
 }
 
-class _BackTitle extends StatelessWidget {
-  const _BackTitle({required this.title, required this.onBack});
+class _QuizFinished extends StatelessWidget {
+  const _QuizFinished({
+    required this.score,
+    required this.total,
+    required this.onRestart,
+  });
 
-  final String title;
-  final VoidCallback onBack;
+  final int score;
+  final int total;
+  final VoidCallback onRestart;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Column(
       children: [
-        IconButton(onPressed: onBack, icon: const Icon(Icons.arrow_back)),
-        Expanded(child: SectionTitle(title, size: 34)),
+        Icon(Icons.celebration, size: 54, color: palette.primary),
+        const SizedBox(height: 12),
+        Text('Você acertou $score de $total.',
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 14),
+        FilledButton.icon(
+          onPressed: onRestart,
+          icon: const Icon(Icons.replay),
+          label: const Text('Jogar novamente'),
+        ),
       ],
     );
   }

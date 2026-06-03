@@ -106,9 +106,16 @@ class SocketClient {
     _socket?.on(event, handler);
   }
 
-  void off(String event) {
-    _handlers.remove(event);
-    _socket?.off(event);
+  void off(String event, [void Function(dynamic data)? handler]) {
+    if (handler == null) {
+      _handlers.remove(event);
+      _socket?.off(event);
+      return;
+    }
+    final handlers = _handlers[event];
+    handlers?.remove(handler);
+    if (handlers != null && handlers.isEmpty) _handlers.remove(event);
+    _socket?.off(event, handler);
   }
 
   void disconnect() {

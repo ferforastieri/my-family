@@ -3,9 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/flower_garden.dart';
+import '../../../core/widgets/love_action_card.dart';
 import '../../../core/widgets/love_background.dart';
-import '../../../core/widgets/section_title.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.onNavigate});
@@ -37,56 +38,202 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return LoveBackground(
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 32, 16, 40),
-        children: [
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1152),
-              child: Column(
-                children: [
-                  const SectionTitle('Para Meu Amor ❤️', size: 38),
-                  const SizedBox(height: 28),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final wide = constraints.maxWidth >= 760;
-                      return GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: wide ? 3 : 1,
-                        childAspectRatio: wide ? 1.05 : 1.22,
-                        crossAxisSpacing: 20,
-                        mainAxisSpacing: 20,
-                        children: counters
-                            .map((counter) => CounterCard(counter))
-                            .toList(),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 28),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 672),
-                    child: Text(
-                      'Um jardim digital de memórias e amor, onde cada momento representa uma parte especial da nossa história juntos.',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                          color: muted, fontSize: 16, height: 1.5),
+      child: RefreshIndicator(
+        onRefresh: () async => setState(() => counters = _buildCounters()),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
+          children: [
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1152),
+                child: Column(
+                  children: [
+                    const _HomeIntro(),
+                    const SizedBox(height: 16),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final wide = constraints.maxWidth >= 760;
+                        return GridView.count(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisCount: wide ? 3 : 1,
+                          childAspectRatio: wide ? 1.05 : 1.22,
+                          crossAxisSpacing: 20,
+                          mainAxisSpacing: 20,
+                          children: counters
+                              .map((counter) => CounterCard(counter))
+                              .toList(),
+                        );
+                      },
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    const _HomeMessage(),
+                    const SizedBox(height: 16),
+                    LoveActionCard(
+                      title: 'Nossa Jornada',
+                      description:
+                          'Escreva e guarde os capítulos da caminhada da família.',
+                      icon: Icons.menu_book_outlined,
+                      onTap: () => widget.onNavigate('/nossa-historia'),
+                      maxWidth: 720,
+                    ),
+                  ],
+                ),
               ),
             ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final wide = constraints.maxWidth >= 900;
+                final height = wide ? 620.0 : 520.0;
+                final lift = wide ? 150.0 : 128.0;
+                return Transform.translate(
+                  offset: Offset(0, -lift),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: height - lift,
+                    child: OverflowBox(
+                      alignment: Alignment.topCenter,
+                      minHeight: height,
+                      maxHeight: height,
+                      child: const SizedBox.expand(child: FlowerGarden()),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeIntro extends StatelessWidget {
+  const _HomeIntro();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final text = Theme.of(context).extension<AppTextThemes>()!;
+    return LovePanel(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 680;
+          final copy = Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                'Nossa Família',
+                textAlign: TextAlign.center,
+                style: text.display.merge(
+                  TextStyle(
+                    color: palette.primary,
+                    fontSize: compact ? 28 : 34,
+                    fontWeight: FontWeight.w900,
+                    height: 1.05,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Um lugar simples para guardar amor, memórias e pequenos milagres do nosso caminho.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: palette.muted,
+                  fontSize: 15,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 8,
+                runSpacing: 8,
+                children: const [
+                  _HomeChip(Icons.favorite_outline, 'Fernando'),
+                  _HomeChip(Icons.favorite, 'Miriam'),
+                  _HomeChip(Icons.child_care_outlined, 'Fernando Filho'),
+                ],
+              ),
+            ],
+          );
+
+          if (compact) {
+            return copy;
+          }
+          return ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 680),
+            child: copy,
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _HomeChip extends StatelessWidget {
+  const _HomeChip(this.icon, this.label);
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: primary.withValues(alpha: .08),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: primary.withValues(alpha: .12)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: primary),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: foreground,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
           ),
-          const SizedBox(height: 28),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final height = constraints.maxWidth >= 900 ? 680.0 : 560.0;
-              return SizedBox(
-                width: double.infinity,
-                height: height,
-                child: const FlowerGarden(),
-              );
-            },
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeMessage extends StatelessWidget {
+  const _HomeMessage();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return LovePanel(
+      maxWidth: 760,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: palette.primary.withValues(alpha: .10),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(Icons.local_florist_outlined, color: palette.primary),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              'Um jardim digital de memórias e amor, onde cada momento representa uma parte especial da nossa história juntos.',
+              style:
+                  TextStyle(color: palette.muted, fontSize: 15, height: 1.45),
+            ),
           ),
         ],
       ),
@@ -149,9 +296,9 @@ List<CounterInfo> _buildCounters() {
     CounterInfo(
       title: 'Nascimento do Fernando',
       icon: '👶',
-      date: DateTime(2026, 6, 1),
+      date: DateTime(2026, 6, 15),
       message: 'Nosso maior presente de amor chegando',
-      elapsed: _elapsed(DateTime(2026, 6, 1)),
+      elapsed: _elapsed(DateTime(2026, 6, 15)),
       colors: const [Color(0xffc084fc), Color(0xff9333ea)],
     ),
   ];
@@ -178,106 +325,162 @@ class CounterCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
     final values = [
       ('${info.elapsed.years}', 'Anos'),
       ('${info.elapsed.months}', 'Meses'),
       ('${info.elapsed.days}', 'Dias'),
     ];
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: info.colors),
+    return LovePanel(
+      padding: EdgeInsets.zero,
+      child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: .26)),
-        boxShadow: [
-          BoxShadow(
-              color: info.colors.last.withValues(alpha: .24),
-              blurRadius: 16,
-              offset: const Offset(0, 8))
-        ],
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(info.icon, style: const TextStyle(fontSize: 30)),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  info.title,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 18),
-                ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              height: 7,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: info.colors),
               ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(_formatDate(info.date),
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13)),
-          const SizedBox(height: 8),
-          Text(info.message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                  color: Colors.white70, fontSize: 12, height: 1.3)),
-          const Spacer(),
-          Row(
-            children: values
-                .map(
-                  (value) => Expanded(
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: .95),
-                          borderRadius: BorderRadius.circular(10)),
-                      child: Column(
-                        children: [
-                          Text(value.$1,
-                              style: const TextStyle(
-                                  color: primary,
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+                child: Column(
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(colors: info.colors),
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: info.colors.last.withValues(alpha: .22),
+                                blurRadius: 12,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Text(info.icon,
+                              style: const TextStyle(fontSize: 26)),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                info.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: palette.foreground,
                                   fontWeight: FontWeight.w900,
-                                  fontSize: 24)),
-                          Text(value.$2,
-                              style: const TextStyle(
-                                  color: muted,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 11)),
-                        ],
+                                  fontSize: 18,
+                                  height: 1.1,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _formatDate(info.date),
+                                style: TextStyle(
+                                  color: palette.primary,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      info.message,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: palette.muted,
+                        fontSize: 13,
+                        height: 1.35,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ),
-                )
-                .toList(),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: .18),
-              border: Border.all(color: Colors.white.withValues(alpha: .25)),
-              borderRadius: BorderRadius.circular(10),
+                    const Spacer(),
+                    Row(
+                      children: values
+                          .map(
+                            (value) => Expanded(
+                              child: Container(
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 3),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: palette.primary.withValues(alpha: .06),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color:
+                                        palette.primary.withValues(alpha: .10),
+                                  ),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      value.$1,
+                                      style: TextStyle(
+                                        color: palette.foreground,
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 23,
+                                      ),
+                                    ),
+                                    Text(
+                                      value.$2,
+                                      style: TextStyle(
+                                        color: palette.muted,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 9),
+                      decoration: BoxDecoration(
+                        color: info.colors.last.withValues(alpha: .08),
+                        border: Border.all(
+                            color: info.colors.last.withValues(alpha: .12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${info.elapsed.isFuture ? 'Faltam' : 'Já se passaram'} ${info.elapsed.totalDays} dias',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: palette.foreground,
+                          fontWeight: FontWeight.w900,
+                          height: 1.2,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            child: Text(
-              '${info.elapsed.isFuture ? 'Faltam' : 'Já se passaram'}\n${info.elapsed.totalDays} dias',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  height: 1.25),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/auth/auth_controller.dart';
@@ -130,6 +131,27 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  Future<void> _refreshChat() async {
+    try {
+      await widget.chat.refreshConversations();
+    } catch (error) {
+      widget.toast.error(error.toString());
+    }
+  }
+
+  Future<void> _refreshMessages() async {
+    try {
+      final active = widget.chat.active;
+      if (active == null) {
+        await widget.chat.refreshConversations();
+      } else {
+        await widget.chat.loadMessages(active);
+      }
+    } catch (error) {
+      widget.toast.error(error.toString());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
@@ -143,6 +165,7 @@ class _ChatPageState extends State<ChatPage> {
               chat: widget.chat,
               auth: widget.auth,
               onNewConversation: _openPeoplePicker,
+              onRefresh: _refreshChat,
             );
             final messages = _MessagePane(
               chat: widget.chat,
@@ -152,11 +175,22 @@ class _ChatPageState extends State<ChatPage> {
               sending: sending,
               onSendText: _sendText,
               onSendImage: _sendImage,
+              onRefresh: _refreshMessages,
+              compact: !wide,
+              onBack: () => _goBack(context),
+              onOpenConversations: () => _openConversationsSheet(sidebar),
             );
+
+            if (!wide) {
+              return Container(
+                color: palette.bgStart,
+                child: messages,
+              );
+            }
 
             return Container(
               color: palette.bgStart,
-              padding: EdgeInsets.all(wide ? 18 : 10),
+              padding: const EdgeInsets.all(18),
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: palette.card,
@@ -172,21 +206,13 @@ class _ChatPageState extends State<ChatPage> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: wide
-                      ? Row(
-                          children: [
-                            SizedBox(width: 330, child: sidebar),
-                            VerticalDivider(width: 1, color: palette.border),
-                            Expanded(child: messages),
-                          ],
-                        )
-                      : Column(
-                          children: [
-                            SizedBox(height: 142, child: sidebar),
-                            Divider(height: 1, color: palette.border),
-                            Expanded(child: messages),
-                          ],
-                        ),
+                  child: Row(
+                    children: [
+                      SizedBox(width: 330, child: sidebar),
+                      VerticalDivider(width: 1, color: palette.border),
+                      Expanded(child: messages),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -195,6 +221,25 @@ class _ChatPageState extends State<ChatPage> {
       },
     );
   }
+
+  void _openConversationsSheet(Widget sidebar) {
+    showAppSheet<void>(
+      context: context,
+      builder: (_) => SizedBox(
+        width: 520,
+        height: MediaQuery.of(context).size.height * .72,
+        child: sidebar,
+      ),
+    );
+  }
+
+  void _goBack(BuildContext context) {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/');
+    }
+  }
 }
 
 class _ConversationList extends StatelessWidget {
@@ -202,11 +247,13 @@ class _ConversationList extends StatelessWidget {
     required this.chat,
     required this.auth,
     required this.onNewConversation,
+    required this.onRefresh,
   });
 
   final ChatController chat;
   final AuthController auth;
   final VoidCallback onNewConversation;
+  final Future<void> Function() onRefresh;
 
   @override
   Widget build(BuildContext context) {
@@ -246,37 +293,43 @@ class _ConversationList extends StatelessWidget {
                 style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ),
         Expanded(
-          child: chat.loading && chat.conversations.isEmpty
-              ? const _ConversationSkeleton()
-              : ListView.separated(
-                  itemCount: chat.conversations.length,
-                  separatorBuilder: (_, __) =>
-                      Divider(height: 1, color: palette.border),
-                  itemBuilder: (context, index) {
-                    final conversation = chat.conversations[index];
-                    final selected = chat.active?.id == conversation.id;
-                    return ListTile(
-                      selected: selected,
-                      selectedTileColor: palette.primary.withValues(alpha: .08),
-                      leading: CircleAvatar(
-                        backgroundColor: palette.primary.withValues(alpha: .16),
-                        foregroundColor: palette.primary,
-                        child: Icon(conversation.type == 'global'
-                            ? Icons.public
-                            : Icons.person_outline),
-                      ),
-                      title: Text(conversation.type == 'global'
-                          ? 'Chat'
-                          : conversation.title),
-                      subtitle: Text(conversation.type == 'global'
-                          ? 'Todos podem conversar'
-                          : 'Conversa privada'),
-                      onTap: () => chat
-                          .loadMessages(conversation)
-                          .catchError((error) => null),
-                    );
-                  },
-                ),
+          child: RefreshIndicator(
+            onRefresh: onRefresh,
+            child: chat.loading && chat.conversations.isEmpty
+                ? const _ConversationSkeleton()
+                : ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: chat.conversations.length,
+                    separatorBuilder: (_, __) =>
+                        Divider(height: 1, color: palette.border),
+                    itemBuilder: (context, index) {
+                      final conversation = chat.conversations[index];
+                      final selected = chat.active?.id == conversation.id;
+                      return ListTile(
+                        selected: selected,
+                        selectedTileColor:
+                            palette.primary.withValues(alpha: .08),
+                        leading: CircleAvatar(
+                          backgroundColor:
+                              palette.primary.withValues(alpha: .16),
+                          foregroundColor: palette.primary,
+                          child: Icon(conversation.type == 'global'
+                              ? Icons.public
+                              : Icons.person_outline),
+                        ),
+                        title: Text(conversation.type == 'global'
+                            ? 'Chat'
+                            : conversation.title),
+                        subtitle: Text(conversation.type == 'global'
+                            ? 'Todos podem conversar'
+                            : 'Conversa privada'),
+                        onTap: () => chat
+                            .loadMessages(conversation)
+                            .catchError((error) => null),
+                      );
+                    },
+                  ),
+          ),
         ),
       ],
     );
@@ -292,6 +345,10 @@ class _MessagePane extends StatelessWidget {
     required this.sending,
     required this.onSendText,
     required this.onSendImage,
+    required this.onRefresh,
+    required this.compact,
+    required this.onBack,
+    required this.onOpenConversations,
   });
 
   final ChatController chat;
@@ -301,6 +358,10 @@ class _MessagePane extends StatelessWidget {
   final bool sending;
   final VoidCallback onSendText;
   final VoidCallback onSendImage;
+  final Future<void> Function() onRefresh;
+  final bool compact;
+  final VoidCallback onBack;
+  final VoidCallback onOpenConversations;
 
   @override
   Widget build(BuildContext context) {
@@ -309,11 +370,18 @@ class _MessagePane extends StatelessWidget {
     return Column(
       children: [
         Container(
-          height: 72,
-          padding: const EdgeInsets.symmetric(horizontal: 18),
-          color: palette.card,
+          height: compact ? 64 : 72,
+          padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 18),
+          color:
+              compact ? palette.primary.withValues(alpha: .08) : palette.card,
           child: Row(
             children: [
+              IconButton(
+                onPressed: onBack,
+                icon: const Icon(Icons.arrow_back),
+                tooltip: 'Voltar',
+              ),
+              const SizedBox(width: 2),
               CircleAvatar(
                 backgroundColor: palette.primary.withValues(alpha: .16),
                 foregroundColor: palette.primary,
@@ -333,50 +401,77 @@ class _MessagePane extends StatelessWidget {
                             : active?.title ?? 'Chat',
                         style: const TextStyle(
                             fontSize: 18, fontWeight: FontWeight.w900)),
-                    Text(
-                      active?.type == 'global'
-                          ? 'Conversa aberta para todos'
-                          : 'Conversa entre pessoas logadas',
-                      style: TextStyle(color: palette.muted),
-                    ),
+                    if (!compact)
+                      Text(
+                        active?.type == 'global'
+                            ? 'Conversa aberta para todos'
+                            : 'Conversa entre pessoas logadas',
+                        style: TextStyle(color: palette.muted),
+                      ),
                   ],
                 ),
               ),
+              if (compact)
+                IconButton(
+                  onPressed: onOpenConversations,
+                  icon: const Icon(Icons.forum_outlined),
+                  tooltip: 'Conversas',
+                ),
             ],
           ),
         ),
         Divider(height: 1, color: palette.border),
         Expanded(
-          child: active == null
-              ? const Center(child: Text('Nenhuma conversa disponível.'))
-              : chat.loading
-                  ? const _MessagesSkeleton()
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(18),
-                      itemCount: chat.messages.length,
-                      itemBuilder: (context, index) {
-                        final message = chat.messages[index];
-                        return _MessageBubble(
-                          message: message,
-                          isMine: _isMine(message, auth.user),
-                        );
-                      },
-                    ),
+          child: RefreshIndicator(
+            onRefresh: onRefresh,
+            child: active == null
+                ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: const [
+                      SizedBox(height: 180),
+                      Center(child: Text('Nenhuma conversa disponível.')),
+                    ],
+                  )
+                : chat.loading
+                    ? const _MessagesSkeleton()
+                    : ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(18),
+                        itemCount: chat.messages.length,
+                        itemBuilder: (context, index) {
+                          final message = chat.messages[index];
+                          return _MessageBubble(
+                            message: message,
+                            isMine: _isMine(message, auth.user),
+                            currentUser: auth.user,
+                            compact: compact,
+                          );
+                        },
+                      ),
+          ),
         ),
         Divider(height: 1, color: palette.border),
         if (auth.user == null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+            padding:
+                EdgeInsets.fromLTRB(compact ? 10 : 14, 8, compact ? 10 : 14, 0),
             child: TextField(
               controller: name,
               decoration: const InputDecoration(
                 labelText: 'Seu nome',
                 prefixIcon: Icon(Icons.badge_outlined),
               ),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => onSendText(),
             ),
           ),
         Padding(
-          padding: const EdgeInsets.all(14),
+          padding: EdgeInsets.fromLTRB(
+            compact ? 8 : 14,
+            8,
+            compact ? 8 : 14,
+            compact ? 10 : 14,
+          ),
           child: Row(
             children: [
               IconButton(
@@ -391,12 +486,21 @@ class _MessagePane extends StatelessWidget {
                   maxLines: 4,
                   decoration: const InputDecoration(
                     hintText: 'Escreva uma mensagem...',
+                    isDense: true,
                   ),
+                  textInputAction: TextInputAction.send,
                   onSubmitted: (_) => onSendText(),
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: compact ? 6 : 8),
               FilledButton(
+                style: compact
+                    ? FilledButton.styleFrom(
+                        shape: const CircleBorder(),
+                        padding: const EdgeInsets.all(14),
+                        minimumSize: const Size(48, 48),
+                      )
+                    : null,
                 onPressed: sending ? null : onSendText,
                 child: sending
                     ? const SizedBox(
@@ -415,77 +519,200 @@ class _MessagePane extends StatelessWidget {
 }
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message, required this.isMine});
+  const _MessageBubble({
+    required this.message,
+    required this.isMine,
+    required this.currentUser,
+    required this.compact,
+  });
 
   final ChatMessage message;
   final bool isMine;
+  final AppUser? currentUser;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    return Align(
-      alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
+    final bubble = Flexible(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: isMine ? palette.primary.withValues(alpha: .18) : palette.card,
+          border: Border.all(
             color: isMine
-                ? palette.primary.withValues(alpha: .18)
-                : palette.primary.withValues(alpha: .08),
-            border: Border.all(
-              color: isMine
-                  ? palette.primary.withValues(alpha: .26)
-                  : palette.border,
-            ),
-            borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(14),
-              topRight: const Radius.circular(14),
-              bottomLeft: Radius.circular(isMine ? 14 : 4),
-              bottomRight: Radius.circular(isMine ? 4 : 14),
-            ),
+                ? palette.primary.withValues(alpha: .24)
+                : palette.border,
           ),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (!isMine)
-                    Text(message.senderName,
-                        style: TextStyle(
-                            color: palette.primary,
-                            fontWeight: FontWeight.w900)),
-                  if (message.mediaUrl != null) ...[
-                    SizedBox(height: isMine ? 0 : 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(16),
+            topRight: const Radius.circular(16),
+            bottomLeft: Radius.circular(isMine ? 16 : 5),
+            bottomRight: Radius.circular(isMine ? 5 : 16),
+          ),
+          boxShadow: compact
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: .04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
+        ),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: compact ? 280 : 560),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              compact ? 10 : 12,
+              compact ? 8 : 12,
+              compact ? 10 : 12,
+              compact ? 7 : 12,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!isMine)
+                  Text(message.senderName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: palette.primary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900)),
+                if (message.mediaUrl != null) ...[
+                  SizedBox(height: isMine ? 0 : 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: InkWell(
+                      onTap: () => _openImagePreview(
+                          context, _mediaUrl(message.mediaUrl!)),
                       child: Image.network(_mediaUrl(message.mediaUrl!),
-                          height: 220,
+                          height: compact ? 180 : 220,
                           width: double.infinity,
                           fit: BoxFit.cover),
                     ),
-                  ],
-                  if (message.text?.isNotEmpty == true) ...[
-                    const SizedBox(height: 6),
-                    Text(message.text!),
-                  ],
-                  const SizedBox(height: 4),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      _timeLabel(message.at),
-                      style: TextStyle(fontSize: 11, color: palette.muted),
-                    ),
                   ),
                 ],
-              ),
+                if (message.text?.isNotEmpty == true) ...[
+                  SizedBox(height: message.mediaUrl == null ? 0 : 6),
+                  Text(message.text!,
+                      style: TextStyle(height: compact ? 1.28 : 1.35)),
+                ],
+                const SizedBox(height: 4),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    _timeLabel(message.at),
+                    style: TextStyle(fontSize: 11, color: palette.muted),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       ),
     );
+
+    final avatar = _MessageAvatar(
+      name: isMine
+          ? (currentUser?.name?.trim().isNotEmpty == true
+              ? currentUser!.name!
+              : currentUser?.email ?? message.senderName)
+          : message.senderName,
+      avatarPath: isMine ? currentUser?.avatarPath : null,
+      isMine: isMine,
+      compact: compact,
+    );
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: compact ? 8 : 14,
+        right: compact ? 8 : 14,
+        bottom: compact ? 8 : 10,
+      ),
+      child: Row(
+        mainAxisAlignment:
+            isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: isMine
+            ? [
+                const Spacer(),
+                bubble,
+                const SizedBox(width: 7),
+                avatar,
+              ]
+            : [
+                avatar,
+                const SizedBox(width: 7),
+                bubble,
+                const Spacer(),
+              ],
+      ),
+    );
   }
+}
+
+class _MessageAvatar extends StatelessWidget {
+  const _MessageAvatar({
+    required this.name,
+    required this.avatarPath,
+    required this.isMine,
+    required this.compact,
+  });
+
+  final String name;
+  final String? avatarPath;
+  final bool isMine;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final size = compact ? 30.0 : 34.0;
+    final initial = _initialFor(name);
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: isMine
+            ? palette.primary.withValues(alpha: .18)
+            : palette.primaryDark.withValues(alpha: .13),
+        shape: BoxShape.circle,
+        border: Border.all(color: palette.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      alignment: Alignment.center,
+      child: avatarPath?.isNotEmpty == true
+          ? Image.network(
+              _avatarUrl(avatarPath!),
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Text(
+                initial,
+                style: TextStyle(
+                  color: palette.primary,
+                  fontWeight: FontWeight.w900,
+                  fontSize: compact ? 12 : 13,
+                ),
+              ),
+            )
+          : Text(
+              initial,
+              style: TextStyle(
+                color: palette.primary,
+                fontWeight: FontWeight.w900,
+                fontSize: compact ? 12 : 13,
+              ),
+            ),
+    );
+  }
+}
+
+String _initialFor(String value) {
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) return '?';
+  return trimmed.characters.first.toUpperCase();
 }
 
 bool _isMine(ChatMessage message, AppUser? user) {
@@ -502,6 +729,7 @@ class _ConversationSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(12),
       itemCount: 4,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
@@ -531,6 +759,7 @@ class _MessagesSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(18),
       children: const [
         Align(
@@ -555,6 +784,42 @@ class _MessagesSkeleton extends StatelessWidget {
 String _mediaUrl(String url) {
   if (url.startsWith('http')) return url;
   return AppConfig.apiUri('/fotos/file?path=${Uri.encodeQueryComponent(url)}')
+      .toString();
+}
+
+void _openImagePreview(BuildContext context, String url) {
+  showDialog<void>(
+    context: context,
+    barrierColor: Colors.black.withValues(alpha: .92),
+    builder: (context) => Dialog.fullscreen(
+      backgroundColor: Colors.black,
+      child: Stack(
+        children: [
+          Center(
+            child: InteractiveViewer(
+              minScale: .8,
+              maxScale: 4,
+              child: Image.network(url, fit: BoxFit.contain),
+            ),
+          ),
+          SafeArea(
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: IconButton.filledTonal(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close),
+                tooltip: 'Fechar',
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+String _avatarUrl(String path) {
+  return AppConfig.apiUri('/auth/avatar?path=${Uri.encodeQueryComponent(path)}')
       .toString();
 }
 

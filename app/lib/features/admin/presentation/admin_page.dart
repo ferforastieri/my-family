@@ -4,9 +4,10 @@ import '../../../core/auth/auth_controller.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
+import '../../../core/widgets/love_action_card.dart';
 import '../../../core/widgets/love_background.dart';
-import '../../../core/widgets/section_title.dart';
 import '../../../core/widgets/skeleton.dart';
 import '../../../data/family_repository.dart';
 import '../../../data/models.dart';
@@ -34,128 +35,140 @@ class _AdminPageState extends State<AdminPage> {
   List<GameWord> words = [];
   List<GameStat> stats = [];
   bool loading = true;
+  String? loadError;
+  _AdminSection selected = _AdminSection.users;
 
   @override
   void initState() {
     super.initState();
+    for (final event in _adminRealtimeEvents) {
+      widget.repository.socket.on(event, _handleRealtimeChange);
+    }
     _load();
+  }
+
+  @override
+  void dispose() {
+    for (final event in _adminRealtimeEvents) {
+      widget.repository.socket.off(event, _handleRealtimeChange);
+    }
+    super.dispose();
+  }
+
+  Future<void> _handleRealtimeChange(dynamic _) async {
+    if (!mounted) return;
+    await _load();
   }
 
   Future<void> _load() async {
     setState(() => loading = true);
+    final errors = <String>[];
+    await Future.wait([
+      _loadPart('usuários', () async {
+        users = await widget.repository.listUsers();
+      }, errors),
+      _loadPart('notificações', () async {
+        notifications = await widget.repository.listNotificationsAdmin();
+      }, errors),
+      _loadPart('perguntas', () async {
+        questions = await widget.repository.listQuizQuestionsAdmin();
+      }, errors),
+      _loadPart('palavras', () async {
+        words = await widget.repository.listGameWordsAdmin();
+      }, errors),
+      _loadPart('estatísticas', () async {
+        stats = await widget.repository.gameStats();
+      }, errors),
+    ]);
+    if (!mounted) return;
+    setState(() {
+      loading = false;
+      loadError = errors.isEmpty ? null : errors.join(' • ');
+    });
+    if (errors.isNotEmpty) {
+      widget.toast.error('Algumas áreas não carregaram.');
+    }
+  }
+
+  Future<void> _loadPart(
+    String label,
+    Future<void> Function() loader,
+    List<String> errors,
+  ) async {
     try {
-      final results = await Future.wait([
-        widget.repository.listUsers(),
-        widget.repository.listNotificationsAdmin(),
-        widget.repository.listQuizQuestionsAdmin(),
-        widget.repository.listGameWordsAdmin(),
-        widget.repository.gameStats(),
-      ]);
-      users = results[0] as List<AppUser>;
-      notifications = results[1] as List<AppNotification>;
-      questions = results[2] as List<QuizQuestion>;
-      words = results[3] as List<GameWord>;
-      stats = results[4] as List<GameStat>;
+      await loader();
     } catch (error) {
-      widget.toast.error(error.toString());
-    } finally {
-      if (mounted) setState(() => loading = false);
+      errors.add('$label: ${_friendlyError(error)}');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    return DefaultTabController(
-      length: 4,
-      child: LoveBackground(
+    return LoveBackground(
+      child: RefreshIndicator(
+        onRefresh: _load,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(18, 28, 18, 44),
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
           children: [
-            const SectionTitle('Administração', size: 38),
-            const SizedBox(height: 22),
             Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 1180),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: palette.card,
-                    border: Border.all(color: palette.border),
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: palette.primary.withValues(alpha: .08),
-                        blurRadius: 18,
-                        offset: const Offset(0, 8),
-                      ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const _AdminHero(),
+                    const SizedBox(height: 16),
+                    _AdminMetrics(
+                      users: users.length,
+                      notifications: notifications.length,
+                      games: questions.length + words.length,
+                      stats: stats.fold<int>(
+                          0, (total, stat) => total + stat.count),
+                    ),
+                    if (loadError != null) ...[
+                      const SizedBox(height: 14),
+                      _AdminErrorBanner(message: loadError!),
                     ],
-                  ),
-                  child: Column(
-                    children: [
-                      Material(
-                        color: palette.primary.withValues(alpha: .06),
-                        borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(8)),
-                        child: const TabBar(
-                          isScrollable: true,
-                          tabs: [
-                            Tab(
-                                icon: Icon(Icons.people_outline),
-                                text: 'Usuários'),
-                            Tab(
-                                icon: Icon(Icons.notifications_outlined),
-                                text: 'Notificações'),
-                            Tab(
-                                icon: Icon(Icons.sports_esports_outlined),
-                                text: 'Jogos'),
-                            Tab(
-                                icon: Icon(Icons.query_stats_outlined),
-                                text: 'Estatísticas'),
-                          ],
-                        ),
+                    const SizedBox(height: 16),
+                    LovePanel(
+                      padding: EdgeInsets.zero,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final wide = constraints.maxWidth >= 860;
+                          final content = _sectionContent();
+                          if (!wide) {
+                            return Column(
+                              children: [
+                                _AdminSegmentedNav(
+                                  selected: selected,
+                                  onChanged: (value) =>
+                                      setState(() => selected = value),
+                                ),
+                                SizedBox(height: 640, child: content),
+                              ],
+                            );
+                          }
+                          return SizedBox(
+                            height: 720,
+                            child: Row(
+                              children: [
+                                _AdminSideNav(
+                                  selected: selected,
+                                  onChanged: (value) =>
+                                      setState(() => selected = value),
+                                ),
+                                VerticalDivider(
+                                    width: 1, color: palette.border),
+                                Expanded(child: content),
+                              ],
+                            ),
+                          );
+                        },
                       ),
-                      SizedBox(
-                        height: 680,
-                        child: TabBarView(
-                          children: [
-                            _UsersAdminTab(
-                              users: users,
-                              loading: loading,
-                              onEdit: _openUserSheet,
-                              onDelete: _deleteUser,
-                              onRefresh: _load,
-                            ),
-                            _NotificationsAdminTab(
-                              notifications: notifications,
-                              loading: loading,
-                              onAdd: () => _openNotificationSheet(),
-                              onEdit: _openNotificationSheet,
-                              onDelete: _deleteNotification,
-                              onClear: _clearNotifications,
-                              onSend: _sendNotification,
-                              onRefresh: _load,
-                            ),
-                            _GamesAdminTab(
-                              questions: questions,
-                              words: words,
-                              loading: loading,
-                              onAddQuestion: () => _openQuestionSheet(),
-                              onEditQuestion: _openQuestionSheet,
-                              onDeleteQuestion: _deleteQuestion,
-                              onAddWord: () => _openWordSheet(),
-                              onEditWord: _openWordSheet,
-                              onDeleteWord: _deleteWord,
-                              onRefresh: _load,
-                            ),
-                            _StatsAdminTab(
-                                stats: stats,
-                                loading: loading,
-                                onRefresh: _load),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -163,6 +176,41 @@ class _AdminPageState extends State<AdminPage> {
         ),
       ),
     );
+  }
+
+  Widget _sectionContent() {
+    return switch (selected) {
+      _AdminSection.users => _UsersAdminTab(
+          users: users,
+          loading: loading,
+          onEdit: _openUserSheet,
+          onDelete: _deleteUser,
+        ),
+      _AdminSection.notifications => _NotificationsAdminTab(
+          notifications: notifications,
+          loading: loading,
+          onAdd: () => _openNotificationSheet(),
+          onEdit: _openNotificationSheet,
+          onDelete: _deleteNotification,
+          onClear: _clearNotifications,
+          onSend: _sendNotification,
+        ),
+      _AdminSection.games => _GamesAdminTab(
+          questions: questions,
+          words: words,
+          loading: loading,
+          onAddQuestion: () => _openQuestionSheet(),
+          onEditQuestion: _openQuestionSheet,
+          onDeleteQuestion: _deleteQuestion,
+          onAddWord: () => _openWordSheet(),
+          onEditWord: _openWordSheet,
+          onDeleteWord: _deleteWord,
+        ),
+      _AdminSection.stats => _StatsAdminTab(
+          stats: stats,
+          loading: loading,
+        ),
+    };
   }
 
   Future<void> _openUserSheet(AppUser user) async {
@@ -274,17 +322,304 @@ class _AdminPageState extends State<AdminPage> {
   }
 }
 
+enum _AdminSection { users, notifications, games, stats }
+
+const _adminRealtimeEvents = [
+  'users.created',
+  'users.updated',
+  'users.deleted',
+  'notifications.created',
+  'notifications.updated',
+  'notifications.deleted',
+  'notifications.cleared',
+  'games.quiz.created',
+  'games.quiz.updated',
+  'games.quiz.deleted',
+  'games.words.created',
+  'games.words.updated',
+  'games.words.deleted',
+  'games.stats.changed',
+];
+
+extension _AdminSectionView on _AdminSection {
+  String get label => switch (this) {
+        _AdminSection.users => 'Usuários',
+        _AdminSection.notifications => 'Notificações',
+        _AdminSection.games => 'Jogos',
+        _AdminSection.stats => 'Estatísticas',
+      };
+
+  IconData get icon => switch (this) {
+        _AdminSection.users => Icons.people_outline,
+        _AdminSection.notifications => Icons.notifications_outlined,
+        _AdminSection.games => Icons.sports_esports_outlined,
+        _AdminSection.stats => Icons.query_stats_outlined,
+      };
+}
+
+class _AdminHero extends StatelessWidget {
+  const _AdminHero();
+
+  @override
+  Widget build(BuildContext context) {
+    return const AppPageHeader(
+      title: 'Administração',
+      subtitle: 'Usuários, notificações, jogos e estatísticas.',
+      icon: Icons.admin_panel_settings_outlined,
+    );
+  }
+}
+
+class _AdminMetrics extends StatelessWidget {
+  const _AdminMetrics({
+    required this.users,
+    required this.notifications,
+    required this.games,
+    required this.stats,
+  });
+
+  final int users;
+  final int notifications;
+  final int games;
+  final int stats;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 760;
+        final cards = [
+          _MetricData('Usuários', users, Icons.people_outline),
+          _MetricData(
+              'Notificações', notifications, Icons.notifications_outlined),
+          _MetricData('Itens dos jogos', games, Icons.sports_esports_outlined),
+          _MetricData('Conclusões', stats, Icons.query_stats_outlined),
+        ];
+        return GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: wide ? 4 : 2,
+          childAspectRatio: wide ? 2.45 : 1.7,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          children: cards.map((card) => _MetricCard(card)).toList(),
+        );
+      },
+    );
+  }
+}
+
+class _MetricData {
+  const _MetricData(this.label, this.value, this.icon);
+  final String label;
+  final int value;
+  final IconData icon;
+}
+
+class _MetricCard extends StatelessWidget {
+  const _MetricCard(this.data);
+
+  final _MetricData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return LovePanel(
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: palette.primary.withValues(alpha: .12),
+            foregroundColor: palette.primary,
+            child: Icon(data.icon),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${data.value}',
+                    style: const TextStyle(
+                        fontSize: 24, fontWeight: FontWeight.w900)),
+                Text(data.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: palette.muted, fontSize: 12)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AdminErrorBanner extends StatelessWidget {
+  const _AdminErrorBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.redAccent.withValues(alpha: .10),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.redAccent),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    color: Colors.redAccent, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AdminSideNav extends StatelessWidget {
+  const _AdminSideNav({required this.selected, required this.onChanged});
+
+  final _AdminSection selected;
+  final ValueChanged<_AdminSection> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Container(
+      width: 236,
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        children: [
+          for (final section in _AdminSection.values)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _AdminNavTile(
+                section: section,
+                selected: selected == section,
+                onTap: () => onChanged(section),
+              ),
+            ),
+          const Spacer(),
+          Text(
+            'Painel privado',
+            style: TextStyle(color: palette.muted, fontWeight: FontWeight.w700),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AdminSegmentedNav extends StatelessWidget {
+  const _AdminSegmentedNav({required this.selected, required this.onChanged});
+
+  final _AdminSection selected;
+  final ValueChanged<_AdminSection> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: palette.primary.withValues(alpha: .05),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            for (final section in _AdminSection.values)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: ChoiceChip(
+                  selected: selected == section,
+                  avatar: Icon(section.icon, size: 16),
+                  label: Text(section.label),
+                  onSelected: (_) => onChanged(section),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AdminNavTile extends StatelessWidget {
+  const _AdminNavTile({
+    required this.section,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final _AdminSection section;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Material(
+      color: selected
+          ? palette.primary.withValues(alpha: .12)
+          : Colors.transparent,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+          child: Row(
+            children: [
+              Icon(section.icon,
+                  color: selected ? palette.primary : palette.muted),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  section.label,
+                  style: TextStyle(
+                    color: selected ? palette.primary : palette.foreground,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _friendlyError(Object error) {
+  final raw = error.toString();
+  if (raw.contains('Internal server error')) return 'erro interno';
+  if (raw.contains('Autenticação')) return 'sessão expirada';
+  if (raw.length > 80) return '${raw.substring(0, 80)}...';
+  return raw;
+}
+
 class _AdminToolbar extends StatelessWidget {
   const _AdminToolbar({
     required this.title,
     required this.subtitle,
-    required this.onRefresh,
     this.action,
   });
 
   final String title;
   final String subtitle;
-  final VoidCallback onRefresh;
   final Widget? action;
 
   @override
@@ -310,11 +645,6 @@ class _AdminToolbar extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(
-            onPressed: onRefresh,
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Atualizar',
-          ),
           if (action != null) action!,
         ],
       ),
@@ -328,14 +658,12 @@ class _UsersAdminTab extends StatelessWidget {
     required this.loading,
     required this.onEdit,
     required this.onDelete,
-    required this.onRefresh,
   });
 
   final List<AppUser> users;
   final bool loading;
   final ValueChanged<AppUser> onEdit;
   final ValueChanged<AppUser> onDelete;
-  final VoidCallback onRefresh;
 
   @override
   Widget build(BuildContext context) {
@@ -344,7 +672,6 @@ class _UsersAdminTab extends StatelessWidget {
         _AdminToolbar(
           title: 'Usuários',
           subtitle: 'Edite perfil, função e remova acessos quando precisar.',
-          onRefresh: onRefresh,
         ),
         Expanded(
           child: loading
@@ -393,7 +720,6 @@ class _NotificationsAdminTab extends StatelessWidget {
     required this.onDelete,
     required this.onClear,
     required this.onSend,
-    required this.onRefresh,
   });
 
   final List<AppNotification> notifications;
@@ -403,7 +729,6 @@ class _NotificationsAdminTab extends StatelessWidget {
   final ValueChanged<AppNotification> onDelete;
   final VoidCallback onClear;
   final ValueChanged<AppNotification> onSend;
-  final VoidCallback onRefresh;
 
   @override
   Widget build(BuildContext context) {
@@ -412,7 +737,6 @@ class _NotificationsAdminTab extends StatelessWidget {
         _AdminToolbar(
           title: 'Notificações',
           subtitle: 'Crie, edite, envie push e limpe o histórico.',
-          onRefresh: onRefresh,
           action: Wrap(
             spacing: 8,
             children: [
@@ -482,7 +806,6 @@ class _GamesAdminTab extends StatelessWidget {
     required this.onAddWord,
     required this.onEditWord,
     required this.onDeleteWord,
-    required this.onRefresh,
   });
 
   final List<QuizQuestion> questions;
@@ -494,7 +817,6 @@ class _GamesAdminTab extends StatelessWidget {
   final VoidCallback onAddWord;
   final ValueChanged<GameWord> onEditWord;
   final ValueChanged<GameWord> onDeleteWord;
-  final VoidCallback onRefresh;
 
   @override
   Widget build(BuildContext context) {
@@ -503,7 +825,6 @@ class _GamesAdminTab extends StatelessWidget {
         _AdminToolbar(
           title: 'Jogos',
           subtitle: 'Gerencie perguntas do Quiz e palavras do Caça Palavras.',
-          onRefresh: onRefresh,
           action: Wrap(
             spacing: 8,
             children: [
@@ -625,15 +946,9 @@ class _GameSection extends StatelessWidget {
                   const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
           const SizedBox(height: 10),
           if (children.isEmpty)
-            DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border.all(color: palette.border),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Text(empty, style: TextStyle(color: palette.muted)),
-              ),
+            LovePanel(
+              padding: const EdgeInsets.all(18),
+              child: Text(empty, style: TextStyle(color: palette.muted)),
             )
           else
             ...children.expand((child) => [child, const SizedBox(height: 10)]),
@@ -647,12 +962,10 @@ class _StatsAdminTab extends StatelessWidget {
   const _StatsAdminTab({
     required this.stats,
     required this.loading,
-    required this.onRefresh,
   });
 
   final List<GameStat> stats;
   final bool loading;
-  final VoidCallback onRefresh;
 
   @override
   Widget build(BuildContext context) {
@@ -661,7 +974,6 @@ class _StatsAdminTab extends StatelessWidget {
         _AdminToolbar(
           title: 'Estatísticas',
           subtitle: 'Veja quantas vezes cada pessoa concluiu os jogos.',
-          onRefresh: onRefresh,
         ),
         Expanded(
           child: loading
@@ -714,25 +1026,39 @@ class _AdminTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: palette.primary.withValues(alpha: .045),
-        border: Border.all(color: palette.border),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: CircleAvatar(
-          backgroundColor: palette.primary.withValues(alpha: .14),
-          foregroundColor: palette.primary,
-          child: Icon(icon),
-        ),
-        title: Text(title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontWeight: FontWeight.w900)),
-        subtitle: Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis),
-        trailing: trailing ?? Wrap(spacing: 4, children: actions),
+    return LovePanel(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: palette.primary.withValues(alpha: .12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: palette.primary),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w900)),
+                const SizedBox(height: 4),
+                Text(subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: palette.muted)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          trailing ?? Wrap(spacing: 4, children: actions),
+        ],
       ),
     );
   }
@@ -814,14 +1140,19 @@ class _UserSheetState extends State<_UserSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Editar usuário',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+          const AppSheetHeader(
+            title: 'Editar usuário',
+            subtitle: 'Ajuste o nome e o nível de acesso desta conta.',
+            icon: Icons.person_outline,
+          ),
           const SizedBox(height: 14),
           Text(widget.user.email),
           const SizedBox(height: 14),
           TextField(
             controller: name,
             decoration: const InputDecoration(labelText: 'Nome'),
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _save(),
           ),
           const SizedBox(height: 12),
           SegmentedButton<String>(
@@ -839,10 +1170,9 @@ class _UserSheetState extends State<_UserSheet> {
             onSelectionChanged: (value) => setState(() => role = value.first),
           ),
           const SizedBox(height: 18),
-          AppButton(
-            onPressed: _save,
-            label: 'Salvar',
-            icon: Icons.check,
+          AppSheetActions(
+            onCancel: saving ? null : () => Navigator.pop(context),
+            onSave: saving ? null : _save,
             loading: saving,
           ),
         ],
@@ -906,16 +1236,19 @@ class _NotificationSheetState extends State<_NotificationSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-              widget.notification == null
-                  ? 'Nova notificação'
-                  : 'Editar notificação',
-              style:
-                  const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+          AppSheetHeader(
+            title: widget.notification == null
+                ? 'Nova notificação'
+                : 'Editar notificação',
+            subtitle: 'Defina a mensagem que será enviada para a família.',
+            icon: Icons.notifications_active_outlined,
+          ),
           const SizedBox(height: 14),
           TextField(
             controller: title,
             decoration: const InputDecoration(labelText: 'Título'),
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _save(),
           ),
           const SizedBox(height: 10),
           TextField(
@@ -923,17 +1256,20 @@ class _NotificationSheetState extends State<_NotificationSheet> {
             minLines: 2,
             maxLines: 4,
             decoration: const InputDecoration(labelText: 'Mensagem'),
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _save(),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: url,
             decoration: const InputDecoration(labelText: 'Rota ao abrir'),
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _save(),
           ),
           const SizedBox(height: 18),
-          AppButton(
-            onPressed: _save,
-            label: 'Salvar',
-            icon: Icons.check,
+          AppSheetActions(
+            onCancel: saving ? null : () => Navigator.pop(context),
+            onSave: saving ? null : _save,
             loading: saving,
           ),
         ],
@@ -1007,13 +1343,18 @@ class _QuestionSheetState extends State<_QuestionSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(widget.question == null ? 'Nova pergunta' : 'Editar pergunta',
-              style:
-                  const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+          AppSheetHeader(
+            title:
+                widget.question == null ? 'Nova pergunta' : 'Editar pergunta',
+            subtitle: 'Monte as opções e marque qual resposta está correta.',
+            icon: Icons.quiz_outlined,
+          ),
           const SizedBox(height: 14),
           TextField(
             controller: question,
             decoration: const InputDecoration(labelText: 'Pergunta'),
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _save(),
           ),
           const SizedBox(height: 12),
           for (var i = 0; i < options.length; i++)
@@ -1031,6 +1372,8 @@ class _QuestionSheetState extends State<_QuestionSheet> {
                     child: TextField(
                       controller: options[i],
                       decoration: InputDecoration(labelText: 'Opção ${i + 1}'),
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _save(),
                     ),
                   ),
                 ],
@@ -1042,10 +1385,9 @@ class _QuestionSheetState extends State<_QuestionSheet> {
             title: const Text('Ativa'),
           ),
           const SizedBox(height: 14),
-          AppButton(
-            onPressed: _save,
-            label: 'Salvar',
-            icon: Icons.check,
+          AppSheetActions(
+            onCancel: saving ? null : () => Navigator.pop(context),
+            onSave: saving ? null : _save,
             loading: saving,
           ),
         ],
@@ -1100,13 +1442,17 @@ class _WordSheetState extends State<_WordSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(widget.word == null ? 'Nova palavra' : 'Editar palavra',
-              style:
-                  const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+          AppSheetHeader(
+            title: widget.word == null ? 'Nova palavra' : 'Editar palavra',
+            subtitle: 'Cadastre palavras que aparecem no caça-palavras.',
+            icon: Icons.extension_outlined,
+          ),
           const SizedBox(height: 14),
           TextField(
             controller: word,
             decoration: const InputDecoration(labelText: 'Palavra'),
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _save(),
           ),
           const SizedBox(height: 10),
           SwitchListTile(
@@ -1115,10 +1461,9 @@ class _WordSheetState extends State<_WordSheet> {
             title: const Text('Ativa'),
           ),
           const SizedBox(height: 14),
-          AppButton(
-            onPressed: _save,
-            label: 'Salvar',
-            icon: Icons.check,
+          AppSheetActions(
+            onCancel: saving ? null : () => Navigator.pop(context),
+            onSave: saving ? null : _save,
             loading: saving,
           ),
         ],

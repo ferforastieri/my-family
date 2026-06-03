@@ -7,11 +7,11 @@ import '../../../core/notifications/notifications_controller.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/toast/toast_controller.dart';
-import '../../../core/widgets/app_dropdown.dart';
+import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
+import '../../../core/widgets/love_action_card.dart';
 import '../../auth/presentation/auth_sheet.dart';
 import '../../notifications/presentation/notifications_sheet.dart';
-import '../../profile/presentation/edit_profile_sheet.dart';
 
 class AppShell extends StatelessWidget {
   const AppShell({
@@ -35,13 +35,11 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = _navigationItems(isAuthenticated: auth.user != null);
-
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 860;
         return Scaffold(
-          appBar: wide ? _buildDesktopAppBar(context, items) : null,
+          appBar: wide ? _buildDesktopAppBar(context) : null,
           body: child,
           bottomNavigationBar: wide
               ? null
@@ -55,41 +53,29 @@ class AppShell extends StatelessWidget {
     );
   }
 
-  PreferredSizeWidget _buildDesktopAppBar(
-      BuildContext context, List<_HeaderItem> items) {
+  PreferredSizeWidget _buildDesktopAppBar(BuildContext context) {
     return AppBar(
       toolbarHeight: 92,
       titleSpacing: 0,
-      leadingWidth: 128,
-      leading: Align(
-        alignment: Alignment.centerLeft,
-        child: Padding(
-          padding: const EdgeInsets.only(left: 22),
-          child: _Logo(onTap: () => context.go('/')),
-        ),
-      ),
+      leadingWidth: 0,
+      leading: const SizedBox.shrink(),
       title: Center(
-        child: _TopNavigation(
-          items: items,
+        child: _DesktopMainNavigation(
+          auth: auth,
           currentLocation: currentLocation,
+          onLogin: () => _openLogin(context),
         ),
       ),
       actions: [
         IconButton(
-            onPressed: () => _openNotificationsSheet(context),
-            icon: const Icon(Icons.notifications_outlined),
-            tooltip: 'Notificações'),
+          onPressed: () => _openNotificationsSheet(context),
+          icon: const Icon(Icons.notifications_outlined),
+          tooltip: 'Notificações',
+        ),
         IconButton(
-            onPressed: () => _openThemeSheet(context),
-            icon: const Icon(Icons.palette_outlined),
-            tooltip: 'Cor e tema'),
-        _ProfileAction(
-          auth: auth,
-          wide: true,
-          onLogin: () => _openLogin(context),
-          onEditProfile: () => _openEditProfileSheet(context),
-          onAdmin: () => context.go('/admin'),
-          onSignOut: () => _signOut(context),
+          onPressed: () => _openThemeSheet(context),
+          icon: const Icon(Icons.palette_outlined),
+          tooltip: 'Cor e tema',
         ),
         const SizedBox(width: 14),
       ],
@@ -100,25 +86,6 @@ class AppShell extends StatelessWidget {
     );
   }
 
-  List<_HeaderItem> _navigationItems({required bool isAuthenticated}) {
-    return [
-      const _HeaderItem('Nosso Início', '/', Icons.home_outlined, Icons.home),
-      const _HeaderItem('Nossa Jornada', '/nossa-historia',
-          Icons.menu_book_outlined, Icons.menu_book),
-      if (isAuthenticated)
-        const _HeaderItem(
-            'Memórias em Fotos', '/galeria', Icons.photo_outlined, Icons.photo),
-      const _HeaderItem('Nossa Playlist', '/playlist',
-          Icons.music_note_outlined, Icons.music_note),
-      const _HeaderItem(
-          'Palavras do Coração', '/mensagens', Icons.mail_outline, Icons.mail),
-      const _HeaderItem('Carta de Amor', '/carta-de-amor',
-          Icons.card_giftcard_outlined, Icons.card_giftcard),
-      const _HeaderItem('Jogos do Amor', '/jogos',
-          Icons.sports_esports_outlined, Icons.sports_esports),
-    ];
-  }
-
   void _openLogin(BuildContext context) {
     showAppSheet<void>(
       context: context,
@@ -126,23 +93,10 @@ class AppShell extends StatelessWidget {
     );
   }
 
-  Future<void> _signOut(BuildContext context) async {
-    await auth.signOut();
-    toast.success('Você saiu da conta.');
-    if (context.mounted) context.go('/');
-  }
-
   void _openThemeSheet(BuildContext context) {
     showAppSheet<void>(
       context: context,
       builder: (_) => _ThemeSheet(theme: theme, toast: toast),
-    );
-  }
-
-  void _openEditProfileSheet(BuildContext context) {
-    showAppSheet<void>(
-      context: context,
-      builder: (_) => EditProfileSheet(auth: auth, toast: toast),
     );
   }
 
@@ -154,87 +108,153 @@ class AppShell extends StatelessWidget {
   }
 }
 
-class _ProfileAction extends StatelessWidget {
-  const _ProfileAction({
+class _DesktopMainNavigation extends StatelessWidget {
+  const _DesktopMainNavigation({
     required this.auth,
-    required this.wide,
+    required this.currentLocation,
     required this.onLogin,
-    required this.onEditProfile,
-    required this.onAdmin,
-    required this.onSignOut,
   });
 
   final AuthController auth;
-  final bool wide;
+  final String currentLocation;
   final VoidCallback onLogin;
-  final VoidCallback onEditProfile;
-  final VoidCallback onAdmin;
-  final VoidCallback onSignOut;
 
   @override
   Widget build(BuildContext context) {
-    final user = auth.user;
-    if (user == null) {
-      if (!wide) {
-        return IconButton(
-          onPressed: onLogin,
-          icon: const Icon(Icons.account_circle_outlined),
-          tooltip: 'Entrar',
-        );
-      }
-      return TextButton.icon(
-        onPressed: onLogin,
-        icon: const Icon(Icons.account_circle_outlined, size: 20),
-        label: const Text('Entrar'),
-      );
-    }
-
     final palette = Theme.of(context).extension<AppPalette>()!;
-    return AppDropdown<_ProfileMenuAction>(
-      tooltip: 'Perfil',
-      onSelected: (value) {
-        switch (value) {
-          case _ProfileMenuAction.editProfile:
-            onEditProfile();
-          case _ProfileMenuAction.admin:
-            onAdmin();
-          case _ProfileMenuAction.signOut:
-            onSignOut();
-        }
-      },
-      actions: [
-        const AppDropdownAction(
-            value: _ProfileMenuAction.editProfile,
-            label: 'Editar perfil',
-            icon: Icons.person_outline),
-        if (user.role == 'admin')
-          const AppDropdownAction(
-              value: _ProfileMenuAction.admin,
-              label: 'Administração',
-              icon: Icons.admin_panel_settings_outlined),
-        const AppDropdownAction(
-            value: _ProfileMenuAction.signOut,
-            label: 'Sair',
-            icon: Icons.logout,
-            destructive: true),
-      ],
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: wide ? 8 : 4),
-        child: CircleAvatar(
-          radius: wide ? 18 : 17,
-          backgroundColor: palette.primary.withValues(alpha: .14),
-          foregroundColor: palette.primary,
-          child: Text(
-            _initialFor(user.name ?? user.email),
-            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 760),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _DesktopNavPill(
+            icon: Icons.home_outlined,
+            selectedIcon: Icons.home,
+            label: 'Início',
+            selected: currentLocation == '/',
+            onTap: () => context.go('/'),
+          ),
+          _DesktopNavPill(
+            icon: Icons.photo_library_outlined,
+            selectedIcon: Icons.photo_library,
+            label: 'Memórias',
+            selected: auth.user != null &&
+                (_isSelected('/atalhos/memorias', currentLocation) ||
+                    currentLocation == '/galeria' ||
+                    currentLocation == '/playlist' ||
+                    currentLocation == '/carta-de-amor'),
+            onTap: () {
+              if (auth.user == null) {
+                onLogin();
+              } else {
+                context.go('/atalhos/memorias');
+              }
+            },
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: InkWell(
+              onTap: () => context.go('/chat'),
+              customBorder: const CircleBorder(),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                width: 72,
+                height: 72,
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: palette.card,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: _isSelected('/chat', currentLocation)
+                        ? palette.primary
+                        : palette.border,
+                    width: 2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: palette.primary.withValues(alpha: .16),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Image.asset(
+                  'assets/brand/family-logo.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ),
+          _DesktopNavPill(
+            icon: Icons.apps_outlined,
+            selectedIcon: Icons.apps,
+            label: 'Mais',
+            selected: _isSelected('/atalhos/mais', currentLocation) ||
+                currentLocation == '/jogos',
+            onTap: () => context.go('/atalhos/mais'),
+          ),
+          _DesktopNavPill(
+            icon: Icons.person_outline,
+            selectedIcon: Icons.person,
+            label: 'Perfil',
+            selected: _isSelected('/perfil', currentLocation) ||
+                _isSelected('/admin', currentLocation),
+            onTap: () {
+              if (auth.user == null) {
+                onLogin();
+              } else {
+                context.go('/perfil');
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DesktopNavPill extends StatelessWidget {
+  const _DesktopNavPill({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final color = selected ? palette.primary : palette.foreground;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: TextButton.icon(
+        onPressed: onTap,
+        icon: Icon(selected ? selectedIcon : icon, size: 20),
+        label: Text(label),
+        style: TextButton.styleFrom(
+          foregroundColor: color,
+          backgroundColor:
+              selected ? palette.primary.withValues(alpha: .08) : null,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 12,
           ),
         ),
       ),
     );
   }
 }
-
-enum _ProfileMenuAction { editProfile, admin, signOut }
 
 class _ThemeSheet extends StatelessWidget {
   const _ThemeSheet({required this.theme, required this.toast});
@@ -352,29 +372,6 @@ class _ColorChoice extends StatelessWidget {
   }
 }
 
-class _Logo extends StatelessWidget {
-  const _Logo({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(999),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-        child: Image.asset(
-          'assets/brand/family-logo.png',
-          width: 78,
-          height: 78,
-          fit: BoxFit.contain,
-        ),
-      ),
-    );
-  }
-}
-
 class _MobileBottomNavigation extends StatelessWidget {
   const _MobileBottomNavigation({
     required this.auth,
@@ -411,21 +408,25 @@ class _MobileBottomNavigation extends StatelessWidget {
                 icon: Icons.home_outlined,
                 selectedIcon: Icons.home,
                 label: 'Início',
-                selected: _isSelected('/atalhos/inicio', currentLocation) ||
-                    currentLocation == '/' ||
-                    currentLocation == '/nossa-historia' ||
-                    currentLocation == '/mensagens',
-                onTap: () => context.go('/atalhos/inicio'),
+                selected: currentLocation == '/',
+                onTap: () => context.go('/'),
               ),
               _MobileNavButton(
                 icon: Icons.photo_library_outlined,
                 selectedIcon: Icons.photo_library,
                 label: 'Memórias',
-                selected: _isSelected('/atalhos/memorias', currentLocation) ||
-                    currentLocation == '/galeria' ||
-                    currentLocation == '/playlist' ||
-                    currentLocation == '/carta-de-amor',
-                onTap: () => context.go('/atalhos/memorias'),
+                selected: auth.user != null &&
+                    (_isSelected('/atalhos/memorias', currentLocation) ||
+                        currentLocation == '/galeria' ||
+                        currentLocation == '/playlist' ||
+                        currentLocation == '/carta-de-amor'),
+                onTap: () {
+                  if (auth.user == null) {
+                    onLogin();
+                  } else {
+                    context.go('/atalhos/memorias');
+                  }
+                },
               ),
               Expanded(
                 child: Center(
@@ -563,67 +564,38 @@ class MobileOptionsPage extends StatelessWidget {
           colors: [palette.bgStart, palette.bgEnd],
         ),
       ),
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 28, 18, 112),
-        children: [
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: palette.primary,
-              fontSize: 30,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 22),
-          for (final item in items)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Material(
-                color: palette.card,
-                borderRadius: BorderRadius.circular(8),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(8),
-                  onTap: () => context.go(item.path),
-                  child: Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: palette.border),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 24,
-                          backgroundColor:
-                              palette.primary.withValues(alpha: .14),
-                          foregroundColor: palette.primary,
-                          child: Icon(item.icon),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.label,
-                                style: const TextStyle(
-                                    fontSize: 17, fontWeight: FontWeight.w900),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(item.description,
-                                  style: TextStyle(color: palette.muted)),
-                            ],
-                          ),
-                        ),
-                        const Icon(Icons.chevron_right),
-                      ],
-                    ),
-                  ),
+      child: RefreshIndicator(
+        onRefresh: () async {},
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
+          children: [
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: AppPageHeader(
+                  title: title,
+                  subtitle: 'Escolha para onde seguir.',
+                  icon: Icons.favorite_outline,
                 ),
               ),
             ),
-        ],
+            const SizedBox(height: 22),
+            for (final item in items)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Center(
+                  child: LoveActionCard(
+                    title: item.label,
+                    description: item.description,
+                    icon: item.icon,
+                    onTap: () => context.go(item.path),
+                    maxWidth: 720,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -643,76 +615,8 @@ class MobileOptionItem {
   final IconData icon;
 }
 
-class _HeaderItem {
-  const _HeaderItem(this.label, this.path, this.icon, this.selectedIcon);
-
-  final String label;
-  final String path;
-  final IconData icon;
-  final IconData selectedIcon;
-}
-
-class _TopNavigation extends StatelessWidget {
-  const _TopNavigation({required this.items, required this.currentLocation});
-
-  final List<_HeaderItem> items;
-  final String currentLocation;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
-    return Container(
-      height: 48,
-      color: palette.card,
-      alignment: Alignment.center,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            for (final item in items)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 3),
-                child: TextButton.icon(
-                  onPressed: () => context.go(item.path),
-                  icon: Icon(
-                      _isSelected(item.path, currentLocation)
-                          ? item.selectedIcon
-                          : item.icon,
-                      size: 19),
-                  label: Text(item.label),
-                  style: TextButton.styleFrom(
-                    foregroundColor: _isSelected(item.path, currentLocation)
-                        ? palette.primary
-                        : palette.foreground,
-                    backgroundColor: _isSelected(item.path, currentLocation)
-                        ? palette.primary.withValues(alpha: .08)
-                        : Colors.transparent,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    textStyle: const TextStyle(
-                        fontWeight: FontWeight.w700, fontSize: 12),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 bool _isSelected(String itemPath, String currentLocation) {
   if (itemPath == '/') return currentLocation == '/';
   return currentLocation == itemPath ||
       currentLocation.startsWith('$itemPath/');
-}
-
-String _initialFor(String value) {
-  final trimmed = value.trim();
-  if (trimmed.isEmpty) return '?';
-  return trimmed.substring(0, 1).toUpperCase();
 }

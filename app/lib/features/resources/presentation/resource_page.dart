@@ -3,12 +3,13 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
+import '../../../core/widgets/love_action_card.dart';
 import '../../../core/widgets/love_background.dart';
-import '../../../core/widgets/love_text_card.dart';
-import '../../../core/widgets/section_title.dart';
 import '../../../core/widgets/skeleton.dart';
 import '../../../data/family_repository.dart';
 import '../../../data/models.dart';
@@ -36,6 +37,27 @@ class _ResourcePageState extends State<ResourcePage> {
   String _albumFilter = 'Todos';
 
   @override
+  void initState() {
+    super.initState();
+    for (final event in _resourceEvents(widget.resource)) {
+      widget.repository.socket.on(event, _handleRealtimeChange);
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final event in _resourceEvents(widget.resource)) {
+      widget.repository.socket.off(event, _handleRealtimeChange);
+    }
+    super.dispose();
+  }
+
+  void _handleRealtimeChange(dynamic _) {
+    if (!mounted) return;
+    setState(() => future = widget.repository.list(widget.resource));
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -60,45 +82,58 @@ class _ResourcePageState extends State<ResourcePage> {
                     .info('Atualizando ${widget.title.toLowerCase()}...');
               },
               child: ListView(
-                padding: EdgeInsets.fromLTRB(
-                    24, widget.resource == 'fotos' ? 32 : 80, 24, 32),
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
                 children: [
-                  _ResourceHeader(
-                    title: _titleFor(widget.resource, widget.title),
-                    subtitle: _subtitleFor(widget.resource),
-                    actionLabel: _actionLabelFor(widget.resource),
-                    onPressed: () => _openCreate(context),
-                  ),
-                  const SizedBox(height: 32),
-                  if (widget.resource == 'fotos') ...[
-                    _AlbumFilter(
-                      albums: albums,
-                      selected: _albumFilter,
-                      onSelected: (album) =>
-                          setState(() => _albumFilter = album),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
                   Center(
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
                           maxWidth: widget.resource == 'fotos' ? 1280 : 1200),
-                      child: visibleItems.isEmpty
-                          ? Card(
-                              child: Padding(
-                                padding: const EdgeInsets.all(32),
-                                child: Text('${widget.title} ainda está vazio.',
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(color: muted)),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _ResourceHero(
+                            resource: widget.resource,
+                            title: _titleFor(widget.resource, widget.title),
+                            subtitle: _subtitleFor(widget.resource),
+                            actionLabel: _actionLabelFor(widget.resource),
+                            onPressed: () => _openCreate(context),
+                          ),
+                          const SizedBox(height: 14),
+                          _ResourceMetrics(
+                            resource: widget.resource,
+                            total: items.length,
+                            visible: visibleItems.length,
+                            albums: albums.length,
+                          ),
+                          if (widget.resource == 'fotos') ...[
+                            const SizedBox(height: 14),
+                            LovePanel(
+                              padding: const EdgeInsets.all(12),
+                              child: _AlbumFilter(
+                                albums: albums,
+                                selected: _albumFilter,
+                                onSelected: (album) =>
+                                    setState(() => _albumFilter = album),
                               ),
-                            )
-                          : _ResourceGrid(
-                              resource: widget.resource,
-                              items: visibleItems,
-                              onEdit: _openEdit,
-                              onDelete: _deleteItem,
-                              onView: _openPhotoViewer,
                             ),
+                          ],
+                          const SizedBox(height: 16),
+                          visibleItems.isEmpty
+                              ? _EmptyResourceState(
+                                  title: '${widget.title} ainda está vazio.',
+                                  actionLabel: _actionLabelFor(widget.resource),
+                                  onPressed: () => _openCreate(context),
+                                )
+                              : _ResourceGrid(
+                                  resource: widget.resource,
+                                  items: visibleItems,
+                                  onEdit: _openEdit,
+                                  onDelete: _deleteItem,
+                                  onView: _openPhotoViewer,
+                                ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -106,12 +141,6 @@ class _ResourcePageState extends State<ResourcePage> {
             );
           },
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: primary,
-        foregroundColor: Colors.white,
-        onPressed: () => _openCreate(context),
-        child: const Icon(Icons.add),
       ),
     );
   }
@@ -187,14 +216,24 @@ class _ResourcePageState extends State<ResourcePage> {
   }
 }
 
-class _ResourceHeader extends StatelessWidget {
-  const _ResourceHeader({
+List<String> _resourceEvents(String resource) {
+  return [
+    '$resource.created',
+    '$resource.updated',
+    '$resource.deleted',
+  ];
+}
+
+class _ResourceHero extends StatelessWidget {
+  const _ResourceHero({
+    required this.resource,
     required this.title,
     required this.subtitle,
     required this.actionLabel,
     required this.onPressed,
   });
 
+  final String resource;
   final String title;
   final String subtitle;
   final String actionLabel;
@@ -202,42 +241,128 @@ class _ResourceHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 1000),
-        child: Column(
-          children: [
-            SectionTitle(title, size: 44),
-            if (subtitle.isNotEmpty) ...[
-              const SizedBox(height: 18),
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                    color: muted,
-                    fontSize: 22,
-                    height: 1.45,
-                    fontFamily: 'serif'),
-              ),
-            ],
-            const SizedBox(height: 28),
-            FilledButton.icon(
-              onPressed: onPressed,
-              icon: const Icon(Icons.add),
-              label: Text(actionLabel),
-              style: FilledButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
-                textStyle: const TextStyle(
-                    fontSize: 18,
-                    fontFamily: 'serif',
-                    fontWeight: FontWeight.w700),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25)),
-              ),
+    return AppPageHeader(
+      title: title,
+      subtitle: subtitle,
+      icon: _resourceIcon(resource),
+      actionLabel: actionLabel,
+      actionIcon: Icons.add,
+      onAction: onPressed,
+    );
+  }
+}
+
+class _ResourceMetrics extends StatelessWidget {
+  const _ResourceMetrics({
+    required this.resource,
+    required this.total,
+    required this.visible,
+    required this.albums,
+  });
+
+  final String resource;
+  final int total;
+  final int visible;
+  final int albums;
+
+  @override
+  Widget build(BuildContext context) {
+    final values = [
+      _MetricValue(
+          _resourceCountLabel(resource), total, _resourceIcon(resource)),
+      if (resource == 'fotos')
+        _MetricValue('Álbuns', albums, Icons.collections_bookmark_outlined),
+      if (resource == 'fotos')
+        _MetricValue('Na visão atual', visible, Icons.filter_alt_outlined),
+    ];
+    return LayoutBuilder(builder: (context, constraints) {
+      final columns = constraints.maxWidth >= 760 ? values.length : 1;
+      return GridView.count(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisCount: columns,
+        childAspectRatio: constraints.maxWidth >= 760 ? 3.6 : 4.8,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        children: values.map((value) => _ResourceMetricCard(value)).toList(),
+      );
+    });
+  }
+}
+
+class _MetricValue {
+  const _MetricValue(this.label, this.value, this.icon);
+  final String label;
+  final int value;
+  final IconData icon;
+}
+
+class _ResourceMetricCard extends StatelessWidget {
+  const _ResourceMetricCard(this.value);
+
+  final _MetricValue value;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return LovePanel(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: palette.primary.withValues(alpha: .12),
+            foregroundColor: palette.primary,
+            child: Icon(value.icon),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${value.value}',
+                    style: const TextStyle(
+                        fontSize: 22, fontWeight: FontWeight.w900)),
+                Text(value.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: palette.muted, fontSize: 12)),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyResourceState extends StatelessWidget {
+  const _EmptyResourceState({
+    required this.title,
+    required this.actionLabel,
+    required this.onPressed,
+  });
+
+  final String title;
+  final String actionLabel;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return LovePanel(
+      padding: const EdgeInsets.all(28),
+      child: Column(
+        children: [
+          Icon(Icons.favorite_border, color: palette.primary, size: 42),
+          const SizedBox(height: 10),
+          Text(title,
+              textAlign: TextAlign.center,
+              style:
+                  const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 14),
+          AppButton(onPressed: onPressed, label: actionLabel, icon: Icons.add),
+        ],
       ),
     );
   }
@@ -290,17 +415,79 @@ class _ResourceGrid extends StatelessWidget {
                   onDelete: onDelete,
                   onView: onView);
             }
-            return InkWell(
-              onLongPress: () => onEdit(item),
-              child: LoveTextCard(
-                  title: item.title,
-                  body:
-                      item.subtitle.isEmpty ? 'Sem descrição.' : item.subtitle,
-                  footer: _footerFor(resource, item)),
+            return _TextResourceCard(
+              resource: resource,
+              item: item,
+              onEdit: onEdit,
+              onDelete: onDelete,
             );
           }).toList(),
         );
       },
+    );
+  }
+}
+
+class _TextResourceCard extends StatelessWidget {
+  const _TextResourceCard({
+    required this.resource,
+    required this.item,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final String resource;
+  final FamilyItem item;
+  final ValueChanged<FamilyItem> onEdit;
+  final ValueChanged<FamilyItem> onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: LoveActionCard(
+              title: item.title,
+              description:
+                  item.subtitle.isEmpty ? 'Sem descrição.' : item.subtitle,
+              icon: _resourceIcon(resource),
+              onTap: () => onEdit(item),
+              trailing: const Icon(Icons.chevron_right, color: primary),
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 54),
+            ),
+          ),
+          Positioned(
+            left: 18,
+            right: 10,
+            bottom: 8,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _footerFor(resource, item) ?? _resourceCountLabel(resource),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        color: primary,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12),
+                  ),
+                ),
+                IconButton(
+                    onPressed: () => onEdit(item),
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: 'Editar'),
+                IconButton(
+                    onPressed: () => onDelete(item),
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: 'Excluir'),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -319,70 +506,103 @@ class _PhotoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          Expanded(
-            child: InkWell(
-              onTap: () => onView(item),
-              child: Container(
-                width: double.infinity,
-                color: primary.withValues(alpha: .08),
-                child: item.tipo == 'video'
-                    ? const Icon(Icons.play_circle_fill,
-                        color: primary, size: 64)
-                    : Image.network(
-                        _photoUrl(item),
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return const Center(
-                              child: SkeletonBox(
-                                  width: 120, height: 120, borderRadius: 18));
-                        },
-                        errorBuilder: (_, __, ___) =>
-                            const Icon(Icons.photo, color: primary, size: 48),
-                      ),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(item.album,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        color: primary, fontWeight: FontWeight.w800)),
-                const SizedBox(height: 6),
-                Text(
-                  item.subtitle.isEmpty
-                      ? 'Adicione uma descrição...'
-                      : item.subtitle,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: muted, height: 1.35),
-                ),
-                const SizedBox(height: 8),
-                Row(
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return LovePanel(
+      padding: EdgeInsets.zero,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          children: [
+            Expanded(
+              child: InkWell(
+                onTap: () => onView(item),
+                child: Stack(
+                  fit: StackFit.expand,
                   children: [
-                    IconButton(
-                        onPressed: () => onEdit(item),
-                        icon: const Icon(Icons.edit_outlined),
-                        tooltip: 'Editar'),
-                    IconButton(
-                        onPressed: () => onDelete(item),
-                        icon: const Icon(Icons.delete_outline),
-                        tooltip: 'Excluir'),
+                    ColoredBox(
+                      color: palette.primary.withValues(alpha: .08),
+                      child: item.tipo == 'video'
+                          ? Icon(Icons.play_circle_fill,
+                              color: palette.primary, size: 64)
+                          : Image.network(
+                              _photoUrl(item),
+                              fit: BoxFit.cover,
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return const Center(
+                                    child: SkeletonBox(
+                                        width: 120,
+                                        height: 120,
+                                        borderRadius: 18));
+                              },
+                              errorBuilder: (_, __, ___) => Icon(Icons.photo,
+                                  color: palette.primary, size: 48),
+                            ),
+                    ),
+                    Positioned(
+                      top: 10,
+                      left: 10,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: .45),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          child: Text(item.album,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800)),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 8, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.subtitle.isEmpty
+                        ? 'Adicione uma descrição...'
+                        : item.subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: palette.muted, height: 1.35),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          item.tipo == 'video' ? 'Vídeo' : 'Foto',
+                          style: TextStyle(
+                              color: palette.primary,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12),
+                        ),
+                      ),
+                      IconButton(
+                          onPressed: () => onEdit(item),
+                          icon: const Icon(Icons.edit_outlined),
+                          tooltip: 'Editar'),
+                      IconButton(
+                          onPressed: () => onDelete(item),
+                          icon: const Icon(Icons.delete_outline),
+                          tooltip: 'Excluir'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -409,6 +629,7 @@ class _ResourceDialogState extends State<ResourceDialog> {
   final title = TextEditingController();
   final subtitle = TextEditingController();
   final extra = TextEditingController();
+  bool saving = false;
 
   @override
   void initState() {
@@ -430,29 +651,34 @@ class _ResourceDialogState extends State<ResourceDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Novo item em ${widget.title}',
-              style: const TextStyle(
-                  color: primary, fontWeight: FontWeight.w900, fontSize: 22)),
+          AppSheetHeader(
+            title: widget.initial == null
+                ? 'Novo item em ${widget.title}'
+                : 'Editar ${widget.title}',
+            subtitle: 'Preencha as informações e salve a lembrança.',
+            icon: _resourceIcon(widget.resource),
+          ),
           const SizedBox(height: 16),
           TextField(
               controller: title,
-              decoration: const InputDecoration(labelText: 'Título ou URL')),
+              decoration: const InputDecoration(labelText: 'Título ou URL'),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _save()),
           TextField(
               controller: subtitle,
-              decoration: const InputDecoration(labelText: 'Texto / artista')),
+              decoration: const InputDecoration(labelText: 'Texto / artista'),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _save()),
           TextField(
               controller: extra,
-              decoration: const InputDecoration(labelText: 'Extra')),
+              decoration: const InputDecoration(labelText: 'Extra'),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _save()),
           const SizedBox(height: 18),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancelar')),
-              const SizedBox(width: 10),
-              AppButton(onPressed: _save, label: 'Salvar'),
-            ],
+          AppSheetActions(
+            onCancel: saving ? null : () => Navigator.pop(context),
+            onSave: saving ? null : _save,
+            loading: saving,
           ),
         ],
       ),
@@ -460,23 +686,28 @@ class _ResourceDialogState extends State<ResourceDialog> {
   }
 
   Future<void> _save() async {
-    final data = switch (widget.resource) {
-      'musicas' => {
-          'titulo': title.text,
-          'artista': subtitle.text,
-          'linkSpotify': extra.text,
-          'momento': 'Especial',
-        },
-      'cartas' => {'titulo': title.text, 'conteudo': subtitle.text},
-      'fotos' => {
-          'url': title.text,
-          'texto': subtitle.text,
-          'tipo': extra.text == 'video' ? 'video' : 'imagem'
-        },
-      _ => <String, dynamic>{},
-    };
-    await widget.onSave(data);
-    if (mounted) Navigator.pop(context);
+    setState(() => saving = true);
+    try {
+      final data = switch (widget.resource) {
+        'musicas' => {
+            'titulo': title.text,
+            'artista': subtitle.text,
+            'linkSpotify': extra.text,
+            'momento': 'Especial',
+          },
+        'cartas' => {'titulo': title.text, 'conteudo': subtitle.text},
+        'fotos' => {
+            'url': title.text,
+            'texto': subtitle.text,
+            'tipo': extra.text == 'video' ? 'video' : 'imagem'
+          },
+        _ => <String, dynamic>{},
+      };
+      await widget.onSave(data);
+      if (mounted) Navigator.pop(context);
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
   }
 }
 
@@ -503,7 +734,7 @@ enum _PickedMediaType { image, video }
 class _PhotoMemorySheetState extends State<PhotoMemorySheet> {
   final texto = TextEditingController();
   final album = TextEditingController(text: 'Geral');
-  final data = TextEditingController();
+  DateTime? date;
   XFile? file;
   bool saving = false;
 
@@ -514,7 +745,7 @@ class _PhotoMemorySheetState extends State<PhotoMemorySheet> {
     if (item != null) {
       texto.text = item.subtitle;
       album.text = item.album;
-      data.text = item.data['data']?.toString().split('T').first ?? '';
+      date = DateTime.tryParse(item.data['data']?.toString() ?? '');
     }
   }
 
@@ -522,7 +753,6 @@ class _PhotoMemorySheetState extends State<PhotoMemorySheet> {
   void dispose() {
     texto.dispose();
     album.dispose();
-    data.dispose();
     super.dispose();
   }
 
@@ -575,7 +805,7 @@ class _PhotoMemorySheetState extends State<PhotoMemorySheet> {
         'tipo': tipo,
         'texto': texto.text.trim(),
         'album': album.text.trim().isEmpty ? 'Geral' : album.text.trim(),
-        if (data.text.trim().isNotEmpty) 'data': data.text.trim(),
+        if (date != null) 'data': _datePayload(date!),
       });
       if (mounted) Navigator.pop(context);
     } catch (error) {
@@ -597,6 +827,14 @@ class _PhotoMemorySheetState extends State<PhotoMemorySheet> {
             Text(widget.item == null ? 'Adicionar memória' : 'Editar memória',
                 style: const TextStyle(
                     color: primary, fontWeight: FontWeight.w900, fontSize: 22)),
+            const SizedBox(height: 6),
+            Text(
+              'Escolha a mídia, organize por álbum e marque a data pelo calendário.',
+              style: TextStyle(
+                color: Theme.of(context).extension<AppPalette>()!.muted,
+                height: 1.35,
+              ),
+            ),
             const SizedBox(height: 16),
             OutlinedButton.icon(
               onPressed: saving ? null : _pickFile,
@@ -606,32 +844,39 @@ class _PhotoMemorySheetState extends State<PhotoMemorySheet> {
             const SizedBox(height: 12),
             TextField(
                 controller: album,
-                decoration: const InputDecoration(labelText: 'Álbum')),
+                decoration: const InputDecoration(labelText: 'Álbum'),
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _save()),
             TextField(
                 controller: texto,
                 decoration: const InputDecoration(labelText: 'Descrição'),
                 minLines: 2,
-                maxLines: 4),
-            TextField(
-                controller: data,
-                decoration:
-                    const InputDecoration(labelText: 'Data (AAAA-MM-DD)')),
+                maxLines: 4,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _save()),
+            AppDateField(
+              label: 'Data da memória',
+              value: date,
+              onChanged: (value) => setState(() => date = value),
+              lastDate: DateTime.now().add(const Duration(days: 365)),
+            ),
             const SizedBox(height: 18),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                    onPressed: saving ? null : () => Navigator.pop(context),
-                    child: const Text('Cancelar')),
-                const SizedBox(width: 10),
-                AppButton(onPressed: _save, label: 'Salvar', loading: saving),
-              ],
+            AppSheetActions(
+              onCancel: saving ? null : () => Navigator.pop(context),
+              onSave: saving ? null : _save,
+              loading: saving,
             ),
           ],
         ),
       ),
     );
   }
+}
+
+String _datePayload(DateTime value) {
+  final month = value.month.toString().padLeft(2, '0');
+  final day = value.day.toString().padLeft(2, '0');
+  return '${value.year}-$month-$day';
 }
 
 class _AlbumFilter extends StatelessWidget {
@@ -751,5 +996,23 @@ String? _footerFor(String resource, FamilyItem item) {
   return switch (resource) {
     'musicas' => item.data['momento']?.toString(),
     _ => null,
+  };
+}
+
+IconData _resourceIcon(String resource) {
+  return switch (resource) {
+    'musicas' => Icons.music_note_outlined,
+    'cartas' => Icons.card_giftcard_outlined,
+    'fotos' => Icons.photo_library_outlined,
+    _ => Icons.favorite_outline,
+  };
+}
+
+String _resourceCountLabel(String resource) {
+  return switch (resource) {
+    'musicas' => 'Músicas',
+    'cartas' => 'Cartas',
+    'fotos' => 'Memórias',
+    _ => 'Itens',
   };
 }

@@ -32,11 +32,6 @@ class NotificationsSheet extends StatelessWidget {
                             fontSize: 24,
                             fontWeight: FontWeight.w900)),
                   ),
-                  IconButton(
-                    onPressed: notifications.refresh,
-                    icon: const Icon(Icons.refresh),
-                    tooltip: 'Atualizar',
-                  ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -47,38 +42,57 @@ class NotificationsSheet extends StatelessWidget {
                       color: palette.muted, fontWeight: FontWeight.w700),
                 ),
               const SizedBox(height: 12),
-              if (notifications.loading)
-                const PageSkeleton(cards: 3)
-              else if (notifications.notifications.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 22),
-                  child: Text('Nenhuma notificação por enquanto.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: palette.muted)),
-                )
-              else
-                Flexible(
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: notifications.notifications.length,
-                    separatorBuilder: (_, __) => Divider(color: palette.border),
-                    itemBuilder: (context, index) {
-                      final item = notifications.notifications[index];
-                      return ListTile(
-                        leading: Icon(Icons.notifications_outlined,
-                            color: palette.primary),
-                        title: Text(item.title,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w900)),
-                        subtitle: item.body.isEmpty ? null : Text(item.body),
-                        onTap: () {
-                          Navigator.pop(context);
-                          context.go(item.url);
-                        },
-                      );
-                    },
-                  ),
+              Flexible(
+                child: RefreshIndicator(
+                  onRefresh: notifications.refresh,
+                  child: notifications.loading
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          children: const [PageSkeleton(cards: 3)],
+                        )
+                      : notifications.notifications.isEmpty
+                          ? ListView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              shrinkWrap: true,
+                              children: [
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 22),
+                                  child: Text(
+                                    'Nenhuma notificação por enquanto.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(color: palette.muted),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : ListView.separated(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              shrinkWrap: true,
+                              itemCount: notifications.notifications.length,
+                              separatorBuilder: (_, __) =>
+                                  Divider(color: palette.border),
+                              itemBuilder: (context, index) {
+                                final item = notifications.notifications[index];
+                                return ListTile(
+                                  leading: Icon(Icons.notifications_outlined,
+                                      color: palette.primary),
+                                  title: Text(item.title,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w900)),
+                                  subtitle: item.body.isEmpty
+                                      ? null
+                                      : Text(item.body),
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    context.go(item.url);
+                                  },
+                                );
+                              },
+                            ),
                 ),
+              ),
               const SizedBox(height: 14),
               AppButton(
                 onPressed: notifications.configurePush,
