@@ -162,7 +162,7 @@ class _ResourcePageState extends State<ResourcePage> {
               toast: widget.toast,
               onSave: (data) async {
                 await widget.repository.create(widget.resource, data);
-                widget.toast.success('Memória salva com sucesso.');
+                widget.toast.success(widget.repository.takeMessage());
                 _reload(nextPage: 1);
               },
             )
@@ -171,7 +171,7 @@ class _ResourcePageState extends State<ResourcePage> {
               resource: widget.resource,
               onSave: (data) async {
                 await widget.repository.create(widget.resource, data);
-                widget.toast.success('Item salvo com sucesso.');
+                widget.toast.success(widget.repository.takeMessage());
                 _reload(nextPage: 1);
               },
             ),
@@ -188,7 +188,7 @@ class _ResourcePageState extends State<ResourcePage> {
               item: item,
               onSave: (data) async {
                 await widget.repository.update(widget.resource, item.id, data);
-                widget.toast.success('Memória atualizada.');
+                widget.toast.success(widget.repository.takeMessage());
                 _reload();
               },
             )
@@ -198,7 +198,7 @@ class _ResourcePageState extends State<ResourcePage> {
               initial: item,
               onSave: (data) async {
                 await widget.repository.update(widget.resource, item.id, data);
-                widget.toast.success('Item atualizado.');
+                widget.toast.success(widget.repository.takeMessage());
                 _reload();
               },
             ),
@@ -792,7 +792,6 @@ class _PhotoMemorySheetState extends State<PhotoMemorySheet> {
 
   Future<void> _save() async {
     if (widget.item == null && file == null) {
-      widget.toast.error('Escolha uma foto ou vídeo.');
       return;
     }
     setState(() => saving = true);

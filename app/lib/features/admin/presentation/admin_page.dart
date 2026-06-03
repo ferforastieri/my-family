@@ -116,9 +116,6 @@ class _AdminPageState extends State<AdminPage> {
         );
       }, errors),
     ]);
-    if (errors.isNotEmpty) {
-      widget.toast.error('Algumas áreas não carregaram.');
-    }
     return _AdminData(
       users: nextUsers,
       notifications: nextNotifications,
@@ -340,7 +337,7 @@ class _AdminPageState extends State<AdminPage> {
         user: user,
         onSave: (data) async {
           await widget.repository.updateUser(user.id, data);
-          widget.toast.success('Usuário atualizado.');
+          widget.toast.success(widget.repository.takeMessage());
           _invalidateAdmin();
         },
       ),
@@ -349,7 +346,7 @@ class _AdminPageState extends State<AdminPage> {
 
   Future<void> _deleteUser(AppUser user) async {
     await widget.repository.deleteUser(user.id);
-    widget.toast.success('Usuário removido.');
+    widget.toast.success(widget.repository.takeMessage());
     _invalidateAdmin();
   }
 
@@ -365,7 +362,7 @@ class _AdminPageState extends State<AdminPage> {
           } else {
             await widget.repository.updateNotification(notification.id, data);
           }
-          widget.toast.success('Notificação salva.');
+          widget.toast.success(widget.repository.takeMessage());
           _invalidateAdmin();
         },
       ),
@@ -374,14 +371,14 @@ class _AdminPageState extends State<AdminPage> {
 
   Future<void> _deleteNotification(AppNotification notification) async {
     await widget.repository.deleteNotification(notification.id);
-    widget.toast.success('Notificação removida.');
+    widget.toast.success(widget.repository.takeMessage());
     _invalidateAdmin();
   }
 
   Future<void> _clearNotifications() async {
     await widget.repository.clearNotifications();
     notificationsPage = 1;
-    widget.toast.success('Notificações limpas.');
+    widget.toast.success(widget.repository.takeMessage());
     _invalidateAdmin();
   }
 
@@ -391,7 +388,7 @@ class _AdminPageState extends State<AdminPage> {
       body: notification.body,
       url: notification.url,
     );
-    widget.toast.success('Notificação enfileirada para envio.');
+    widget.toast.success(widget.repository.takeMessage());
     _invalidateAdmin();
   }
 
@@ -407,7 +404,7 @@ class _AdminPageState extends State<AdminPage> {
             url: notification.url,
             scheduledAt: scheduledAt,
           );
-          widget.toast.success('Notificação agendada.');
+          widget.toast.success(widget.repository.takeMessage());
         },
       ),
     );
@@ -425,7 +422,7 @@ class _AdminPageState extends State<AdminPage> {
           } else {
             await widget.repository.updateQuizQuestion(question.id, data);
           }
-          widget.toast.success('Pergunta salva.');
+          widget.toast.success(widget.repository.takeMessage());
           _invalidateAdmin();
         },
       ),
@@ -434,7 +431,7 @@ class _AdminPageState extends State<AdminPage> {
 
   Future<void> _deleteQuestion(QuizQuestion question) async {
     await widget.repository.deleteQuizQuestion(question.id);
-    widget.toast.success('Pergunta removida.');
+    widget.toast.success(widget.repository.takeMessage());
     _invalidateAdmin();
   }
 
@@ -450,7 +447,7 @@ class _AdminPageState extends State<AdminPage> {
           } else {
             await widget.repository.updateGameWord(word.id, data);
           }
-          widget.toast.success('Palavra salva.');
+          widget.toast.success(widget.repository.takeMessage());
           _invalidateAdmin();
         },
       ),
@@ -459,7 +456,7 @@ class _AdminPageState extends State<AdminPage> {
 
   Future<void> _deleteWord(GameWord word) async {
     await widget.repository.deleteGameWord(word.id);
-    widget.toast.success('Palavra removida.');
+    widget.toast.success(widget.repository.takeMessage());
     _invalidateAdmin();
   }
 }
@@ -1558,12 +1555,6 @@ class _ScheduleNotificationSheetState
   }
 
   Future<void> _schedule() async {
-    if (scheduledAt.isBefore(DateTime.now())) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Escolha uma data futura.')),
-      );
-      return;
-    }
     setState(() => saving = true);
     try {
       await widget.onSchedule(scheduledAt);

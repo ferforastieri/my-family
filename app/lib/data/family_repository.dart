@@ -14,6 +14,9 @@ class FamilyRepository {
   final SocketClient socket;
   late final SocketApiClient api = SocketApiClient(socket);
 
+  String takeMessage([String fallback = 'Ação realizada com sucesso.']) =>
+      socket.takeLastMessage(fallback);
+
   Future<PaginatedResult<FamilyItem>> listPage(
     String resource,
     int page,
@@ -67,9 +70,14 @@ class FamilyRepository {
     }
 
     final json = jsonDecode(body) as Map<String, dynamic>;
-    final relativePath = json['relativePath']?.toString();
+    final data = json['data'] is Map
+        ? Map<String, dynamic>.from(json['data'] as Map)
+        : json;
+    final message = json['message'];
+    if (message is String) socket.rememberMessage(message);
+    final relativePath = data['relativePath']?.toString();
     if (relativePath == null || relativePath.isEmpty) {
-      throw Exception('Resposta de upload inválida.');
+      throw Exception(json['message']?.toString() ?? body);
     }
     return relativePath;
   }

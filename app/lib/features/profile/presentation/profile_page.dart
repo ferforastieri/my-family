@@ -76,7 +76,8 @@ class ProfilePage extends StatelessWidget {
                                 onAdmin: () => context.openAppRoute('/admin'),
                                 onSignOut: () async {
                                   await auth.signOut();
-                                  toast.success('Você saiu da conta.');
+                                  toast.success(
+                                      auth.takeMessage('Sessão encerrada.'));
                                   if (context.mounted) context.go('/');
                                 },
                               ),
@@ -125,7 +126,7 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
     setState(() => uploadingAvatar = true);
     try {
       await widget.auth.updateAvatar(file);
-      widget.toast.success('Foto do perfil atualizada.');
+      widget.toast.success(widget.auth.takeMessage());
     } catch (error) {
       widget.toast.error(error.toString());
     } finally {

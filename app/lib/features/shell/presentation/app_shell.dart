@@ -352,7 +352,6 @@ class _ColorChoice extends StatelessWidget {
           borderRadius: BorderRadius.circular(999),
           onTap: () {
             theme.setColor(value);
-            toast.success('Cor $label aplicada.');
           },
           child: Container(
             width: 42,

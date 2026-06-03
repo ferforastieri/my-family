@@ -10,9 +10,21 @@ class SocketClient {
   String? _token;
   Completer<void>? _connectCompleter;
   final Map<String, List<void Function(dynamic data)>> _handlers = {};
+  String? _lastMessage;
 
   bool get isConnected => _socket?.connected ?? false;
   String? get token => _token;
+  String? get lastMessage => _lastMessage;
+
+  void rememberMessage(String? message) {
+    if (message?.trim().isNotEmpty == true) _lastMessage = message!.trim();
+  }
+
+  String takeLastMessage([String fallback = 'Ação realizada com sucesso.']) {
+    final message = _lastMessage;
+    _lastMessage = null;
+    return message?.isNotEmpty == true ? message! : fallback;
+  }
 
   void connect({String? token}) {
     if (_socket?.connected == true && _token == token) return;
@@ -78,8 +90,14 @@ class SocketClient {
       payload,
       ack: (dynamic data) {
         _socket?.off('exception', exceptionHandler);
-        if (data is Map && data['status'] == 'error') {
+        if (data is Map && (data['status'] == 'error' || data['ok'] == false)) {
           completer.completeError(data['message'] ?? 'Erro no servidor');
+          return;
+        }
+        if (data is Map && data.containsKey('ok') && data.containsKey('data')) {
+          final message = data['message'];
+          if (message is String) _lastMessage = message;
+          completer.complete(data['data'] as T);
           return;
         }
         completer.complete(data as T);

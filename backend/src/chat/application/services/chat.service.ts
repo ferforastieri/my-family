@@ -1,4 +1,8 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { UserService } from '@auth/application/services/user.service';
 import type { UserEntity } from '@auth/domain/entities/user.entity';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
@@ -99,6 +103,9 @@ export class ChatService {
     }
     const senderName =
       user?.name || user?.email || body.senderName?.trim() || 'Visitante';
+    if (!body.text?.trim() && !body.mediaUrl) {
+      throw new BadRequestException('Escreva uma mensagem.');
+    }
     const message = await this.chat.createMessage(
       chatMessageFactory.create({
         conversationId,

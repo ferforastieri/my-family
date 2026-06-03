@@ -93,10 +93,10 @@ class _AuthSheetState extends State<AuthSheet> {
     try {
       if (register) {
         await widget.auth.register(email.text, password.text, name.text);
-        widget.toast.success('Cadastro realizado com sucesso.');
+        widget.toast.success(widget.auth.takeMessage());
       } else {
         await widget.auth.signIn(email.text, password.text);
-        widget.toast.success('Login realizado com sucesso.');
+        widget.toast.success(widget.auth.takeMessage());
       }
       if (mounted) Navigator.pop(context);
     } catch (e) {
@@ -114,7 +114,7 @@ class _AuthSheetState extends State<AuthSheet> {
     });
     try {
       await widget.auth.forgotPassword(email.text);
-      widget.toast.info('Se o email existir, você receberá instruções.');
+      widget.toast.info(widget.auth.takeMessage());
       if (mounted) {
         setState(() => error = 'Se o email existir, você receberá instruções.');
       }

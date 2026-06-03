@@ -20,6 +20,8 @@ class AuthController extends ChangeNotifier {
   AppUser? user;
   bool loading = true;
   String? token;
+  String takeMessage([String fallback = 'Ação realizada com sucesso.']) =>
+      socket.takeLastMessage(fallback);
 
   Future<void> bootstrap() async {
     token = await tokenStore.read();
@@ -90,14 +92,13 @@ class AuthController extends ChangeNotifier {
 
   Future<void> updateAvatar(XFile file) async {
     final currentToken = token;
-    if (currentToken == null) {
-      throw Exception('Entre para alterar sua foto.');
-    }
     final request = http.MultipartRequest(
       'POST',
       AppConfig.apiUri('/auth/avatar'),
     );
-    request.headers['Authorization'] = 'Bearer $currentToken';
+    if (currentToken != null) {
+      request.headers['Authorization'] = 'Bearer $currentToken';
+    }
     request.files.add(http.MultipartFile.fromBytes(
       'file',
       await file.readAsBytes(),
@@ -111,7 +112,12 @@ class AuthController extends ChangeNotifier {
     }
 
     final raw = await compute(_decodeJsonMap, body);
-    final rawUser = raw['user'];
+    final message = raw['message'];
+    if (message is String) socket.rememberMessage(message);
+    final data = raw['data'] is Map
+        ? Map<String, dynamic>.from(raw['data'] as Map)
+        : raw;
+    final rawUser = data['user'];
     if (rawUser is Map) {
       user = AppUser.fromJson(Map<String, dynamic>.from(rawUser));
       notifyListeners();

@@ -9,7 +9,9 @@ class ThemeController extends ChangeNotifier {
 
   Future<void> bootstrap() async {
     final prefs = await SharedPreferences.getInstance();
-    mode = prefs.getString('theme.mode') == 'dark' ? ThemeMode.dark : ThemeMode.light;
+    mode = prefs.getString('theme.mode') == 'dark'
+        ? ThemeMode.dark
+        : ThemeMode.light;
     color = ThemeColorChoice.values.firstWhere(
       (item) => item.name == prefs.getString('theme.color'),
       orElse: () => ThemeColorChoice.rosa,
@@ -21,7 +23,8 @@ class ThemeController extends ChangeNotifier {
     mode = value;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('theme.mode', value == ThemeMode.dark ? 'dark' : 'light');
+    await prefs.setString(
+        'theme.mode', value == ThemeMode.dark ? 'dark' : 'light');
   }
 
   Future<void> setColor(ThemeColorChoice value) async {
@@ -31,4 +34,3 @@ class ThemeController extends ChangeNotifier {
     await prefs.setString('theme.color', value.name);
   }
 }
-
