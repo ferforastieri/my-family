@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'core/auth/auth_controller.dart';
 import 'core/chat/chat_controller.dart';
 import 'core/auth/token_store.dart';
+import 'core/location/location_controller.dart';
 import 'core/notifications/notifications_controller.dart';
 import 'core/socket/socket_client.dart';
 import 'core/theme/app_theme.dart';
@@ -31,6 +34,7 @@ void main() {
   final repository = FamilyRepository(socket);
   final chat = ChatController(socket, repository);
   final notifications = NotificationsController(socket);
+  final location = LocationController(socket);
   final theme = ThemeController();
   final toast = ToastController();
   runApp(MyFamilyApp(
@@ -40,6 +44,7 @@ void main() {
       theme: theme,
       toast: toast,
       repository: repository));
+  unawaited(location.bootstrap());
   Future<void>(() async {
     await auth.bootstrap();
     await Future.wait([

@@ -210,4 +210,54 @@ class FamilyRepository {
     });
     return (row['sent'] as num?)?.toInt() ?? 0;
   }
+
+  Future<List<FamilyList>> listFamilyLists() async {
+    final rows = await socket.emitAck<List<dynamic>>('lists.list');
+    return rows
+        .map((row) => FamilyList.fromJson(Map<String, dynamic>.from(row as Map)))
+        .toList();
+  }
+
+  Future<FamilyList> createFamilyList(Map<String, dynamic> data) async {
+    final row = await socket.emitAck<Map<String, dynamic>>('lists.create', data);
+    return FamilyList.fromJson(Map<String, dynamic>.from(row));
+  }
+
+  Future<FamilyList?> updateFamilyList(String id, Map<String, dynamic> data) async {
+    final row = await socket.emitAck<Map<String, dynamic>?>(
+        'lists.update', {'id': id, 'data': data});
+    return row == null ? null : FamilyList.fromJson(Map<String, dynamic>.from(row));
+  }
+
+  Future<void> deleteFamilyList(String id) async {
+    await socket.emitAck<Map<String, dynamic>>('lists.delete', {'id': id});
+  }
+
+  Future<List<FamilyListItem>> listFamilyListItems(String listId) async {
+    final rows = await socket.emitAck<List<dynamic>>('lists.items', {'listId': listId});
+    return rows
+        .map((row) => FamilyListItem.fromJson(Map<String, dynamic>.from(row as Map)))
+        .toList();
+  }
+
+  Future<FamilyListItem> createFamilyListItem(String listId, String text) async {
+    final row = await socket.emitAck<Map<String, dynamic>>('lists.items.create', {
+      'listId': listId,
+      'text': text,
+    });
+    return FamilyListItem.fromJson(Map<String, dynamic>.from(row));
+  }
+
+  Future<FamilyListItem?> updateFamilyListItem(
+      String id, Map<String, dynamic> data) async {
+    final row = await socket.emitAck<Map<String, dynamic>?>(
+        'lists.items.update', {'id': id, 'data': data});
+    return row == null
+        ? null
+        : FamilyListItem.fromJson(Map<String, dynamic>.from(row));
+  }
+
+  Future<void> deleteFamilyListItem(String id) async {
+    await socket.emitAck<Map<String, dynamic>>('lists.items.delete', {'id': id});
+  }
 }

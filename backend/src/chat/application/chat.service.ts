@@ -2,12 +2,16 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import { UserService } from '@auth/application/user.service';
 import type { UserEntity } from '@shared/domain/entities';
 import { ChatRepository } from '../infrastructure/repositories/chat.repository';
+import { ListsService } from '../../lists/application/lists.service';
+import { ListsRealtimeGateway } from '../../lists/interfaces/gateways/lists-realtime.gateway';
 
 @Injectable()
 export class ChatService {
   constructor(
     private chat: ChatRepository,
     private users: UserService,
+    private lists: ListsService,
+    private listsRealtime: ListsRealtimeGateway,
   ) {}
 
   private messageDto(message: Awaited<ReturnType<ChatRepository['createMessage']>>) {
@@ -69,6 +73,13 @@ export class ChatService {
       mediaUrl: body.mediaUrl,
       mediaType: body.mediaType,
     });
+    if (body.text?.trim()) {
+      const listResult = await this.lists.addFromChat(body.text, user);
+      if (listResult) {
+        this.listsRealtime.emitListCreated(listResult.list);
+        for (const item of listResult.items) this.listsRealtime.emitItemCreated(item);
+      }
+    }
     return this.messageDto(message);
   }
 }

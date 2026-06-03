@@ -2,8 +2,11 @@ export * from './carta.schema';
 export * from './chat-conversation.schema';
 export * from './chat-message.schema';
 export * from './foto.schema';
+export * from './family-list.schema';
+export * from './family-list-item.schema';
 export * from './game-completion.schema';
 export * from './game-word.schema';
+export * from './location-update.schema';
 export * from './musica.schema';
 export * from './notification.schema';
 export * from './password-reset.schema';
@@ -18,11 +21,20 @@ import {
 } from './chat-conversation.schema';
 import { ChatMessageDocument, ChatMessageSchema } from './chat-message.schema';
 import { FotoDocument, FotoSchema } from './foto.schema';
+import { FamilyListDocument, FamilyListSchema } from './family-list.schema';
+import {
+  FamilyListItemDocument,
+  FamilyListItemSchema,
+} from './family-list-item.schema';
 import {
   GameCompletionDocument,
   GameCompletionSchema,
 } from './game-completion.schema';
 import { GameWordDocument, GameWordSchema } from './game-word.schema';
+import {
+  LocationUpdateDocument,
+  LocationUpdateSchema,
+} from './location-update.schema';
 import { MusicaDocument, MusicaSchema } from './musica.schema';
 import {
   NotificationDocument,
@@ -48,8 +60,11 @@ export const mongoModels = [
   { name: ChatConversationDocument.name, schema: ChatConversationSchema },
   { name: ChatMessageDocument.name, schema: ChatMessageSchema },
   { name: FotoDocument.name, schema: FotoSchema },
+  { name: FamilyListDocument.name, schema: FamilyListSchema },
+  { name: FamilyListItemDocument.name, schema: FamilyListItemSchema },
   { name: GameCompletionDocument.name, schema: GameCompletionSchema },
   { name: GameWordDocument.name, schema: GameWordSchema },
+  { name: LocationUpdateDocument.name, schema: LocationUpdateSchema },
   { name: MusicaDocument.name, schema: MusicaSchema },
   { name: CartaDocument.name, schema: CartaSchema },
   { name: NotificationDocument.name, schema: NotificationSchema },
