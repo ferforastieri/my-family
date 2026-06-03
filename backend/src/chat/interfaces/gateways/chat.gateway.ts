@@ -47,7 +47,7 @@ export class ChatGateway {
     const user = await this.session.requireUser(client);
     const conversation = await this.chat.createDirectConversation(user, body);
     this.server?.emit('chat.conversation.created', conversation);
-    return conversation;
+    return { message: 'Conversa criada.', ...conversation };
   }
 
   @SubscribeMessage('chat.messages')
@@ -71,6 +71,6 @@ export class ChatGateway {
       user,
     );
     this.server?.emit('chat.message.created', message);
-    return message;
+    return { message: 'Mensagem enviada.', ...message };
   }
 }

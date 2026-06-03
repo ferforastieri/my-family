@@ -65,7 +65,7 @@ export class FotosController {
       UploadContext.Fotos,
     );
     await this.fotosService.processUpload(relativePath);
-    return { relativePath };
+    return { relativePath, message: 'Arquivo enviado com sucesso.' };
   }
 
   @Get(':id')
@@ -76,18 +76,23 @@ export class FotosController {
   @Post()
   @UseGuards(JwtAuthGuard)
   async create(@Body() data: FotoWriteDto) {
-    return this.fotosService.create(data);
+    const row = await this.fotosService.create(data);
+    return { message: 'Memória salva com sucesso.', ...row };
   }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard)
   async update(@Param('id') id: string, @Body() data: Partial<FotoWriteDto>) {
-    return this.fotosService.update(id, data);
+    const row = await this.fotosService.update(id, data);
+    return row ? { message: 'Memória atualizada.', ...row } : row;
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   async delete(@Param('id') id: string) {
-    return this.fotosService.delete(id);
+    return {
+      ok: await this.fotosService.delete(id),
+      message: 'Memória removida.',
+    };
   }
 }

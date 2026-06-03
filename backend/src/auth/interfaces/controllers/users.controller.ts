@@ -36,12 +36,13 @@ export class UsersController {
   async update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
     const user = await this.user.update(id, dto);
     if (!user) throw new NotFoundException('Usuário não encontrado');
-    return user;
+    return { message: 'Usuário atualizado.', ...user };
   }
 
   @Delete(':id')
   async delete(@Param('id') id: string) {
     const ok = await this.user.delete(id);
     if (!ok) throw new NotFoundException('Usuário não encontrado');
+    return { ok, message: 'Usuário removido.' };
   }
 }

@@ -280,7 +280,7 @@ class _QuizGameState extends State<_QuizGame> {
       score: score,
       total: questions.length,
     );
-    widget.toast.success(widget.repository.takeMessage());
+    widget.toast.backendSuccess(widget.repository.takeMessage());
   }
 
   @override
@@ -484,7 +484,7 @@ class _WordSearchGameState extends State<_WordSearchGame> {
         score: found.length,
         total: words.length,
       );
-      widget.toast.success(widget.repository.takeMessage());
+      widget.toast.backendSuccess(widget.repository.takeMessage());
     }
   }
 

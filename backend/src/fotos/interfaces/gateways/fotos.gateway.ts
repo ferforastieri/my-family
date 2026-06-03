@@ -34,7 +34,7 @@ export class FotosGateway {
     await this.session.requireUser(client);
     const row = await this.fotos.create(data);
     this.server.emit('fotos.created', row);
-    return row;
+    return { message: 'Memória salva com sucesso.', ...row };
   }
 
   @SubscribeMessage('fotos.update')
@@ -45,7 +45,7 @@ export class FotosGateway {
     await this.session.requireUser(client);
     const row = await this.fotos.update(body.id, body.data);
     if (row) this.server.emit('fotos.updated', row);
-    return row;
+    return row ? { message: 'Memória atualizada.', ...row } : row;
   }
 
   @SubscribeMessage('fotos.delete')
@@ -56,6 +56,6 @@ export class FotosGateway {
     await this.session.requireUser(client);
     const ok = await this.fotos.delete(body.id);
     if (ok) this.server.emit('fotos.deleted', { id: body.id });
-    return { ok };
+    return { ok, message: 'Memória removida.' };
   }
 }

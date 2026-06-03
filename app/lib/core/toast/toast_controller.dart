@@ -18,6 +18,13 @@ class ToastController extends ChangeNotifier {
   void success(String message) => show(message, ToastKind.success);
   void error(String message) => show(message, ToastKind.error);
   void info(String message) => show(message, ToastKind.info);
+  void backendSuccess(String? message) {
+    if (message?.trim().isNotEmpty == true) success(message!.trim());
+  }
+
+  void backendInfo(String? message) {
+    if (message?.trim().isNotEmpty == true) info(message!.trim());
+  }
 
   void show(String message, ToastKind kind) {
     _timer?.cancel();

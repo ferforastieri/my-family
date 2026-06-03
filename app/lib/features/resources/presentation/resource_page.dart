@@ -162,7 +162,7 @@ class _ResourcePageState extends State<ResourcePage> {
               toast: widget.toast,
               onSave: (data) async {
                 await widget.repository.create(widget.resource, data);
-                widget.toast.success(widget.repository.takeMessage());
+                widget.toast.backendSuccess(widget.repository.takeMessage());
                 _reload(nextPage: 1);
               },
             )
@@ -171,7 +171,7 @@ class _ResourcePageState extends State<ResourcePage> {
               resource: widget.resource,
               onSave: (data) async {
                 await widget.repository.create(widget.resource, data);
-                widget.toast.success(widget.repository.takeMessage());
+                widget.toast.backendSuccess(widget.repository.takeMessage());
                 _reload(nextPage: 1);
               },
             ),
@@ -188,7 +188,7 @@ class _ResourcePageState extends State<ResourcePage> {
               item: item,
               onSave: (data) async {
                 await widget.repository.update(widget.resource, item.id, data);
-                widget.toast.success(widget.repository.takeMessage());
+                widget.toast.backendSuccess(widget.repository.takeMessage());
                 _reload();
               },
             )
@@ -198,7 +198,7 @@ class _ResourcePageState extends State<ResourcePage> {
               initial: item,
               onSave: (data) async {
                 await widget.repository.update(widget.resource, item.id, data);
-                widget.toast.success(widget.repository.takeMessage());
+                widget.toast.backendSuccess(widget.repository.takeMessage());
                 _reload();
               },
             ),

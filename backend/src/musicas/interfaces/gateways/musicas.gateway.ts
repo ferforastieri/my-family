@@ -34,7 +34,7 @@ export class MusicasGateway {
     await this.session.requireUser(client);
     const row = await this.musicas.create(data);
     this.server.emit('musicas.created', row);
-    return row;
+    return { message: 'Música salva com sucesso.', ...row };
   }
 
   @SubscribeMessage('musicas.update')
@@ -45,7 +45,7 @@ export class MusicasGateway {
     await this.session.requireUser(client);
     const row = await this.musicas.update(body.id, body.data);
     if (row) this.server.emit('musicas.updated', row);
-    return row;
+    return row ? { message: 'Música atualizada.', ...row } : row;
   }
 
   @SubscribeMessage('musicas.delete')
@@ -56,6 +56,6 @@ export class MusicasGateway {
     await this.session.requireUser(client);
     const ok = await this.musicas.delete(body.id);
     if (ok) this.server.emit('musicas.deleted', { id: body.id });
-    return { ok };
+    return { ok, message: 'Música removida.' };
   }
 }

@@ -58,13 +58,16 @@ import { LocationModule } from './location/location.module';
     }),
     ThrottlerModule.forRootAsync({
       inject: [Environment],
-      useFactory: (environment: Environment) => [
-        {
-          name: 'default',
-          ttl: environment.security.throttleTtlMs,
-          limit: environment.security.throttleLimit,
-        },
-      ],
+      useFactory: (environment: Environment) => ({
+        errorMessage: 'Muitas tentativas. Aguarde um pouco e tente novamente.',
+        throttlers: [
+          {
+            name: 'default',
+            ttl: environment.security.throttleTtlMs,
+            limit: environment.security.throttleLimit,
+          },
+        ],
+      }),
     }),
     DatabaseModule,
     QueueModule,

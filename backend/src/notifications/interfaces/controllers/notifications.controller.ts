@@ -6,8 +6,6 @@ import {
   Delete,
   Body,
   Param,
-  HttpCode,
-  HttpStatus,
   NotFoundException,
   UseGuards,
   BadRequestException,
@@ -35,25 +33,25 @@ export class NotificationsController {
   }
 
   @Post('subscribe')
-  @HttpCode(HttpStatus.NO_CONTENT)
   async subscribe(
     @Body() body: { subscription: FcmSubscriptionDto; userAgent?: string },
   ) {
     if (body.subscription?.token) {
       await this.notifications.pushSubscribe(body.subscription, body.userAgent);
     }
+    return { ok: true, message: 'Notificações ativadas.' };
   }
 
   @Post('unsubscribe')
-  @HttpCode(HttpStatus.NO_CONTENT)
   async unsubscribe(@Body() body: { token: string }) {
     if (body.token) await this.notifications.pushUnsubscribe(body.token);
+    return { ok: true, message: 'Notificações desativadas.' };
   }
 
   @Delete()
-  @HttpCode(HttpStatus.NO_CONTENT)
   async clear() {
     await this.notifications.clearAll();
+    return { ok: true, message: 'Notificações limpas.' };
   }
 
   @Get(':id')
@@ -69,7 +67,8 @@ export class NotificationsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   async create(@Body() dto: NotificationCreateDto) {
-    return this.notifications.create(dto);
+    const row = await this.notifications.create(dto);
+    return { message: 'Notificação salva.', ...row };
   }
 
   @Patch(':id')
@@ -81,16 +80,16 @@ export class NotificationsController {
   ) {
     const n = await this.notifications.update(id, dto);
     if (!n) throw new NotFoundException('Notificação não encontrada');
-    return n;
+    return { message: 'Notificação atualizada.', ...n };
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   async delete(@Param('id') id: string) {
     const ok = await this.notifications.delete(id);
     if (!ok) throw new NotFoundException('Notificação não encontrada');
+    return { ok, message: 'Notificação removida.' };
   }
 
   @Post('send')
@@ -98,7 +97,8 @@ export class NotificationsController {
   @Roles('admin')
   async sendNow(@Body() body: NotificationSendDto) {
     if (!body?.title) throw new BadRequestException('title é obrigatório');
-    return this.notifications.send(body.title, body.body, body.url);
+    const row = await this.notifications.send(body.title, body.body, body.url);
+    return { message: 'Notificação enviada.', ...row };
   }
 
   @Post('schedule')
@@ -119,6 +119,7 @@ export class NotificationsController {
     const at = new Date(body.scheduledAt);
     if (Number.isNaN(at.getTime()))
       throw new BadRequestException('scheduledAt inválido');
-    return this.scheduler.schedule(body);
+    const row = await this.scheduler.schedule(body);
+    return { message: 'Notificação agendada.', ...row };
   }
 }

@@ -20,10 +20,10 @@ class SocketClient {
     if (message?.trim().isNotEmpty == true) _lastMessage = message!.trim();
   }
 
-  String takeLastMessage([String fallback = 'Ação realizada com sucesso.']) {
+  String? takeLastMessage() {
     final message = _lastMessage;
     _lastMessage = null;
-    return message?.isNotEmpty == true ? message! : fallback;
+    return message?.isNotEmpty == true ? message : null;
   }
 
   void connect({String? token}) {

@@ -29,7 +29,7 @@ export class LocationGateway {
     const user = await this.session.getUser(client);
     const row = await this.locations.update(data, user);
     this.server?.emit('location.updated', row);
-    return { ok: true, id: row.id };
+    return { ok: true, id: row.id, message: 'Localização atualizada.' };
   }
 
   @SubscribeMessage('location.latest')

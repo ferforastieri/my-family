@@ -28,7 +28,13 @@ export class AuthController {
 
   @Post('register')
   async register(@Body() dto: RegisterDto) {
-    return this.auth.register(dto.email, dto.password, dto.name, dto.role);
+    const response = await this.auth.register(
+      dto.email,
+      dto.password,
+      dto.name,
+      dto.role,
+    );
+    return { message: 'Cadastro realizado com sucesso.', ...response };
   }
 
   @Post('login')
@@ -36,7 +42,10 @@ export class AuthController {
   async login(
     @Req() req: { user: { id: string; email: string; name: string | null } },
   ) {
-    return this.auth.tokenResponse(req.user as any);
+    return {
+      message: 'Login realizado com sucesso.',
+      ...this.auth.tokenResponse(req.user as any),
+    };
   }
 
   @Get('me')
@@ -71,6 +80,7 @@ export class AuthController {
     );
     const user = await this.auth.updateAvatar(req.user.id, relativePath);
     return {
+      message: 'Foto do perfil atualizada.',
       user: user
         ? {
             id: user.id,
@@ -88,7 +98,6 @@ export class AuthController {
     if (!email) throw new BadRequestException('Email é obrigatório');
     await this.auth.requestPasswordReset(email);
     return {
-      success: true,
       message:
         'Se o email existir, você receberá um token de recuperação por email.',
     };
@@ -100,7 +109,7 @@ export class AuthController {
     if (!token || !newPassword)
       throw new BadRequestException('Token e nova senha são obrigatórios');
     await this.auth.resetPassword(token, newPassword);
-    return { success: true, message: 'Senha redefinida com sucesso.' };
+    return { message: 'Senha redefinida com sucesso.' };
   }
 
   @Get('avatar')

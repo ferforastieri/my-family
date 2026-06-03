@@ -34,7 +34,7 @@ export class CartasGateway {
     await this.session.requireUser(client);
     const row = await this.cartas.create(data);
     this.server.emit('cartas.created', row);
-    return row;
+    return { message: 'Texto salvo.', ...row };
   }
 
   @SubscribeMessage('cartas.update')
@@ -45,7 +45,7 @@ export class CartasGateway {
     await this.session.requireUser(client);
     const row = await this.cartas.update(body.id, body.data);
     if (row) this.server.emit('cartas.updated', row);
-    return row;
+    return row ? { message: 'Texto atualizado.', ...row } : row;
   }
 
   @SubscribeMessage('cartas.delete')
@@ -56,6 +56,6 @@ export class CartasGateway {
     await this.session.requireUser(client);
     const ok = await this.cartas.delete(body.id);
     if (ok) this.server.emit('cartas.deleted', { id: body.id });
-    return { ok };
+    return { ok, message: 'Texto removido.' };
   }
 }
