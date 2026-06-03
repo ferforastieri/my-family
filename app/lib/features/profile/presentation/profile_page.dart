@@ -76,8 +76,6 @@ class ProfilePage extends StatelessWidget {
                                 onAdmin: () => context.openAppRoute('/admin'),
                                 onSignOut: () async {
                                   await auth.signOut();
-                                  toast.success(
-                                      auth.takeMessage('Sessão encerrada.'));
                                   if (context.mounted) context.go('/');
                                 },
                               ),
