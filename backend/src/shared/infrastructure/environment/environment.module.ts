@@ -41,6 +41,7 @@ export class Environment {
   security: {
     throttleTtlMs: number;
     throttleLimit: number;
+    csrfSecret: string;
   };
 
   isProduction(): boolean {
@@ -72,6 +73,7 @@ class EnvironmentFactory {
     const logLevel = readEnv('LOG_LEVEL', output.parsed);
     const throttleTtlMs = readNumberEnv('THROTTLE_TTL_MS', output.parsed);
     const throttleLimit = readNumberEnv('THROTTLE_LIMIT', output.parsed);
+    const csrfSecret = readEnv('CSRF_SECRET', output.parsed);
 
     return new Environment({
       type:
@@ -150,6 +152,7 @@ class EnvironmentFactory {
       security: {
         throttleTtlMs,
         throttleLimit,
+        csrfSecret,
       },
     });
   }

@@ -13,6 +13,7 @@ import { QueueModule } from '@shared/infrastructure/queue';
 import {
   ApiExceptionFilter,
   ApiResponseInterceptor,
+  CsrfController,
 } from '@shared/interfaces/http';
 import { AuthModule } from '@auth/auth.module';
 import { FotosModule } from '@fotos/fotos.module';
@@ -89,5 +90,6 @@ import { LocationModule } from './location/location.module';
     { provide: APP_INTERCEPTOR, useClass: ApiResponseInterceptor },
     { provide: APP_FILTER, useClass: ApiExceptionFilter },
   ],
+  controllers: [CsrfController],
 })
 export class AppModule {}

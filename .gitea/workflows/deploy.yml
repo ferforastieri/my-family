@@ -39,6 +39,7 @@ jobs:
           LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
           THROTTLE_TTL_MS: ${{ secrets.THROTTLE_TTL_MS }}
           THROTTLE_LIMIT: ${{ secrets.THROTTLE_LIMIT }}
+          CSRF_SECRET: ${{ secrets.CSRF_SECRET }}
           UPLOAD_HOST_PATH: ${{ secrets.UPLOAD_HOST_PATH }}
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
           SOCKET_URL: ${{ secrets.SOCKET_URL }}
@@ -58,6 +59,7 @@ jobs:
           test -n "$LOG_LEVEL" || { echo "Missing secret LOG_LEVEL"; exit 1; }
           test -n "$THROTTLE_TTL_MS" || { echo "Missing secret THROTTLE_TTL_MS"; exit 1; }
           test -n "$THROTTLE_LIMIT" || { echo "Missing secret THROTTLE_LIMIT"; exit 1; }
+          test -n "$CSRF_SECRET" || { echo "Missing secret CSRF_SECRET"; exit 1; }
           test -n "$UPLOAD_HOST_PATH" || { echo "Missing secret UPLOAD_HOST_PATH"; exit 1; }
           test -n "$API_BASE_URL" || { echo "Missing secret API_BASE_URL"; exit 1; }
           test -n "$SOCKET_URL" || { echo "Missing secret SOCKET_URL"; exit 1; }
@@ -84,6 +86,7 @@ jobs:
           LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
           THROTTLE_TTL_MS: ${{ secrets.THROTTLE_TTL_MS }}
           THROTTLE_LIMIT: ${{ secrets.THROTTLE_LIMIT }}
+          CSRF_SECRET: ${{ secrets.CSRF_SECRET }}
           JWT_EXPIRES_IN: ${{ secrets.JWT_EXPIRES_IN }}
           CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
@@ -120,6 +123,7 @@ jobs:
             printf 'LOG_LEVEL=%s\n' "$LOG_LEVEL"
             printf 'THROTTLE_TTL_MS=%s\n' "$THROTTLE_TTL_MS"
             printf 'THROTTLE_LIMIT=%s\n' "$THROTTLE_LIMIT"
+            printf 'CSRF_SECRET=%s\n' "$CSRF_SECRET"
             printf 'JWT_EXPIRES_IN=%s\n' "${JWT_EXPIRES_IN:-7d}"
             printf 'CORS_ORIGIN=%s\n' "${CORS_ORIGIN:-*}"
             printf 'API_BASE_URL=%s\n' "$API_BASE_URL"
