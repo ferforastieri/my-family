@@ -12,10 +12,8 @@ import {
   UseGuards,
   BadRequestException,
 } from '@nestjs/common';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
 import { NotificationsService, FcmSubscriptionDto, NotificationCreateDto } from '../../application/notifications.service';
-import { NOTIFICATION_QUEUE_NAME, NotificationJobPayload } from '../../infrastructure/queues/notification-queue.processor';
+import { NotificationSchedulerService } from '../../application/notification-scheduler.service';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@auth/guards/roles.guard';
 import { Roles } from '@auth/decorators/roles.decorator';
@@ -23,7 +21,7 @@ import { Roles } from '@auth/decorators/roles.decorator';
 export class NotificationsController {
   constructor(
     private notifications: NotificationsService,
-    @InjectQueue(NOTIFICATION_QUEUE_NAME) private queue: Queue,
+    private scheduler: NotificationSchedulerService,
   ) {}
 
   @Get()
@@ -101,10 +99,6 @@ export class NotificationsController {
     if (!body?.scheduledAt) throw new BadRequestException('scheduledAt é obrigatório (ISO 8601)');
     const at = new Date(body.scheduledAt);
     if (Number.isNaN(at.getTime())) throw new BadRequestException('scheduledAt inválido');
-    const delay = at.getTime() - Date.now();
-    if (delay <= 0) throw new BadRequestException('scheduledAt deve ser no futuro');
-    const payload: NotificationJobPayload = { title: body.title, body: body.body, url: body.url };
-    await this.queue.add('send', payload, { delay });
-    return { scheduledAt: body.scheduledAt, delayMs: delay };
+    return this.scheduler.schedule(body);
   }
 }

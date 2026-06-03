@@ -13,6 +13,7 @@ export * from './password-reset.schema';
 export * from './push-subscription.schema';
 export * from './user.schema';
 export * from './quiz-question.schema';
+export * from './scheduled-notification.schema';
 
 import { CartaDocument, CartaSchema } from './carta.schema';
 import {
@@ -53,6 +54,10 @@ import {
   QuizQuestionDocument,
   QuizQuestionSchema,
 } from './quiz-question.schema';
+import {
+  ScheduledNotificationDocument,
+  ScheduledNotificationSchema,
+} from './scheduled-notification.schema';
 
 export const mongoModels = [
   { name: UserDocument.name, schema: UserSchema },
@@ -70,4 +75,5 @@ export const mongoModels = [
   { name: NotificationDocument.name, schema: NotificationSchema },
   { name: PushSubscriptionDocument.name, schema: PushSubscriptionSchema },
   { name: QuizQuestionDocument.name, schema: QuizQuestionSchema },
+  { name: ScheduledNotificationDocument.name, schema: ScheduledNotificationSchema },
 ];

@@ -194,6 +194,7 @@ class _AdminPageState extends State<AdminPage> {
           onDelete: _deleteNotification,
           onClear: _clearNotifications,
           onSend: _sendNotification,
+          onSchedule: _scheduleNotification,
         ),
       _AdminSection.games => _GamesAdminTab(
           questions: questions,
@@ -271,6 +272,24 @@ class _AdminPageState extends State<AdminPage> {
     );
     widget.toast.success('Notificação enviada para $sent dispositivo(s).');
     await _load();
+  }
+
+  Future<void> _scheduleNotification(AppNotification notification) async {
+    await showAppSheet<void>(
+      context: context,
+      builder: (_) => _ScheduleNotificationSheet(
+        notification: notification,
+        onSchedule: (scheduledAt) async {
+          await widget.repository.scheduleNotification(
+            title: notification.title,
+            body: notification.body,
+            url: notification.url,
+            scheduledAt: scheduledAt,
+          );
+          widget.toast.success('Notificação agendada.');
+        },
+      ),
+    );
   }
 
   Future<void> _openQuestionSheet([QuizQuestion? question]) async {
@@ -720,6 +739,7 @@ class _NotificationsAdminTab extends StatelessWidget {
     required this.onDelete,
     required this.onClear,
     required this.onSend,
+    required this.onSchedule,
   });
 
   final List<AppNotification> notifications;
@@ -729,6 +749,7 @@ class _NotificationsAdminTab extends StatelessWidget {
   final ValueChanged<AppNotification> onDelete;
   final VoidCallback onClear;
   final ValueChanged<AppNotification> onSend;
+  final ValueChanged<AppNotification> onSchedule;
 
   @override
   Widget build(BuildContext context) {
@@ -774,6 +795,11 @@ class _NotificationsAdminTab extends StatelessWidget {
                               onPressed: () => onSend(notification),
                               icon: const Icon(Icons.send_outlined),
                               tooltip: 'Enviar push',
+                            ),
+                            IconButton(
+                              onPressed: () => onSchedule(notification),
+                              icon: const Icon(Icons.schedule_send_outlined),
+                              tooltip: 'Agendar push',
                             ),
                             IconButton(
                               onPressed: () => onEdit(notification),
@@ -1271,6 +1297,127 @@ class _NotificationSheetState extends State<_NotificationSheet> {
             onCancel: saving ? null : () => Navigator.pop(context),
             onSave: saving ? null : _save,
             loading: saving,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ScheduleNotificationSheet extends StatefulWidget {
+  const _ScheduleNotificationSheet({
+    required this.notification,
+    required this.onSchedule,
+  });
+
+  final AppNotification notification;
+  final Future<void> Function(DateTime scheduledAt) onSchedule;
+
+  @override
+  State<_ScheduleNotificationSheet> createState() =>
+      _ScheduleNotificationSheetState();
+}
+
+class _ScheduleNotificationSheetState
+    extends State<_ScheduleNotificationSheet> {
+  DateTime selectedDate = DateTime.now().add(const Duration(minutes: 10));
+  TimeOfDay selectedTime =
+      TimeOfDay.fromDateTime(DateTime.now().add(const Duration(minutes: 10)));
+  bool saving = false;
+
+  DateTime get scheduledAt => DateTime(
+        selectedDate.year,
+        selectedDate.month,
+        selectedDate.day,
+        selectedTime.hour,
+        selectedTime.minute,
+      );
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate.isBefore(now) ? now : selectedDate,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365 * 2)),
+    );
+    if (picked != null) setState(() => selectedDate = picked);
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: selectedTime,
+    );
+    if (picked != null) setState(() => selectedTime = picked);
+  }
+
+  Future<void> _schedule() async {
+    if (scheduledAt.isBefore(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Escolha uma data futura.')),
+      );
+      return;
+    }
+    setState(() => saving = true);
+    try {
+      await widget.onSchedule(scheduledAt);
+      if (mounted) Navigator.pop(context);
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 540,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const AppSheetHeader(
+            title: 'Agendar notificação',
+            subtitle: 'Escolha quando a família deve receber o push.',
+            icon: Icons.schedule_send_outlined,
+          ),
+          const SizedBox(height: 14),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.notifications_outlined),
+            title: Text(widget.notification.title,
+                style: const TextStyle(fontWeight: FontWeight.w900)),
+            subtitle: Text(widget.notification.body.isEmpty
+                ? 'Sem mensagem'
+                : widget.notification.body),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: saving ? null : _pickDate,
+                  icon: const Icon(Icons.calendar_month_outlined),
+                  label: Text(
+                      '${selectedDate.day.toString().padLeft(2, '0')}/${selectedDate.month.toString().padLeft(2, '0')}/${selectedDate.year}'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: saving ? null : _pickTime,
+                  icon: const Icon(Icons.schedule_outlined),
+                  label: Text(selectedTime.format(context)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          AppSheetActions(
+            onCancel: saving ? null : () => Navigator.pop(context),
+            onSave: saving ? null : _schedule,
+            loading: saving,
+            saveLabel: 'Agendar',
           ),
         ],
       ),
