@@ -260,4 +260,12 @@ class FamilyRepository {
   Future<void> deleteFamilyListItem(String id) async {
     await socket.emitAck<Map<String, dynamic>>('lists.items.delete', {'id': id});
   }
+
+  Future<List<LocationSnapshot>> listLocations() async {
+    final rows = await socket.emitAck<List<dynamic>>('location.latest');
+    return rows
+        .map((row) =>
+            LocationSnapshot.fromJson(Map<String, dynamic>.from(row as Map)))
+        .toList();
+  }
 }

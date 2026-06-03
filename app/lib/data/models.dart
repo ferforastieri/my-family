@@ -258,3 +258,42 @@ class FamilyListItem {
         checked: json['checked'] == true,
       );
 }
+
+class LocationSnapshot {
+  const LocationSnapshot({
+    required this.id,
+    required this.latitude,
+    required this.longitude,
+    required this.at,
+    this.userName,
+    this.accuracy,
+    this.batteryLevel,
+    this.isCharging,
+    this.platform,
+  });
+
+  final String id;
+  final String? userName;
+  final double latitude;
+  final double longitude;
+  final double? accuracy;
+  final int? batteryLevel;
+  final bool? isCharging;
+  final String? platform;
+  final DateTime at;
+
+  factory LocationSnapshot.fromJson(Map<String, dynamic> json) =>
+      LocationSnapshot(
+        id: json['id'].toString(),
+        userName: json['userName']?.toString(),
+        latitude: (json['latitude'] as num).toDouble(),
+        longitude: (json['longitude'] as num).toDouble(),
+        accuracy: (json['accuracy'] as num?)?.toDouble(),
+        batteryLevel: (json['batteryLevel'] as num?)?.toInt(),
+        isCharging: json['isCharging'] as bool?,
+        platform: json['platform']?.toString(),
+        at: json['createdAt'] is String
+            ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
+            : DateTime.now(),
+      );
+}

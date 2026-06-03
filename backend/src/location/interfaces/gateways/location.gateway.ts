@@ -24,8 +24,7 @@ export class LocationGateway {
 
   @SubscribeMessage('location.latest')
   async latest(@ConnectedSocket() client: Socket) {
-    await this.session.requireRole(client, ['admin']);
+    await this.session.requireUser(client);
     return this.locations.latest();
   }
 }
-

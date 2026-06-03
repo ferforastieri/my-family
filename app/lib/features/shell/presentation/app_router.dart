@@ -13,6 +13,7 @@ import '../../content/presentation/editable_text_collection_page.dart';
 import '../../games/presentation/games_page.dart';
 import '../../home/presentation/home_page.dart';
 import '../../lists/presentation/lists_page.dart';
+import '../../location/presentation/location_page.dart';
 import '../../profile/presentation/profile_page.dart';
 import '../../resources/presentation/resource_page.dart';
 import 'app_shell.dart';
@@ -89,6 +90,12 @@ GoRouter buildRouter(
                   path: '/listas',
                   icon: Icons.checklist_outlined,
                 ),
+                MobileOptionItem(
+                  label: 'Localização',
+                  description: 'Mapa da família e bateria de cada pessoa.',
+                  path: '/localizacao',
+                  icon: Icons.location_on_outlined,
+                ),
               ],
             )),
           ),
@@ -152,6 +159,13 @@ GoRouter buildRouter(
             )),
           ),
           GoRoute(
+            path: '/localizacao',
+            pageBuilder: (context, state) => _page(LocationPage(
+              repository: repository,
+              toast: toast,
+            )),
+          ),
+          GoRoute(
             path: '/perfil',
             pageBuilder: (context, state) => _page(ProfilePage(
               auth: auth,
@@ -173,7 +187,8 @@ bool _requiresAuth(String path) {
   return path == '/atalhos/memorias' ||
       path == '/galeria' ||
       path == '/playlist' ||
-      path == '/carta-de-amor';
+      path == '/carta-de-amor' ||
+      path == '/localizacao';
 }
 
 Page<void> _page(Widget child) {
