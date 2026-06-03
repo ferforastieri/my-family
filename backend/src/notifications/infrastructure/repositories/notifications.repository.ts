@@ -68,15 +68,34 @@ export class NotificationsRepository {
       limit: 30,
       maxLimit: 100,
     });
-    const [docs, total] = await Promise.all([
-      this.notifications
-        .find()
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .exec(),
-      this.notifications.countDocuments().exec(),
-    ]);
+    const [result] = await this.notifications
+      .aggregate<{
+        items: NotificationMongoDocument[];
+        total: Array<{ count: number }>;
+      }>([
+        { $sort: { createdAt: -1 } },
+        {
+          $group: {
+            _id: {
+              title: '$title',
+              body: '$body',
+              url: '$url',
+            },
+            row: { $first: '$$ROOT' },
+          },
+        },
+        { $replaceRoot: { newRoot: '$row' } },
+        { $sort: { createdAt: -1 } },
+        {
+          $facet: {
+            items: [{ $skip: skip }, { $limit: limit }],
+            total: [{ $count: 'count' }],
+          },
+        },
+      ])
+      .exec();
+    const docs = result?.items ?? [];
+    const total = result?.total?.[0]?.count ?? 0;
     return paginated(
       docs.map((doc) => this.toNotification(doc)!),
       total,
@@ -97,6 +116,28 @@ export class NotificationsRepository {
         url: data.url ?? '/',
         icon: data.icon ?? null,
       }),
+    )!;
+  }
+
+  async upsertByContent(data: NotificationWrite) {
+    const normalized = {
+      title: data.title,
+      body: data.body ?? '',
+      url: data.url ?? '/',
+      icon: data.icon ?? null,
+    };
+    return this.toNotification(
+      await this.notifications
+        .findOneAndUpdate(
+          {
+            title: normalized.title,
+            body: normalized.body,
+            url: normalized.url,
+          },
+          { $set: normalized, $setOnInsert: { createdAt: new Date() } },
+          { upsert: true, new: true },
+        )
+        .exec(),
     )!;
   }
 

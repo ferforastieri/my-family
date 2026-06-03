@@ -101,10 +101,10 @@ export class NotificationsService {
     url?: string,
   ): Promise<{ sent: number }> {
     const dto: NotificationSendDto = { title, body, url };
-    const row = await this.repository.create(
+    const row = await this.repository.upsertByContent(
       notificationFactory.createPush(dto),
     );
-    this.realtime.emitNotificationCreated(notificationMapper.toDto(row));
+    this.realtime.emitNotificationUpdated(notificationMapper.toDto(row));
     await this.jobs.enqueueNotification({ title, body, url });
     return { sent: 0 };
   }

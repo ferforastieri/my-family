@@ -36,8 +36,14 @@ class NotificationsController extends ChangeNotifier {
   Future<void> bootstrap() async {
     socket.on('notifications.created', (data) {
       if (data is Map) {
-        notifications.insert(
-            0, AppNotification.fromJson(Map<String, dynamic>.from(data)));
+        final item = AppNotification.fromJson(Map<String, dynamic>.from(data));
+        final index = notifications
+            .indexWhere((notification) => notification.id == item.id);
+        if (index >= 0) {
+          notifications[index] = item;
+        } else {
+          notifications.insert(0, item);
+        }
         notifyListeners();
       }
     });
@@ -46,7 +52,11 @@ class NotificationsController extends ChangeNotifier {
         final item = AppNotification.fromJson(Map<String, dynamic>.from(data));
         final index = notifications
             .indexWhere((notification) => notification.id == item.id);
-        if (index >= 0) notifications[index] = item;
+        if (index >= 0) {
+          notifications[index] = item;
+        } else {
+          notifications.insert(0, item);
+        }
         notifyListeners();
       }
     });
