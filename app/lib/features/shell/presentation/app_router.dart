@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/chat/chat_controller.dart';
 import '../../../core/notifications/notifications_controller.dart';
+import '../../../core/navigation/app_navigation.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../data/family_repository.dart';
@@ -103,7 +104,7 @@ GoRouter buildRouter(
             path: '/',
             pageBuilder: (context, state) => _page(HomePage(onNavigate: (path) {
               toast.info('Abrindo página...');
-              context.go(path);
+              context.openAppRoute(path);
             })),
           ),
           GoRoute(

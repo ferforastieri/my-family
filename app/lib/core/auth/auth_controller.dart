@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 import '../../data/models.dart';
+import '../api/socket_api_client.dart';
 import '../config/app_config.dart';
 import '../socket/socket_client.dart';
 import 'token_store.dart';
@@ -14,6 +15,7 @@ class AuthController extends ChangeNotifier {
 
   final SocketClient socket;
   final TokenStore tokenStore;
+  late final SocketApiClient api = SocketApiClient(socket);
 
   AppUser? user;
   bool loading = true;
@@ -24,7 +26,7 @@ class AuthController extends ChangeNotifier {
     socket.connect(token: token);
     if (token != null) {
       try {
-        final response = await socket.emitAck<Map<String, dynamic>>('auth.me');
+        final response = await api.query<Map<String, dynamic>>('auth.me');
         user = AppUser.fromJson(
             Map<String, dynamic>.from(response['user'] as Map));
       } catch (_) {
@@ -37,7 +39,7 @@ class AuthController extends ChangeNotifier {
   }
 
   Future<void> signIn(String email, String password) async {
-    final response = await socket.emitAck<Map<String, dynamic>>('auth.login', {
+    final response = await api.mutate<Map<String, dynamic>>('auth.login', {
       'email': email,
       'password': password,
     });
@@ -45,8 +47,7 @@ class AuthController extends ChangeNotifier {
   }
 
   Future<void> register(String email, String password, String name) async {
-    final response =
-        await socket.emitAck<Map<String, dynamic>>('auth.register', {
+    final response = await api.mutate<Map<String, dynamic>>('auth.register', {
       'email': email,
       'password': password,
       'name': name,
@@ -55,20 +56,19 @@ class AuthController extends ChangeNotifier {
   }
 
   Future<void> forgotPassword(String email) {
-    return socket
-        .emitAck<Map<String, dynamic>>('auth.forgotPassword', {'email': email});
+    return api
+        .mutate<Map<String, dynamic>>('auth.forgotPassword', {'email': email});
   }
 
   Future<void> resetPassword(String token, String newPassword) {
-    return socket.emitAck<Map<String, dynamic>>('auth.resetPassword', {
+    return api.mutate<Map<String, dynamic>>('auth.resetPassword', {
       'token': token,
       'newPassword': newPassword,
     });
   }
 
   Future<void> updateMe({required String name}) async {
-    final response =
-        await socket.emitAck<Map<String, dynamic>>('auth.updateMe', {
+    final response = await api.mutate<Map<String, dynamic>>('auth.updateMe', {
       'name': name,
     });
     final rawUser = response['user'];
@@ -80,7 +80,7 @@ class AuthController extends ChangeNotifier {
 
   Future<void> refreshMe() async {
     if (token == null) return;
-    final response = await socket.emitAck<Map<String, dynamic>>('auth.me');
+    final response = await api.query<Map<String, dynamic>>('auth.me');
     final rawUser = response['user'];
     if (rawUser is Map) {
       user = AppUser.fromJson(Map<String, dynamic>.from(rawUser));

@@ -4,6 +4,9 @@ import {
   MusicaWrite,
 } from '../infrastructure/repositories/musicas.repository';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
+import { musicaFactory } from './musica.factory';
+import { musicaMapper } from './musica.mapper';
+import type { MusicaWriteDto } from '../interfaces/dto/musica.dto';
 
 const requiredMusicFields = [
   'titulo',
@@ -18,27 +21,35 @@ export class MusicasService {
   constructor(private musicas: MusicasRepository) {}
 
   async findAll(query?: PaginationQuery) {
-    return this.musicas.list(query);
+    const result = await this.musicas.list(query);
+    return {
+      ...result,
+      items: result.items.map((item) => musicaMapper.toDto(item)),
+    };
   }
 
   async findOne(id: string) {
-    return this.musicas.findById(id);
+    const item = await this.musicas.findById(id);
+    return item ? musicaMapper.toDto(item) : null;
   }
 
-  async create(data: MusicaWrite) {
-    return this.musicas.create(this.validateCreate(data));
+  async create(data: MusicaWriteDto) {
+    return musicaMapper.toDto(
+      await this.musicas.create(this.validateCreate(data)),
+    );
   }
 
-  async update(id: string, data: Partial<MusicaWrite>) {
-    return this.musicas.update(id, this.validateUpdate(data));
+  async update(id: string, data: Partial<MusicaWriteDto>) {
+    const row = await this.musicas.update(id, this.validateUpdate(data));
+    return row ? musicaMapper.toDto(row) : null;
   }
 
   async delete(id: string) {
     return this.musicas.delete(id);
   }
 
-  private validateCreate(data: Partial<MusicaWrite>): MusicaWrite {
-    const normalized = this.normalize(data);
+  private validateCreate(data: Partial<MusicaWriteDto>): MusicaWrite {
+    const normalized = musicaFactory.create(data);
     const missing = requiredMusicFields.filter((field) => !normalized[field]);
     if (missing.length > 0) {
       throw new BadRequestException(
@@ -48,8 +59,8 @@ export class MusicasService {
     return normalized as MusicaWrite;
   }
 
-  private validateUpdate(data: Partial<MusicaWrite>): Partial<MusicaWrite> {
-    const normalized = this.normalize(data);
+  private validateUpdate(data: Partial<MusicaWriteDto>): Partial<MusicaWrite> {
+    const normalized = musicaFactory.create(data);
     const empty = requiredMusicFields.filter(
       (field) =>
         Object.prototype.hasOwnProperty.call(data, field) && !normalized[field],
@@ -60,17 +71,6 @@ export class MusicasService {
       );
     }
     return normalized;
-  }
-
-  private normalize(data: Partial<MusicaWrite>): Partial<MusicaWrite> {
-    return {
-      ...data,
-      titulo: data.titulo?.trim(),
-      artista: data.artista?.trim(),
-      linkSpotify: data.linkSpotify?.trim(),
-      momento: data.momento?.trim(),
-      descricao: data.descricao?.trim(),
-    };
   }
 
   private readonly fieldLabels: Record<RequiredMusicField, string> = {

@@ -1,52 +1,37 @@
 import { Injectable } from '@nestjs/common';
 import { UserRepository } from '../infrastructure/repositories/user.repository';
-import type { UserRole } from '@shared/domain/entities';
-import type { PaginatedResult, PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
-
-export type UserDto = {
-  id: string;
-  email: string;
-  name: string | null;
-  role: UserRole;
-  avatarPath: string | null;
-  createdAt: Date;
-};
+import type {
+  PaginatedResult,
+  PaginationQuery,
+} from '@shared/infrastructure/database/mongo.utils';
+import { userMapper } from './user.mapper';
+import { userUpdateFactory } from './user.factory';
+import { UpdateUserDto, UserResponseDto } from '../interfaces/dto/user.dto';
 
 @Injectable()
 export class UserService {
   constructor(private users: UserRepository) {}
 
-  async list(query?: PaginationQuery): Promise<PaginatedResult<UserDto>> {
+  async list(
+    query?: PaginationQuery,
+  ): Promise<PaginatedResult<UserResponseDto>> {
     const page = await this.users.list(query);
     return {
       ...page,
-      items: page.items.map(({ id, email, name, role, avatarPath, createdAt }) => ({
-      id,
-      email,
-      name: name ?? null,
-      role,
-      avatarPath: avatarPath ?? null,
-      createdAt,
-      })),
+      items: page.items.map((user) => userMapper.toDto(user)),
     };
   }
 
-  async findOne(id: string): Promise<UserDto | null> {
+  async findOne(id: string): Promise<UserResponseDto | null> {
     const row = await this.users.findById(id);
-    return row
-      ? {
-          id: row.id,
-          email: row.email,
-          name: row.name ?? null,
-          role: row.role,
-          avatarPath: row.avatarPath ?? null,
-          createdAt: row.createdAt,
-        }
-      : null;
+    return row ? userMapper.toDto(row) : null;
   }
 
-  async update(id: string, data: { name?: string; role?: UserRole; avatarPath?: string }): Promise<UserDto | null> {
-    await this.users.update(id, data);
+  async update(
+    id: string,
+    data: UpdateUserDto,
+  ): Promise<UserResponseDto | null> {
+    await this.users.update(id, userUpdateFactory.create(data));
     return this.findOne(id);
   }
 

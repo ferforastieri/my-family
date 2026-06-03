@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
+import '../../../core/navigation/app_navigation.dart';
 import '../../../core/theme/app_theme.dart';
 
 class ChatFloatingButton extends StatelessWidget {
@@ -14,7 +14,7 @@ class ChatFloatingButton extends StatelessWidget {
       bottom: 18,
       child: FloatingActionButton.extended(
         heroTag: 'global-chat',
-        onPressed: () => context.go('/chat'),
+        onPressed: () => context.openAppRoute('/chat'),
         backgroundColor: palette.primary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.chat_bubble_outline),

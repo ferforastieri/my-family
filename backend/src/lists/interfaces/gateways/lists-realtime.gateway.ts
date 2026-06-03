@@ -30,4 +30,3 @@ export class ListsRealtimeGateway {
     this.server?.emit('lists.items.deleted', { id, listId });
   }
 }
-

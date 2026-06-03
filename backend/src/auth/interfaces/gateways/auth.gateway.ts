@@ -1,15 +1,27 @@
 import { Body, UsePipes, ValidationPipe } from '@nestjs/common';
-import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import {
+  ConnectedSocket,
+  MessageBody,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
+} from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { AuthService } from '../../application/auth.service';
 import { UserService } from '../../application/user.service';
 import { LoginDto, RegisterDto } from '../../auth.dto';
 import { WsSessionService } from '../../application/ws-session.service';
-import type { UserRole } from '@shared/domain/entities';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
+import { UpdateUserDto } from '../dto/user.dto';
 
 @WebSocketGateway({ cors: { origin: '*' } })
-@UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+@UsePipes(
+  new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }),
+)
 export class AuthGateway {
   @WebSocketServer()
   server!: Server;
@@ -29,7 +41,12 @@ export class AuthGateway {
 
   @SubscribeMessage('auth.register')
   async register(@MessageBody() dto: RegisterDto) {
-    const response = await this.auth.register(dto.email, dto.password, dto.name, dto.role);
+    const response = await this.auth.register(
+      dto.email,
+      dto.password,
+      dto.name,
+      dto.role,
+    );
     this.server.emit('users.created', response.user);
     return response;
   }
@@ -37,45 +54,87 @@ export class AuthGateway {
   @SubscribeMessage('auth.me')
   async me(@ConnectedSocket() client: Socket) {
     const user = await this.session.requireUser(client);
-    return { user: { id: user.id, email: user.email, name: user.name, role: user.role, avatarPath: user.avatarPath } };
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        avatarPath: user.avatarPath,
+      },
+    };
   }
 
   @SubscribeMessage('auth.updateMe')
-  async updateMe(@ConnectedSocket() client: Socket, @MessageBody() body: { name?: string; avatarPath?: string }) {
+  async updateMe(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: UpdateUserDto,
+  ) {
     const user = await this.session.requireUser(client);
-    const updated = await this.users.update(user.id, { name: body.name, avatarPath: body.avatarPath });
+    const updated = await this.users.update(user.id, {
+      name: body.name,
+      avatarPath: body.avatarPath,
+    });
     if (updated) this.server.emit('users.updated', updated);
-    return { user: updated ? { id: updated.id, email: updated.email, name: updated.name, role: updated.role, avatarPath: updated.avatarPath } : null };
+    return {
+      user: updated
+        ? {
+            id: updated.id,
+            email: updated.email,
+            name: updated.name,
+            role: updated.role,
+            avatarPath: updated.avatarPath,
+          }
+        : null,
+    };
   }
 
   @SubscribeMessage('auth.forgotPassword')
   async forgotPassword(@MessageBody() body: { email: string }) {
     await this.auth.requestPasswordReset(body.email);
-    return { success: true, message: 'Se o email existir, você receberá um token de recuperação por email.' };
+    return {
+      success: true,
+      message:
+        'Se o email existir, você receberá um token de recuperação por email.',
+    };
   }
 
   @SubscribeMessage('auth.resetPassword')
-  async resetPassword(@MessageBody() body: { token: string; newPassword: string }) {
+  async resetPassword(
+    @MessageBody() body: { token: string; newPassword: string },
+  ) {
     await this.auth.resetPassword(body.token, body.newPassword);
     return { success: true, message: 'Senha redefinida com sucesso.' };
   }
 
   @SubscribeMessage('users.list')
-  async listUsers(@ConnectedSocket() client: Socket, @MessageBody() query?: PaginationQuery) {
+  async listUsers(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() query?: PaginationQuery,
+  ) {
     await this.session.requireRole(client, ['admin']);
     return this.users.list(query);
   }
 
   @SubscribeMessage('users.update')
-  async updateUser(@ConnectedSocket() client: Socket, @MessageBody() body: { id: string; name?: string; role?: UserRole }) {
+  async updateUser(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { id: string } & UpdateUserDto,
+  ) {
     await this.session.requireRole(client, ['admin']);
-    const row = await this.users.update(body.id, { name: body.name, role: body.role });
+    const row = await this.users.update(body.id, {
+      name: body.name,
+      role: body.role,
+    });
     if (row) this.server.emit('users.updated', row);
     return row;
   }
 
   @SubscribeMessage('users.delete')
-  async deleteUser(@ConnectedSocket() client: Socket, @MessageBody() body: { id: string }) {
+  async deleteUser(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { id: string },
+  ) {
     await this.session.requireRole(client, ['admin']);
     const ok = await this.users.delete(body.id);
     if (ok) this.server.emit('users.deleted', { id: body.id });

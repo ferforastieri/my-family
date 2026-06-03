@@ -1,6 +1,14 @@
-import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+} from '@nestjs/common';
 import { MusicasService } from '../../application/musicas.service';
-import type { MusicaWrite } from '../../infrastructure/repositories/musicas.repository';
+import type { MusicaWriteDto } from '../dto/musica.dto';
 
 @Controller('musicas')
 export class MusicasController {
@@ -17,12 +25,12 @@ export class MusicasController {
   }
 
   @Post()
-  async create(@Body() data: MusicaWrite) {
+  async create(@Body() data: MusicaWriteDto) {
     return this.musicasService.create(data);
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() data: Partial<MusicaWrite>) {
+  async update(@Param('id') id: string, @Body() data: Partial<MusicaWriteDto>) {
     return this.musicasService.update(id, data);
   }
 
@@ -31,4 +39,3 @@ export class MusicasController {
     return this.musicasService.delete(id);
   }
 }
-

@@ -8,6 +8,7 @@ import 'core/chat/chat_controller.dart';
 import 'core/auth/token_store.dart';
 import 'core/location/location_controller.dart';
 import 'core/notifications/notifications_controller.dart';
+import 'core/query/app_query_provider.dart';
 import 'core/socket/socket_client.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
@@ -37,13 +38,15 @@ void main() {
   final location = LocationController(socket);
   final theme = ThemeController();
   final toast = ToastController();
-  runApp(MyFamilyApp(
-      auth: auth,
-      notifications: notifications,
-      chat: chat,
-      theme: theme,
-      toast: toast,
-      repository: repository));
+  runApp(AppQueryProvider(
+    child: MyFamilyApp(
+        auth: auth,
+        notifications: notifications,
+        chat: chat,
+        theme: theme,
+        toast: toast,
+        repository: repository),
+  ));
   unawaited(location.bootstrap());
   Future<void>(() async {
     await auth.bootstrap();

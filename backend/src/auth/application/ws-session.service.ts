@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Socket } from 'socket.io';
 import { Environment } from '@shared/infrastructure/environment/environment.module';
@@ -17,7 +21,8 @@ export class WsSessionService {
     const authToken = client.handshake.auth?.token;
     const bearer = client.handshake.headers.authorization;
     if (typeof authToken === 'string' && authToken) return authToken;
-    if (typeof bearer === 'string' && bearer.startsWith('Bearer ')) return bearer.slice(7);
+    if (typeof bearer === 'string' && bearer.startsWith('Bearer '))
+      return bearer.slice(7);
     return null;
   }
 
@@ -26,7 +31,9 @@ export class WsSessionService {
     const token = this.tokenFromClient(client);
     if (!token) return null;
     try {
-      const payload = this.jwt.verify<{ sub: string }>(token, { secret: this.env.jwt.secret });
+      const payload = this.jwt.verify<{ sub: string }>(token, {
+        secret: this.env.jwt.secret,
+      });
       const user = await this.auth.findById(payload.sub);
       if (user) client.data.user = user;
       return user;
@@ -43,7 +50,8 @@ export class WsSessionService {
 
   async requireRole(client: Socket, roles: UserRole[]): Promise<UserEntity> {
     const user = await this.requireUser(client);
-    if (!roles.includes(user.role)) throw new ForbiddenException('Acesso não autorizado para sua role.');
+    if (!roles.includes(user.role))
+      throw new ForbiddenException('Acesso não autorizado para sua role.');
     return user;
   }
 }

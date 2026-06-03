@@ -2,9 +2,10 @@ import { BadRequestException } from '@nestjs/common';
 import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/ws-session.service';
-import { NotificationsService, NotificationCreateDto } from '../../application/notifications.service';
+import { NotificationsService } from '../../application/notifications.service';
 import { NotificationSchedulerService } from '../../application/notification-scheduler.service';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
+import { NotificationCreateDto, NotificationSendDto } from '../dto/notification.dto';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class NotificationsGateway {
@@ -45,7 +46,7 @@ export class NotificationsGateway {
   }
 
   @SubscribeMessage('notifications.send')
-  async send(@ConnectedSocket() client: Socket, @MessageBody() body: { title: string; body?: string; url?: string }) {
+  async send(@ConnectedSocket() client: Socket, @MessageBody() body: NotificationSendDto) {
     await this.session.requireRole(client, ['admin']);
     if (!body?.title) throw new BadRequestException('title é obrigatório');
     return this.notifications.send(body.title, body.body, body.url);

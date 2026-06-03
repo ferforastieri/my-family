@@ -6,6 +6,9 @@ import {
 import { UploadContext, UploadService } from '@shared/infrastructure/upload';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 import { JobsService } from '@shared/infrastructure/queue';
+import { fotoFactory } from './foto.factory';
+import { fotoMapper } from './foto.mapper';
+import type { FotoWriteDto } from '../interfaces/dto/foto.dto';
 
 @Injectable()
 export class FotosService {
@@ -16,25 +19,33 @@ export class FotosService {
   ) {}
 
   async findAll(query?: PaginationQuery) {
-    return this.fotos.list(query);
+    const result = await this.fotos.list(query);
+    return {
+      ...result,
+      items: result.items.map((item) => fotoMapper.toDto(item)),
+    };
   }
 
   async findOne(id: string) {
-    return this.fotos.findById(id);
+    const item = await this.fotos.findById(id);
+    return item ? fotoMapper.toDto(item) : null;
   }
 
-  async create(data: FotoWrite) {
-    return this.fotos.create(data);
+  async create(data: FotoWriteDto) {
+    return fotoMapper.toDto(
+      await this.fotos.create(fotoFactory.create(data) as FotoWrite),
+    );
   }
 
   async ensureFromChat(data: FotoWrite) {
     const existing = await this.fotos.findByUrl(data.url);
-    if (existing) return existing;
-    return this.fotos.create(data);
+    const row = existing ?? (await this.fotos.create(data));
+    return fotoMapper.toDto(row);
   }
 
-  async update(id: string, data: Partial<FotoWrite>) {
-    return this.fotos.update(id, data);
+  async update(id: string, data: Partial<FotoWriteDto>) {
+    const row = await this.fotos.update(id, fotoFactory.create(data));
+    return row ? fotoMapper.toDto(row) : null;
   }
 
   async delete(id: string) {

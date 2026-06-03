@@ -7,6 +7,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../../data/models.dart';
 import '../../firebase_options.dart';
+import '../api/socket_api_client.dart';
 import '../config/app_config.dart';
 import '../socket/socket_client.dart';
 
@@ -22,6 +23,7 @@ class NotificationsController extends ChangeNotifier {
   NotificationsController(this.socket);
 
   final SocketClient socket;
+  late final SocketApiClient api = SocketApiClient(socket);
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
@@ -75,8 +77,8 @@ class NotificationsController extends ChangeNotifier {
     loading = true;
     notifyListeners();
     try {
-      final data = await socket.emitAck<dynamic>(
-          'notifications.list', {'page': 1, 'limit': 30});
+      final data = await api
+          .query<dynamic>('notifications.list', {'page': 1, 'limit': 30});
       final rows = data is List
           ? data
           : ((Map<String, dynamic>.from(data as Map)['items'] as List?) ??
@@ -149,7 +151,7 @@ class NotificationsController extends ChangeNotifier {
 
   Future<void> _subscribeToken(String token) async {
     fcmToken = token;
-    await socket.emitAck<Map<String, dynamic>>('notifications.subscribe', {
+    await api.mutate<Map<String, dynamic>>('notifications.subscribe', {
       'subscription': {
         'token': token,
         'platform': _platform,

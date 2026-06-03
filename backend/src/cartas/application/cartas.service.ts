@@ -1,25 +1,39 @@
 import { Injectable } from '@nestjs/common';
-import { CartasRepository, CartaWrite } from '../infrastructure/repositories/cartas.repository';
+import {
+  CartasRepository,
+  CartaWrite,
+} from '../infrastructure/repositories/cartas.repository';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
+import { cartaFactory } from './carta.factory';
+import { cartaMapper } from './carta.mapper';
+import type { CartaWriteDto } from '../interfaces/dto/carta.dto';
 
 @Injectable()
 export class CartasService {
   constructor(private cartas: CartasRepository) {}
 
   async findAll(query?: PaginationQuery) {
-    return this.cartas.list(query);
+    const result = await this.cartas.list(query);
+    return {
+      ...result,
+      items: result.items.map((item) => cartaMapper.toDto(item)),
+    };
   }
 
   async findOne(id: string) {
-    return this.cartas.findById(id);
+    const item = await this.cartas.findById(id);
+    return item ? cartaMapper.toDto(item) : null;
   }
 
-  async create(data: CartaWrite) {
-    return this.cartas.create(data);
+  async create(data: CartaWriteDto) {
+    return cartaMapper.toDto(
+      await this.cartas.create(cartaFactory.create(data) as CartaWrite),
+    );
   }
 
-  async update(id: string, data: Partial<CartaWrite>) {
-    return this.cartas.update(id, data);
+  async update(id: string, data: Partial<CartaWriteDto>) {
+    const row = await this.cartas.update(id, cartaFactory.create(data));
+    return row ? cartaMapper.toDto(row) : null;
   }
 
   async delete(id: string) {

@@ -1,11 +1,11 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { UserEntity } from '@shared/domain/entities';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 import { JobsService } from '@shared/infrastructure/queue';
-import {
-  LocationRepository,
-  LocationUpdateWrite,
-} from '../infrastructure/repositories/location.repository';
+import { LocationRepository } from '../infrastructure/repositories/location.repository';
+import { locationMapper } from './location.mapper';
+import { locationUpdateFactory } from './location.factory';
+import { LocationUpdateDto } from '../interfaces/dto/location.dto';
 
 @Injectable()
 export class LocationService {
@@ -16,32 +16,19 @@ export class LocationService {
     private jobs: JobsService,
   ) {}
 
-  async update(data: LocationUpdateWrite, user?: UserEntity | null) {
-    const latitude = Number(data.latitude);
-    const longitude = Number(data.longitude);
-    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-      throw new BadRequestException('Localização inválida.');
-    }
-    const row = await this.locations.create({
-      latitude,
-      longitude,
-      accuracy: toOptionalNumber(data.accuracy),
-      altitude: toOptionalNumber(data.altitude),
-      speed: toOptionalNumber(data.speed),
-      heading: toOptionalNumber(data.heading),
-      batteryLevel: normalizeBatteryLevel(data.batteryLevel),
-      isCharging:
-        typeof data.isCharging === 'boolean' ? data.isCharging : undefined,
-      platform: data.platform ?? 'unknown',
-      userId: user?.id ?? data.userId ?? null,
-      userName: user?.name || user?.email || data.userName || null,
-    });
+  async update(data: LocationUpdateDto, user?: UserEntity | null) {
+    const row = await this.locations.create(
+      locationUpdateFactory.create({ dto: data, user }),
+    );
     await this.notifyLowBattery(row);
-    return row;
+    return locationMapper.toDto(row);
   }
 
   latest(query?: PaginationQuery) {
-    return this.locations.latestByPerson(query);
+    return this.locations.latestByPerson(query).then((page) => ({
+      ...page,
+      items: page.items.map((item) => locationMapper.toDto(item)),
+    }));
   }
 
   private async notifyLowBattery(
@@ -64,16 +51,4 @@ export class LocationService {
       batteryLevel: row.batteryLevel,
     });
   }
-}
-
-function toOptionalNumber(value: unknown) {
-  if (value === null || value === undefined) return undefined;
-  const numberValue = Number(value);
-  return Number.isFinite(numberValue) ? numberValue : undefined;
-}
-
-function normalizeBatteryLevel(value: unknown) {
-  const numberValue = toOptionalNumber(value);
-  if (numberValue == null) return undefined;
-  return Math.max(0, Math.min(100, Math.round(numberValue)));
 }

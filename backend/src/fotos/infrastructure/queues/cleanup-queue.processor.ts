@@ -15,4 +15,3 @@ export class CleanupQueueProcessor extends WorkerHost {
     return { removed };
   }
 }
-

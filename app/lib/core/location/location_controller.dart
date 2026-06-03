@@ -4,12 +4,14 @@ import 'package:flutter/foundation.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../api/socket_api_client.dart';
 import '../socket/socket_client.dart';
 
 class LocationController {
   LocationController(this.socket);
 
   final SocketClient socket;
+  late final SocketApiClient api = SocketApiClient(socket);
   final Battery _battery = Battery();
   StreamSubscription<Position>? _positionSubscription;
   Timer? _timer;
@@ -64,7 +66,7 @@ class LocationController {
     try {
       final batteryLevel = await _safeBatteryLevel();
       final batteryState = await _safeBatteryState();
-      await socket.emitAck<Map<String, dynamic>>('location.update', {
+      await api.mutate<Map<String, dynamic>>('location.update', {
         'latitude': position.latitude,
         'longitude': position.longitude,
         'accuracy': position.accuracy,
