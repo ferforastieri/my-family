@@ -9,12 +9,12 @@ O projeto centraliza memorias, cartas, playlist, jogos, notificacoes, perfil e c
 Principais caracteristicas:
 
 - App Flutter em `app/`, com suporte Web e Android.
-- Backend NestJS em `backend/`, usando MongoDB, Redis/BullMQ e Socket.IO.
+- Backend NestJS em `backend/`, usando MongoDB, Socket.IO, Redis/BullMQ e agendamentos via Nest Schedule.
 - Acoes de negocio preferencialmente via WebSocket.
 - REST reservado para endpoints tecnicos, healthcheck e arquivos.
 - Uploads persistidos fora do repositorio, por bind mount no Docker.
 - Push notifications via Firebase.
-- Deploy no padrao do `atacte`, com containers persistentes e artefato APK gerado no workflow.
+- Deploy por Docker Compose com containers persistentes e artefato APK gerado no workflow.
 
 ## Estrutura
 
@@ -41,9 +41,19 @@ Features principais:
 - `fotos`: memorias, albums, upload e arquivos.
 - `musicas`: playlist.
 - `cartas`: cartas e mensagens.
-- `notifications`: notificacoes, agendamento BullMQ/Redis e Firebase.
+- `notifications`: notificacoes, agendamento Nest Schedule/Mongo e envio push em fila BullMQ.
 - `chat`: chat global publico e conversas entre usuarios autenticados.
+- `location`: localizacao em tempo real e alerta de bateria baixa em fila.
+- `lists`: listas compartilhadas criadas diretamente ou a partir do chat.
+- `games`: quiz, caca-palavras e estatisticas.
 - `health`: healthcheck REST.
+
+Filas BullMQ:
+
+- `notifications`: envio Firebase Cloud Messaging com retry/backoff.
+- `media`: pos-processamento de upload, metadados e thumbnail WebP para imagens.
+- `location`: alertas derivados de localizacao, como bateria baixa.
+- `cleanup`: limpeza recorrente de uploads orfaos.
 
 Eventos WebSocket principais:
 
@@ -133,6 +143,7 @@ Backend local (`backend/.env`):
 - `PASSWORD_RESET_URL`
 - `FIREBASE_SERVICE_ACCOUNT_PATH`
 - `FIREBASE_SERVICE_ACCOUNT_JSON`
+- `REDIS_URL`
 
 Compose/deploy (`.env` ou Gitea secrets):
 
@@ -142,6 +153,7 @@ Compose/deploy (`.env` ou Gitea secrets):
 - `BACKEND_PORT`
 - `FRONT_PORT`
 - `MONGO_PORT`
+- `REDIS_PORT`
 - `JWT_SECRET`
 - `JWT_EXPIRES_IN`
 - `CORS_ORIGIN`
@@ -168,12 +180,13 @@ Fluxo:
 4. Build do APK Android release.
 5. Publicacao do APK como artefato `my-family-android-apk`.
 6. Build dos containers.
-7. Subida de `mongo`.
+7. Subida de `mongo` e `redis`.
 8. Subida de `backend` e `front` com `--remove-orphans`.
 
 Servicos:
 
 - `mongo`: MongoDB 7.
+- `redis`: Redis 7 Alpine para filas BullMQ.
 - `backend`: NestJS em `3001`, exposto pela porta definida em `BACKEND_PORT`.
 - `front`: Flutter Web via nginx, exposto pela porta definida em `FRONT_PORT`.
 
@@ -199,6 +212,7 @@ Secrets recomendados:
 - `BACKEND_PORT`
 - `FRONT_PORT`
 - `MONGO_PORT`
+- `REDIS_PORT`
 - `JWT_EXPIRES_IN`
 - `CORS_ORIGIN`
 - `API_BASE_URL`

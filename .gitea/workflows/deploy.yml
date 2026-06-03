@@ -73,6 +73,7 @@ jobs:
           BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
           FRONT_PORT: ${{ secrets.FRONT_PORT }}
           MONGO_PORT: ${{ secrets.MONGO_PORT }}
+          REDIS_PORT: ${{ secrets.REDIS_PORT }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           JWT_EXPIRES_IN: ${{ secrets.JWT_EXPIRES_IN }}
           CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
@@ -105,6 +106,7 @@ jobs:
             printf 'BACKEND_PORT=%s\n' "${BACKEND_PORT:-3459}"
             printf 'FRONT_PORT=%s\n' "${FRONT_PORT:-3458}"
             printf 'MONGO_PORT=%s\n' "${MONGO_PORT:-27019}"
+            printf 'REDIS_PORT=%s\n' "${REDIS_PORT:-6389}"
             printf 'JWT_SECRET=%s\n' "$JWT_SECRET"
             printf 'JWT_EXPIRES_IN=%s\n' "${JWT_EXPIRES_IN:-7d}"
             printf 'CORS_ORIGIN=%s\n' "${CORS_ORIGIN:-*}"
@@ -185,6 +187,6 @@ jobs:
 
           export COMPOSE_PROJECT_NAME=my-family
           $COMPOSE --env-file .env build --pull
-          $COMPOSE --env-file .env up -d mongo
+          $COMPOSE --env-file .env up -d mongo redis
           $COMPOSE --env-file .env up -d --remove-orphans
           $COMPOSE --env-file .env ps

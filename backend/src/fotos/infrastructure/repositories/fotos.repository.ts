@@ -38,6 +38,15 @@ export class FotosRepository {
     return this.toEntity(await this.model.findById(id).exec());
   }
 
+  async findByUrl(url: string) {
+    return this.toEntity(await this.model.findOne({ url }).exec());
+  }
+
+  async listUrls() {
+    const rows = await this.model.find({}, { url: 1 }).exec();
+    return rows.map((row) => row.url).filter(Boolean);
+  }
+
   async create(data: FotoWrite) {
     return this.toEntity(await this.model.create({ ...data, data: data.data ? new Date(data.data) : undefined }))!;
   }

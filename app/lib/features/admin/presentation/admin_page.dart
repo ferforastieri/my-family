@@ -351,12 +351,12 @@ class _AdminPageState extends State<AdminPage> {
   }
 
   Future<void> _sendNotification(AppNotification notification) async {
-    final sent = await widget.repository.sendNotification(
+    await widget.repository.sendNotification(
       title: notification.title,
       body: notification.body,
       url: notification.url,
     );
-    widget.toast.success('Notificação enviada para $sent dispositivo(s).');
+    widget.toast.success('Notificação enfileirada para envio.');
     await _load();
   }
 

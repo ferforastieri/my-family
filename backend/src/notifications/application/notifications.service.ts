@@ -5,6 +5,7 @@ import { NotificationsRepository } from '../infrastructure/repositories/notifica
 import { NotificationsRealtimeGateway } from '../interfaces/gateways/notifications-realtime.gateway';
 import { Environment } from '@shared/infrastructure/environment/environment.module';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
+import { JobsService } from '@shared/infrastructure/queue';
 
 export interface NotificationCreateDto {
   title: string;
@@ -26,10 +27,13 @@ export class NotificationsService {
     private repository: NotificationsRepository,
     private env: Environment,
     private realtime: NotificationsRealtimeGateway,
+    private jobs: JobsService,
   ) {
     const serviceAccount = this.loadFirebaseServiceAccount();
     if (serviceAccount && admin.apps.length === 0) {
-      admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
       this.fcmEnabled = true;
     } else if (admin.apps.length > 0) {
       this.fcmEnabled = true;
@@ -45,7 +49,14 @@ export class NotificationsService {
     return JSON.parse(readFileSync(path, 'utf8')) as admin.ServiceAccount;
   }
 
-  private toDto(r: { id: string; title: string; body: string; url: string; icon?: string | null; createdAt: Date }) {
+  private toDto(r: {
+    id: string;
+    title: string;
+    body: string;
+    url: string;
+    icon?: string | null;
+    createdAt: Date;
+  }) {
     return {
       id: r.id,
       title: r.title,
@@ -104,7 +115,11 @@ export class NotificationsService {
     await this.repository.removeSubscriptionByFcmToken(token);
   }
 
-  async send(title: string, body?: string, url?: string): Promise<{ sent: number }> {
+  async send(
+    title: string,
+    body?: string,
+    url?: string,
+  ): Promise<{ sent: number }> {
     const row = await this.repository.create({
       title: title ?? 'Nossa Família',
       body: body ?? '',
@@ -112,6 +127,15 @@ export class NotificationsService {
       icon: '/favicon-192.png',
     });
     this.realtime.emitNotificationCreated(this.toDto(row));
+    await this.jobs.enqueueNotification({ title, body, url });
+    return { sent: 0 };
+  }
+
+  async sendNow(
+    title: string,
+    body?: string,
+    url?: string,
+  ): Promise<{ sent: number }> {
     if (!this.fcmEnabled) return { sent: 0 };
 
     const subs = await this.repository.listSubscriptions();
