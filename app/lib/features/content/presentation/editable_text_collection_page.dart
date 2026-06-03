@@ -67,7 +67,7 @@ class _EditableTextCollectionPageState
     invalidateQueries(context, QueryKeys.textCollectionScope(widget.prefix));
   }
 
-  Future<PaginatedResult<FamilyItem>> _load() async {
+  Future<PaginatedResult<FamilyItem>> _fetchTexts() async {
     final result = await widget.repository.listPage(
       'cartas',
       page,
@@ -99,7 +99,7 @@ class _EditableTextCollectionPageState
       body: LoveBackground(
         child: AppQuery<PaginatedResult<FamilyItem>>(
           queryKey: QueryKeys.textCollection(widget.prefix, page, _pageLimit),
-          queryFn: _load,
+          queryFn: _fetchTexts,
           loading: const PageSkeleton(cards: 3),
           builder: (context, result, refetch) {
             final items = result.items;
