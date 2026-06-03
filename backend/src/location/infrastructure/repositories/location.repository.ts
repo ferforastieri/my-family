@@ -13,7 +13,7 @@ import {
   PaginationQuery,
   toId,
 } from '@shared/infrastructure/database/mongo.utils';
-import type { LocationUpdateEntity } from '@shared/domain/entities';
+import type { LocationUpdateEntity } from '@location/domain/entities/location.entity';
 
 export type LocationUpdateWrite = Pick<
   LocationUpdateEntity,
@@ -66,7 +66,9 @@ export class LocationRepository {
     return this.toEntity(await this.model.create(cleanUndefined(data)))!;
   }
 
-  async latestByPerson(query?: PaginationQuery): Promise<PaginatedResult<LocationUpdateEntity>> {
+  async latestByPerson(
+    query?: PaginationQuery,
+  ): Promise<PaginatedResult<LocationUpdateEntity>> {
     const { page, limit, skip } = normalizePagination(query, {
       page: 1,
       limit: 50,

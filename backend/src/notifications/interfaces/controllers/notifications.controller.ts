@@ -12,9 +12,13 @@ import {
   UseGuards,
   BadRequestException,
 } from '@nestjs/common';
-import { NotificationsService } from '../../application/notifications.service';
-import { NotificationSchedulerService } from '../../application/notification-scheduler.service';
-import { FcmSubscriptionDto, NotificationCreateDto, NotificationSendDto } from '../dto/notification.dto';
+import { NotificationsService } from '../../application/services/notifications.service';
+import { NotificationSchedulerService } from '../../application/services/notification-scheduler.service';
+import {
+  FcmSubscriptionDto,
+  NotificationCreateDto,
+  NotificationSendDto,
+} from '../dto/notification.dto';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@auth/guards/roles.guard';
 import { Roles } from '@auth/decorators/roles.decorator';
@@ -32,7 +36,9 @@ export class NotificationsController {
 
   @Post('subscribe')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async subscribe(@Body() body: { subscription: FcmSubscriptionDto; userAgent?: string }) {
+  async subscribe(
+    @Body() body: { subscription: FcmSubscriptionDto; userAgent?: string },
+  ) {
     if (body.subscription?.token) {
       await this.notifications.pushSubscribe(body.subscription, body.userAgent);
     }
@@ -69,7 +75,10 @@ export class NotificationsController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  async update(@Param('id') id: string, @Body() dto: Partial<NotificationCreateDto>) {
+  async update(
+    @Param('id') id: string,
+    @Body() dto: Partial<NotificationCreateDto>,
+  ) {
     const n = await this.notifications.update(id, dto);
     if (!n) throw new NotFoundException('Notificação não encontrada');
     return n;
@@ -95,11 +104,21 @@ export class NotificationsController {
   @Post('schedule')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  async schedule(@Body() body: { title: string; body?: string; url?: string; scheduledAt: string }) {
+  async schedule(
+    @Body()
+    body: {
+      title: string;
+      body?: string;
+      url?: string;
+      scheduledAt: string;
+    },
+  ) {
     if (!body?.title) throw new BadRequestException('title é obrigatório');
-    if (!body?.scheduledAt) throw new BadRequestException('scheduledAt é obrigatório (ISO 8601)');
+    if (!body?.scheduledAt)
+      throw new BadRequestException('scheduledAt é obrigatório (ISO 8601)');
     const at = new Date(body.scheduledAt);
-    if (Number.isNaN(at.getTime())) throw new BadRequestException('scheduledAt inválido');
+    if (Number.isNaN(at.getTime()))
+      throw new BadRequestException('scheduledAt inválido');
     return this.scheduler.schedule(body);
   }
 }

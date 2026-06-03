@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { CartasController } from './interfaces/controllers/cartas.controller';
-import { CartasService } from './application/cartas.service';
+import { CartasService } from './application/services/cartas.service';
 import { DatabaseModule } from '@shared/infrastructure/database/database.module';
 import { MongoModelsModule } from '@shared/infrastructure/database/database.providers';
 import { CartasRepository } from './infrastructure/repositories/cartas.repository';

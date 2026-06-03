@@ -7,10 +7,10 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { AuthService } from '../../application/auth.service';
-import { UserService } from '../../application/user.service';
-import { LoginDto, RegisterDto } from '../../auth.dto';
-import { WsSessionService } from '../../application/ws-session.service';
+import { AuthService } from '../../application/services/auth.service';
+import { UserService } from '../../application/services/user.service';
+import { LoginDto, RegisterDto } from '../dto/auth.dto';
+import { WsSessionService } from '../../application/services/ws-session.service';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 import { UpdateUserDto } from '../dto/user.dto';
 

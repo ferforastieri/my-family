@@ -14,9 +14,14 @@
       "@shared/*": ["src/shared/*"],
       "@auth/*": ["src/auth/*"],
       "@user/*": ["src/user/*"],
+      "@chat/*": ["src/chat/*"],
+      "@games/*": ["src/games/*"],
+      "@lists/*": ["src/lists/*"],
+      "@location/*": ["src/location/*"],
       "@fotos/*": ["src/fotos/*"],
       "@musicas/*": ["src/musicas/*"],
-      "@cartas/*": ["src/cartas/*"]
+      "@cartas/*": ["src/cartas/*"],
+      "@notifications/*": ["src/notifications/*"]
     },
     "incremental": true,
     "skipLibCheck": true,

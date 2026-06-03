@@ -20,4 +20,5 @@ export class QuizQuestionDocument {
 }
 
 export type QuizQuestionMongoDocument = HydratedDocument<QuizQuestionDocument>;
-export const QuizQuestionSchema = SchemaFactory.createForClass(QuizQuestionDocument);
+export const QuizQuestionSchema =
+  SchemaFactory.createForClass(QuizQuestionDocument);

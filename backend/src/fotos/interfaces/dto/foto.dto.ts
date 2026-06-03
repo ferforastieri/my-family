@@ -1,5 +1,5 @@
 import { IsDateString, IsIn, IsOptional, IsString } from 'class-validator';
-import type { FotoEntity } from '@shared/domain/entities';
+import type { FotoEntity } from '@fotos/domain/entities/foto.entity';
 
 export class FotoWriteDto {
   @IsString()

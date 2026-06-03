@@ -17,5 +17,5 @@ export class FamilyListDocument {
 }
 
 export type FamilyListMongoDocument = HydratedDocument<FamilyListDocument>;
-export const FamilyListSchema = SchemaFactory.createForClass(FamilyListDocument);
-
+export const FamilyListSchema =
+  SchemaFactory.createForClass(FamilyListDocument);

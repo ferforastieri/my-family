@@ -19,5 +19,8 @@ export class ChatConversationDocument {
   updatedAt: Date;
 }
 
-export type ChatConversationMongoDocument = HydratedDocument<ChatConversationDocument>;
-export const ChatConversationSchema = SchemaFactory.createForClass(ChatConversationDocument);
+export type ChatConversationMongoDocument =
+  HydratedDocument<ChatConversationDocument>;
+export const ChatConversationSchema = SchemaFactory.createForClass(
+  ChatConversationDocument,
+);

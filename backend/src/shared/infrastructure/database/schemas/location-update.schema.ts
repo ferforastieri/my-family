@@ -1,7 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
-@Schema({ timestamps: { createdAt: true, updatedAt: false }, collection: 'location_updates' })
+@Schema({
+  timestamps: { createdAt: true, updatedAt: false },
+  collection: 'location_updates',
+})
 export class LocationUpdateDocument {
   @Prop()
   userId?: string;
@@ -39,5 +42,8 @@ export class LocationUpdateDocument {
   createdAt: Date;
 }
 
-export type LocationUpdateMongoDocument = HydratedDocument<LocationUpdateDocument>;
-export const LocationUpdateSchema = SchemaFactory.createForClass(LocationUpdateDocument);
+export type LocationUpdateMongoDocument =
+  HydratedDocument<LocationUpdateDocument>;
+export const LocationUpdateSchema = SchemaFactory.createForClass(
+  LocationUpdateDocument,
+);

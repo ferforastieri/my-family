@@ -1,0 +1,16 @@
+export interface NotificationEntity {
+  id: string;
+  title: string;
+  body: string;
+  url: string;
+  icon?: string | null;
+  createdAt: Date;
+}
+
+export interface PushSubscriptionEntity {
+  id: string;
+  fcmToken?: string | null;
+  platform?: 'web' | 'android' | 'ios' | 'unknown' | null;
+  userAgent?: string | null;
+  createdAt: Date;
+}

@@ -5,8 +5,8 @@ import {
   WebSocketGateway,
 } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
-import { WsSessionService } from '@auth/application/ws-session.service';
-import { ListsService } from '../../application/lists.service';
+import { WsSessionService } from '@auth/application/services/ws-session.service';
+import { ListsService } from '../../application/services/lists.service';
 import type {
   FamilyListItemWriteDto,
   FamilyListWriteDto,

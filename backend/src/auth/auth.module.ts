@@ -5,9 +5,9 @@ import { DatabaseModule } from '@shared/infrastructure/database/database.module'
 import { MongoModelsModule } from '@shared/infrastructure/database/database.providers';
 import { EnvironmentModule } from '@shared/infrastructure/environment/environment.module';
 import { Environment } from '@shared/infrastructure/environment/environment.module';
-import { AuthService } from './application/auth.service';
+import { AuthService } from './application/services/auth.service';
 import { AuthController } from './interfaces/controllers/auth.controller';
-import { UserService } from './application/user.service';
+import { UserService } from './application/services/user.service';
 import { UsersController } from './interfaces/controllers/users.controller';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -15,7 +15,7 @@ import { RolesGuard } from './guards/roles.guard';
 import { UserRepository } from './infrastructure/repositories/user.repository';
 import { PasswordResetRepository } from './infrastructure/repositories/password-reset.repository';
 import { AuthGateway } from './interfaces/gateways/auth.gateway';
-import { WsSessionService } from './application/ws-session.service';
+import { WsSessionService } from './application/services/ws-session.service';
 
 @Module({
   imports: [
@@ -25,10 +25,11 @@ import { WsSessionService } from './application/ws-session.service';
     JwtModule.registerAsync({
       imports: [EnvironmentModule],
       inject: [Environment],
-      useFactory: (env: Environment) => ({
-        secret: env.jwt.secret,
-        signOptions: { expiresIn: env.jwt.expiresIn },
-      } as any),
+      useFactory: (env: Environment) =>
+        ({
+          secret: env.jwt.secret,
+          signOptions: { expiresIn: env.jwt.expiresIn },
+        }) as any,
     }),
   ],
   controllers: [AuthController, UsersController],

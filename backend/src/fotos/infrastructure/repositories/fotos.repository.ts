@@ -12,7 +12,7 @@ import {
   PaginationQuery,
   toId,
 } from '@shared/infrastructure/database/mongo.utils';
-import type { FotoEntity } from '@shared/domain/entities';
+import type { FotoEntity } from '@fotos/domain/entities/foto.entity';
 
 export type FotoWrite = Pick<FotoEntity, 'url' | 'tipo'> &
   Partial<Pick<FotoEntity, 'texto' | 'album' | 'data'>>;

@@ -12,7 +12,7 @@ import {
   PaginationQuery,
   toId,
 } from '@shared/infrastructure/database/mongo.utils';
-import type { MusicaEntity } from '@shared/domain/entities';
+import type { MusicaEntity } from '@musicas/domain/entities/musica.entity';
 
 export type MusicaWrite = Pick<
   MusicaEntity,

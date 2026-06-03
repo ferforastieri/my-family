@@ -8,7 +8,7 @@ async function bootstrap() {
   EventEmitter.defaultMaxListeners = 50;
   const app = await NestFactory.create(AppModule, { cors: false });
   const environment = app.get(Environment);
-  
+
   app.setGlobalPrefix('api');
   app.enableCors({
     origin: '*',

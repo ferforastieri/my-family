@@ -1,7 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
-@Schema({ timestamps: { createdAt: true, updatedAt: false }, collection: 'game_completions' })
+@Schema({
+  timestamps: { createdAt: true, updatedAt: false },
+  collection: 'game_completions',
+})
 export class GameCompletionDocument {
   @Prop({ required: true, enum: ['quiz', 'word_search'] })
   game: 'quiz' | 'word_search';
@@ -21,5 +24,8 @@ export class GameCompletionDocument {
   createdAt: Date;
 }
 
-export type GameCompletionMongoDocument = HydratedDocument<GameCompletionDocument>;
-export const GameCompletionSchema = SchemaFactory.createForClass(GameCompletionDocument);
+export type GameCompletionMongoDocument =
+  HydratedDocument<GameCompletionDocument>;
+export const GameCompletionSchema = SchemaFactory.createForClass(
+  GameCompletionDocument,
+);

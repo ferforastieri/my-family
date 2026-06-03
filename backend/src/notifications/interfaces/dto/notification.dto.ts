@@ -48,4 +48,3 @@ export class NotificationResponseDto {
   icon?: string | null;
   at: number;
 }
-

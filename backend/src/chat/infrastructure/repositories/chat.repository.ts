@@ -16,7 +16,7 @@ import {
 import type {
   ChatConversationEntity,
   ChatMessageEntity,
-} from '@shared/domain/entities';
+} from '@chat/domain/entities/chat.entity';
 
 export type ChatMessageWrite = {
   conversationId: string;

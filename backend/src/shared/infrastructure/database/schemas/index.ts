@@ -75,5 +75,8 @@ export const mongoModels = [
   { name: NotificationDocument.name, schema: NotificationSchema },
   { name: PushSubscriptionDocument.name, schema: PushSubscriptionSchema },
   { name: QuizQuestionDocument.name, schema: QuizQuestionSchema },
-  { name: ScheduledNotificationDocument.name, schema: ScheduledNotificationSchema },
+  {
+    name: ScheduledNotificationDocument.name,
+    schema: ScheduledNotificationSchema,
+  },
 ];

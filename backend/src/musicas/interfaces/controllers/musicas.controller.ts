@@ -7,7 +7,7 @@ import {
   Body,
   Param,
 } from '@nestjs/common';
-import { MusicasService } from '../../application/musicas.service';
+import { MusicasService } from '../../application/services/musicas.service';
 import type { MusicaWriteDto } from '../dto/musica.dto';
 
 @Controller('musicas')

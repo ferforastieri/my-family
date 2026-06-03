@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MusicasController } from './interfaces/controllers/musicas.controller';
-import { MusicasService } from './application/musicas.service';
+import { MusicasService } from './application/services/musicas.service';
 import { DatabaseModule } from '@shared/infrastructure/database/database.module';
 import { MongoModelsModule } from '@shared/infrastructure/database/database.providers';
 import { MusicasRepository } from './infrastructure/repositories/musicas.repository';

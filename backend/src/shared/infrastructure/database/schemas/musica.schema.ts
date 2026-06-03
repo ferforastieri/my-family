@@ -27,4 +27,3 @@ export class MusicaDocument {
 
 export type MusicaMongoDocument = HydratedDocument<MusicaDocument>;
 export const MusicaSchema = SchemaFactory.createForClass(MusicaDocument);
-

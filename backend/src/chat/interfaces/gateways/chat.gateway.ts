@@ -6,8 +6,8 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { WsSessionService } from '@auth/application/ws-session.service';
-import { ChatService } from '../../application/chat.service';
+import { WsSessionService } from '@auth/application/services/ws-session.service';
+import { ChatService } from '../../application/services/chat.service';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 import type {
   ChatConversationCreateDto,
