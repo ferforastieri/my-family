@@ -3,6 +3,7 @@ import { EnvironmentModule } from '@shared/infrastructure/environment/environmen
 import { DatabaseModule } from '@shared/infrastructure/database/database.module';
 import { EmailModule } from '@shared/infrastructure/email/email.module';
 import { UploadModule } from '@shared/infrastructure/upload';
+import { QueueModule } from '@shared/infrastructure/queue';
 import { AuthModule } from '@auth/auth.module';
 import { FotosModule } from '@fotos/fotos.module';
 import { MusicasModule } from '@musicas/musicas.module';
@@ -18,6 +19,7 @@ import { LocationModule } from './location/location.module';
   imports: [
     EnvironmentModule.forRoot(),
     DatabaseModule,
+    QueueModule,
     EmailModule,
     UploadModule,
     HealthModule,

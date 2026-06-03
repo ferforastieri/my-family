@@ -34,6 +34,7 @@ export class Environment {
     serviceAccountPath?: string;
     serviceAccountJson?: string;
   };
+  redis?: { url: string };
 
   isProduction(): boolean {
     return this.type === 'production';
@@ -64,20 +65,28 @@ class EnvironmentFactory {
 
     return new Environment({
       type:
-        ((process.env.NODE_ENV || output.parsed?.NODE_ENV) as 'development' | 'production' | 'staging') ||
-        'development',
+        ((process.env.NODE_ENV || output.parsed?.NODE_ENV) as
+          | 'development'
+          | 'production'
+          | 'staging') || 'development',
       http: {
         port: +(process.env.PORT || output.parsed?.PORT || 3000),
       },
       database: {
         mongo: {
-          uri: process.env.MONGO_URI || output.parsed?.MONGO_URI || 'mongodb://localhost:27017/my-family',
-          dbName: process.env.MONGO_DB || output.parsed?.MONGO_DB || 'my-family',
+          uri:
+            process.env.MONGO_URI ||
+            output.parsed?.MONGO_URI ||
+            'mongodb://localhost:27017/my-family',
+          dbName:
+            process.env.MONGO_DB || output.parsed?.MONGO_DB || 'my-family',
         },
       },
       jwt: {
-        secret: process.env.JWT_SECRET || output.parsed?.JWT_SECRET || 'change-me',
-        expiresIn: process.env.JWT_EXPIRES_IN || output.parsed?.JWT_EXPIRES_IN || '7d',
+        secret:
+          process.env.JWT_SECRET || output.parsed?.JWT_SECRET || 'change-me',
+        expiresIn:
+          process.env.JWT_EXPIRES_IN || output.parsed?.JWT_EXPIRES_IN || '7d',
       },
       uploadPath,
       cors: {
@@ -89,23 +98,41 @@ class EnvironmentFactory {
         (process.env.SMTP_PASS || output.parsed?.SMTP_PASS)
           ? {
               host: process.env.SMTP_HOST || output.parsed!.SMTP_HOST,
-              port: +(process.env.SMTP_PORT || output.parsed?.SMTP_PORT || '587'),
+              port: +(
+                process.env.SMTP_PORT ||
+                output.parsed?.SMTP_PORT ||
+                '587'
+              ),
               user: process.env.SMTP_USER || output.parsed!.SMTP_USER,
               pass: process.env.SMTP_PASS || output.parsed!.SMTP_PASS,
             }
           : undefined,
       emailFrom: process.env.EMAIL_FROM || output.parsed?.EMAIL_FROM,
-      emailFromName: process.env.EMAIL_FROM_NAME || output.parsed?.EMAIL_FROM_NAME || 'Nossa Família',
-      passwordResetUrl: process.env.PASSWORD_RESET_URL || output.parsed?.PASSWORD_RESET_URL || '',
+      emailFromName:
+        process.env.EMAIL_FROM_NAME ||
+        output.parsed?.EMAIL_FROM_NAME ||
+        'Nossa Família',
+      passwordResetUrl:
+        process.env.PASSWORD_RESET_URL ||
+        output.parsed?.PASSWORD_RESET_URL ||
+        '',
       firebase:
         process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
         output.parsed?.FIREBASE_SERVICE_ACCOUNT_PATH ||
         process.env.FIREBASE_SERVICE_ACCOUNT_JSON ||
         output.parsed?.FIREBASE_SERVICE_ACCOUNT_JSON
           ? {
-              serviceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH || output.parsed?.FIREBASE_SERVICE_ACCOUNT_PATH,
-              serviceAccountJson: process.env.FIREBASE_SERVICE_ACCOUNT_JSON || output.parsed?.FIREBASE_SERVICE_ACCOUNT_JSON,
+              serviceAccountPath:
+                process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
+                output.parsed?.FIREBASE_SERVICE_ACCOUNT_PATH,
+              serviceAccountJson:
+                process.env.FIREBASE_SERVICE_ACCOUNT_JSON ||
+                output.parsed?.FIREBASE_SERVICE_ACCOUNT_JSON,
             }
+          : undefined,
+      redis:
+        process.env.REDIS_URL || output.parsed?.REDIS_URL
+          ? { url: process.env.REDIS_URL || output.parsed?.REDIS_URL! }
           : undefined,
     });
   }

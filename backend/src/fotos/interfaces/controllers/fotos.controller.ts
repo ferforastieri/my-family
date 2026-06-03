@@ -37,6 +37,7 @@ export class FotosController {
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('Nenhum arquivo enviado');
     const { relativePath } = await this.upload.saveFile(file, UploadContext.Fotos);
+    await this.fotosService.processUpload(relativePath);
     return { relativePath };
   }
 

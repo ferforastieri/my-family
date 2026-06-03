@@ -11,6 +11,7 @@ import { NotificationsGateway } from './interfaces/gateways/notifications.gatewa
 import { NotificationsRealtimeGateway } from './interfaces/gateways/notifications-realtime.gateway';
 import { NotificationSchedulerService } from './application/notification-scheduler.service';
 import { ScheduledNotificationsRepository } from './infrastructure/repositories/scheduled-notifications.repository';
+import { NotificationQueueProcessor } from './infrastructure/queues/notification-queue.processor';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { ScheduledNotificationsRepository } from './infrastructure/repositories/
     ScheduledNotificationsRepository,
     NotificationsGateway,
     NotificationsRealtimeGateway,
+    NotificationQueueProcessor,
   ],
   exports: [NotificationsService, NotificationSchedulerService],
 })
