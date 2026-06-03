@@ -70,3 +70,39 @@ export class LocationResponseDto {
   platform: string;
   createdAt: Date;
 }
+
+export class LocationPlaceWriteDto {
+  @IsString()
+  name: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsNumber()
+  latitude: number;
+
+  @IsNumber()
+  longitude: number;
+
+  @IsNumber()
+  @Min(20)
+  @Max(5000)
+  radiusMeters: number;
+
+  @IsBoolean()
+  @IsOptional()
+  active?: boolean;
+}
+
+export class LocationPlaceResponseDto {
+  id: string;
+  name: string;
+  description: string | null;
+  latitude: number;
+  longitude: number;
+  radiusMeters: number;
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}

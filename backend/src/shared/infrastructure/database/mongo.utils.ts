@@ -14,6 +14,7 @@ export type PaginationQuery = {
   page?: number | string;
   limit?: number | string;
   titlePrefix?: string;
+  album?: string;
 };
 
 export type PaginatedResult<T> = {

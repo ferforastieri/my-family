@@ -37,6 +37,7 @@ class ResourcePage extends StatefulWidget {
 class _ResourcePageState extends State<ResourcePage> {
   static const _pageLimit = 24;
   int page = 1;
+  String? selectedAlbum;
 
   @override
   void initState() {
@@ -75,79 +76,114 @@ class _ResourcePageState extends State<ResourcePage> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: LoveBackground(
-        child: AppQuery<PaginatedResult<FamilyItem>>(
-          queryKey: QueryKeys.resource(widget.resource, page, _pageLimit),
-          queryFn: () =>
-              widget.repository.listPage(widget.resource, page, _pageLimit),
+        child: AppQuery<List<PhotoAlbumSummary>>(
+          queryKey: widget.resource == 'fotos'
+              ? QueryKeys.photoAlbums()
+              : const ['resource', 'albums', 'disabled'],
+          queryFn: () => widget.resource == 'fotos'
+              ? widget.repository.listPhotoAlbums()
+              : Future.value(<PhotoAlbumSummary>[]),
           loading: const PageSkeleton(),
-          builder: (context, result, refetch) {
-            final items = result.items;
-            return RefreshIndicator(
-              onRefresh: () async {
-                setState(() => page = 1);
-                await refetch();
-                widget.toast
-                    .info('Atualizando ${widget.title.toLowerCase()}...');
-              },
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
-                children: [
-                  Center(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                          maxWidth: widget.resource == 'fotos' ? 1280 : 1200),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _ResourceHero(
-                            resource: widget.resource,
-                            title: _titleFor(widget.resource, widget.title),
-                            subtitle: _subtitleFor(widget.resource),
-                            actionLabel: _actionLabelFor(widget.resource),
-                            onPressed: () => _openCreate(context),
-                          ),
-                          const SizedBox(height: 14),
-                          _ResourceMetrics(
-                            resource: widget.resource,
-                            total: result.total,
-                            visible: items.length,
-                            albums: 0,
-                          ),
-                          const SizedBox(height: 16),
-                          items.isEmpty
-                              ? _EmptyResourceState(
-                                  title: '${widget.title} ainda está vazio.',
-                                  actionLabel: _actionLabelFor(widget.resource),
-                                  onPressed: () => _openCreate(context),
-                                )
-                              : _ResourceGrid(
-                                  resource: widget.resource,
-                                  items: items,
-                                  onEdit: _openEdit,
-                                  onDelete: _deleteItem,
-                                  onView: _openPhotoViewer,
-                                ),
-                          const SizedBox(height: 12),
-                          AppPagination(
-                            page: result.page,
-                            pages: result.pages,
-                            total: result.total,
-                            onPrevious: result.hasPrevious
-                                ? () => _reload(nextPage: result.page - 1)
-                                : null,
-                            onNext: result.hasNext
-                                ? () => _reload(nextPage: result.page + 1)
-                                : null,
-                          ),
-                        ],
+          builder: (context, albums, _) =>
+              AppQuery<PaginatedResult<FamilyItem>>(
+            queryKey: QueryKeys.resource(
+              widget.resource,
+              page,
+              _pageLimit,
+              album: selectedAlbum,
+            ),
+            queryFn: () => widget.repository.listPage(
+              widget.resource,
+              page,
+              _pageLimit,
+              album: selectedAlbum,
+            ),
+            loading: const PageSkeleton(),
+            builder: (context, result, refetch) {
+              final items = result.items;
+              return RefreshIndicator(
+                onRefresh: () async {
+                  setState(() => page = 1);
+                  await refetch();
+                  widget.toast
+                      .info('Atualizando ${widget.title.toLowerCase()}...');
+                },
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
+                  children: [
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                            maxWidth: widget.resource == 'fotos' ? 1280 : 1200),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _ResourceHero(
+                              resource: widget.resource,
+                              title: _titleFor(widget.resource, widget.title),
+                              subtitle: _subtitleFor(widget.resource),
+                              actionLabel: _actionLabelFor(widget.resource),
+                              onPressed: () => _openCreate(context),
+                            ),
+                            const SizedBox(height: 14),
+                            _ResourceMetrics(
+                              resource: widget.resource,
+                              total: result.total,
+                              visible: items.length,
+                              albums: albums.length,
+                            ),
+                            if (widget.resource == 'fotos') ...[
+                              const SizedBox(height: 16),
+                              _AlbumFilter(
+                                albums: albums,
+                                selectedAlbum: selectedAlbum,
+                                onSelected: (album) {
+                                  setState(() {
+                                    selectedAlbum = album;
+                                    page = 1;
+                                  });
+                                },
+                              ),
+                            ],
+                            const SizedBox(height: 16),
+                            items.isEmpty
+                                ? _EmptyResourceState(
+                                    title: selectedAlbum == null
+                                        ? '${widget.title} ainda está vazio.'
+                                        : 'Nenhuma memória nesse álbum.',
+                                    actionLabel:
+                                        _actionLabelFor(widget.resource),
+                                    onPressed: () => _openCreate(context),
+                                  )
+                                : _ResourceGrid(
+                                    resource: widget.resource,
+                                    items: items,
+                                    onEdit: _openEdit,
+                                    onDelete: _deleteItem,
+                                    onView: _openPhotoViewer,
+                                  ),
+                            const SizedBox(height: 12),
+                            AppPagination(
+                              page: result.page,
+                              pages: result.pages,
+                              total: result.total,
+                              onPrevious: result.hasPrevious
+                                  ? () => _reload(nextPage: result.page - 1)
+                                  : null,
+                              onNext: result.hasNext
+                                  ? () => _reload(nextPage: result.page + 1)
+                                  : null,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          },
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -336,6 +372,91 @@ class _ResourceMetricCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AlbumFilter extends StatelessWidget {
+  const _AlbumFilter({
+    required this.albums,
+    required this.selectedAlbum,
+    required this.onSelected,
+  });
+
+  final List<PhotoAlbumSummary> albums;
+  final String? selectedAlbum;
+  final ValueChanged<String?> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final total = albums.fold<int>(0, (sum, album) => sum + album.count);
+    return LovePanel(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.collections_bookmark_outlined,
+                  color: palette.primary, size: 20),
+              const SizedBox(width: 8),
+              const Text(
+                'Álbuns',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _AlbumChip(
+                  label: 'Todos',
+                  count: total,
+                  selected: selectedAlbum == null,
+                  onTap: () => onSelected(null),
+                ),
+                for (final album in albums) ...[
+                  const SizedBox(width: 8),
+                  _AlbumChip(
+                    label: album.album,
+                    count: album.count,
+                    selected: selectedAlbum == album.album,
+                    onTap: () => onSelected(album.album),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AlbumChip extends StatelessWidget {
+  const _AlbumChip({
+    required this.label,
+    required this.count,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final int count;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ChoiceChip(
+      selected: selected,
+      onSelected: (_) => onTap(),
+      avatar: const Icon(Icons.photo_album_outlined, size: 18),
+      label: Text('$label ($count)'),
+      labelStyle: const TextStyle(fontWeight: FontWeight.w800),
     );
   }
 }

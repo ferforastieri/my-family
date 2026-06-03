@@ -9,7 +9,7 @@ import { Server, Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/services/ws-session.service';
 import { LocationService } from '../../application/services/location.service';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
-import { LocationUpdateDto } from '../dto/location.dto';
+import { LocationPlaceWriteDto, LocationUpdateDto } from '../dto/location.dto';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class LocationGateway {
@@ -26,7 +26,7 @@ export class LocationGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: LocationUpdateDto,
   ) {
-    const user = await this.session.getUser(client);
+    const user = await this.session.requireUser(client);
     const row = await this.locations.update(data, user);
     this.server?.emit('location.updated', row);
     return { ok: true, id: row.id, message: 'Localização atualizada.' };
@@ -39,5 +39,44 @@ export class LocationGateway {
   ) {
     await this.session.requireUser(client);
     return this.locations.latest(query);
+  }
+
+  @SubscribeMessage('location.places')
+  async places(@ConnectedSocket() client: Socket) {
+    await this.session.requireUser(client);
+    return this.locations.listPlaces();
+  }
+
+  @SubscribeMessage('location.places.create')
+  async createPlace(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: LocationPlaceWriteDto,
+  ) {
+    await this.session.requireUser(client);
+    const row = await this.locations.createPlace(data);
+    this.server?.emit('location.places.changed', row);
+    return { message: 'Local salvo.', ...row };
+  }
+
+  @SubscribeMessage('location.places.update')
+  async updatePlace(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { id: string; data: LocationPlaceWriteDto },
+  ) {
+    await this.session.requireUser(client);
+    const row = await this.locations.updatePlace(body.id, body.data);
+    if (row) this.server?.emit('location.places.changed', row);
+    return row ? { message: 'Local atualizado.', ...row } : row;
+  }
+
+  @SubscribeMessage('location.places.delete')
+  async deletePlace(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { id: string },
+  ) {
+    await this.session.requireUser(client);
+    const ok = await this.locations.deletePlace(body.id);
+    if (ok) this.server?.emit('location.places.changed', { id: body.id });
+    return { ok, message: 'Local removido.' };
   }
 }

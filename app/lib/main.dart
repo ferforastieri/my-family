@@ -35,7 +35,7 @@ void main() {
   final repository = FamilyRepository(socket);
   final chat = ChatController(socket, repository);
   final notifications = NotificationsController(socket);
-  final location = LocationController(socket);
+  final location = LocationController(socket, auth);
   final theme = ThemeController();
   final toast = ToastController();
   runApp(AppQueryProvider(
@@ -47,12 +47,12 @@ void main() {
         toast: toast,
         repository: repository),
   ));
-  unawaited(location.bootstrap());
   Future<void>(() async {
     await auth.bootstrap();
+    await notifications.bootstrap();
+    unawaited(location.bootstrap());
     await Future.wait([
       chat.bootstrap(),
-      notifications.bootstrap(),
     ]);
   }).catchError((_) {});
   theme.bootstrap();

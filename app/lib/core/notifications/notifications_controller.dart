@@ -94,20 +94,25 @@ class NotificationsController extends ChangeNotifier {
   }
 
   Future<void> configurePush() async {
-    if (!AppConfig.hasFirebaseConfig) return;
     try {
-      if (Firebase.apps.isEmpty) {
-        await Firebase.initializeApp(
-            options: DefaultFirebaseOptions.currentPlatform);
-      }
-      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-
       if (!kIsWeb) {
         await _localNotifications.initialize(
           settings: const InitializationSettings(
               android: AndroidInitializationSettings('ic_notification')),
         );
+        await _localNotifications
+            .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>()
+            ?.requestNotificationsPermission();
       }
+
+      if (!AppConfig.hasFirebaseConfig) return;
+
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp(
+            options: DefaultFirebaseOptions.currentPlatform);
+      }
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
       await FirebaseMessaging.instance
           .requestPermission(alert: true, badge: true, sound: true);

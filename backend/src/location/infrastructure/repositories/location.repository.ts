@@ -2,6 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
+  LocationPlaceDocument,
+  LocationPlaceMongoDocument,
+  LocationPresenceDocument,
+  LocationPresenceMongoDocument,
   LocationUpdateDocument,
   LocationUpdateMongoDocument,
 } from '@shared/infrastructure/database/schemas';
@@ -13,7 +17,11 @@ import {
   PaginationQuery,
   toId,
 } from '@shared/infrastructure/database/mongo.utils';
-import type { LocationUpdateEntity } from '@location/domain/entities/location.entity';
+import type {
+  LocationPlaceEntity,
+  LocationPresenceEntity,
+  LocationUpdateEntity,
+} from '@location/domain/entities/location.entity';
 
 export type LocationUpdateWrite = Pick<
   LocationUpdateEntity,
@@ -34,11 +42,21 @@ export type LocationUpdateWrite = Pick<
     >
   >;
 
+export type LocationPlaceWrite = Pick<
+  LocationPlaceEntity,
+  'name' | 'latitude' | 'longitude' | 'radiusMeters'
+> &
+  Partial<Pick<LocationPlaceEntity, 'description' | 'active'>>;
+
 @Injectable()
 export class LocationRepository {
   constructor(
     @InjectModel(LocationUpdateDocument.name)
     private model: Model<LocationUpdateMongoDocument>,
+    @InjectModel(LocationPlaceDocument.name)
+    private placeModel: Model<LocationPlaceMongoDocument>,
+    @InjectModel(LocationPresenceDocument.name)
+    private presenceModel: Model<LocationPresenceMongoDocument>,
   ) {}
 
   private toEntity(
@@ -66,6 +84,39 @@ export class LocationRepository {
     return this.toEntity(await this.model.create(cleanUndefined(data)))!;
   }
 
+  private toPlaceEntity(
+    doc: LocationPlaceMongoDocument | null,
+  ): LocationPlaceEntity | null {
+    if (!doc) return null;
+    return {
+      id: toId(doc),
+      name: doc.name,
+      description: doc.description ?? null,
+      latitude: doc.latitude,
+      longitude: doc.longitude,
+      radiusMeters: doc.radiusMeters,
+      active: doc.active !== false,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+    };
+  }
+
+  private toPresenceEntity(
+    doc: LocationPresenceMongoDocument | null,
+  ): LocationPresenceEntity | null {
+    if (!doc) return null;
+    return {
+      id: toId(doc),
+      userId: doc.userId,
+      placeId: doc.placeId,
+      inside: doc.inside,
+      userName: doc.userName ?? null,
+      placeName: doc.placeName ?? null,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+    };
+  }
+
   async latestByPerson(
     query?: PaginationQuery,
   ): Promise<PaginatedResult<LocationUpdateEntity>> {
@@ -75,26 +126,11 @@ export class LocationRepository {
       maxLimit: 100,
     });
     const [result] = await this.model.aggregate([
+      { $match: { userId: { $nin: [null, ''] } } },
       { $sort: { createdAt: -1 } },
       {
         $group: {
-          _id: {
-            $ifNull: [
-              '$userId',
-              {
-                $ifNull: [
-                  '$userName',
-                  {
-                    $concat: [
-                      { $toString: '$latitude' },
-                      ',',
-                      { $toString: '$longitude' },
-                    ],
-                  },
-                ],
-              },
-            ],
-          },
+          _id: '$userId',
           row: { $first: '$$ROOT' },
         },
       },
@@ -115,5 +151,71 @@ export class LocationRepository {
       page,
       limit,
     );
+  }
+
+  async listPlaces() {
+    const docs = await this.placeModel
+      .find()
+      .sort({ name: 1, createdAt: -1 })
+      .exec();
+    return docs.map((doc) => this.toPlaceEntity(doc)!);
+  }
+
+  async listActivePlaces() {
+    const docs = await this.placeModel
+      .find({ active: true })
+      .sort({ name: 1 })
+      .exec();
+    return docs.map((doc) => this.toPlaceEntity(doc)!);
+  }
+
+  async createPlace(data: LocationPlaceWrite) {
+    return this.toPlaceEntity(
+      await this.placeModel.create(cleanUndefined(data)),
+    )!;
+  }
+
+  async updatePlace(id: string, data: Partial<LocationPlaceWrite>) {
+    return this.toPlaceEntity(
+      await this.placeModel
+        .findByIdAndUpdate(id, { $set: cleanUndefined(data) }, { new: true })
+        .exec(),
+    );
+  }
+
+  async deletePlace(id: string) {
+    const deleted = await this.placeModel.findByIdAndDelete(id).exec();
+    if (deleted) await this.presenceModel.deleteMany({ placeId: id }).exec();
+    return !!deleted;
+  }
+
+  async findPresence(userId: string, placeId: string) {
+    return this.toPresenceEntity(
+      await this.presenceModel.findOne({ userId, placeId }).exec(),
+    );
+  }
+
+  async upsertPresence(data: {
+    userId: string;
+    userName?: string | null;
+    placeId: string;
+    placeName: string;
+    inside: boolean;
+  }) {
+    return this.toPresenceEntity(
+      await this.presenceModel
+        .findOneAndUpdate(
+          { userId: data.userId, placeId: data.placeId },
+          {
+            $set: {
+              inside: data.inside,
+              userName: data.userName ?? undefined,
+              placeName: data.placeName,
+            },
+          },
+          { upsert: true, new: true },
+        )
+        .exec(),
+    )!;
   }
 }
