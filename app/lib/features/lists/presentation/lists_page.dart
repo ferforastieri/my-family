@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/api/query_keys.dart';
 import '../../../core/auth/auth_controller.dart';
+import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_button.dart';
@@ -28,117 +30,58 @@ class ListsPage extends StatefulWidget {
 }
 
 class _ListsPageState extends State<ListsPage> {
-  final lists = <FamilyList>[];
-  final items = <String, List<FamilyListItem>>{};
   String? selectedListId;
-  bool loading = true;
 
   @override
   void initState() {
     super.initState();
-    widget.repository.socket.on('lists.created', _handleListEvent);
-    widget.repository.socket.on('lists.updated', _handleListEvent);
+    widget.repository.socket.on('lists.created', _handleListChanged);
+    widget.repository.socket.on('lists.updated', _handleListChanged);
     widget.repository.socket.on('lists.deleted', _handleListDeleted);
-    widget.repository.socket.on('lists.items.created', _handleItemEvent);
-    widget.repository.socket.on('lists.items.updated', _handleItemEvent);
+    widget.repository.socket.on('lists.items.created', _handleItemChanged);
+    widget.repository.socket.on('lists.items.updated', _handleItemChanged);
     widget.repository.socket.on('lists.items.deleted', _handleItemDeleted);
-    Future.microtask(_load);
   }
 
   @override
   void dispose() {
-    widget.repository.socket.off('lists.created', _handleListEvent);
-    widget.repository.socket.off('lists.updated', _handleListEvent);
+    widget.repository.socket.off('lists.created', _handleListChanged);
+    widget.repository.socket.off('lists.updated', _handleListChanged);
     widget.repository.socket.off('lists.deleted', _handleListDeleted);
-    widget.repository.socket.off('lists.items.created', _handleItemEvent);
-    widget.repository.socket.off('lists.items.updated', _handleItemEvent);
+    widget.repository.socket.off('lists.items.created', _handleItemChanged);
+    widget.repository.socket.off('lists.items.updated', _handleItemChanged);
     widget.repository.socket.off('lists.items.deleted', _handleItemDeleted);
     super.dispose();
   }
 
-  Future<void> _load() async {
-    setState(() => loading = true);
-    try {
-      final rows = await widget.repository.listFamilyLists();
-      lists
-        ..clear()
-        ..addAll(rows);
-      selectedListId ??= lists.isNotEmpty ? lists.first.id : null;
-      if (selectedListId != null) await _loadItems(selectedListId!);
-    } catch (error) {
-      widget.toast.error(error.toString());
-    } finally {
-      if (mounted) setState(() => loading = false);
-    }
-  }
-
-  Future<void> _loadItems(String listId) async {
-    final rows = await widget.repository.listFamilyListItems(listId);
-    items[listId] = rows;
-  }
-
-  Future<void> _select(FamilyList list) async {
-    selectedListId = list.id;
-    setState(() => loading = true);
-    try {
-      await _loadItems(list.id);
-    } catch (error) {
-      widget.toast.error(error.toString());
-    } finally {
-      if (mounted) setState(() => loading = false);
-    }
-  }
-
-  void _handleListEvent(dynamic data) {
-    if (data is! Map) return;
-    final row = FamilyList.fromJson(Map<String, dynamic>.from(data));
-    final index = lists.indexWhere((item) => item.id == row.id);
-    setState(() {
-      if (index >= 0) {
-        lists[index] = row;
-      } else {
-        lists.insert(0, row);
-        selectedListId ??= row.id;
-      }
-    });
-  }
+  void _handleListChanged(dynamic _) => _invalidateLists();
 
   void _handleListDeleted(dynamic data) {
-    final id = data is Map ? data['id'].toString() : data.toString();
-    setState(() {
-      lists.removeWhere((item) => item.id == id);
-      items.remove(id);
-      if (selectedListId == id) selectedListId = lists.isNotEmpty ? lists.first.id : null;
-    });
+    final id = data is Map ? data['id']?.toString() : data?.toString();
+    if (id != null && selectedListId == id) {
+      setState(() => selectedListId = null);
+    }
+    _invalidateLists();
   }
 
-  void _handleItemEvent(dynamic data) {
+  void _handleItemChanged(dynamic data) {
     if (data is! Map) return;
-    final row = FamilyListItem.fromJson(Map<String, dynamic>.from(data));
-    final listItems = items.putIfAbsent(row.listId, () => []);
-    final index = listItems.indexWhere((item) => item.id == row.id);
-    setState(() {
-      if (index >= 0) {
-        listItems[index] = row;
-      } else {
-        listItems.insert(0, row);
-      }
-    });
+    final listId = data['listId']?.toString();
+    if (listId != null) _invalidateItems(listId);
   }
 
   void _handleItemDeleted(dynamic data) {
     if (data is! Map) return;
-    final id = data['id'].toString();
     final listId = data['listId']?.toString();
-    setState(() {
-      if (listId != null && items[listId] != null) {
-        items[listId]!.removeWhere((item) => item.id == id);
-      } else {
-        for (final listItems in items.values) {
-          listItems.removeWhere((item) => item.id == id);
-        }
-      }
-    });
+    if (listId != null) _invalidateItems(listId);
+  }
+
+  void _invalidateLists() {
+    if (mounted) invalidateQueries(context, QueryKeys.familyLists);
+  }
+
+  void _invalidateItems(String listId) {
+    if (mounted) invalidateQueries(context, QueryKeys.familyListItems(listId));
   }
 
   Future<void> _createList() async {
@@ -156,7 +99,8 @@ class _ListsPageState extends State<ListsPage> {
             'title': title.text.trim(),
             'description': description.text.trim(),
           });
-          selectedListId = row.id;
+          setState(() => selectedListId = row.id);
+          _invalidateLists();
           widget.toast.success('Lista criada.');
         },
       ),
@@ -173,7 +117,9 @@ class _ListsPageState extends State<ListsPage> {
       builder: (_) => _ItemFormSheet(
         controller: text,
         onSave: () async {
-          await widget.repository.createFamilyListItem(listId, text.text.trim());
+          await widget.repository
+              .createFamilyListItem(listId, text.text.trim());
+          _invalidateItems(listId);
           widget.toast.success('Item adicionado.');
         },
       ),
@@ -189,8 +135,6 @@ class _ListsPageState extends State<ListsPage> {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    final selected = _selectedList;
-    final selectedItems = selectedListId == null ? <FamilyListItem>[] : items[selectedListId] ?? const [];
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -200,7 +144,7 @@ class _ListsPageState extends State<ListsPage> {
         ),
       ),
       child: RefreshIndicator(
-        onRefresh: _load,
+        onRefresh: () async => _invalidateLists(),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
@@ -219,50 +163,35 @@ class _ListsPageState extends State<ListsPage> {
             Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 980),
-                child: loading && lists.isEmpty
-                    ? const PageSkeleton(cards: 4)
-                    : LayoutBuilder(
-                        builder: (context, constraints) {
-                          final wide = constraints.maxWidth >= 760;
-                          final listPanel = _ListsPanel(
-                            lists: lists,
-                            selectedListId: selectedListId,
-                            onSelect: _select,
-                            onCreate: _createList,
-                          );
-                          final itemPanel = _ItemsPanel(
-                            list: selected,
-                            items: selectedItems,
-                            onAdd: _addItem,
-                            onToggle: (item) async {
-                              if (!_ensureLogged()) return;
-                              await widget.repository.updateFamilyListItem(
-                                  item.id, {'checked': !item.checked});
-                            },
-                            onDelete: (item) async {
-                              if (!_ensureLogged()) return;
-                              await widget.repository.deleteFamilyListItem(item.id);
-                            },
-                          );
-                          if (!wide) {
-                            return Column(
-                              children: [
-                                listPanel,
-                                const SizedBox(height: 14),
-                                itemPanel,
-                              ],
-                            );
-                          }
-                          return Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SizedBox(width: 330, child: listPanel),
-                              const SizedBox(width: 16),
-                              Expanded(child: itemPanel),
-                            ],
-                          );
-                        },
-                      ),
+                child: AppQuery<List<FamilyList>>(
+                  queryKey: QueryKeys.familyLists,
+                  queryFn: widget.repository.listFamilyLists,
+                  loading: const PageSkeleton(cards: 4),
+                  builder: (context, lists, _) {
+                    final effectiveSelectedId = selectedListId ??
+                        (lists.isNotEmpty ? lists.first.id : null);
+                    if (selectedListId == null && effectiveSelectedId != null) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted && selectedListId == null) {
+                          setState(() => selectedListId = effectiveSelectedId);
+                        }
+                      });
+                    }
+                    final selected = _findList(lists, effectiveSelectedId);
+                    return _ListsLayout(
+                      lists: lists,
+                      selectedListId: effectiveSelectedId,
+                      selected: selected,
+                      repository: widget.repository,
+                      ensureLogged: _ensureLogged,
+                      onSelect: (list) =>
+                          setState(() => selectedListId = list.id),
+                      onCreate: _createList,
+                      onAdd: _addItem,
+                      invalidateItems: _invalidateItems,
+                    );
+                  },
+                ),
               ),
             ),
           ],
@@ -271,11 +200,95 @@ class _ListsPageState extends State<ListsPage> {
     );
   }
 
-  FamilyList? get _selectedList {
+  FamilyList? _findList(List<FamilyList> lists, String? id) {
+    if (id == null) return null;
     for (final list in lists) {
-      if (list.id == selectedListId) return list;
+      if (list.id == id) return list;
     }
     return null;
+  }
+}
+
+class _ListsLayout extends StatelessWidget {
+  const _ListsLayout({
+    required this.lists,
+    required this.selectedListId,
+    required this.selected,
+    required this.repository,
+    required this.ensureLogged,
+    required this.onSelect,
+    required this.onCreate,
+    required this.onAdd,
+    required this.invalidateItems,
+  });
+
+  final List<FamilyList> lists;
+  final String? selectedListId;
+  final FamilyList? selected;
+  final FamilyRepository repository;
+  final bool Function() ensureLogged;
+  final ValueChanged<FamilyList> onSelect;
+  final VoidCallback onCreate;
+  final VoidCallback onAdd;
+  final void Function(String listId) invalidateItems;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppQuery<List<FamilyListItem>>(
+      queryKey: selectedListId == null
+          ? const ['lists', 'items', 'empty']
+          : QueryKeys.familyListItems(selectedListId!),
+      queryFn: () => selectedListId == null
+          ? Future.value(<FamilyListItem>[])
+          : repository.listFamilyListItems(selectedListId!),
+      loading: const PageSkeleton(cards: 2),
+      builder: (context, selectedItems, _) {
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final wide = constraints.maxWidth >= 760;
+            final listPanel = _ListsPanel(
+              lists: lists,
+              selectedListId: selectedListId,
+              onSelect: onSelect,
+              onCreate: onCreate,
+            );
+            final itemPanel = _ItemsPanel(
+              list: selected,
+              items: selectedItems,
+              onAdd: onAdd,
+              onToggle: (item) async {
+                if (!ensureLogged()) return;
+                await repository
+                    .updateFamilyListItem(item.id, {'checked': !item.checked});
+                invalidateItems(item.listId);
+              },
+              onDelete: (item) async {
+                if (!ensureLogged()) return;
+                await repository.deleteFamilyListItem(item.id);
+                invalidateItems(item.listId);
+              },
+            );
+            if (!wide) {
+              return Column(
+                children: [
+                  listPanel,
+                  const SizedBox(height: 14),
+                  itemPanel,
+                ],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(width: 330, child: listPanel),
+                const SizedBox(width: 16),
+                Expanded(child: itemPanel),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 }
 
@@ -311,8 +324,11 @@ class _ListsPanel extends StatelessWidget {
             ListTile(
               selected: list.id == selectedListId,
               leading: const Icon(Icons.checklist_outlined),
-              title: Text(list.title, style: const TextStyle(fontWeight: FontWeight.w900)),
-              subtitle: list.description?.isNotEmpty == true ? Text(list.description!) : null,
+              title: Text(list.title,
+                  style: const TextStyle(fontWeight: FontWeight.w900)),
+              subtitle: list.description?.isNotEmpty == true
+                  ? Text(list.description!)
+                  : null,
               onTap: () => onSelect(list),
             ),
         ],
@@ -351,7 +367,11 @@ class _ItemsPanel extends StatelessWidget {
             icon: Icons.task_alt_outlined,
           ),
           const SizedBox(height: 16),
-          AppButton(onPressed: list == null ? null : onAdd, label: 'Adicionar item', icon: Icons.add_task_outlined),
+          AppButton(
+            onPressed: list == null ? null : onAdd,
+            label: 'Adicionar item',
+            icon: Icons.add_task_outlined,
+          ),
           const SizedBox(height: 12),
           if (list == null)
             const Padding(
@@ -371,7 +391,8 @@ class _ItemsPanel extends StatelessWidget {
                 title: Text(
                   item.text,
                   style: TextStyle(
-                    decoration: item.checked ? TextDecoration.lineThrough : null,
+                    decoration:
+                        item.checked ? TextDecoration.lineThrough : null,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -413,8 +434,12 @@ class _PanelTitle extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-              Text(description, style: TextStyle(color: palette.muted, fontWeight: FontWeight.w700)),
+              Text(title,
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.w900)),
+              Text(description,
+                  style: TextStyle(
+                      color: palette.muted, fontWeight: FontWeight.w700)),
             ],
           ),
         ),
@@ -443,7 +468,9 @@ class _ListFormSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+          Text(title,
+              style:
+                  const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
           const SizedBox(height: 16),
           TextField(
             controller: titleController,
@@ -487,7 +514,8 @@ class _ItemFormSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('Novo item', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+          const Text('Novo item',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
           const SizedBox(height: 16),
           TextField(
             controller: controller,

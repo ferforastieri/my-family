@@ -6,9 +6,30 @@ class QueryKeys {
   static const chatConversations = ['chat', 'conversations'];
   static const locations = ['location', 'latest'];
   static const familyLists = ['lists'];
+  static const admin = ['admin'];
 
   static List<Object?> familyListItems(String listId) =>
       ['lists', 'items', listId];
+
+  static List<Object?> quizQuestions() => ['games', 'quiz', 'public'];
+
+  static List<Object?> wordSearchWords() => ['games', 'words', 'public'];
+
+  static List<Object?> adminPage({
+    required int usersPage,
+    required int notificationsPage,
+    required int questionsPage,
+    required int wordsPage,
+    required int statsPage,
+  }) =>
+      [
+        ...admin,
+        usersPage,
+        notificationsPage,
+        questionsPage,
+        wordsPage,
+        statsPage,
+      ];
 
   static List<Object?> resourceScope(String resource) => ['resource', resource];
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/api/query_keys.dart';
 import '../../../core/auth/auth_controller.dart';
+import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_button.dart';
@@ -47,7 +49,6 @@ class _AdminPageState extends State<AdminPage> {
   int questionsPage = 1;
   int wordsPage = 1;
   int statsPage = 1;
-  bool loading = true;
   String? loadError;
   _AdminSection selected = _AdminSection.users;
 
@@ -57,7 +58,6 @@ class _AdminPageState extends State<AdminPage> {
     for (final event in _adminRealtimeEvents) {
       widget.repository.socket.on(event, _handleRealtimeChange);
     }
-    _load();
   }
 
   @override
@@ -68,67 +68,68 @@ class _AdminPageState extends State<AdminPage> {
     super.dispose();
   }
 
-  Future<void> _handleRealtimeChange(dynamic _) async {
+  void _handleRealtimeChange(dynamic _) {
     if (!mounted) return;
-    await _load();
+    _invalidateAdmin();
   }
 
-  Future<void> _load() async {
-    setState(() => loading = true);
+  void _invalidateAdmin() {
+    if (mounted) invalidateQueries(context, QueryKeys.admin);
+  }
+
+  Future<_AdminData> _fetchAdminData() async {
     final errors = <String>[];
+    PaginatedResult<AppUser>? nextUsers;
+    PaginatedResult<AppNotification>? nextNotifications;
+    PaginatedResult<QuizQuestion>? nextQuestions;
+    PaginatedResult<GameWord>? nextWords;
+    PaginatedResult<GameStat>? nextStats;
     await Future.wait([
-      _loadPart('usuários', () async {
-        final page = await widget.repository.listUsersPage(
+      _fetchPart('usuários', () async {
+        nextUsers = await widget.repository.listUsersPage(
           usersPage,
           _adminPageLimit,
         );
-        users = page.items;
-        usersPagination = page;
       }, errors),
-      _loadPart('notificações', () async {
-        final page = await widget.repository.listNotificationsAdminPage(
+      _fetchPart('notificações', () async {
+        nextNotifications = await widget.repository.listNotificationsAdminPage(
           notificationsPage,
           _adminPageLimit,
         );
-        notifications = page.items;
-        notificationsPagination = page;
       }, errors),
-      _loadPart('perguntas', () async {
-        final page = await widget.repository.listQuizQuestionsAdminPage(
+      _fetchPart('perguntas', () async {
+        nextQuestions = await widget.repository.listQuizQuestionsAdminPage(
           questionsPage,
           _adminPageLimit,
         );
-        questions = page.items;
-        questionsPagination = page;
       }, errors),
-      _loadPart('palavras', () async {
-        final page = await widget.repository.listGameWordsAdminPage(
+      _fetchPart('palavras', () async {
+        nextWords = await widget.repository.listGameWordsAdminPage(
           wordsPage,
           _adminPageLimit,
         );
-        words = page.items;
-        wordsPagination = page;
       }, errors),
-      _loadPart('estatísticas', () async {
-        final page = await widget.repository.gameStatsPage(
+      _fetchPart('estatísticas', () async {
+        nextStats = await widget.repository.gameStatsPage(
           statsPage,
           _adminPageLimit,
         );
-        stats = page.items;
-        statsPagination = page;
       }, errors),
     ]);
-    if (!mounted) return;
-    setState(() {
-      loading = false;
-      loadError = errors.isEmpty ? null : errors.join(' • ');
-    });
     if (errors.isNotEmpty) {
       widget.toast.error('Algumas áreas não carregaram.');
     }
+    return _AdminData(
+      users: nextUsers,
+      notifications: nextNotifications,
+      questions: nextQuestions,
+      words: nextWords,
+      stats: nextStats,
+      loadError: errors.isEmpty ? null : errors.join(' • '),
+    );
   }
 
-  Future<void> _loadPart(
+  Future<void> _fetchPart(
     String label,
     Future<void> Function() loader,
     List<String> errors,
@@ -145,7 +146,7 @@ class _AdminPageState extends State<AdminPage> {
     final palette = Theme.of(context).extension<AppPalette>()!;
     return LoveBackground(
       child: RefreshIndicator(
-        onRefresh: _load,
+        onRefresh: () async => _invalidateAdmin(),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
@@ -158,55 +159,75 @@ class _AdminPageState extends State<AdminPage> {
                   children: [
                     const _AdminHero(),
                     const SizedBox(height: 16),
-                    _AdminMetrics(
-                      users: usersPagination?.total ?? users.length,
-                      notifications: notificationsPagination?.total ??
-                          notifications.length,
-                      games: (questionsPagination?.total ?? questions.length) +
-                          (wordsPagination?.total ?? words.length),
-                      stats: stats.fold<int>(
-                          0, (total, stat) => total + stat.count),
-                    ),
-                    if (loadError != null) ...[
-                      const SizedBox(height: 14),
-                      _AdminErrorBanner(message: loadError!),
-                    ],
-                    const SizedBox(height: 16),
-                    LovePanel(
-                      padding: EdgeInsets.zero,
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final wide = constraints.maxWidth >= 860;
-                          final content = _sectionContent();
-                          if (!wide) {
-                            return Column(
-                              children: [
-                                _AdminSegmentedNav(
-                                  selected: selected,
-                                  onChanged: (value) =>
-                                      setState(() => selected = value),
-                                ),
-                                SizedBox(height: 640, child: content),
-                              ],
-                            );
-                          }
-                          return SizedBox(
-                            height: 720,
-                            child: Row(
-                              children: [
-                                _AdminSideNav(
-                                  selected: selected,
-                                  onChanged: (value) =>
-                                      setState(() => selected = value),
-                                ),
-                                VerticalDivider(
-                                    width: 1, color: palette.border),
-                                Expanded(child: content),
-                              ],
-                            ),
-                          );
-                        },
+                    AppQuery<_AdminData>(
+                      queryKey: QueryKeys.adminPage(
+                        usersPage: usersPage,
+                        notificationsPage: notificationsPage,
+                        questionsPage: questionsPage,
+                        wordsPage: wordsPage,
+                        statsPage: statsPage,
                       ),
+                      queryFn: _fetchAdminData,
+                      loading: const PageSkeleton(cards: 4),
+                      builder: (context, data, _) {
+                        _applyAdminData(data);
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _AdminMetrics(
+                              users: usersPagination?.total ?? users.length,
+                              notifications: notificationsPagination?.total ??
+                                  notifications.length,
+                              games: (questionsPagination?.total ??
+                                      questions.length) +
+                                  (wordsPagination?.total ?? words.length),
+                              stats: stats.fold<int>(
+                                  0, (total, stat) => total + stat.count),
+                            ),
+                            if (loadError != null) ...[
+                              const SizedBox(height: 14),
+                              _AdminErrorBanner(message: loadError!),
+                            ],
+                            const SizedBox(height: 16),
+                            LovePanel(
+                              padding: EdgeInsets.zero,
+                              child: LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final wide = constraints.maxWidth >= 860;
+                                  final content = _sectionContent();
+                                  if (!wide) {
+                                    return Column(
+                                      children: [
+                                        _AdminSegmentedNav(
+                                          selected: selected,
+                                          onChanged: (value) =>
+                                              setState(() => selected = value),
+                                        ),
+                                        SizedBox(height: 640, child: content),
+                                      ],
+                                    );
+                                  }
+                                  return SizedBox(
+                                    height: 720,
+                                    child: Row(
+                                      children: [
+                                        _AdminSideNav(
+                                          selected: selected,
+                                          onChanged: (value) =>
+                                              setState(() => selected = value),
+                                        ),
+                                        VerticalDivider(
+                                            width: 1, color: palette.border),
+                                        Expanded(child: content),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -218,11 +239,25 @@ class _AdminPageState extends State<AdminPage> {
     );
   }
 
+  void _applyAdminData(_AdminData data) {
+    usersPagination = data.users;
+    notificationsPagination = data.notifications;
+    questionsPagination = data.questions;
+    wordsPagination = data.words;
+    statsPagination = data.stats;
+    users = data.users?.items ?? const [];
+    notifications = data.notifications?.items ?? const [];
+    questions = data.questions?.items ?? const [];
+    words = data.words?.items ?? const [];
+    stats = data.stats?.items ?? const [];
+    loadError = data.loadError;
+  }
+
   Widget _sectionContent() {
     return switch (selected) {
       _AdminSection.users => _UsersAdminTab(
           users: users,
-          loading: loading,
+          loading: false,
           onEdit: _openUserSheet,
           onDelete: _deleteUser,
           pagination: _pagination(
@@ -232,7 +267,7 @@ class _AdminPageState extends State<AdminPage> {
         ),
       _AdminSection.notifications => _NotificationsAdminTab(
           notifications: notifications,
-          loading: loading,
+          loading: false,
           onAdd: () => _openNotificationSheet(),
           onEdit: _openNotificationSheet,
           onDelete: _deleteNotification,
@@ -247,7 +282,7 @@ class _AdminPageState extends State<AdminPage> {
       _AdminSection.games => _GamesAdminTab(
           questions: questions,
           words: words,
-          loading: loading,
+          loading: false,
           onAddQuestion: () => _openQuestionSheet(),
           onEditQuestion: _openQuestionSheet,
           onDeleteQuestion: _deleteQuestion,
@@ -265,7 +300,7 @@ class _AdminPageState extends State<AdminPage> {
         ),
       _AdminSection.stats => _StatsAdminTab(
           stats: stats,
-          loading: loading,
+          loading: false,
           pagination: _pagination(
             statsPagination,
             (page) => statsPage = page,
@@ -286,13 +321,13 @@ class _AdminPageState extends State<AdminPage> {
       onPrevious: result.hasPrevious
           ? () {
               setState(() => setPage(result.page - 1));
-              _load();
+              _invalidateAdmin();
             }
           : null,
       onNext: result.hasNext
           ? () {
               setState(() => setPage(result.page + 1));
-              _load();
+              _invalidateAdmin();
             }
           : null,
     );
@@ -306,7 +341,7 @@ class _AdminPageState extends State<AdminPage> {
         onSave: (data) async {
           await widget.repository.updateUser(user.id, data);
           widget.toast.success('Usuário atualizado.');
-          await _load();
+          _invalidateAdmin();
         },
       ),
     );
@@ -315,7 +350,7 @@ class _AdminPageState extends State<AdminPage> {
   Future<void> _deleteUser(AppUser user) async {
     await widget.repository.deleteUser(user.id);
     widget.toast.success('Usuário removido.');
-    await _load();
+    _invalidateAdmin();
   }
 
   Future<void> _openNotificationSheet([AppNotification? notification]) async {
@@ -331,7 +366,7 @@ class _AdminPageState extends State<AdminPage> {
             await widget.repository.updateNotification(notification.id, data);
           }
           widget.toast.success('Notificação salva.');
-          await _load();
+          _invalidateAdmin();
         },
       ),
     );
@@ -340,14 +375,14 @@ class _AdminPageState extends State<AdminPage> {
   Future<void> _deleteNotification(AppNotification notification) async {
     await widget.repository.deleteNotification(notification.id);
     widget.toast.success('Notificação removida.');
-    await _load();
+    _invalidateAdmin();
   }
 
   Future<void> _clearNotifications() async {
     await widget.repository.clearNotifications();
     notificationsPage = 1;
     widget.toast.success('Notificações limpas.');
-    await _load();
+    _invalidateAdmin();
   }
 
   Future<void> _sendNotification(AppNotification notification) async {
@@ -357,7 +392,7 @@ class _AdminPageState extends State<AdminPage> {
       url: notification.url,
     );
     widget.toast.success('Notificação enfileirada para envio.');
-    await _load();
+    _invalidateAdmin();
   }
 
   Future<void> _scheduleNotification(AppNotification notification) async {
@@ -391,7 +426,7 @@ class _AdminPageState extends State<AdminPage> {
             await widget.repository.updateQuizQuestion(question.id, data);
           }
           widget.toast.success('Pergunta salva.');
-          await _load();
+          _invalidateAdmin();
         },
       ),
     );
@@ -400,7 +435,7 @@ class _AdminPageState extends State<AdminPage> {
   Future<void> _deleteQuestion(QuizQuestion question) async {
     await widget.repository.deleteQuizQuestion(question.id);
     widget.toast.success('Pergunta removida.');
-    await _load();
+    _invalidateAdmin();
   }
 
   Future<void> _openWordSheet([GameWord? word]) async {
@@ -416,7 +451,7 @@ class _AdminPageState extends State<AdminPage> {
             await widget.repository.updateGameWord(word.id, data);
           }
           widget.toast.success('Palavra salva.');
-          await _load();
+          _invalidateAdmin();
         },
       ),
     );
@@ -425,8 +460,26 @@ class _AdminPageState extends State<AdminPage> {
   Future<void> _deleteWord(GameWord word) async {
     await widget.repository.deleteGameWord(word.id);
     widget.toast.success('Palavra removida.');
-    await _load();
+    _invalidateAdmin();
   }
+}
+
+class _AdminData {
+  const _AdminData({
+    required this.users,
+    required this.notifications,
+    required this.questions,
+    required this.words,
+    required this.stats,
+    required this.loadError,
+  });
+
+  final PaginatedResult<AppUser>? users;
+  final PaginatedResult<AppNotification>? notifications;
+  final PaginatedResult<QuizQuestion>? questions;
+  final PaginatedResult<GameWord>? words;
+  final PaginatedResult<GameStat>? stats;
+  final String? loadError;
 }
 
 enum _AdminSection { users, notifications, games, stats }
