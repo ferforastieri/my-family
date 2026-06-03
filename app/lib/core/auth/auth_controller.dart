@@ -1,6 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 
 import '../../data/models.dart';
+import '../config/app_config.dart';
 import '../socket/socket_client.dart';
 import 'token_store.dart';
 
@@ -73,6 +78,36 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  Future<void> updateAvatar(XFile file) async {
+    final currentToken = token;
+    if (currentToken == null) {
+      throw Exception('Entre para alterar sua foto.');
+    }
+    final request = http.MultipartRequest(
+      'POST',
+      AppConfig.apiUri('/auth/avatar'),
+    );
+    request.headers['Authorization'] = 'Bearer $currentToken';
+    request.files.add(http.MultipartFile.fromBytes(
+      'file',
+      await file.readAsBytes(),
+      filename: file.name,
+    ));
+
+    final response = await request.send();
+    final body = await response.stream.bytesToString();
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(body.isEmpty ? 'Erro ao enviar avatar.' : body);
+    }
+
+    final raw = await compute(_decodeJsonMap, body);
+    final rawUser = raw['user'];
+    if (rawUser is Map) {
+      user = AppUser.fromJson(Map<String, dynamic>.from(rawUser));
+      notifyListeners();
+    }
+  }
+
   Future<void> signOut() async {
     user = null;
     token = null;
@@ -88,4 +123,9 @@ class AuthController extends ChangeNotifier {
     await socket.ensureConnected(token: token);
     notifyListeners();
   }
+}
+
+Map<String, dynamic> _decodeJsonMap(String body) {
+  return Map<String, dynamic>.from(
+      const JsonDecoder().convert(body) as Map<dynamic, dynamic>);
 }

@@ -21,6 +21,8 @@ void main() {
     statusBarColor: Colors.transparent,
     systemNavigationBarColor: Colors.transparent,
     systemNavigationBarDividerColor: Colors.transparent,
+    systemStatusBarContrastEnforced: false,
+    systemNavigationBarContrastEnforced: false,
     statusBarIconBrightness: Brightness.dark,
     systemNavigationBarIconBrightness: Brightness.dark,
   ));
@@ -104,27 +106,45 @@ class _SystemSafeArea extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
     final brightness = Theme.of(context).brightness;
     final overlayStyle = brightness == Brightness.dark
         ? SystemUiOverlayStyle.light.copyWith(
-            statusBarColor: Colors.transparent,
-            systemNavigationBarColor: Colors.transparent,
-            systemNavigationBarDividerColor: Colors.transparent,
+            statusBarColor: palette.bgStart,
+            systemNavigationBarColor: palette.card,
+            systemNavigationBarDividerColor: palette.card,
+            systemStatusBarContrastEnforced: false,
+            systemNavigationBarContrastEnforced: false,
           )
         : SystemUiOverlayStyle.dark.copyWith(
-            statusBarColor: Colors.transparent,
-            systemNavigationBarColor: Colors.transparent,
-            systemNavigationBarDividerColor: Colors.transparent,
+            statusBarColor: palette.bgStart,
+            systemNavigationBarColor: palette.card,
+            systemNavigationBarDividerColor: palette.card,
+            systemStatusBarContrastEnforced: false,
+            systemNavigationBarContrastEnforced: false,
           );
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: overlayStyle,
-      child: SafeArea(
-        top: true,
-        bottom: true,
-        left: false,
-        right: false,
-        child: child,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ColoredBox(color: palette.bgStart),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: MediaQuery.of(context).padding.bottom,
+            child: ColoredBox(color: palette.card),
+          ),
+          SafeArea(
+            top: true,
+            bottom: true,
+            left: false,
+            right: false,
+            child: child,
+          ),
+        ],
       ),
     );
   }
