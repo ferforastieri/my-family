@@ -6,6 +6,7 @@ import { UserService } from '../../application/user.service';
 import { LoginDto, RegisterDto } from '../../auth.dto';
 import { WsSessionService } from '../../application/ws-session.service';
 import type { UserRole } from '@shared/domain/entities';
+import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
@@ -60,9 +61,9 @@ export class AuthGateway {
   }
 
   @SubscribeMessage('users.list')
-  async listUsers(@ConnectedSocket() client: Socket) {
+  async listUsers(@ConnectedSocket() client: Socket, @MessageBody() query?: PaginationQuery) {
     await this.session.requireRole(client, ['admin']);
-    return this.users.list();
+    return this.users.list(query);
   }
 
   @SubscribeMessage('users.update')

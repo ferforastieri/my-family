@@ -27,6 +27,25 @@ class AppUser {
       );
 }
 
+class PaginatedResult<T> {
+  const PaginatedResult({
+    required this.items,
+    required this.page,
+    required this.limit,
+    required this.total,
+    required this.pages,
+  });
+
+  final List<T> items;
+  final int page;
+  final int limit;
+  final int total;
+  final int pages;
+
+  bool get hasPrevious => page > 1;
+  bool get hasNext => page < pages;
+}
+
 class FamilyItem {
   const FamilyItem(this.data);
   final Map<String, dynamic> data;

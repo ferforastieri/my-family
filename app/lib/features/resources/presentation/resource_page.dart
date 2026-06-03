@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_pagination.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
 import '../../../core/widgets/love_action_card.dart';
@@ -32,9 +33,10 @@ class ResourcePage extends StatefulWidget {
 }
 
 class _ResourcePageState extends State<ResourcePage> {
-  late Future<List<FamilyItem>> future =
-      widget.repository.list(widget.resource);
-  String _albumFilter = 'Todos';
+  static const _pageLimit = 24;
+  int page = 1;
+  late Future<PaginatedResult<FamilyItem>> future =
+      widget.repository.listPage(widget.resource, page, _pageLimit);
 
   @override
   void initState() {
@@ -54,7 +56,14 @@ class _ResourcePageState extends State<ResourcePage> {
 
   void _handleRealtimeChange(dynamic _) {
     if (!mounted) return;
-    setState(() => future = widget.repository.list(widget.resource));
+    _reload();
+  }
+
+  void _reload({int? nextPage}) {
+    setState(() {
+      page = nextPage ?? page;
+      future = widget.repository.listPage(widget.resource, page, _pageLimit);
+    });
   }
 
   @override
@@ -62,22 +71,15 @@ class _ResourcePageState extends State<ResourcePage> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: LoveBackground(
-        child: FutureBuilder<List<FamilyItem>>(
+        child: FutureBuilder<PaginatedResult<FamilyItem>>(
           future: future,
           builder: (context, snapshot) {
             if (!snapshot.hasData) return const PageSkeleton();
-            final items = snapshot.data!;
-            final visibleItems =
-                widget.resource == 'fotos' && _albumFilter != 'Todos'
-                    ? items.where((item) => item.album == _albumFilter).toList()
-                    : items;
-            final albums = widget.resource == 'fotos'
-                ? _albumsFor(items)
-                : const <String>[];
+            final result = snapshot.data!;
+            final items = result.items;
             return RefreshIndicator(
               onRefresh: () async {
-                setState(
-                    () => future = widget.repository.list(widget.resource));
+                _reload(nextPage: 1);
                 widget.toast
                     .info('Atualizando ${widget.title.toLowerCase()}...');
               },
@@ -100,26 +102,14 @@ class _ResourcePageState extends State<ResourcePage> {
                             onPressed: () => _openCreate(context),
                           ),
                           const SizedBox(height: 14),
-                          _ResourceMetrics(
-                            resource: widget.resource,
-                            total: items.length,
-                            visible: visibleItems.length,
-                            albums: albums.length,
-                          ),
-                          if (widget.resource == 'fotos') ...[
-                            const SizedBox(height: 14),
-                            LovePanel(
-                              padding: const EdgeInsets.all(12),
-                              child: _AlbumFilter(
-                                albums: albums,
-                                selected: _albumFilter,
-                                onSelected: (album) =>
-                                    setState(() => _albumFilter = album),
-                              ),
-                            ),
-                          ],
+	                          _ResourceMetrics(
+	                            resource: widget.resource,
+	                            total: result.total,
+	                            visible: items.length,
+	                            albums: 0,
+	                          ),
                           const SizedBox(height: 16),
-                          visibleItems.isEmpty
+                          items.isEmpty
                               ? _EmptyResourceState(
                                   title: '${widget.title} ainda está vazio.',
                                   actionLabel: _actionLabelFor(widget.resource),
@@ -127,11 +117,23 @@ class _ResourcePageState extends State<ResourcePage> {
                                 )
                               : _ResourceGrid(
                                   resource: widget.resource,
-                                  items: visibleItems,
+                                  items: items,
                                   onEdit: _openEdit,
                                   onDelete: _deleteItem,
                                   onView: _openPhotoViewer,
                                 ),
+                          const SizedBox(height: 12),
+                          AppPagination(
+                            page: result.page,
+                            pages: result.pages,
+                            total: result.total,
+                            onPrevious: result.hasPrevious
+                                ? () => _reload(nextPage: result.page - 1)
+                                : null,
+                            onNext: result.hasNext
+                                ? () => _reload(nextPage: result.page + 1)
+                                : null,
+                          ),
                         ],
                       ),
                     ),
@@ -153,20 +155,18 @@ class _ResourcePageState extends State<ResourcePage> {
               repository: widget.repository,
               toast: widget.toast,
               onSave: (data) async {
-                await widget.repository.create(widget.resource, data);
-                widget.toast.success('Memória salva com sucesso.');
-                setState(
-                    () => future = widget.repository.list(widget.resource));
+	                await widget.repository.create(widget.resource, data);
+	                widget.toast.success('Memória salva com sucesso.');
+	                _reload(nextPage: 1);
               },
             )
           : ResourceDialog(
               title: widget.title,
               resource: widget.resource,
               onSave: (data) async {
-                await widget.repository.create(widget.resource, data);
-                widget.toast.success('Item salvo com sucesso.');
-                setState(
-                    () => future = widget.repository.list(widget.resource));
+	                await widget.repository.create(widget.resource, data);
+	                widget.toast.success('Item salvo com sucesso.');
+	                _reload(nextPage: 1);
               },
             ),
     );
@@ -181,10 +181,9 @@ class _ResourcePageState extends State<ResourcePage> {
               toast: widget.toast,
               item: item,
               onSave: (data) async {
-                await widget.repository.update(widget.resource, item.id, data);
-                widget.toast.success('Memória atualizada.');
-                setState(
-                    () => future = widget.repository.list(widget.resource));
+	                await widget.repository.update(widget.resource, item.id, data);
+	                widget.toast.success('Memória atualizada.');
+	                _reload();
               },
             )
           : ResourceDialog(
@@ -192,21 +191,20 @@ class _ResourcePageState extends State<ResourcePage> {
               resource: widget.resource,
               initial: item,
               onSave: (data) async {
-                await widget.repository.update(widget.resource, item.id, data);
-                widget.toast.success('Item atualizado.');
-                setState(
-                    () => future = widget.repository.list(widget.resource));
+	                await widget.repository.update(widget.resource, item.id, data);
+	                widget.toast.success('Item atualizado.');
+	                _reload();
               },
             ),
     );
   }
 
   Future<void> _deleteItem(FamilyItem item) async {
-    await widget.repository.delete(widget.resource, item.id);
-    widget.toast.success(
-        widget.resource == 'fotos' ? 'Memória removida.' : 'Item removido.');
-    setState(() => future = widget.repository.list(widget.resource));
-  }
+	    await widget.repository.delete(widget.resource, item.id);
+	    widget.toast.success(
+	        widget.resource == 'fotos' ? 'Memória removida.' : 'Item removido.');
+	    _reload();
+	  }
 
   void _openPhotoViewer(FamilyItem item) {
     showAppSheet<void>(
@@ -879,34 +877,6 @@ String _datePayload(DateTime value) {
   return '${value.year}-$month-$day';
 }
 
-class _AlbumFilter extends StatelessWidget {
-  const _AlbumFilter(
-      {required this.albums, required this.selected, required this.onSelected});
-
-  final List<String> albums;
-  final String selected;
-  final ValueChanged<String> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        spacing: 10,
-        runSpacing: 10,
-        children: [
-          for (final album in albums)
-            ChoiceChip(
-              label: Text(album),
-              selected: selected == album,
-              onSelected: (_) => onSelected(album),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
 class _PhotoViewer extends StatelessWidget {
   const _PhotoViewer({required this.item});
 
@@ -954,16 +924,6 @@ String _titleFor(String resource, String fallback) {
     'fotos' => 'Nossa Galeria de Memórias',
     _ => fallback,
   };
-}
-
-List<String> _albumsFor(List<FamilyItem> items) {
-  final albums = {'Todos', ...items.map((item) => item.album)};
-  return albums.toList()
-    ..sort((a, b) => a == 'Todos'
-        ? -1
-        : b == 'Todos'
-            ? 1
-            : a.compareTo(b));
 }
 
 String _photoUrl(FamilyItem item) {

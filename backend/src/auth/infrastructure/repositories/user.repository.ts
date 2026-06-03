@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { UserDocument, UserMongoDocument } from '@shared/infrastructure/database/schemas';
-import { cleanUndefined, toId } from '@shared/infrastructure/database/mongo.utils';
+import { cleanUndefined, normalizePagination, paginated, PaginationQuery, toId } from '@shared/infrastructure/database/mongo.utils';
 import type { UserEntity, UserRole } from '@shared/domain/entities';
 
 export type CreateUserData = {
@@ -30,9 +30,13 @@ export class UserRepository {
     };
   }
 
-  async list(): Promise<UserEntity[]> {
-    const docs = await this.model.find().sort({ createdAt: -1 }).exec();
-    return docs.map((doc) => this.toEntity(doc)!);
+  async list(query?: PaginationQuery) {
+    const { page, limit, skip } = normalizePagination(query, { page: 1, limit: 20, maxLimit: 100 });
+    const [docs, total] = await Promise.all([
+      this.model.find().sort({ createdAt: -1 }).skip(skip).limit(limit).exec(),
+      this.model.countDocuments().exec(),
+    ]);
+    return paginated(docs.map((doc) => this.toEntity(doc)!), total, page, limit);
   }
 
   async findById(id: string): Promise<UserEntity | null> {

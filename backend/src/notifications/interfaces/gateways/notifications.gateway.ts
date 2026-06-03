@@ -4,6 +4,7 @@ import { Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/ws-session.service';
 import { NotificationsService, NotificationCreateDto } from '../../application/notifications.service';
 import { NotificationSchedulerService } from '../../application/notification-scheduler.service';
+import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class NotificationsGateway {
@@ -14,8 +15,8 @@ export class NotificationsGateway {
   ) {}
 
   @SubscribeMessage('notifications.list')
-  list() {
-    return this.notifications.list();
+  list(@MessageBody() query?: PaginationQuery) {
+    return this.notifications.list(query);
   }
 
   @SubscribeMessage('notifications.create')

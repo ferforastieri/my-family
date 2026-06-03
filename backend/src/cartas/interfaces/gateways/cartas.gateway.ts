@@ -3,6 +3,7 @@ import { Server, Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/ws-session.service';
 import { CartasService } from '../../application/cartas.service';
 import type { CartaWrite } from '../../infrastructure/repositories/cartas.repository';
+import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class CartasGateway {
@@ -15,8 +16,8 @@ export class CartasGateway {
   ) {}
 
   @SubscribeMessage('cartas.list')
-  list() {
-    return this.cartas.findAll();
+  list(@MessageBody() query?: PaginationQuery) {
+    return this.cartas.findAll(query);
   }
 
   @SubscribeMessage('cartas.create')

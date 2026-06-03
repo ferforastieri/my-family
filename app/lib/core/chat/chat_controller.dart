@@ -42,7 +42,12 @@ class ChatController extends ChangeNotifier {
       notifyListeners();
     }
     try {
-      final rows = await socket.emitAck<List<dynamic>>('chat.conversations');
+      final data = await socket.emitAck<dynamic>(
+          'chat.conversations', {'page': 1, 'limit': 30});
+      final rows = data is List
+          ? data
+          : ((Map<String, dynamic>.from(data as Map)['items'] as List?) ??
+              const []);
       conversations
         ..clear()
         ..addAll(rows.map((row) =>
@@ -80,8 +85,12 @@ class ChatController extends ChangeNotifier {
     errorMessage = null;
     notifyListeners();
     try {
-      final rows = await socket.emitAck<List<dynamic>>(
-          'chat.messages', {'conversationId': conversation.id});
+      final data = await socket.emitAck<dynamic>('chat.messages',
+          {'conversationId': conversation.id, 'page': 1, 'limit': 80});
+      final rows = data is List
+          ? data
+          : ((Map<String, dynamic>.from(data as Map)['items'] as List?) ??
+              const []);
       messages
         ..clear()
         ..addAll(rows.map((row) =>

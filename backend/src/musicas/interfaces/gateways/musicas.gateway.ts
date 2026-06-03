@@ -3,6 +3,7 @@ import { Server, Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/ws-session.service';
 import { MusicasService } from '../../application/musicas.service';
 import type { MusicaWrite } from '../../infrastructure/repositories/musicas.repository';
+import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class MusicasGateway {
@@ -15,8 +16,8 @@ export class MusicasGateway {
   ) {}
 
   @SubscribeMessage('musicas.list')
-  list() {
-    return this.musicas.findAll();
+  list(@MessageBody() query?: PaginationQuery) {
+    return this.musicas.findAll(query);
   }
 
   @SubscribeMessage('musicas.create')

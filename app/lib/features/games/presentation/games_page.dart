@@ -446,15 +446,18 @@ class _WordSearchGameState extends State<_WordSearchGame> {
   final name = TextEditingController();
   List<GameWord> gameWords = [];
   late List<String> words;
-  late List<String> grid;
+  late _WordPuzzle puzzle;
   final Set<String> found = {};
+  final Set<int> foundCells = {};
+  final List<int> selectedCells = [];
+  int? dragStart;
   bool loading = true;
 
   @override
   void initState() {
     super.initState();
     words = [];
-    grid = [];
+    puzzle = _WordPuzzle.empty();
     _load();
   }
 
@@ -478,12 +481,20 @@ class _WordSearchGameState extends State<_WordSearchGame> {
 
   void _newGame() {
     words = _randomWords(gameWords);
-    grid = _wordGrid(words);
+    puzzle = _generateWordPuzzle(words);
     found.clear();
+    foundCells.clear();
+    selectedCells.clear();
+    dragStart = null;
   }
 
-  Future<void> _toggle(String word) async {
-    setState(() => found.add(word));
+  Future<void> _completeWord(String word, List<int> path) async {
+    setState(() {
+      found.add(word);
+      foundCells.addAll(path);
+      selectedCells.clear();
+      dragStart = null;
+    });
     if (found.length == words.length) {
       await widget.repository.completeGame(
         game: 'word_search',
@@ -493,6 +504,45 @@ class _WordSearchGameState extends State<_WordSearchGame> {
       );
       widget.toast.success('Caça palavras concluído!');
     }
+  }
+
+  void _startSelection(int index) {
+    setState(() {
+      dragStart = index;
+      selectedCells
+        ..clear()
+        ..add(index);
+    });
+  }
+
+  void _updateSelection(int index) {
+    final start = dragStart;
+    if (start == null) return;
+    final path = _linePath(start, index, puzzle.size);
+    if (path.isEmpty) return;
+    setState(() {
+      selectedCells
+        ..clear()
+        ..addAll(path);
+    });
+  }
+
+  Future<void> _endSelection() async {
+    if (selectedCells.isEmpty) return;
+    final selectedText = selectedCells
+        .map((index) => puzzle.letters[index ~/ puzzle.size][index % puzzle.size])
+        .join();
+    for (final word in words) {
+      if (found.contains(word)) continue;
+      if (selectedText == word || selectedText.split('').reversed.join() == word) {
+        await _completeWord(word, List<int>.from(selectedCells));
+        return;
+      }
+    }
+    setState(() {
+      selectedCells.clear();
+      dragStart = null;
+    });
   }
 
   @override
@@ -512,7 +562,7 @@ class _WordSearchGameState extends State<_WordSearchGame> {
                 children: [
                   _GamePlayHeader(
                     title: 'Caça Palavras',
-                    subtitle: 'Toque nas palavras escondidas.',
+                    subtitle: 'Arraste sobre as letras para formar cada palavra.',
                     icon: Icons.grid_on_outlined,
                     onBack: widget.onBack,
                   ),
@@ -534,25 +584,46 @@ class _WordSearchGameState extends State<_WordSearchGame> {
                                 ),
                                 const SizedBox(height: 14),
                               ],
-                              Text('Encontre as palavras tocando nelas.',
+                              Text('Encontre as palavras na horizontal, vertical e diagonal.',
                                   style: TextStyle(color: palette.muted)),
                               const SizedBox(height: 18),
+                              _WordSearchBoard(
+                                puzzle: puzzle,
+                                foundCells: foundCells,
+                                selectedCells: selectedCells,
+                                onSelectionStart: _startSelection,
+                                onSelectionUpdate: _updateSelection,
+                                onSelectionEnd: _endSelection,
+                              ),
+                              const SizedBox(height: 20),
                               Wrap(
-                                spacing: 10,
-                                runSpacing: 10,
+                                spacing: 8,
+                                runSpacing: 8,
                                 children: [
-                                  for (final token in grid)
-                                    FilterChip(
-                                      selected: found.contains(token),
-                                      label: Text(token),
-                                      onSelected: words.contains(token) &&
-                                              !found.contains(token)
-                                          ? (_) => _toggle(token)
-                                          : null,
+                                  for (final word in words)
+                                    Chip(
+                                      avatar: Icon(
+                                        found.contains(word)
+                                            ? Icons.check_circle
+                                            : Icons.search,
+                                        size: 18,
+                                        color: found.contains(word)
+                                            ? Colors.green
+                                            : palette.primary,
+                                      ),
+                                      label: Text(
+                                        word,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w900,
+                                          decoration: found.contains(word)
+                                              ? TextDecoration.lineThrough
+                                              : null,
+                                        ),
+                                      ),
                                     ),
                                 ],
                               ),
-                              const SizedBox(height: 20),
+                              const SizedBox(height: 16),
                               LinearProgressIndicator(
                                 value: words.isEmpty
                                     ? 0
@@ -580,6 +651,122 @@ class _WordSearchGameState extends State<_WordSearchGame> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _WordSearchBoard extends StatelessWidget {
+  const _WordSearchBoard({
+    required this.puzzle,
+    required this.foundCells,
+    required this.selectedCells,
+    required this.onSelectionStart,
+    required this.onSelectionUpdate,
+    required this.onSelectionEnd,
+  });
+
+  final _WordPuzzle puzzle;
+  final Set<int> foundCells;
+  final List<int> selectedCells;
+  final ValueChanged<int> onSelectionStart;
+  final ValueChanged<int> onSelectionUpdate;
+  final Future<void> Function() onSelectionEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final selected = selectedCells.toSet();
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final boardSize = min(constraints.maxWidth, 560.0);
+        final cellSize = boardSize / puzzle.size;
+        int? indexFromOffset(Offset localPosition) {
+          final col = (localPosition.dx / cellSize).floor();
+          final row = (localPosition.dy / cellSize).floor();
+          if (row < 0 || row >= puzzle.size || col < 0 || col >= puzzle.size) {
+            return null;
+          }
+          return row * puzzle.size + col;
+        }
+
+        return Center(
+          child: GestureDetector(
+            onPanStart: (details) {
+              final index = indexFromOffset(details.localPosition);
+              if (index != null) onSelectionStart(index);
+            },
+            onPanUpdate: (details) {
+              final index = indexFromOffset(details.localPosition);
+              if (index != null) onSelectionUpdate(index);
+            },
+            onPanEnd: (_) => onSelectionEnd(),
+            onTapDown: (details) {
+              final index = indexFromOffset(details.localPosition);
+              if (index != null) onSelectionStart(index);
+            },
+            onTapUp: (_) => onSelectionEnd(),
+            child: Container(
+              width: boardSize,
+              height: boardSize,
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: .72),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: palette.primary.withValues(alpha: .22)),
+                boxShadow: [
+                  BoxShadow(
+                    color: palette.primary.withValues(alpha: .10),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: GridView.builder(
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: puzzle.size,
+                  mainAxisSpacing: 3,
+                  crossAxisSpacing: 3,
+                ),
+                itemCount: puzzle.size * puzzle.size,
+                itemBuilder: (context, index) {
+                  final row = index ~/ puzzle.size;
+                  final col = index % puzzle.size;
+                  final isFound = foundCells.contains(index);
+                  final isSelected = selected.contains(index);
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 120),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: isFound
+                          ? Colors.green.withValues(alpha: .20)
+                          : isSelected
+                              ? palette.primary.withValues(alpha: .24)
+                              : palette.card,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isFound
+                            ? Colors.green
+                            : isSelected
+                                ? palette.primary
+                                : palette.border,
+                      ),
+                    ),
+                    child: Text(
+                      puzzle.letters[row][col],
+                      style: TextStyle(
+                        color: isFound ? Colors.green.shade800 : palette.foreground,
+                        fontSize: cellSize.clamp(18, 28).toDouble(),
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -674,7 +861,8 @@ class _QuizFinished extends StatelessWidget {
 List<String> _randomWords(List<GameWord> gameWords) {
   final all = gameWords
       .where((word) => word.active && word.word.trim().isNotEmpty)
-      .map((word) => word.word.trim().toUpperCase())
+      .map((word) => _normalizeWord(word.word))
+      .where((word) => word.length >= 3 && word.length <= _wordSearchSize)
       .toList();
   if (all.isEmpty) {
     all.addAll([
@@ -693,23 +881,130 @@ List<String> _randomWords(List<GameWord> gameWords) {
     ]);
   }
   all.shuffle(Random());
-  return all.take(6).toList();
+  return all.toSet().take(8).toList();
 }
 
-List<String> _wordGrid(List<String> words) {
-  final fillers = [
-    'CASA',
-    'ROSA',
-    'LUZ',
-    'VIDA',
-    'PAZ',
-    'CEU',
-    'DIA',
-    'SORRISO',
-    'ABRACO',
-    'DOCE',
-    'SONHO',
-    'JARDIM',
-  ]..shuffle(Random());
-  return [...words, ...fillers.take(10)]..shuffle(Random());
+const _wordSearchSize = 12;
+
+class _WordPuzzle {
+  const _WordPuzzle({required this.size, required this.letters});
+
+  final int size;
+  final List<List<String>> letters;
+
+  factory _WordPuzzle.empty() => _WordPuzzle(
+        size: _wordSearchSize,
+        letters: List.generate(
+          _wordSearchSize,
+          (_) => List.generate(_wordSearchSize, (_) => ''),
+        ),
+      );
+}
+
+class _WordDirection {
+  const _WordDirection(this.row, this.col);
+
+  final int row;
+  final int col;
+}
+
+final _wordDirections = [
+  const _WordDirection(0, 1),
+  const _WordDirection(1, 0),
+  const _WordDirection(1, 1),
+  const _WordDirection(-1, 1),
+  const _WordDirection(0, -1),
+  const _WordDirection(-1, 0),
+  const _WordDirection(-1, -1),
+  const _WordDirection(1, -1),
+];
+
+_WordPuzzle _generateWordPuzzle(List<String> words) {
+  final random = Random();
+  final board = List.generate(
+    _wordSearchSize,
+    (_) => List.generate(_wordSearchSize, (_) => ''),
+  );
+  final sortedWords = [...words]..sort((a, b) => b.length.compareTo(a.length));
+  for (final word in sortedWords) {
+    _placeWord(board, word, random);
+  }
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  for (var row = 0; row < _wordSearchSize; row++) {
+    for (var col = 0; col < _wordSearchSize; col++) {
+      if (board[row][col].isEmpty) {
+        board[row][col] = alphabet[random.nextInt(alphabet.length)];
+      }
+    }
+  }
+  return _WordPuzzle(size: _wordSearchSize, letters: board);
+}
+
+bool _placeWord(List<List<String>> board, String word, Random random) {
+  for (var attempt = 0; attempt < 180; attempt++) {
+    final direction = _wordDirections[random.nextInt(_wordDirections.length)];
+    final row = random.nextInt(_wordSearchSize);
+    final col = random.nextInt(_wordSearchSize);
+    if (!_canPlaceWord(board, word, row, col, direction)) continue;
+    for (var i = 0; i < word.length; i++) {
+      board[row + direction.row * i][col + direction.col * i] = word[i];
+    }
+    return true;
+  }
+  return false;
+}
+
+bool _canPlaceWord(
+  List<List<String>> board,
+  String word,
+  int row,
+  int col,
+  _WordDirection direction,
+) {
+  final endRow = row + direction.row * (word.length - 1);
+  final endCol = col + direction.col * (word.length - 1);
+  if (endRow < 0 ||
+      endRow >= _wordSearchSize ||
+      endCol < 0 ||
+      endCol >= _wordSearchSize) {
+    return false;
+  }
+  for (var i = 0; i < word.length; i++) {
+    final current = board[row + direction.row * i][col + direction.col * i];
+    if (current.isNotEmpty && current != word[i]) return false;
+  }
+  return true;
+}
+
+List<int> _linePath(int start, int end, int size) {
+  final startRow = start ~/ size;
+  final startCol = start % size;
+  final endRow = end ~/ size;
+  final endCol = end % size;
+  final rowDelta = endRow - startRow;
+  final colDelta = endCol - startCol;
+  final rowStep = rowDelta == 0 ? 0 : rowDelta.sign;
+  final colStep = colDelta == 0 ? 0 : colDelta.sign;
+  if (rowDelta != 0 && colDelta != 0 && rowDelta.abs() != colDelta.abs()) {
+    return const [];
+  }
+  if (rowDelta == 0 && colDelta == 0) return [start];
+  final length = max(rowDelta.abs(), colDelta.abs()) + 1;
+  return List.generate(
+    length,
+    (i) => (startRow + rowStep * i) * size + startCol + colStep * i,
+  );
+}
+
+String _normalizeWord(String value) {
+  return value
+      .trim()
+      .toUpperCase()
+      .replaceAll(RegExp(r'[ÁÀÂÃÄ]'), 'A')
+      .replaceAll(RegExp(r'[ÉÈÊË]'), 'E')
+      .replaceAll(RegExp(r'[ÍÌÎÏ]'), 'I')
+      .replaceAll(RegExp(r'[ÓÒÔÕÖ]'), 'O')
+      .replaceAll(RegExp(r'[ÚÙÛÜ]'), 'U')
+      .replaceAll('Ç', 'C')
+      .replaceAll(RegExp(r'[^A-Z]'), '');
 }

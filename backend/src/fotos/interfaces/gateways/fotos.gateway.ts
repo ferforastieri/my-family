@@ -3,6 +3,7 @@ import { Server, Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/ws-session.service';
 import { FotosService } from '../../application/fotos.service';
 import type { FotoWrite } from '../../infrastructure/repositories/fotos.repository';
+import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class FotosGateway {
@@ -15,8 +16,8 @@ export class FotosGateway {
   ) {}
 
   @SubscribeMessage('fotos.list')
-  list() {
-    return this.fotos.findAll();
+  list(@MessageBody() query?: PaginationQuery) {
+    return this.fotos.findAll(query);
   }
 
   @SubscribeMessage('fotos.create')

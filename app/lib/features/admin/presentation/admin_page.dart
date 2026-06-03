@@ -5,6 +5,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_page_header.dart';
+import '../../../core/widgets/app_pagination.dart';
 import '../../../core/widgets/app_sheet.dart';
 import '../../../core/widgets/love_action_card.dart';
 import '../../../core/widgets/love_background.dart';
@@ -29,11 +30,23 @@ class AdminPage extends StatefulWidget {
 }
 
 class _AdminPageState extends State<AdminPage> {
+  static const _adminPageLimit = 20;
+
   List<AppUser> users = [];
   List<AppNotification> notifications = [];
   List<QuizQuestion> questions = [];
   List<GameWord> words = [];
   List<GameStat> stats = [];
+  PaginatedResult<AppUser>? usersPagination;
+  PaginatedResult<AppNotification>? notificationsPagination;
+  PaginatedResult<QuizQuestion>? questionsPagination;
+  PaginatedResult<GameWord>? wordsPagination;
+  PaginatedResult<GameStat>? statsPagination;
+  int usersPage = 1;
+  int notificationsPage = 1;
+  int questionsPage = 1;
+  int wordsPage = 1;
+  int statsPage = 1;
   bool loading = true;
   String? loadError;
   _AdminSection selected = _AdminSection.users;
@@ -65,19 +78,44 @@ class _AdminPageState extends State<AdminPage> {
     final errors = <String>[];
     await Future.wait([
       _loadPart('usuários', () async {
-        users = await widget.repository.listUsers();
+        final page = await widget.repository.listUsersPage(
+          usersPage,
+          _adminPageLimit,
+        );
+        users = page.items;
+        usersPagination = page;
       }, errors),
       _loadPart('notificações', () async {
-        notifications = await widget.repository.listNotificationsAdmin();
+        final page = await widget.repository.listNotificationsAdminPage(
+          notificationsPage,
+          _adminPageLimit,
+        );
+        notifications = page.items;
+        notificationsPagination = page;
       }, errors),
       _loadPart('perguntas', () async {
-        questions = await widget.repository.listQuizQuestionsAdmin();
+        final page = await widget.repository.listQuizQuestionsAdminPage(
+          questionsPage,
+          _adminPageLimit,
+        );
+        questions = page.items;
+        questionsPagination = page;
       }, errors),
       _loadPart('palavras', () async {
-        words = await widget.repository.listGameWordsAdmin();
+        final page = await widget.repository.listGameWordsAdminPage(
+          wordsPage,
+          _adminPageLimit,
+        );
+        words = page.items;
+        wordsPagination = page;
       }, errors),
       _loadPart('estatísticas', () async {
-        stats = await widget.repository.gameStats();
+        final page = await widget.repository.gameStatsPage(
+          statsPage,
+          _adminPageLimit,
+        );
+        stats = page.items;
+        statsPagination = page;
       }, errors),
     ]);
     if (!mounted) return;
@@ -121,9 +159,11 @@ class _AdminPageState extends State<AdminPage> {
                     const _AdminHero(),
                     const SizedBox(height: 16),
                     _AdminMetrics(
-                      users: users.length,
-                      notifications: notifications.length,
-                      games: questions.length + words.length,
+                      users: usersPagination?.total ?? users.length,
+                      notifications: notificationsPagination?.total ??
+                          notifications.length,
+                      games: (questionsPagination?.total ?? questions.length) +
+                          (wordsPagination?.total ?? words.length),
                       stats: stats.fold<int>(
                           0, (total, stat) => total + stat.count),
                     ),
@@ -185,6 +225,10 @@ class _AdminPageState extends State<AdminPage> {
           loading: loading,
           onEdit: _openUserSheet,
           onDelete: _deleteUser,
+          pagination: _pagination(
+            usersPagination,
+            (page) => usersPage = page,
+          ),
         ),
       _AdminSection.notifications => _NotificationsAdminTab(
           notifications: notifications,
@@ -195,6 +239,10 @@ class _AdminPageState extends State<AdminPage> {
           onClear: _clearNotifications,
           onSend: _sendNotification,
           onSchedule: _scheduleNotification,
+          pagination: _pagination(
+            notificationsPagination,
+            (page) => notificationsPage = page,
+          ),
         ),
       _AdminSection.games => _GamesAdminTab(
           questions: questions,
@@ -206,12 +254,48 @@ class _AdminPageState extends State<AdminPage> {
           onAddWord: () => _openWordSheet(),
           onEditWord: _openWordSheet,
           onDeleteWord: _deleteWord,
+          questionsPagination: _pagination(
+            questionsPagination,
+            (page) => questionsPage = page,
+          ),
+          wordsPagination: _pagination(
+            wordsPagination,
+            (page) => wordsPage = page,
+          ),
         ),
       _AdminSection.stats => _StatsAdminTab(
           stats: stats,
           loading: loading,
+          pagination: _pagination(
+            statsPagination,
+            (page) => statsPage = page,
+          ),
         ),
     };
+  }
+
+  Widget? _pagination<T>(
+    PaginatedResult<T>? result,
+    ValueChanged<int> setPage,
+  ) {
+    if (result == null || result.pages <= 1) return null;
+    return AppPagination(
+      page: result.page,
+      pages: result.pages,
+      total: result.total,
+      onPrevious: result.hasPrevious
+          ? () {
+              setState(() => setPage(result.page - 1));
+              _load();
+            }
+          : null,
+      onNext: result.hasNext
+          ? () {
+              setState(() => setPage(result.page + 1));
+              _load();
+            }
+          : null,
+    );
   }
 
   Future<void> _openUserSheet(AppUser user) async {
@@ -242,6 +326,7 @@ class _AdminPageState extends State<AdminPage> {
         onSave: (data) async {
           if (notification == null) {
             await widget.repository.createNotification(data);
+            notificationsPage = 1;
           } else {
             await widget.repository.updateNotification(notification.id, data);
           }
@@ -260,6 +345,7 @@ class _AdminPageState extends State<AdminPage> {
 
   Future<void> _clearNotifications() async {
     await widget.repository.clearNotifications();
+    notificationsPage = 1;
     widget.toast.success('Notificações limpas.');
     await _load();
   }
@@ -300,6 +386,7 @@ class _AdminPageState extends State<AdminPage> {
         onSave: (data) async {
           if (question == null) {
             await widget.repository.createQuizQuestion(data);
+            questionsPage = 1;
           } else {
             await widget.repository.updateQuizQuestion(question.id, data);
           }
@@ -324,6 +411,7 @@ class _AdminPageState extends State<AdminPage> {
         onSave: (data) async {
           if (word == null) {
             await widget.repository.createGameWord(data);
+            wordsPage = 1;
           } else {
             await widget.repository.updateGameWord(word.id, data);
           }
@@ -677,12 +765,14 @@ class _UsersAdminTab extends StatelessWidget {
     required this.loading,
     required this.onEdit,
     required this.onDelete,
+    required this.pagination,
   });
 
   final List<AppUser> users;
   final bool loading;
   final ValueChanged<AppUser> onEdit;
   final ValueChanged<AppUser> onDelete;
+  final Widget? pagination;
 
   @override
   Widget build(BuildContext context) {
@@ -699,9 +789,10 @@ class _UsersAdminTab extends StatelessWidget {
                   ? const _EmptyAdminState('Nenhum usuário cadastrado.')
                   : ListView.separated(
                       padding: const EdgeInsets.fromLTRB(20, 8, 20, 22),
-                      itemCount: users.length,
+                      itemCount: users.length + (pagination == null ? 0 : 1),
                       separatorBuilder: (_, __) => const SizedBox(height: 10),
                       itemBuilder: (context, index) {
+                        if (index == users.length) return pagination!;
                         final user = users[index];
                         return _AdminTile(
                           icon: Icons.person_outline,
@@ -740,6 +831,7 @@ class _NotificationsAdminTab extends StatelessWidget {
     required this.onClear,
     required this.onSend,
     required this.onSchedule,
+    required this.pagination,
   });
 
   final List<AppNotification> notifications;
@@ -750,6 +842,7 @@ class _NotificationsAdminTab extends StatelessWidget {
   final VoidCallback onClear;
   final ValueChanged<AppNotification> onSend;
   final ValueChanged<AppNotification> onSchedule;
+  final Widget? pagination;
 
   @override
   Widget build(BuildContext context) {
@@ -781,9 +874,11 @@ class _NotificationsAdminTab extends StatelessWidget {
                   ? const _EmptyAdminState('Nenhuma notificação cadastrada.')
                   : ListView.separated(
                       padding: const EdgeInsets.fromLTRB(20, 8, 20, 22),
-                      itemCount: notifications.length,
+                      itemCount:
+                          notifications.length + (pagination == null ? 0 : 1),
                       separatorBuilder: (_, __) => const SizedBox(height: 10),
                       itemBuilder: (context, index) {
+                        if (index == notifications.length) return pagination!;
                         final notification = notifications[index];
                         return _AdminTile(
                           icon: Icons.notifications_outlined,
@@ -832,6 +927,8 @@ class _GamesAdminTab extends StatelessWidget {
     required this.onAddWord,
     required this.onEditWord,
     required this.onDeleteWord,
+    required this.questionsPagination,
+    required this.wordsPagination,
   });
 
   final List<QuizQuestion> questions;
@@ -843,6 +940,8 @@ class _GamesAdminTab extends StatelessWidget {
   final VoidCallback onAddWord;
   final ValueChanged<GameWord> onEditWord;
   final ValueChanged<GameWord> onDeleteWord;
+  final Widget? questionsPagination;
+  final Widget? wordsPagination;
 
   @override
   Widget build(BuildContext context) {
@@ -876,6 +975,8 @@ class _GamesAdminTab extends StatelessWidget {
                     final questionList = _GameSection(
                       title: 'Quiz do Amor',
                       empty: 'Nenhuma pergunta cadastrada.',
+                      scrollable: wide,
+                      pagination: questionsPagination,
                       children: [
                         for (final question in questions)
                           _AdminTile(
@@ -901,6 +1002,8 @@ class _GamesAdminTab extends StatelessWidget {
                     final wordList = _GameSection(
                       title: 'Caça Palavras',
                       empty: 'Nenhuma palavra cadastrada.',
+                      scrollable: wide,
+                      pagination: wordsPagination,
                       children: [
                         for (final word in words)
                           _AdminTile(
@@ -952,35 +1055,81 @@ class _GameSection extends StatelessWidget {
   const _GameSection({
     required this.title,
     required this.empty,
+    required this.scrollable,
+    required this.pagination,
     required this.children,
   });
 
   final String title;
   final String empty;
+  final bool scrollable;
+  final Widget? pagination;
   final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(title,
-              style:
-                  const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+          ),
           const SizedBox(height: 10),
-          if (children.isEmpty)
-            LovePanel(
-              padding: const EdgeInsets.all(18),
-              child: Text(empty, style: TextStyle(color: palette.muted)),
+          if (scrollable)
+            Expanded(
+              child: _GameSectionBody(
+                empty: empty,
+                pagination: pagination,
+                children: children,
+              ),
             )
           else
-            ...children.expand((child) => [child, const SizedBox(height: 10)]),
+            _GameSectionBody(
+              empty: empty,
+              pagination: pagination,
+              children: children,
+            ),
         ],
       ),
     );
+  }
+}
+
+class _GameSectionBody extends StatelessWidget {
+  const _GameSectionBody({
+    required this.children,
+    required this.empty,
+    required this.pagination,
+  });
+
+  final List<Widget> children;
+  final String empty;
+  final Widget? pagination;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    if (children.isEmpty) {
+      return LovePanel(
+        padding: const EdgeInsets.all(18),
+        child: Text(empty, style: TextStyle(color: palette.muted)),
+      );
+    }
+    final list = ListView.separated(
+      padding: EdgeInsets.zero,
+      shrinkWrap: true,
+      physics: const ClampingScrollPhysics(),
+      itemCount: children.length + (pagination == null ? 0 : 1),
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        if (index == children.length) return pagination!;
+        return children[index];
+      },
+    );
+    return list;
   }
 }
 
@@ -988,10 +1137,12 @@ class _StatsAdminTab extends StatelessWidget {
   const _StatsAdminTab({
     required this.stats,
     required this.loading,
+    required this.pagination,
   });
 
   final List<GameStat> stats;
   final bool loading;
+  final Widget? pagination;
 
   @override
   Widget build(BuildContext context) {
@@ -1008,9 +1159,10 @@ class _StatsAdminTab extends StatelessWidget {
                   ? const _EmptyAdminState('Nenhuma conclusão registrada.')
                   : ListView.separated(
                       padding: const EdgeInsets.fromLTRB(20, 8, 20, 22),
-                      itemCount: stats.length,
+                      itemCount: stats.length + (pagination == null ? 0 : 1),
                       separatorBuilder: (_, __) => const SizedBox(height: 10),
                       itemBuilder: (context, index) {
+                        if (index == stats.length) return pagination!;
                         final stat = stats[index];
                         return _AdminTile(
                           icon: stat.game == 'quiz'

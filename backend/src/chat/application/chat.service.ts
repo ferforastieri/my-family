@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { UserService } from '@auth/application/user.service';
 import type { UserEntity } from '@shared/domain/entities';
+import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 import { ChatRepository } from '../infrastructure/repositories/chat.repository';
 import { ListsService } from '../../lists/application/lists.service';
 import { ListsRealtimeGateway } from '../../lists/interfaces/gateways/lists-realtime.gateway';
@@ -28,11 +29,12 @@ export class ChatService {
   }
 
   async usersForChat(currentUser: UserEntity) {
-    return (await this.users.list()).map(({ id, name, email, role }) => ({ id, name, email, role })).filter((user) => user.id !== currentUser.id);
+    const page = await this.users.list({ page: 1, limit: 100 });
+    return page.items.map(({ id, name, email, role }) => ({ id, name, email, role })).filter((user) => user.id !== currentUser.id);
   }
 
-  async listConversations(user?: UserEntity | null) {
-    return this.chat.listForUser(user?.id);
+  async listConversations(user?: UserEntity | null, query?: PaginationQuery) {
+    return this.chat.listForUser(user?.id, query);
   }
 
   async createDirectConversation(currentUser: UserEntity, body: { title?: string; participantIds: string[] }) {
@@ -45,13 +47,14 @@ export class ChatService {
     });
   }
 
-  async listMessages(conversationId: string, user?: UserEntity | null) {
+  async listMessages(conversationId: string, user?: UserEntity | null, query?: PaginationQuery) {
     const conversation = await this.chat.findConversation(conversationId);
     if (!conversation) return [];
     if (conversation.type === 'direct' && (!user || !conversation.participantIds.includes(user.id))) {
       throw new ForbiddenException('Sem acesso a esta conversa.');
     }
-    return (await this.chat.listMessages(conversationId)).map((message) => this.messageDto(message));
+    const page = await this.chat.listMessages(conversationId, query);
+    return { ...page, items: page.items.map((message) => this.messageDto(message)) };
   }
 
   async sendMessage(

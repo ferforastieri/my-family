@@ -19,15 +19,6 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:7-alpine
-    container_name: my-family-redis
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
-    networks:
-      - my-family-network
-
   backend:
     build:
       context: .
@@ -37,7 +28,6 @@ services:
     environment:
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-my_family}:${MONGO_ROOT_PASSWORD}@mongo:27017/${MONGO_DB:-my-family}?authSource=admin
       MONGO_DB: ${MONGO_DB:-my-family}
-      REDIS_URL: redis://redis:6379
       PORT: 3001
       NODE_ENV: production
       JWT_SECRET: ${JWT_SECRET}
@@ -60,8 +50,6 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
-      redis:
-        condition: service_started
     networks:
       - my-family-network
 

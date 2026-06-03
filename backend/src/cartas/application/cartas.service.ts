@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { CartasRepository, CartaWrite } from '../infrastructure/repositories/cartas.repository';
+import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 @Injectable()
 export class CartasService {
   constructor(private cartas: CartasRepository) {}
 
-  async findAll() {
-    return this.cartas.list();
+  async findAll(query?: PaginationQuery) {
+    return this.cartas.list(query);
   }
 
   async findOne(id: string) {
@@ -25,4 +26,3 @@ export class CartasService {
     return this.cartas.delete(id);
   }
 }
-

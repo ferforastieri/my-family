@@ -7,7 +7,7 @@ import {
   ChatMessageDocument,
   ChatMessageMongoDocument,
 } from '@shared/infrastructure/database/schemas';
-import { toId } from '@shared/infrastructure/database/mongo.utils';
+import { normalizePagination, paginated, PaginationQuery, toId } from '@shared/infrastructure/database/mongo.utils';
 import type { ChatConversationEntity, ChatMessageEntity } from '@shared/domain/entities';
 
 export type ChatMessageWrite = {
@@ -59,14 +59,18 @@ export class ChatRepository {
     return this.toConversation(await this.conversations.create({ type: 'global', title: 'Chat global', participantIds: [] }))!;
   }
 
-  async listForUser(userId?: string | null) {
+  async listForUser(userId?: string | null, query?: PaginationQuery) {
     const global = await this.getGlobalConversation();
-    if (!userId) return [global];
+    const { page, limit, skip } = normalizePagination(query, { page: 1, limit: 30, maxLimit: 100 });
+    if (!userId) return paginated(page === 1 ? [global] : [], 1, page, limit);
     const rows = await this.conversations
       .find({ type: 'direct', participantIds: userId })
       .sort({ updatedAt: -1 })
+      .skip(skip)
+      .limit(Math.max(0, limit - 1))
       .exec();
-    return [global, ...rows.map((doc) => this.toConversation(doc)!)];
+    const totalDirect = await this.conversations.countDocuments({ type: 'direct', participantIds: userId }).exec();
+    return paginated([global, ...rows.map((doc) => this.toConversation(doc)!)], totalDirect + 1, page, limit);
   }
 
   async findConversation(id: string) {
@@ -77,10 +81,14 @@ export class ChatRepository {
     return this.toConversation(await this.conversations.create({ type: 'direct', ...data }))!;
   }
 
-  async listMessages(conversationId: string, limit = 80) {
-    return (await this.messages.find({ conversationId }).sort({ createdAt: -1 }).limit(limit).exec())
-      .reverse()
-      .map((doc) => this.toMessage(doc)!);
+  async listMessages(conversationId: string, query?: PaginationQuery) {
+    const { page, limit, skip } = normalizePagination(query, { page: 1, limit: 80, maxLimit: 100 });
+    const filter = { conversationId };
+    const [docs, total] = await Promise.all([
+      this.messages.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).exec(),
+      this.messages.countDocuments(filter).exec(),
+    ]);
+    return paginated(docs.reverse().map((doc) => this.toMessage(doc)!), total, page, limit);
   }
 
   async createMessage(data: ChatMessageWrite) {

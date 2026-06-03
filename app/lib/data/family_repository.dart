@@ -12,11 +12,23 @@ class FamilyRepository {
 
   final SocketClient socket;
 
+  Future<PaginatedResult<FamilyItem>> listPage(
+    String resource,
+    int page,
+    int limit, {
+    String? titlePrefix,
+  }) async {
+    final data = await socket.emitAck<dynamic>('$resource.list', {
+      'page': page,
+      'limit': limit,
+      if (titlePrefix != null) 'titlePrefix': titlePrefix,
+    });
+    return _paginated(
+        data, (row) => FamilyItem(Map<String, dynamic>.from(row)));
+  }
+
   Future<List<FamilyItem>> list(String resource) async {
-    final rows = await socket.emitAck<List<dynamic>>('$resource.list');
-    return rows
-        .map((row) => FamilyItem(Map<String, dynamic>.from(row as Map)))
-        .toList();
+    return (await listPage(resource, 1, 24)).items;
   }
 
   Future<FamilyItem> create(String resource, Map<String, dynamic> data) async {
@@ -61,19 +73,27 @@ class FamilyRepository {
   }
 
   Future<List<QuizQuestion>> listQuizQuestions() async {
-    final rows = await socket.emitAck<List<dynamic>>('games.quiz.list');
-    return rows
-        .map((row) =>
-            QuizQuestion.fromJson(Map<String, dynamic>.from(row as Map)))
-        .toList();
+    return (await listQuizQuestionsPage(1, 20)).items;
+  }
+
+  Future<PaginatedResult<QuizQuestion>> listQuizQuestionsPage(
+      int page, int limit) async {
+    final data = await socket
+        .emitAck<dynamic>('games.quiz.list', {'page': page, 'limit': limit});
+    return _paginated(
+        data, (row) => QuizQuestion.fromJson(Map<String, dynamic>.from(row)));
   }
 
   Future<List<QuizQuestion>> listQuizQuestionsAdmin() async {
-    final rows = await socket.emitAck<List<dynamic>>('games.quiz.admin.list');
-    return rows
-        .map((row) =>
-            QuizQuestion.fromJson(Map<String, dynamic>.from(row as Map)))
-        .toList();
+    return (await listQuizQuestionsAdminPage(1, 20)).items;
+  }
+
+  Future<PaginatedResult<QuizQuestion>> listQuizQuestionsAdminPage(
+      int page, int limit) async {
+    final data = await socket.emitAck<dynamic>(
+        'games.quiz.admin.list', {'page': page, 'limit': limit});
+    return _paginated(
+        data, (row) => QuizQuestion.fromJson(Map<String, dynamic>.from(row)));
   }
 
   Future<QuizQuestion> createQuizQuestion(Map<String, dynamic> data) async {
@@ -94,17 +114,27 @@ class FamilyRepository {
   }
 
   Future<List<GameWord>> listGameWords() async {
-    final rows = await socket.emitAck<List<dynamic>>('games.words.list');
-    return rows
-        .map((row) => GameWord.fromJson(Map<String, dynamic>.from(row as Map)))
-        .toList();
+    return (await listGameWordsPage(1, 30)).items;
+  }
+
+  Future<PaginatedResult<GameWord>> listGameWordsPage(
+      int page, int limit) async {
+    final data = await socket
+        .emitAck<dynamic>('games.words.list', {'page': page, 'limit': limit});
+    return _paginated(
+        data, (row) => GameWord.fromJson(Map<String, dynamic>.from(row)));
   }
 
   Future<List<GameWord>> listGameWordsAdmin() async {
-    final rows = await socket.emitAck<List<dynamic>>('games.words.admin.list');
-    return rows
-        .map((row) => GameWord.fromJson(Map<String, dynamic>.from(row as Map)))
-        .toList();
+    return (await listGameWordsAdminPage(1, 30)).items;
+  }
+
+  Future<PaginatedResult<GameWord>> listGameWordsAdminPage(
+      int page, int limit) async {
+    final data = await socket.emitAck<dynamic>(
+        'games.words.admin.list', {'page': page, 'limit': limit});
+    return _paginated(
+        data, (row) => GameWord.fromJson(Map<String, dynamic>.from(row)));
   }
 
   Future<GameWord> createGameWord(Map<String, dynamic> data) async {
@@ -142,17 +172,27 @@ class FamilyRepository {
   }
 
   Future<List<GameStat>> gameStats() async {
-    final rows = await socket.emitAck<List<dynamic>>('games.stats');
-    return rows
-        .map((row) => GameStat.fromJson(Map<String, dynamic>.from(row as Map)))
-        .toList();
+    return (await gameStatsPage(1, 20)).items;
+  }
+
+  Future<PaginatedResult<GameStat>> gameStatsPage(int page, int limit) async {
+    final data = await socket
+        .emitAck<dynamic>('games.stats', {'page': page, 'limit': limit});
+    return _paginated(
+      data,
+      (row) => GameStat.fromJson(Map<String, dynamic>.from(row)),
+    );
   }
 
   Future<List<AppUser>> listUsers() async {
-    final rows = await socket.emitAck<List<dynamic>>('users.list');
-    return rows
-        .map((row) => AppUser.fromJson(Map<String, dynamic>.from(row as Map)))
-        .toList();
+    return (await listUsersPage(1, 20)).items;
+  }
+
+  Future<PaginatedResult<AppUser>> listUsersPage(int page, int limit) async {
+    final data = await socket
+        .emitAck<dynamic>('users.list', {'page': page, 'limit': limit});
+    return _paginated(
+        data, (row) => AppUser.fromJson(Map<String, dynamic>.from(row)));
   }
 
   Future<AppUser> updateUser(String id, Map<String, dynamic> data) async {
@@ -166,11 +206,15 @@ class FamilyRepository {
   }
 
   Future<List<AppNotification>> listNotificationsAdmin() async {
-    final rows = await socket.emitAck<List<dynamic>>('notifications.list');
-    return rows
-        .map((row) =>
-            AppNotification.fromJson(Map<String, dynamic>.from(row as Map)))
-        .toList();
+    return (await listNotificationsAdminPage(1, 30)).items;
+  }
+
+  Future<PaginatedResult<AppNotification>> listNotificationsAdminPage(
+      int page, int limit) async {
+    final data = await socket
+        .emitAck<dynamic>('notifications.list', {'page': page, 'limit': limit});
+    return _paginated(data,
+        (row) => AppNotification.fromJson(Map<String, dynamic>.from(row)));
   }
 
   Future<AppNotification> createNotification(Map<String, dynamic> data) async {
@@ -226,21 +270,30 @@ class FamilyRepository {
   }
 
   Future<List<FamilyList>> listFamilyLists() async {
-    final rows = await socket.emitAck<List<dynamic>>('lists.list');
-    return rows
-        .map((row) => FamilyList.fromJson(Map<String, dynamic>.from(row as Map)))
-        .toList();
+    return (await listFamilyListsPage(1, 20)).items;
+  }
+
+  Future<PaginatedResult<FamilyList>> listFamilyListsPage(
+      int page, int limit) async {
+    final data = await socket
+        .emitAck<dynamic>('lists.list', {'page': page, 'limit': limit});
+    return _paginated(
+        data, (row) => FamilyList.fromJson(Map<String, dynamic>.from(row)));
   }
 
   Future<FamilyList> createFamilyList(Map<String, dynamic> data) async {
-    final row = await socket.emitAck<Map<String, dynamic>>('lists.create', data);
+    final row =
+        await socket.emitAck<Map<String, dynamic>>('lists.create', data);
     return FamilyList.fromJson(Map<String, dynamic>.from(row));
   }
 
-  Future<FamilyList?> updateFamilyList(String id, Map<String, dynamic> data) async {
+  Future<FamilyList?> updateFamilyList(
+      String id, Map<String, dynamic> data) async {
     final row = await socket.emitAck<Map<String, dynamic>?>(
         'lists.update', {'id': id, 'data': data});
-    return row == null ? null : FamilyList.fromJson(Map<String, dynamic>.from(row));
+    return row == null
+        ? null
+        : FamilyList.fromJson(Map<String, dynamic>.from(row));
   }
 
   Future<void> deleteFamilyList(String id) async {
@@ -248,14 +301,21 @@ class FamilyRepository {
   }
 
   Future<List<FamilyListItem>> listFamilyListItems(String listId) async {
-    final rows = await socket.emitAck<List<dynamic>>('lists.items', {'listId': listId});
-    return rows
-        .map((row) => FamilyListItem.fromJson(Map<String, dynamic>.from(row as Map)))
-        .toList();
+    return (await listFamilyListItemsPage(listId, 1, 50)).items;
   }
 
-  Future<FamilyListItem> createFamilyListItem(String listId, String text) async {
-    final row = await socket.emitAck<Map<String, dynamic>>('lists.items.create', {
+  Future<PaginatedResult<FamilyListItem>> listFamilyListItemsPage(
+      String listId, int page, int limit) async {
+    final data = await socket.emitAck<dynamic>(
+        'lists.items', {'listId': listId, 'page': page, 'limit': limit});
+    return _paginated(
+        data, (row) => FamilyListItem.fromJson(Map<String, dynamic>.from(row)));
+  }
+
+  Future<FamilyListItem> createFamilyListItem(
+      String listId, String text) async {
+    final row =
+        await socket.emitAck<Map<String, dynamic>>('lists.items.create', {
       'listId': listId,
       'text': text,
     });
@@ -272,14 +332,41 @@ class FamilyRepository {
   }
 
   Future<void> deleteFamilyListItem(String id) async {
-    await socket.emitAck<Map<String, dynamic>>('lists.items.delete', {'id': id});
+    await socket
+        .emitAck<Map<String, dynamic>>('lists.items.delete', {'id': id});
   }
 
   Future<List<LocationSnapshot>> listLocations() async {
-    final rows = await socket.emitAck<List<dynamic>>('location.latest');
-    return rows
-        .map((row) =>
-            LocationSnapshot.fromJson(Map<String, dynamic>.from(row as Map)))
-        .toList();
+    final data = await socket
+        .emitAck<dynamic>('location.latest', {'page': 1, 'limit': 50});
+    return _paginated(data,
+            (row) => LocationSnapshot.fromJson(Map<String, dynamic>.from(row)))
+        .items;
+  }
+
+  PaginatedResult<T> _paginated<T>(
+      dynamic data, T Function(Map<String, dynamic> row) mapper) {
+    if (data is List) {
+      return PaginatedResult<T>(
+        items: data
+            .map((row) => mapper(Map<String, dynamic>.from(row as Map)))
+            .toList(),
+        page: 1,
+        limit: data.length,
+        total: data.length,
+        pages: 1,
+      );
+    }
+    final map = Map<String, dynamic>.from(data as Map);
+    final rows = ((map['items'] as List?) ?? const []);
+    return PaginatedResult<T>(
+      items: rows
+          .map((row) => mapper(Map<String, dynamic>.from(row as Map)))
+          .toList(),
+      page: (map['page'] as num?)?.toInt() ?? 1,
+      limit: (map['limit'] as num?)?.toInt() ?? rows.length,
+      total: (map['total'] as num?)?.toInt() ?? rows.length,
+      pages: (map['pages'] as num?)?.toInt() ?? 1,
+    );
   }
 }

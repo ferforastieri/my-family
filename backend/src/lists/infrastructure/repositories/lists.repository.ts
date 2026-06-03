@@ -7,7 +7,7 @@ import {
   FamilyListItemMongoDocument,
   FamilyListMongoDocument,
 } from '@shared/infrastructure/database/schemas';
-import { cleanUndefined, toId } from '@shared/infrastructure/database/mongo.utils';
+import { cleanUndefined, normalizePagination, paginated, PaginationQuery, toId } from '@shared/infrastructure/database/mongo.utils';
 import type { FamilyListEntity, FamilyListItemEntity } from '@shared/domain/entities';
 
 export type FamilyListWrite = {
@@ -55,8 +55,13 @@ export class ListsRepository {
     };
   }
 
-  async listLists() {
-    return (await this.lists.find().sort({ updatedAt: -1 }).exec()).map((doc) => this.toList(doc)!);
+  async listLists(query?: PaginationQuery) {
+    const { page, limit, skip } = normalizePagination(query, { page: 1, limit: 20, maxLimit: 100 });
+    const [docs, total] = await Promise.all([
+      this.lists.find().sort({ updatedAt: -1 }).skip(skip).limit(limit).exec(),
+      this.lists.countDocuments().exec(),
+    ]);
+    return paginated(docs.map((doc) => this.toList(doc)!), total, page, limit);
   }
 
   async findList(id: string) {
@@ -80,8 +85,14 @@ export class ListsRepository {
     return !!(await this.lists.findByIdAndDelete(id).exec());
   }
 
-  async listItems(listId: string) {
-    return (await this.items.find({ listId }).sort({ checked: 1, createdAt: -1 }).exec()).map((doc) => this.toItem(doc)!);
+  async listItems(listId: string, query?: PaginationQuery) {
+    const { page, limit, skip } = normalizePagination(query, { page: 1, limit: 50, maxLimit: 100 });
+    const filter = { listId };
+    const [docs, total] = await Promise.all([
+      this.items.find(filter).sort({ checked: 1, createdAt: -1 }).skip(skip).limit(limit).exec(),
+      this.items.countDocuments(filter).exec(),
+    ]);
+    return paginated(docs.map((doc) => this.toItem(doc)!), total, page, limit);
   }
 
   async createItem(data: FamilyListItemWrite) {
@@ -107,4 +118,3 @@ export class ListsRepository {
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
-
