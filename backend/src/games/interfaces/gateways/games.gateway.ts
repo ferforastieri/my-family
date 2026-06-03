@@ -47,7 +47,7 @@ export class GamesGateway {
     await this.session.requireRole(client, ['admin']);
     const row = await this.games.createQuestion(body);
     this.server.emit('games.quiz.created', row);
-    return row;
+    return { message: 'Pergunta salva.', ...row };
   }
 
   @SubscribeMessage('games.quiz.update')
@@ -58,7 +58,7 @@ export class GamesGateway {
     await this.session.requireRole(client, ['admin']);
     const row = await this.games.updateQuestion(body.id, body.data);
     if (row) this.server.emit('games.quiz.updated', row);
-    return row;
+    return row ? { message: 'Pergunta atualizada.', ...row } : row;
   }
 
   @SubscribeMessage('games.quiz.delete')
@@ -69,7 +69,7 @@ export class GamesGateway {
     await this.session.requireRole(client, ['admin']);
     const ok = await this.games.deleteQuestion(body.id);
     if (ok) this.server.emit('games.quiz.deleted', { id: body.id });
-    return { ok };
+    return { ok, message: 'Pergunta removida.' };
   }
 
   @SubscribeMessage('games.words.list')
@@ -94,7 +94,7 @@ export class GamesGateway {
     await this.session.requireRole(client, ['admin']);
     const row = await this.games.createWord(body);
     this.server.emit('games.words.created', row);
-    return row;
+    return { message: 'Palavra salva.', ...row };
   }
 
   @SubscribeMessage('games.words.update')
@@ -105,7 +105,7 @@ export class GamesGateway {
     await this.session.requireRole(client, ['admin']);
     const row = await this.games.updateWord(body.id, body.data);
     if (row) this.server.emit('games.words.updated', row);
-    return row;
+    return row ? { message: 'Palavra atualizada.', ...row } : row;
   }
 
   @SubscribeMessage('games.words.delete')
@@ -116,7 +116,7 @@ export class GamesGateway {
     await this.session.requireRole(client, ['admin']);
     const ok = await this.games.deleteWord(body.id);
     if (ok) this.server.emit('games.words.deleted', { id: body.id });
-    return { ok };
+    return { ok, message: 'Palavra removida.' };
   }
 
   @SubscribeMessage('games.complete')
@@ -127,7 +127,7 @@ export class GamesGateway {
     const user = await this.session.getUser(client);
     const row = await this.games.complete(body, user);
     this.server.emit('games.stats.changed', row);
-    return row;
+    return { message: 'Jogo concluído.', ...row };
   }
 
   @SubscribeMessage('games.stats')

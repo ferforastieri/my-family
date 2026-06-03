@@ -1,4 +1,9 @@
-import { Body, UsePipes, ValidationPipe } from '@nestjs/common';
+import {
+  Body,
+  UnauthorizedException,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -35,8 +40,11 @@ export class AuthGateway {
   @SubscribeMessage('auth.login')
   async login(@MessageBody() dto: LoginDto) {
     const user = await this.auth.validateUser(dto.email, dto.password);
-    if (!user) throw new Error('Email ou senha inválidos');
-    return this.auth.tokenResponse(user);
+    if (!user) throw new UnauthorizedException('Email ou senha inválidos');
+    return {
+      message: 'Login realizado com sucesso.',
+      ...this.auth.tokenResponse(user),
+    };
   }
 
   @SubscribeMessage('auth.register')
@@ -48,7 +56,7 @@ export class AuthGateway {
       dto.role,
     );
     this.server.emit('users.created', response.user);
-    return response;
+    return { message: 'Cadastro realizado com sucesso.', ...response };
   }
 
   @SubscribeMessage('auth.me')
@@ -77,6 +85,7 @@ export class AuthGateway {
     });
     if (updated) this.server.emit('users.updated', updated);
     return {
+      message: 'Perfil atualizado.',
       user: updated
         ? {
             id: updated.id,
@@ -93,7 +102,6 @@ export class AuthGateway {
   async forgotPassword(@MessageBody() body: { email: string }) {
     await this.auth.requestPasswordReset(body.email);
     return {
-      success: true,
       message:
         'Se o email existir, você receberá um token de recuperação por email.',
     };
@@ -104,7 +112,7 @@ export class AuthGateway {
     @MessageBody() body: { token: string; newPassword: string },
   ) {
     await this.auth.resetPassword(body.token, body.newPassword);
-    return { success: true, message: 'Senha redefinida com sucesso.' };
+    return { message: 'Senha redefinida com sucesso.' };
   }
 
   @SubscribeMessage('users.list')
@@ -127,7 +135,7 @@ export class AuthGateway {
       role: body.role,
     });
     if (row) this.server.emit('users.updated', row);
-    return row;
+    return row ? { message: 'Usuário atualizado.', ...row } : row;
   }
 
   @SubscribeMessage('users.delete')
@@ -138,6 +146,6 @@ export class AuthGateway {
     await this.session.requireRole(client, ['admin']);
     const ok = await this.users.delete(body.id);
     if (ok) this.server.emit('users.deleted', { id: body.id });
-    return { ok };
+    return { ok, message: 'Usuário removido.' };
   }
 }

@@ -35,7 +35,7 @@ export class ListsGateway {
     const user = await this.session.requireUser(client);
     const row = await this.lists.createList(data, user);
     this.realtime.emitListCreated(row);
-    return row;
+    return { message: 'Lista criada.', ...row };
   }
 
   @SubscribeMessage('lists.update')
@@ -46,7 +46,7 @@ export class ListsGateway {
     await this.session.requireUser(client);
     const row = await this.lists.updateList(body.id, body.data);
     if (row) this.realtime.emitListUpdated(row);
-    return row;
+    return row ? { message: 'Lista atualizada.', ...row } : row;
   }
 
   @SubscribeMessage('lists.delete')
@@ -57,7 +57,7 @@ export class ListsGateway {
     await this.session.requireUser(client);
     const ok = await this.lists.deleteList(body.id);
     if (ok) this.realtime.emitListDeleted(body.id);
-    return { ok };
+    return { ok, message: 'Lista removida.' };
   }
 
   @SubscribeMessage('lists.items')
@@ -73,7 +73,7 @@ export class ListsGateway {
     const user = await this.session.requireUser(client);
     const row = await this.lists.createItem(data, user);
     this.realtime.emitItemCreated(row);
-    return row;
+    return { message: 'Item adicionado.', ...row };
   }
 
   @SubscribeMessage('lists.items.update')
@@ -84,7 +84,7 @@ export class ListsGateway {
     await this.session.requireUser(client);
     const row = await this.lists.updateItem(body.id, body.data);
     if (row) this.realtime.emitItemUpdated(row);
-    return row;
+    return row ? { message: 'Item atualizado.', ...row } : row;
   }
 
   @SubscribeMessage('lists.items.delete')
@@ -95,6 +95,6 @@ export class ListsGateway {
     await this.session.requireUser(client);
     const result = await this.lists.deleteItem(body.id);
     if (result.ok) this.realtime.emitItemDeleted(body.id, result.listId);
-    return { ok: result.ok };
+    return { ok: result.ok, message: 'Item removido.' };
   }
 }

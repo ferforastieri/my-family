@@ -337,7 +337,7 @@ class _AdminPageState extends State<AdminPage> {
         user: user,
         onSave: (data) async {
           await widget.repository.updateUser(user.id, data);
-          widget.toast.success(widget.repository.takeMessage());
+          widget.toast.backendSuccess(widget.repository.takeMessage());
           _invalidateAdmin();
         },
       ),
@@ -346,7 +346,7 @@ class _AdminPageState extends State<AdminPage> {
 
   Future<void> _deleteUser(AppUser user) async {
     await widget.repository.deleteUser(user.id);
-    widget.toast.success(widget.repository.takeMessage());
+    widget.toast.backendSuccess(widget.repository.takeMessage());
     _invalidateAdmin();
   }
 
@@ -362,7 +362,7 @@ class _AdminPageState extends State<AdminPage> {
           } else {
             await widget.repository.updateNotification(notification.id, data);
           }
-          widget.toast.success(widget.repository.takeMessage());
+          widget.toast.backendSuccess(widget.repository.takeMessage());
           _invalidateAdmin();
         },
       ),
@@ -371,14 +371,14 @@ class _AdminPageState extends State<AdminPage> {
 
   Future<void> _deleteNotification(AppNotification notification) async {
     await widget.repository.deleteNotification(notification.id);
-    widget.toast.success(widget.repository.takeMessage());
+    widget.toast.backendSuccess(widget.repository.takeMessage());
     _invalidateAdmin();
   }
 
   Future<void> _clearNotifications() async {
     await widget.repository.clearNotifications();
     notificationsPage = 1;
-    widget.toast.success(widget.repository.takeMessage());
+    widget.toast.backendSuccess(widget.repository.takeMessage());
     _invalidateAdmin();
   }
 
@@ -388,7 +388,7 @@ class _AdminPageState extends State<AdminPage> {
       body: notification.body,
       url: notification.url,
     );
-    widget.toast.success(widget.repository.takeMessage());
+    widget.toast.backendSuccess(widget.repository.takeMessage());
     _invalidateAdmin();
   }
 
@@ -404,7 +404,7 @@ class _AdminPageState extends State<AdminPage> {
             url: notification.url,
             scheduledAt: scheduledAt,
           );
-          widget.toast.success(widget.repository.takeMessage());
+          widget.toast.backendSuccess(widget.repository.takeMessage());
         },
       ),
     );
@@ -422,7 +422,7 @@ class _AdminPageState extends State<AdminPage> {
           } else {
             await widget.repository.updateQuizQuestion(question.id, data);
           }
-          widget.toast.success(widget.repository.takeMessage());
+          widget.toast.backendSuccess(widget.repository.takeMessage());
           _invalidateAdmin();
         },
       ),
@@ -431,7 +431,7 @@ class _AdminPageState extends State<AdminPage> {
 
   Future<void> _deleteQuestion(QuizQuestion question) async {
     await widget.repository.deleteQuizQuestion(question.id);
-    widget.toast.success(widget.repository.takeMessage());
+    widget.toast.backendSuccess(widget.repository.takeMessage());
     _invalidateAdmin();
   }
 
@@ -447,7 +447,7 @@ class _AdminPageState extends State<AdminPage> {
           } else {
             await widget.repository.updateGameWord(word.id, data);
           }
-          widget.toast.success(widget.repository.takeMessage());
+          widget.toast.backendSuccess(widget.repository.takeMessage());
           _invalidateAdmin();
         },
       ),
@@ -456,7 +456,7 @@ class _AdminPageState extends State<AdminPage> {
 
   Future<void> _deleteWord(GameWord word) async {
     await widget.repository.deleteGameWord(word.id);
-    widget.toast.success(widget.repository.takeMessage());
+    widget.toast.backendSuccess(widget.repository.takeMessage());
     _invalidateAdmin();
   }
 }

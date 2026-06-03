@@ -34,7 +34,8 @@ export class NotificationsGateway {
     @MessageBody() dto: NotificationCreateDto,
   ) {
     await this.session.requireRole(client, ['admin']);
-    return this.notifications.create(dto);
+    const row = await this.notifications.create(dto);
+    return { message: 'Notificação salva.', ...row };
   }
 
   @SubscribeMessage('notifications.update')
@@ -43,7 +44,8 @@ export class NotificationsGateway {
     @MessageBody() body: { id: string; data: Partial<NotificationCreateDto> },
   ) {
     await this.session.requireRole(client, ['admin']);
-    return this.notifications.update(body.id, body.data);
+    const row = await this.notifications.update(body.id, body.data);
+    return row ? { message: 'Notificação atualizada.', ...row } : row;
   }
 
   @SubscribeMessage('notifications.delete')
@@ -52,14 +54,17 @@ export class NotificationsGateway {
     @MessageBody() body: { id: string },
   ) {
     await this.session.requireRole(client, ['admin']);
-    return { ok: await this.notifications.delete(body.id) };
+    return {
+      ok: await this.notifications.delete(body.id),
+      message: 'Notificação removida.',
+    };
   }
 
   @SubscribeMessage('notifications.clear')
   async clear(@ConnectedSocket() client: Socket) {
     await this.session.requireUser(client);
     await this.notifications.clearAll();
-    return { ok: true };
+    return { ok: true, message: 'Notificações limpas.' };
   }
 
   @SubscribeMessage('notifications.send')
@@ -69,7 +74,8 @@ export class NotificationsGateway {
   ) {
     await this.session.requireRole(client, ['admin']);
     if (!body?.title) throw new BadRequestException('title é obrigatório');
-    return this.notifications.send(body.title, body.body, body.url);
+    const row = await this.notifications.send(body.title, body.body, body.url);
+    return { message: 'Notificação enviada.', ...row };
   }
 
   @SubscribeMessage('notifications.schedule')
@@ -83,7 +89,8 @@ export class NotificationsGateway {
     const at = new Date(body.scheduledAt);
     if (Number.isNaN(at.getTime()))
       throw new BadRequestException('scheduledAt inválido');
-    return this.scheduler.schedule(body);
+    const row = await this.scheduler.schedule(body);
+    return { message: 'Notificação agendada.', ...row };
   }
 
   @SubscribeMessage('notifications.subscribe')
@@ -100,12 +107,12 @@ export class NotificationsGateway {
     if (body.subscription?.token) {
       await this.notifications.pushSubscribe(body.subscription, body.userAgent);
     }
-    return { ok: true };
+    return { ok: true, message: 'Notificações ativadas.' };
   }
 
   @SubscribeMessage('notifications.unsubscribe')
   async unsubscribe(@MessageBody() body: { token: string }) {
     if (body.token) await this.notifications.pushUnsubscribe(body.token);
-    return { ok: true };
+    return { ok: true, message: 'Notificações desativadas.' };
   }
 }

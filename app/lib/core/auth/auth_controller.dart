@@ -20,8 +20,7 @@ class AuthController extends ChangeNotifier {
   AppUser? user;
   bool loading = true;
   String? token;
-  String takeMessage([String fallback = 'Ação realizada com sucesso.']) =>
-      socket.takeLastMessage(fallback);
+  String? takeMessage() => socket.takeLastMessage();
 
   Future<void> bootstrap() async {
     token = await tokenStore.read();

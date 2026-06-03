@@ -72,7 +72,7 @@ class _ChatPageState extends State<ChatPage> {
     try {
       await widget.chat.sendMedia(text.text, file, senderName: _senderName);
       text.clear();
-      widget.toast.success(widget.chat.repository.takeMessage());
+      widget.toast.backendSuccess(widget.chat.repository.takeMessage());
     } catch (error) {
       widget.toast.error(error.toString());
     } finally {

@@ -34,7 +34,7 @@ class _EditProfileSheetState extends State<EditProfileSheet> {
     setState(() => _saving = true);
     try {
       await widget.auth.updateMe(name: _name.text.trim());
-      widget.toast.success(widget.auth.takeMessage());
+      widget.toast.backendSuccess(widget.auth.takeMessage());
       if (mounted) Navigator.pop(context);
     } catch (error) {
       widget.toast.error(error.toString());

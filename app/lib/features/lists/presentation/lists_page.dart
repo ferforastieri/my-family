@@ -101,7 +101,7 @@ class _ListsPageState extends State<ListsPage> {
           });
           setState(() => selectedListId = row.id);
           _invalidateLists();
-          widget.toast.success(widget.repository.takeMessage());
+          widget.toast.backendSuccess(widget.repository.takeMessage());
         },
       ),
     );
@@ -120,7 +120,7 @@ class _ListsPageState extends State<ListsPage> {
           await widget.repository
               .createFamilyListItem(listId, text.text.trim());
           _invalidateItems(listId);
-          widget.toast.success(widget.repository.takeMessage());
+          widget.toast.backendSuccess(widget.repository.takeMessage());
         },
       ),
     );

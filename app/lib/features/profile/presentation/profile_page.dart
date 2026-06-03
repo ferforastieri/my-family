@@ -126,7 +126,7 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
     setState(() => uploadingAvatar = true);
     try {
       await widget.auth.updateAvatar(file);
-      widget.toast.success(widget.auth.takeMessage());
+      widget.toast.backendSuccess(widget.auth.takeMessage());
     } catch (error) {
       widget.toast.error(error.toString());
     } finally {

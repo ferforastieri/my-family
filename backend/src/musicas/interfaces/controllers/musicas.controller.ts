@@ -26,16 +26,21 @@ export class MusicasController {
 
   @Post()
   async create(@Body() data: MusicaWriteDto) {
-    return this.musicasService.create(data);
+    const row = await this.musicasService.create(data);
+    return { message: 'Música salva com sucesso.', ...row };
   }
 
   @Put(':id')
   async update(@Param('id') id: string, @Body() data: Partial<MusicaWriteDto>) {
-    return this.musicasService.update(id, data);
+    const row = await this.musicasService.update(id, data);
+    return row ? { message: 'Música atualizada.', ...row } : row;
   }
 
   @Delete(':id')
   async delete(@Param('id') id: string) {
-    return this.musicasService.delete(id);
+    return {
+      ok: await this.musicasService.delete(id),
+      message: 'Música removida.',
+    };
   }
 }
