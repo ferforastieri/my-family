@@ -45,6 +45,73 @@ GoRouter buildRouter(
         ),
         routes: [
           GoRoute(
+            path: '/atalhos/inicio',
+            pageBuilder: (context, state) => _page(const MobileOptionsPage(
+              title: 'Nossa Família',
+              items: [
+                MobileOptionItem(
+                  label: 'Nosso Início',
+                  description: 'Voltar para a página principal.',
+                  path: '/',
+                  icon: Icons.home_outlined,
+                ),
+                MobileOptionItem(
+                  label: 'Nossa Jornada',
+                  description: 'Textos e lembranças da caminhada da família.',
+                  path: '/nossa-historia',
+                  icon: Icons.menu_book_outlined,
+                ),
+                MobileOptionItem(
+                  label: 'Palavras do Coração',
+                  description: 'Mensagens escritas com carinho.',
+                  path: '/mensagens',
+                  icon: Icons.mail_outline,
+                ),
+              ],
+            )),
+          ),
+          GoRoute(
+            path: '/atalhos/memorias',
+            pageBuilder: (context, state) => _page(MobileOptionsPage(
+              title: 'Memórias',
+              items: [
+                if (auth.user != null)
+                  const MobileOptionItem(
+                    label: 'Memórias em Fotos',
+                    description: 'Fotos, vídeos e álbuns da família.',
+                    path: '/galeria',
+                    icon: Icons.photo_library_outlined,
+                  ),
+                const MobileOptionItem(
+                  label: 'Nossa Playlist',
+                  description: 'Músicas que marcaram nossa história.',
+                  path: '/playlist',
+                  icon: Icons.music_note_outlined,
+                ),
+                const MobileOptionItem(
+                  label: 'Carta de Amor',
+                  description: 'Cartas e declarações especiais.',
+                  path: '/carta-de-amor',
+                  icon: Icons.card_giftcard_outlined,
+                ),
+              ],
+            )),
+          ),
+          GoRoute(
+            path: '/atalhos/mais',
+            pageBuilder: (context, state) => _page(const MobileOptionsPage(
+              title: 'Mais opções',
+              items: [
+                MobileOptionItem(
+                  label: 'Jogos do Amor',
+                  description: 'Quiz e Caça Palavras em um só lugar.',
+                  path: '/jogos',
+                  icon: Icons.sports_esports_outlined,
+                ),
+              ],
+            )),
+          ),
+          GoRoute(
             path: '/',
             pageBuilder: (context, state) => _page(HomePage(onNavigate: (path) {
               toast.info('Abrindo página...');
@@ -107,7 +174,10 @@ GoRouter buildRouter(
           ),
           GoRoute(
             path: '/perfil',
-            pageBuilder: (context, state) => _page(ProfilePage(auth: auth)),
+            pageBuilder: (context, state) => _page(ProfilePage(
+              auth: auth,
+              toast: toast,
+            )),
           ),
           GoRoute(
             path: '/admin',
