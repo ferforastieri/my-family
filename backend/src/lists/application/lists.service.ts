@@ -1,13 +1,14 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import type { UserEntity } from '@shared/domain/entities';
+import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 import { FamilyListItemWrite, FamilyListWrite, ListsRepository } from '../infrastructure/repositories/lists.repository';
 
 @Injectable()
 export class ListsService {
   constructor(private lists: ListsRepository) {}
 
-  async listLists() {
-    return this.lists.listLists();
+  async listLists(query?: PaginationQuery) {
+    return this.lists.listLists(query);
   }
 
   async createList(data: FamilyListWrite, user?: UserEntity | null) {
@@ -31,8 +32,8 @@ export class ListsService {
     return this.lists.deleteList(id);
   }
 
-  async listItems(listId: string) {
-    return this.lists.listItems(listId);
+  async listItems(listId: string, query?: PaginationQuery) {
+    return this.lists.listItems(listId, query);
   }
 
   async createItem(data: FamilyListItemWrite, user?: UserEntity | null) {
@@ -87,4 +88,3 @@ function parseListMessage(text: string) {
     .filter(Boolean);
   return { title, items: items.length ? items : ['Novo item'] };
 }
-

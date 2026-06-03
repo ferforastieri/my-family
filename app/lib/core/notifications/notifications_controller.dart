@@ -75,7 +75,12 @@ class NotificationsController extends ChangeNotifier {
     loading = true;
     notifyListeners();
     try {
-      final rows = await socket.emitAck<List<dynamic>>('notifications.list');
+      final data = await socket.emitAck<dynamic>(
+          'notifications.list', {'page': 1, 'limit': 30});
+      final rows = data is List
+          ? data
+          : ((Map<String, dynamic>.from(data as Map)['items'] as List?) ??
+              const []);
       notifications
         ..clear()
         ..addAll(rows.map((row) =>

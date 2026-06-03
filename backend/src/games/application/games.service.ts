@@ -5,17 +5,18 @@ import {
   GameWordWrite,
   QuizQuestionWrite,
 } from '../infrastructure/repositories/games.repository';
+import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 @Injectable()
 export class GamesService {
   constructor(private games: GamesRepository) {}
 
-  quizPublic() {
-    return this.games.listQuestions(false);
+  quizPublic(query?: PaginationQuery) {
+    return this.games.listQuestions(false, query);
   }
 
-  quizAdmin() {
-    return this.games.listQuestions(true);
+  quizAdmin(query?: PaginationQuery) {
+    return this.games.listQuestions(true, query);
   }
 
   createQuestion(data: QuizQuestionWrite) {
@@ -36,12 +37,12 @@ export class GamesService {
     return this.games.deleteQuestion(id);
   }
 
-  wordsPublic() {
-    return this.games.listWords(false);
+  wordsPublic(query?: PaginationQuery) {
+    return this.games.listWords(false, query);
   }
 
-  wordsAdmin() {
-    return this.games.listWords(true);
+  wordsAdmin(query?: PaginationQuery) {
+    return this.games.listWords(true, query);
   }
 
   createWord(data: GameWordWrite) {
@@ -78,8 +79,8 @@ export class GamesService {
     });
   }
 
-  stats() {
-    return this.games.stats();
+  stats(query?: PaginationQuery) {
+    return this.games.stats(query);
   }
 
   private normalizeQuestion(data: QuizQuestionWrite) {

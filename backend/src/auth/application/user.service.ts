@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { UserRepository } from '../infrastructure/repositories/user.repository';
 import type { UserRole } from '@shared/domain/entities';
+import type { PaginatedResult, PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 export type UserDto = {
   id: string;
@@ -15,15 +16,19 @@ export type UserDto = {
 export class UserService {
   constructor(private users: UserRepository) {}
 
-  async list(): Promise<UserDto[]> {
-    return (await this.users.list()).map(({ id, email, name, role, avatarPath, createdAt }) => ({
+  async list(query?: PaginationQuery): Promise<PaginatedResult<UserDto>> {
+    const page = await this.users.list(query);
+    return {
+      ...page,
+      items: page.items.map(({ id, email, name, role, avatarPath, createdAt }) => ({
       id,
       email,
       name: name ?? null,
       role,
       avatarPath: avatarPath ?? null,
       createdAt,
-    }));
+      })),
+    };
   }
 
   async findOne(id: string): Promise<UserDto | null> {

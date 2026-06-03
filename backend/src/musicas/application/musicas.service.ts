@@ -3,6 +3,7 @@ import {
   MusicasRepository,
   MusicaWrite,
 } from '../infrastructure/repositories/musicas.repository';
+import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 const requiredMusicFields = [
   'titulo',
@@ -16,8 +17,8 @@ type RequiredMusicField = (typeof requiredMusicFields)[number];
 export class MusicasService {
   constructor(private musicas: MusicasRepository) {}
 
-  async findAll() {
-    return this.musicas.list();
+  async findAll(query?: PaginationQuery) {
+    return this.musicas.list(query);
   }
 
   async findOne(id: string) {

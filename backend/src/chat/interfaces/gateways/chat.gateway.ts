@@ -2,6 +2,7 @@ import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSo
 import { Server, Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/ws-session.service';
 import { ChatService } from '../../application/chat.service';
+import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class ChatGateway {
@@ -20,9 +21,9 @@ export class ChatGateway {
   }
 
   @SubscribeMessage('chat.conversations')
-  async conversations(@ConnectedSocket() client: Socket) {
+  async conversations(@ConnectedSocket() client: Socket, @MessageBody() query?: PaginationQuery) {
     const user = await this.session.getUser(client);
-    return this.chat.listConversations(user);
+    return this.chat.listConversations(user, query);
   }
 
   @SubscribeMessage('chat.conversation.create')
@@ -34,9 +35,9 @@ export class ChatGateway {
   }
 
   @SubscribeMessage('chat.messages')
-  async messages(@ConnectedSocket() client: Socket, @MessageBody() body: { conversationId: string }) {
+  async messages(@ConnectedSocket() client: Socket, @MessageBody() body: { conversationId: string } & PaginationQuery) {
     const user = await this.session.getUser(client);
-    return this.chat.listMessages(body.conversationId, user);
+    return this.chat.listMessages(body.conversationId, user, body);
   }
 
   @SubscribeMessage('chat.message.send')

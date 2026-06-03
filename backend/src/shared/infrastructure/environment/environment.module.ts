@@ -34,7 +34,6 @@ export class Environment {
     serviceAccountPath?: string;
     serviceAccountJson?: string;
   };
-  redis?: { url: string };
 
   isProduction(): boolean {
     return this.type === 'production';
@@ -108,9 +107,6 @@ class EnvironmentFactory {
               serviceAccountJson: process.env.FIREBASE_SERVICE_ACCOUNT_JSON || output.parsed?.FIREBASE_SERVICE_ACCOUNT_JSON,
             }
           : undefined,
-      redis: (process.env.REDIS_URL || output.parsed?.REDIS_URL)
-        ? { url: process.env.REDIS_URL || output.parsed?.REDIS_URL! }
-        : undefined,
     });
   }
 }

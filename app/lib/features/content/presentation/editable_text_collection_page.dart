@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
+import '../../../core/widgets/app_pagination.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
 import '../../../core/widgets/love_action_card.dart';
@@ -35,7 +36,10 @@ class EditableTextCollectionPage extends StatefulWidget {
 
 class _EditableTextCollectionPageState
     extends State<EditableTextCollectionPage> {
-  late Future<List<FamilyItem>> future = _load();
+  static const _pageLimit = 12;
+
+  int page = 1;
+  late Future<PaginatedResult<FamilyItem>> future = _load();
 
   @override
   void initState() {
@@ -58,12 +62,20 @@ class _EditableTextCollectionPageState
     setState(() => future = _load());
   }
 
-  Future<List<FamilyItem>> _load() async {
-    final rows = await widget.repository.list('cartas');
-    return rows
-        .where((item) => item.title.startsWith('${widget.prefix}:'))
-        .map(_withoutPrefix)
-        .toList();
+  Future<PaginatedResult<FamilyItem>> _load() async {
+    final result = await widget.repository.listPage(
+      'cartas',
+      page,
+      _pageLimit,
+      titlePrefix: '${widget.prefix}:',
+    );
+    return PaginatedResult<FamilyItem>(
+      items: result.items.map(_withoutPrefix).toList(),
+      page: result.page,
+      limit: result.limit,
+      total: result.total,
+      pages: result.pages,
+    );
   }
 
   FamilyItem _withoutPrefix(FamilyItem item) {
@@ -80,11 +92,12 @@ class _EditableTextCollectionPageState
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: LoveBackground(
-        child: FutureBuilder<List<FamilyItem>>(
+        child: FutureBuilder<PaginatedResult<FamilyItem>>(
           future: future,
           builder: (context, snapshot) {
             if (!snapshot.hasData) return const PageSkeleton(cards: 3);
-            final items = snapshot.data!;
+            final result = snapshot.data!;
+            final items = result.items;
             return RefreshIndicator(
               onRefresh: () async {
                 setState(() => future = _load());
@@ -173,6 +186,30 @@ class _EditableTextCollectionPageState
                                                   ],
                                                 ),
                                               ),
+                                            if (result.pages > 1) ...[
+                                              const SizedBox(height: 12),
+                                              AppPagination(
+                                                page: result.page,
+                                                pages: result.pages,
+                                                total: result.total,
+                                                onPrevious: result.hasPrevious
+                                                    ? () {
+                                                        setState(() {
+                                                          page -= 1;
+                                                          future = _load();
+                                                        });
+                                                      }
+                                                    : null,
+                                                onNext: result.hasNext
+                                                    ? () {
+                                                        setState(() {
+                                                          page += 1;
+                                                          future = _load();
+                                                        });
+                                                      }
+                                                    : null,
+                                              ),
+                                            ],
                                           ],
                                         ),
                                       ),
@@ -204,6 +241,7 @@ class _EditableTextCollectionPageState
           };
           if (item == null) {
             await widget.repository.create('cartas', payload);
+            page = 1;
           } else {
             await widget.repository.update('cartas', item.id, payload);
           }

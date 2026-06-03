@@ -3,6 +3,7 @@ import { Server, Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/ws-session.service';
 import { LocationService } from '../../application/location.service';
 import type { LocationUpdateWrite } from '../../infrastructure/repositories/location.repository';
+import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class LocationGateway {
@@ -23,8 +24,8 @@ export class LocationGateway {
   }
 
   @SubscribeMessage('location.latest')
-  async latest(@ConnectedSocket() client: Socket) {
+  async latest(@ConnectedSocket() client: Socket, @MessageBody() query?: PaginationQuery) {
     await this.session.requireUser(client);
-    return this.locations.latest();
+    return this.locations.latest(query);
   }
 }

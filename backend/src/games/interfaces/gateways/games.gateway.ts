@@ -12,6 +12,7 @@ import type {
   GameWordWrite,
   QuizQuestionWrite,
 } from '../../infrastructure/repositories/games.repository';
+import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class GamesGateway {
@@ -24,14 +25,17 @@ export class GamesGateway {
   ) {}
 
   @SubscribeMessage('games.quiz.list')
-  quizList() {
-    return this.games.quizPublic();
+  quizList(@MessageBody() query?: PaginationQuery) {
+    return this.games.quizPublic(query);
   }
 
   @SubscribeMessage('games.quiz.admin.list')
-  async quizAdminList(@ConnectedSocket() client: Socket) {
+  async quizAdminList(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() query?: PaginationQuery,
+  ) {
     await this.session.requireRole(client, ['admin']);
-    return this.games.quizAdmin();
+    return this.games.quizAdmin(query);
   }
 
   @SubscribeMessage('games.quiz.create')
@@ -68,14 +72,17 @@ export class GamesGateway {
   }
 
   @SubscribeMessage('games.words.list')
-  wordsList() {
-    return this.games.wordsPublic();
+  wordsList(@MessageBody() query?: PaginationQuery) {
+    return this.games.wordsPublic(query);
   }
 
   @SubscribeMessage('games.words.admin.list')
-  async wordsAdminList(@ConnectedSocket() client: Socket) {
+  async wordsAdminList(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() query?: PaginationQuery,
+  ) {
     await this.session.requireRole(client, ['admin']);
-    return this.games.wordsAdmin();
+    return this.games.wordsAdmin(query);
   }
 
   @SubscribeMessage('games.words.create')
@@ -129,8 +136,11 @@ export class GamesGateway {
   }
 
   @SubscribeMessage('games.stats')
-  async stats(@ConnectedSocket() client: Socket) {
+  async stats(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() query?: PaginationQuery,
+  ) {
     await this.session.requireRole(client, ['admin']);
-    return this.games.stats();
+    return this.games.stats(query);
   }
 }

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { FotoDocument, FotoMongoDocument } from '@shared/infrastructure/database/schemas';
-import { cleanUndefined, toId } from '@shared/infrastructure/database/mongo.utils';
+import { cleanUndefined, normalizePagination, paginated, PaginationQuery, toId } from '@shared/infrastructure/database/mongo.utils';
 import type { FotoEntity } from '@shared/domain/entities';
 
 export type FotoWrite = Pick<FotoEntity, 'url' | 'tipo'> & Partial<Pick<FotoEntity, 'texto' | 'album' | 'data'>>;
@@ -25,8 +25,13 @@ export class FotosRepository {
     };
   }
 
-  async list() {
-    return (await this.model.find().sort({ data: -1, createdAt: -1 }).exec()).map((doc) => this.toEntity(doc)!);
+  async list(query?: PaginationQuery) {
+    const { page, limit, skip } = normalizePagination(query);
+    const [docs, total] = await Promise.all([
+      this.model.find().sort({ data: -1, createdAt: -1 }).skip(skip).limit(limit).exec(),
+      this.model.countDocuments().exec(),
+    ]);
+    return paginated(docs.map((doc) => this.toEntity(doc)!), total, page, limit);
   }
 
   async findById(id: string) {

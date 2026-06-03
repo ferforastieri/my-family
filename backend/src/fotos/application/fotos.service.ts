@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { FotosRepository, FotoWrite } from '../infrastructure/repositories/fotos.repository';
 import { UploadService } from '@shared/infrastructure/upload';
+import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 @Injectable()
 export class FotosService {
@@ -9,8 +10,8 @@ export class FotosService {
     private upload: UploadService,
   ) {}
 
-  async findAll() {
-    return this.fotos.list();
+  async findAll(query?: PaginationQuery) {
+    return this.fotos.list(query);
   }
 
   async findOne(id: string) {

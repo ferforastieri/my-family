@@ -7,7 +7,7 @@ import {
   PushSubscriptionDocument,
   PushSubscriptionMongoDocument,
 } from '@shared/infrastructure/database/schemas';
-import { cleanUndefined, toId } from '@shared/infrastructure/database/mongo.utils';
+import { cleanUndefined, normalizePagination, paginated, PaginationQuery, toId } from '@shared/infrastructure/database/mongo.utils';
 import type { NotificationEntity, PushSubscriptionEntity } from '@shared/domain/entities';
 
 export type NotificationWrite = {
@@ -47,8 +47,13 @@ export class NotificationsRepository {
     };
   }
 
-  async list(limit = 100) {
-    return (await this.notifications.find().sort({ createdAt: -1 }).limit(limit).exec()).map((doc) => this.toNotification(doc)!);
+  async list(query?: PaginationQuery) {
+    const { page, limit, skip } = normalizePagination(query, { page: 1, limit: 30, maxLimit: 100 });
+    const [docs, total] = await Promise.all([
+      this.notifications.find().sort({ createdAt: -1 }).skip(skip).limit(limit).exec(),
+      this.notifications.countDocuments().exec(),
+    ]);
+    return paginated(docs.map((doc) => this.toNotification(doc)!), total, page, limit);
   }
 
   async findById(id: string) {

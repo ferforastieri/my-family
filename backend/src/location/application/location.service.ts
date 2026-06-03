@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import type { UserEntity } from '@shared/domain/entities';
+import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 import { NotificationsService } from '../../notifications/application/notifications.service';
 import { LocationRepository, LocationUpdateWrite } from '../infrastructure/repositories/location.repository';
 
@@ -35,8 +36,8 @@ export class LocationService {
     return row;
   }
 
-  latest() {
-    return this.locations.latestByPerson();
+  latest(query?: PaginationQuery) {
+    return this.locations.latestByPerson(query);
   }
 
   private async notifyLowBattery(row: Awaited<ReturnType<LocationRepository['create']>>) {

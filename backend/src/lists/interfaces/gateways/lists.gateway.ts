@@ -4,6 +4,7 @@ import { WsSessionService } from '@auth/application/ws-session.service';
 import { ListsService } from '../../application/lists.service';
 import type { FamilyListItemWrite, FamilyListWrite } from '../../infrastructure/repositories/lists.repository';
 import { ListsRealtimeGateway } from './lists-realtime.gateway';
+import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class ListsGateway {
@@ -14,8 +15,8 @@ export class ListsGateway {
   ) {}
 
   @SubscribeMessage('lists.list')
-  listLists() {
-    return this.lists.listLists();
+  listLists(@MessageBody() query?: PaginationQuery) {
+    return this.lists.listLists(query);
   }
 
   @SubscribeMessage('lists.create')
@@ -43,8 +44,8 @@ export class ListsGateway {
   }
 
   @SubscribeMessage('lists.items')
-  listItems(@MessageBody() body: { listId: string }) {
-    return this.lists.listItems(body.listId);
+  listItems(@MessageBody() body: { listId: string } & PaginationQuery) {
+    return this.lists.listItems(body.listId, body);
   }
 
   @SubscribeMessage('lists.items.create')
@@ -71,4 +72,3 @@ export class ListsGateway {
     return { ok: result.ok };
   }
 }
-

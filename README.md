@@ -123,7 +123,6 @@ Backend local (`backend/.env`):
 - `PORT`
 - `MONGO_URI`
 - `MONGO_DB`
-- `REDIS_URL`
 - `JWT_SECRET`
 - `JWT_EXPIRES_IN`
 - `UPLOAD_PATH`
@@ -143,7 +142,6 @@ Compose/deploy (`.env` ou Gitea secrets):
 - `BACKEND_PORT`
 - `FRONT_PORT`
 - `MONGO_PORT`
-- `REDIS_PORT`
 - `JWT_SECRET`
 - `JWT_EXPIRES_IN`
 - `CORS_ORIGIN`
@@ -170,13 +168,12 @@ Fluxo:
 4. Build do APK Android release.
 5. Publicacao do APK como artefato `my-family-android-apk`.
 6. Build dos containers.
-7. Subida de `mongo` e `redis`.
+7. Subida de `mongo`.
 8. Subida de `backend` e `front` com `--remove-orphans`.
 
 Servicos:
 
 - `mongo`: MongoDB 7.
-- `redis`: Redis 7 Alpine.
 - `backend`: NestJS em `3001`, exposto pela porta definida em `BACKEND_PORT`.
 - `front`: Flutter Web via nginx, exposto pela porta definida em `FRONT_PORT`.
 
@@ -202,7 +199,6 @@ Secrets recomendados:
 - `BACKEND_PORT`
 - `FRONT_PORT`
 - `MONGO_PORT`
-- `REDIS_PORT`
 - `JWT_EXPIRES_IN`
 - `CORS_ORIGIN`
 - `API_BASE_URL`

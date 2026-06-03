@@ -4,6 +4,7 @@ import * as admin from 'firebase-admin';
 import { NotificationsRepository } from '../infrastructure/repositories/notifications.repository';
 import { NotificationsRealtimeGateway } from '../interfaces/gateways/notifications-realtime.gateway';
 import { Environment } from '@shared/infrastructure/environment/environment.module';
+import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 export interface NotificationCreateDto {
   title: string;
@@ -11,8 +12,6 @@ export interface NotificationCreateDto {
   url?: string;
   icon?: string;
 }
-
-const LIST_LIMIT = 100;
 
 export interface FcmSubscriptionDto {
   token: string;
@@ -57,9 +56,9 @@ export class NotificationsService {
     };
   }
 
-  async list() {
-    const rows = await this.repository.list(LIST_LIMIT);
-    return rows.map((r) => this.toDto(r));
+  async list(query?: PaginationQuery) {
+    const page = await this.repository.list(query);
+    return { ...page, items: page.items.map((r) => this.toDto(r)) };
   }
 
   async findOne(id: string) {

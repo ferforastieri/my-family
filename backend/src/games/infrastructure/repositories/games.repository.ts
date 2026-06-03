@@ -9,7 +9,12 @@ import {
   QuizQuestionDocument,
   QuizQuestionMongoDocument,
 } from '@shared/infrastructure/database/schemas';
-import { toId } from '@shared/infrastructure/database/mongo.utils';
+import {
+  normalizePagination,
+  paginated,
+  PaginationQuery,
+  toId,
+} from '@shared/infrastructure/database/mongo.utils';
 
 export type QuizQuestionWrite = {
   question: string;
@@ -122,12 +127,29 @@ export class GamesRepository {
     );
   }
 
-  async listQuestions(includeInactive = false) {
+  async listQuestions(includeInactive = false, query?: PaginationQuery) {
     await this.seedQuestions();
     const filter = includeInactive ? {} : { active: true };
-    return (
-      await this.questions.find(filter).sort({ createdAt: 1 }).exec()
-    ).map((doc) => this.questionDto(doc));
+    const { page, limit, skip } = normalizePagination(query, {
+      page: 1,
+      limit: 20,
+      maxLimit: 100,
+    });
+    const [docs, total] = await Promise.all([
+      this.questions
+        .find(filter)
+        .sort({ createdAt: 1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.questions.countDocuments(filter).exec(),
+    ]);
+    return paginated(
+      docs.map((doc) => this.questionDto(doc)),
+      total,
+      page,
+      limit,
+    );
   }
 
   async createQuestion(data: QuizQuestionWrite) {
@@ -148,11 +170,23 @@ export class GamesRepository {
     return !!result;
   }
 
-  async listWords(includeInactive = false) {
+  async listWords(includeInactive = false, query?: PaginationQuery) {
     await this.seedWords();
     const filter = includeInactive ? {} : { active: true };
-    return (await this.words.find(filter).sort({ word: 1 }).exec()).map((doc) =>
-      this.wordDto(doc),
+    const { page, limit, skip } = normalizePagination(query, {
+      page: 1,
+      limit: 30,
+      maxLimit: 100,
+    });
+    const [docs, total] = await Promise.all([
+      this.words.find(filter).sort({ word: 1 }).skip(skip).limit(limit).exec(),
+      this.words.countDocuments(filter).exec(),
+    ]);
+    return paginated(
+      docs.map((doc) => this.wordDto(doc)),
+      total,
+      page,
+      limit,
     );
   }
 
@@ -178,8 +212,13 @@ export class GamesRepository {
     return this.completionDto(await this.completions.create(data));
   }
 
-  async stats() {
-    const rows = await this.completions.aggregate([
+  async stats(query?: PaginationQuery) {
+    const { page, limit, skip } = normalizePagination(query, {
+      page: 1,
+      limit: 20,
+      maxLimit: 100,
+    });
+    const [result] = await this.completions.aggregate([
       {
         $group: {
           _id: { game: '$game', playerName: '$playerName' },
@@ -189,13 +228,26 @@ export class GamesRepository {
         },
       },
       { $sort: { '_id.game': 1, count: -1, lastAt: -1 } },
+      {
+        $facet: {
+          items: [{ $skip: skip }, { $limit: limit }],
+          total: [{ $count: 'count' }],
+        },
+      },
     ]);
-    return rows.map((row) => ({
-      game: row._id.game,
-      playerName: row._id.playerName,
-      count: row.count,
-      bestScore: row.bestScore ?? null,
-      lastAt: new Date(row.lastAt).getTime(),
-    }));
+    const rows = result?.items ?? [];
+    const total = result?.total?.[0]?.count ?? 0;
+    return paginated(
+      rows.map((row) => ({
+        game: row._id.game,
+        playerName: row._id.playerName,
+        count: row.count,
+        bestScore: row.bestScore ?? null,
+        lastAt: new Date(row.lastAt).getTime(),
+      })),
+      total,
+      page,
+      limit,
+    );
   }
 }
