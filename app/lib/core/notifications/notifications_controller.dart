@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -27,6 +29,7 @@ class NotificationsController extends ChangeNotifier {
   bool loading = false;
   bool pushReady = false;
   String? fcmToken;
+  bool _pushListenersBound = false;
 
   Future<void> bootstrap() async {
     socket.on('notifications.created', (data) {
@@ -54,9 +57,18 @@ class NotificationsController extends ChangeNotifier {
       notifications.clear();
       notifyListeners();
     });
+    socket.on('connect', (_) {
+      final token = fcmToken;
+      if (token != null) unawaited(_subscribeTokenSafely(token));
+    });
 
-    await refresh();
     await configurePush();
+    try {
+      await refresh();
+    } catch (_) {
+      loading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> refresh() async {
@@ -97,28 +109,31 @@ class NotificationsController extends ChangeNotifier {
             ? AppConfig.firebaseWebPushCertificateKey
             : null,
       );
-      if (fcmToken != null) await _subscribeToken(fcmToken!);
-      FirebaseMessaging.instance.onTokenRefresh.listen(_subscribeToken);
+      if (fcmToken != null) unawaited(_subscribeTokenSafely(fcmToken!));
 
-      FirebaseMessaging.onMessage.listen((message) {
-        final notification = message.notification;
-        if (notification != null && !kIsWeb) {
-          _localNotifications.show(
-            id: notification.hashCode,
-            title: notification.title,
-            body: notification.body,
-            notificationDetails: const NotificationDetails(
-              android: AndroidNotificationDetails(
-                'my_family_notifications',
-                'Nossa Família',
-                icon: 'ic_notification',
-                importance: Importance.high,
-                priority: Priority.high,
+      if (!_pushListenersBound) {
+        FirebaseMessaging.instance.onTokenRefresh.listen(_subscribeTokenSafely);
+        FirebaseMessaging.onMessage.listen((message) {
+          final notification = message.notification;
+          if (notification != null && !kIsWeb) {
+            _localNotifications.show(
+              id: notification.hashCode,
+              title: notification.title,
+              body: notification.body,
+              notificationDetails: const NotificationDetails(
+                android: AndroidNotificationDetails(
+                  'my_family_notifications',
+                  'Nossa Família',
+                  icon: 'ic_notification',
+                  importance: Importance.high,
+                  priority: Priority.high,
+                ),
               ),
-            ),
-          );
-        }
-      });
+            );
+          }
+        });
+        _pushListenersBound = true;
+      }
       pushReady = true;
       notifyListeners();
     } catch (_) {
@@ -135,6 +150,14 @@ class NotificationsController extends ChangeNotifier {
         'platform': _platform,
       },
     });
+  }
+
+  Future<void> _subscribeTokenSafely(String token) async {
+    try {
+      await _subscribeToken(token);
+    } catch (_) {
+      fcmToken = token;
+    }
   }
 
   String get _platform {

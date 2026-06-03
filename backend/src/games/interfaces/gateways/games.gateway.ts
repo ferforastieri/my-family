@@ -3,8 +3,9 @@ import {
   MessageBody,
   SubscribeMessage,
   WebSocketGateway,
+  WebSocketServer,
 } from '@nestjs/websockets';
-import { Socket } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/ws-session.service';
 import { GamesService } from '../../application/games.service';
 import type {
@@ -14,6 +15,9 @@ import type {
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class GamesGateway {
+  @WebSocketServer()
+  server!: Server;
+
   constructor(
     private games: GamesService,
     private session: WsSessionService,
@@ -36,7 +40,9 @@ export class GamesGateway {
     @MessageBody() body: QuizQuestionWrite,
   ) {
     await this.session.requireRole(client, ['admin']);
-    return this.games.createQuestion(body);
+    const row = await this.games.createQuestion(body);
+    this.server.emit('games.quiz.created', row);
+    return row;
   }
 
   @SubscribeMessage('games.quiz.update')
@@ -45,7 +51,9 @@ export class GamesGateway {
     @MessageBody() body: { id: string; data: Partial<QuizQuestionWrite> },
   ) {
     await this.session.requireRole(client, ['admin']);
-    return this.games.updateQuestion(body.id, body.data);
+    const row = await this.games.updateQuestion(body.id, body.data);
+    if (row) this.server.emit('games.quiz.updated', row);
+    return row;
   }
 
   @SubscribeMessage('games.quiz.delete')
@@ -54,7 +62,9 @@ export class GamesGateway {
     @MessageBody() body: { id: string },
   ) {
     await this.session.requireRole(client, ['admin']);
-    return { ok: await this.games.deleteQuestion(body.id) };
+    const ok = await this.games.deleteQuestion(body.id);
+    if (ok) this.server.emit('games.quiz.deleted', { id: body.id });
+    return { ok };
   }
 
   @SubscribeMessage('games.words.list')
@@ -74,7 +84,9 @@ export class GamesGateway {
     @MessageBody() body: GameWordWrite,
   ) {
     await this.session.requireRole(client, ['admin']);
-    return this.games.createWord(body);
+    const row = await this.games.createWord(body);
+    this.server.emit('games.words.created', row);
+    return row;
   }
 
   @SubscribeMessage('games.words.update')
@@ -83,7 +95,9 @@ export class GamesGateway {
     @MessageBody() body: { id: string; data: Partial<GameWordWrite> },
   ) {
     await this.session.requireRole(client, ['admin']);
-    return this.games.updateWord(body.id, body.data);
+    const row = await this.games.updateWord(body.id, body.data);
+    if (row) this.server.emit('games.words.updated', row);
+    return row;
   }
 
   @SubscribeMessage('games.words.delete')
@@ -92,7 +106,9 @@ export class GamesGateway {
     @MessageBody() body: { id: string },
   ) {
     await this.session.requireRole(client, ['admin']);
-    return { ok: await this.games.deleteWord(body.id) };
+    const ok = await this.games.deleteWord(body.id);
+    if (ok) this.server.emit('games.words.deleted', { id: body.id });
+    return { ok };
   }
 
   @SubscribeMessage('games.complete')
@@ -107,7 +123,9 @@ export class GamesGateway {
     },
   ) {
     const user = await this.session.getUser(client);
-    return this.games.complete(body, user);
+    const row = await this.games.complete(body, user);
+    this.server.emit('games.stats.changed', row);
+    return row;
   }
 
   @SubscribeMessage('games.stats')

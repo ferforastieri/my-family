@@ -78,6 +78,16 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  Future<void> refreshMe() async {
+    if (token == null) return;
+    final response = await socket.emitAck<Map<String, dynamic>>('auth.me');
+    final rawUser = response['user'];
+    if (rawUser is Map) {
+      user = AppUser.fromJson(Map<String, dynamic>.from(rawUser));
+      notifyListeners();
+    }
+  }
+
   Future<void> updateAvatar(XFile file) async {
     final currentToken = token;
     if (currentToken == null) {

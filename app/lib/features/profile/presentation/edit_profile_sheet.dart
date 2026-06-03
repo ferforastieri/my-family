@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/auth/auth_controller.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
-import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_sheet.dart';
 
 class EditProfileSheet extends StatefulWidget {
   const EditProfileSheet({super.key, required this.auth, required this.toast});
@@ -46,7 +45,6 @@ class _EditProfileSheetState extends State<EditProfileSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
     final user = widget.auth.user;
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 520),
@@ -54,11 +52,11 @@ class _EditProfileSheetState extends State<EditProfileSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Editar perfil',
-              style: TextStyle(
-                  color: palette.primary,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900)),
+          const AppSheetHeader(
+            title: 'Editar perfil',
+            subtitle: 'Atualize como seu nome aparece no app.',
+            icon: Icons.badge_outlined,
+          ),
           const SizedBox(height: 14),
           TextField(
             controller: _name,
@@ -68,26 +66,13 @@ class _EditProfileSheetState extends State<EditProfileSheet> {
           ),
           const SizedBox(height: 10),
           if (user != null)
-            Text(user.email, style: TextStyle(color: palette.muted)),
+            Text(user.email,
+                style: TextStyle(color: Theme.of(context).hintColor)),
           const SizedBox(height: 18),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: _saving ? null : () => Navigator.pop(context),
-                  child: const Text('Cancelar'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: AppButton(
-                  onPressed: _save,
-                  label: 'Salvar',
-                  icon: Icons.check,
-                  loading: _saving,
-                ),
-              ),
-            ],
+          AppSheetActions(
+            onCancel: _saving ? null : () => Navigator.pop(context),
+            onSave: _saving ? null : _save,
+            loading: _saving,
           ),
         ],
       ),

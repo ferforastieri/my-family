@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/auth/auth_controller.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
-import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
+import '../../../core/widgets/love_action_card.dart';
 import '../../../core/widgets/love_background.dart';
 import '../../../core/widgets/love_text_card.dart';
-import '../../../core/widgets/section_title.dart';
 import '../../../core/widgets/skeleton.dart';
 import '../../../data/family_repository.dart';
 import '../../../data/models.dart';
@@ -37,6 +37,27 @@ class _EditableTextCollectionPageState
     extends State<EditableTextCollectionPage> {
   late Future<List<FamilyItem>> future = _load();
 
+  @override
+  void initState() {
+    super.initState();
+    for (final event in _events) {
+      widget.repository.socket.on(event, _handleRealtimeChange);
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final event in _events) {
+      widget.repository.socket.off(event, _handleRealtimeChange);
+    }
+    super.dispose();
+  }
+
+  void _handleRealtimeChange(dynamic _) {
+    if (!mounted) return;
+    setState(() => future = _load());
+  }
+
   Future<List<FamilyItem>> _load() async {
     final rows = await widget.repository.list('cartas');
     return rows
@@ -55,6 +76,7 @@ class _EditableTextCollectionPageState
   @override
   Widget build(BuildContext context) {
     final canWrite = widget.auth.user != null;
+    final palette = Theme.of(context).extension<AppPalette>()!;
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: LoveBackground(
@@ -68,33 +90,36 @@ class _EditableTextCollectionPageState
                 setState(() => future = _load());
               },
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(24, 80, 24, 32),
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
                 children: [
-                  SectionTitle(widget.title, size: 42),
-                  const SizedBox(height: 28),
-                  if (canWrite)
-                    Center(
-                      child: FilledButton.icon(
-                        onPressed: () => _openEditor(),
-                        icon: const Icon(Icons.edit_outlined),
-                        label: const Text('Escrever'),
+                  Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1100),
+                      child: AppPageHeader(
+                        title: widget.title,
+                        subtitle: canWrite
+                            ? 'Escreva e edite os textos desta página.'
+                            : 'Textos publicados para a família.',
+                        icon: Icons.edit_note_outlined,
+                        actionLabel: canWrite ? 'Escrever' : null,
+                        actionIcon: Icons.edit_outlined,
+                        onAction: canWrite ? () => _openEditor() : null,
                       ),
                     ),
-                  if (canWrite) const SizedBox(height: 28),
+                  ),
+                  const SizedBox(height: 16),
                   Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 1100),
                       child: items.isEmpty
-                          ? Card(
-                              child: Padding(
-                                padding: const EdgeInsets.all(32),
-                                child: Text(
-                                  canWrite
-                                      ? 'Nenhum texto escrito ainda.'
-                                      : 'Ainda não há textos publicados.',
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(color: muted),
-                                ),
+                          ? LovePanel(
+                              child: Text(
+                                canWrite
+                                    ? 'Nenhum texto escrito ainda.'
+                                    : 'Ainda não há textos publicados.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: palette.muted),
                               ),
                             )
                           : LayoutBuilder(
@@ -196,6 +221,8 @@ class _EditableTextCollectionPageState
   }
 }
 
+const _events = ['cartas.created', 'cartas.updated', 'cartas.deleted'];
+
 class _TextEntrySheet extends StatefulWidget {
   const _TextEntrySheet({required this.title, required this.onSave, this.item});
 
@@ -255,13 +282,18 @@ class _TextEntrySheetState extends State<_TextEntrySheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(widget.item == null ? 'Escrever em ${widget.title}' : 'Editar',
-              style: const TextStyle(
-                  color: primary, fontWeight: FontWeight.w900, fontSize: 22)),
+          AppSheetHeader(
+            title:
+                widget.item == null ? 'Escrever em ${widget.title}' : 'Editar',
+            subtitle: 'Registre um texto especial para aparecer no app.',
+            icon: Icons.edit_note_outlined,
+          ),
           const SizedBox(height: 16),
           TextField(
             controller: title,
             decoration: const InputDecoration(labelText: 'Título'),
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _save(),
           ),
           const SizedBox(height: 10),
           TextField(
@@ -269,19 +301,14 @@ class _TextEntrySheetState extends State<_TextEntrySheet> {
             decoration: const InputDecoration(labelText: 'Texto'),
             minLines: 5,
             maxLines: 10,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _save(),
           ),
           const SizedBox(height: 18),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                  onPressed: saving ? null : () => Navigator.pop(context),
-                  child: const Text('Cancelar')),
-              const SizedBox(width: 10),
-              AppButton(
-                  onPressed: saving ? null : _save,
-                  label: saving ? 'Salvando...' : 'Salvar'),
-            ],
+          AppSheetActions(
+            onCancel: saving ? null : () => Navigator.pop(context),
+            onSave: saving ? null : _save,
+            loading: saving,
           ),
         ],
       ),

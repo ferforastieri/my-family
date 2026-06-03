@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/auth/auth_controller.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_sheet.dart';
 
 class AuthSheet extends StatefulWidget {
   const AuthSheet({super.key, required this.auth, required this.toast});
@@ -25,26 +25,61 @@ class _AuthSheetState extends State<AuthSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 520),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(register ? 'Criar conta' : 'Entrar', style: const TextStyle(color: primary, fontWeight: FontWeight.w800, fontSize: 24)),
-          const SizedBox(height: 12),
-          if (register) TextField(controller: name, decoration: const InputDecoration(labelText: 'Nome')),
-          TextField(controller: email, decoration: const InputDecoration(labelText: 'Email')),
-          TextField(controller: password, decoration: const InputDecoration(labelText: 'Senha'), obscureText: true),
+          AppSheetHeader(
+            title: register ? 'Criar conta' : 'Entrar',
+            subtitle: register
+                ? 'Crie seu acesso para participar das memórias.'
+                : 'Entre para acessar fotos, perfil e recursos privados.',
+            icon: register ? Icons.person_add_alt_1_outlined : Icons.login,
+          ),
+          const SizedBox(height: 16),
+          if (register)
+            TextField(
+              controller: name,
+              decoration: const InputDecoration(labelText: 'Nome'),
+              textInputAction: TextInputAction.next,
+              onSubmitted: (_) => _submit(),
+            ),
+          TextField(
+            controller: email,
+            decoration: const InputDecoration(labelText: 'Email'),
+            keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
+            onSubmitted: (_) => _submit(),
+          ),
+          TextField(
+            controller: password,
+            decoration: const InputDecoration(labelText: 'Senha'),
+            obscureText: true,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _submit(),
+          ),
           if (error != null) ...[
             const SizedBox(height: 12),
-            Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            Text(error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ],
           const SizedBox(height: 22),
-          SizedBox(width: double.infinity, child: AppButton(onPressed: _submit, loading: loading, label: register ? 'Cadastrar' : 'Entrar')),
+          AppButton(
+            onPressed: _submit,
+            loading: loading,
+            icon: register ? Icons.favorite_outline : Icons.login,
+            label: register ? 'Cadastrar' : 'Entrar',
+          ),
           const SizedBox(height: 14),
-          TextButton(onPressed: () => setState(() => register = !register), child: Text(register ? 'Já tenho conta' : 'Criar conta')),
+          TextButton(
+              onPressed: () => setState(() => register = !register),
+              child: Text(register ? 'Já tenho conta' : 'Criar conta')),
           const SizedBox(height: 8),
-          TextButton(onPressed: loading ? null : _forgotPassword, child: const Text('Esqueci minha senha')),
+          TextButton(
+              onPressed: loading ? null : _forgotPassword,
+              child: const Text('Esqueci minha senha')),
         ],
       ),
     );
@@ -80,7 +115,9 @@ class _AuthSheetState extends State<AuthSheet> {
     try {
       await widget.auth.forgotPassword(email.text);
       widget.toast.info('Se o email existir, você receberá instruções.');
-      if (mounted) setState(() => error = 'Se o email existir, você receberá instruções.');
+      if (mounted) {
+        setState(() => error = 'Se o email existir, você receberá instruções.');
+      }
     } catch (e) {
       widget.toast.error(_cleanError(e));
       if (mounted) setState(() => error = e.toString());
