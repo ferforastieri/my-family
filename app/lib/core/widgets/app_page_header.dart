@@ -68,7 +68,7 @@ class AppPageHeader extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             if (!desktop) ...[
-              _HeaderIconButton(
+              AppHeaderIconButton(
                 onPressed: onBack ?? () => _defaultBack(context),
                 icon: const Icon(Icons.arrow_back),
                 tooltip: 'Voltar',
@@ -115,13 +115,13 @@ class AppPageHeader extends StatelessWidget {
             if (!desktop) ...[
               const SizedBox(width: 10),
               if (mobileActions != null) ...[
-                _HeaderIconButton(
+                AppHeaderIconButton(
                   onPressed: mobileActions.onNotifications,
                   icon: const Icon(Icons.notifications_outlined),
                   tooltip: 'Notificações',
                 ),
                 const SizedBox(width: 6),
-                _HeaderIconButton(
+                AppHeaderIconButton(
                   onPressed: mobileActions.onTheme,
                   icon: const Icon(Icons.palette_outlined),
                   tooltip: 'Cor e tema',
@@ -172,8 +172,9 @@ class AppPageHeader extends StatelessWidget {
   }
 }
 
-class _HeaderIconButton extends StatelessWidget {
-  const _HeaderIconButton({
+class AppHeaderIconButton extends StatelessWidget {
+  const AppHeaderIconButton({
+    super.key,
     required this.onPressed,
     required this.icon,
     required this.tooltip,

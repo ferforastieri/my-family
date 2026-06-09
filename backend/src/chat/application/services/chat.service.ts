@@ -40,15 +40,37 @@ export class ChatService {
   async usersForChat(currentUser: UserEntity) {
     const page = await this.users.list({ page: 1, limit: 100 });
     return page.items
-      .map(({ id, name, email, role }) => ({ id, name, email, role }))
+      .map(({ id, name, email, role, avatarPath }) => ({
+        id,
+        name,
+        email,
+        role,
+        avatarPath,
+      }))
       .filter((user) => user.id !== currentUser.id);
   }
 
   async listConversations(user?: UserEntity | null, query?: PaginationQuery) {
     const result = await this.chat.listForUser(user?.id, query);
+    const users = user
+      ? (await this.users.list({ page: 1, limit: 100 })).items
+      : [];
     return {
       ...result,
-      items: result.items.map((item) => chatConversationMapper.toDto(item)),
+      items: result.items.map((item) => {
+        const participant =
+          item.type === 'direct'
+            ? users.find(
+                (candidate) =>
+                  candidate.id !== user?.id &&
+                  item.participantIds.includes(candidate.id),
+              )
+            : null;
+        return {
+          ...chatConversationMapper.toDto(item),
+          avatarPath: participant?.avatarPath ?? null,
+        };
+      }),
     };
   }
 
@@ -61,15 +83,21 @@ export class ChatService {
     );
     if (ids.length < 2)
       throw new ForbiddenException('Escolha pelo menos uma pessoa.');
-    return chatConversationMapper.toDto(
-      await this.chat.createDirectConversation(
-        chatConversationFactory.create({
-          ...body,
-          participantIds: ids,
-          createdBy: currentUser.id,
-        }),
-      ),
+    const conversation = await this.chat.createDirectConversation(
+      chatConversationFactory.create({
+        ...body,
+        participantIds: ids,
+        createdBy: currentUser.id,
+      }),
     );
+    const participantId = ids.find((id) => id !== currentUser.id);
+    const participant = participantId
+      ? await this.users.findOne(participantId)
+      : null;
+    return {
+      ...chatConversationMapper.toDto(conversation),
+      avatarPath: participant?.avatarPath ?? null,
+    };
   }
 
   async listMessages(

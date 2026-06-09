@@ -54,6 +54,7 @@ export class ChatConversationResponseDto {
   type: 'global' | 'direct';
   title: string;
   participantIds: string[];
+  avatarPath: string | null;
   createdBy: string | null;
   createdAt: Date;
   updatedAt: Date;

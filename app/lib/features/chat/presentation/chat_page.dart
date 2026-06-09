@@ -8,6 +8,7 @@ import '../../../core/chat/chat_controller.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
+import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
 import '../../../core/widgets/skeleton.dart';
 import '../../../data/models.dart';
@@ -33,7 +34,10 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   final text = TextEditingController();
   final name = TextEditingController();
+  final messagesScroll = ScrollController();
   bool sending = false;
+  String? _lastScrollSignature;
+  String? _lastScrolledConversationId;
 
   @override
   void initState() {
@@ -56,7 +60,35 @@ class _ChatPageState extends State<ChatPage> {
   void dispose() {
     text.dispose();
     name.dispose();
+    messagesScroll.dispose();
     super.dispose();
+  }
+
+  void _scheduleScrollToBottom() {
+    final chat = widget.chat;
+    final conversationId = chat.active?.id;
+    if (conversationId == null || chat.loading) return;
+    final lastMessageId =
+        chat.messages.isEmpty ? 'empty' : chat.messages.last.id;
+    final signature = '$conversationId:${chat.messages.length}:$lastMessageId';
+    if (_lastScrollSignature == signature) return;
+
+    final animate = _lastScrolledConversationId == conversationId;
+    _lastScrollSignature = signature;
+    _lastScrolledConversationId = conversationId;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !messagesScroll.hasClients) return;
+      final end = messagesScroll.position.maxScrollExtent;
+      if (animate) {
+        messagesScroll.animateTo(
+          end,
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOutCubic,
+        );
+      } else {
+        messagesScroll.jumpTo(end);
+      }
+    });
   }
 
   Future<void> _sendText() async {
@@ -242,6 +274,7 @@ class _ChatPageState extends State<ChatPage> {
     return ListenableBuilder(
       listenable: widget.chat,
       builder: (context, _) {
+        _scheduleScrollToBottom();
         return LayoutBuilder(
           builder: (context, constraints) {
             final wide = constraints.maxWidth >= 820;
@@ -256,6 +289,7 @@ class _ChatPageState extends State<ChatPage> {
               auth: widget.auth,
               name: name,
               text: text,
+              messagesScroll: messagesScroll,
               sending: sending,
               onSendText: _sendText,
               onSendImage: _sendImage,
@@ -456,13 +490,9 @@ class _ConversationList extends StatelessWidget {
                         selected: selected,
                         selectedTileColor:
                             palette.primary.withValues(alpha: .08),
-                        leading: CircleAvatar(
-                          backgroundColor:
-                              palette.primary.withValues(alpha: .16),
-                          foregroundColor: palette.primary,
-                          child: Icon(conversation.type == 'global'
-                              ? Icons.public
-                              : Icons.person_outline),
+                        leading: _ConversationAvatar(
+                          conversation: conversation,
+                          size: 40,
                         ),
                         title: Text(conversation.type == 'global'
                             ? 'Chat'
@@ -489,6 +519,7 @@ class _MessagePane extends StatelessWidget {
     required this.auth,
     required this.name,
     required this.text,
+    required this.messagesScroll,
     required this.sending,
     required this.onSendText,
     required this.onSendImage,
@@ -505,6 +536,7 @@ class _MessagePane extends StatelessWidget {
   final AuthController auth;
   final TextEditingController name;
   final TextEditingController text;
+  final ScrollController messagesScroll;
   final bool sending;
   final VoidCallback onSendText;
   final VoidCallback onSendImage;
@@ -529,18 +561,15 @@ class _MessagePane extends StatelessWidget {
               compact ? palette.primary.withValues(alpha: .08) : palette.card,
           child: Row(
             children: [
-              IconButton(
+              AppHeaderIconButton(
                 onPressed: onBack,
                 icon: const Icon(Icons.arrow_back),
                 tooltip: 'Voltar',
               ),
-              const SizedBox(width: 2),
-              CircleAvatar(
-                backgroundColor: palette.primary.withValues(alpha: .16),
-                foregroundColor: palette.primary,
-                child: Icon(active?.type == 'global'
-                    ? Icons.public
-                    : Icons.favorite_outline),
+              const SizedBox(width: 10),
+              _ConversationAvatar(
+                conversation: active,
+                size: 42,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -588,6 +617,7 @@ class _MessagePane extends StatelessWidget {
                 : chat.loading
                     ? const _MessagesSkeleton()
                     : ListView.builder(
+                        controller: messagesScroll,
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.all(18),
                         itemCount: chat.messages.length,
@@ -1186,6 +1216,82 @@ class _MessageAvatar extends StatelessWidget {
   }
 }
 
+class _ConversationAvatar extends StatelessWidget {
+  const _ConversationAvatar({
+    required this.conversation,
+    required this.size,
+  });
+
+  final ChatConversation? conversation;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final isGlobal = conversation?.type == 'global';
+    final title = isGlobal ? 'Família' : conversation?.title ?? 'Pessoa';
+    final initial = _initialFor(title);
+    final avatarPath = conversation?.avatarPath;
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: palette.primary.withValues(alpha: .12),
+        shape: BoxShape.circle,
+        border: Border.all(color: palette.primary.withValues(alpha: .22)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      alignment: Alignment.center,
+      child: isGlobal
+          ? Image.asset(
+              'assets/brand/family-logo.png',
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _AvatarInitial(
+                initial: initial,
+                color: palette.primary,
+              ),
+            )
+          : avatarPath?.isNotEmpty == true
+              ? Image.network(
+                  _avatarUrl(avatarPath!),
+                  width: size,
+                  height: size,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => _AvatarInitial(
+                    initial: initial,
+                    color: palette.primary,
+                  ),
+                )
+              : _AvatarInitial(
+                  initial: initial,
+                  color: palette.primary,
+                ),
+    );
+  }
+}
+
+class _AvatarInitial extends StatelessWidget {
+  const _AvatarInitial({required this.initial, required this.color});
+
+  final String initial;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      initial,
+      style: TextStyle(
+        color: color,
+        fontSize: 16,
+        fontWeight: FontWeight.w900,
+      ),
+    );
+  }
+}
+
 enum _MessageAction { edit, delete }
 
 class _MessageMenuItem extends StatelessWidget {
@@ -1286,17 +1392,19 @@ String _mediaUrl(String url) {
 }
 
 void _openImagePreview(BuildContext context, String url) {
-  showDialog<void>(
+  showAppSheet<void>(
     context: context,
-    barrierColor: Colors.black.withValues(alpha: .92),
-    builder: (context) => Dialog.fullscreen(
-      backgroundColor: Colors.black,
-      child: Stack(
-        children: [
-          Center(
-            child: InteractiveViewer(
-              minScale: .8,
-              maxScale: 4,
+    builder: (sheetContext) => SizedBox(
+      width: 900,
+      height: MediaQuery.sizeOf(sheetContext).height * .72,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: ColoredBox(
+          color: Colors.black,
+          child: InteractiveViewer(
+            minScale: .8,
+            maxScale: 4,
+            child: Center(
               child: Image.network(
                 url,
                 fit: BoxFit.contain,
@@ -1308,6 +1416,7 @@ void _openImagePreview(BuildContext context, String url) {
                 },
                 errorBuilder: (_, __, ___) => const Column(
                   mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
                       Icons.broken_image_outlined,
@@ -1324,17 +1433,7 @@ void _openImagePreview(BuildContext context, String url) {
               ),
             ),
           ),
-          SafeArea(
-            child: Align(
-              alignment: Alignment.topLeft,
-              child: IconButton.filledTonal(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close),
-                tooltip: 'Fechar',
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     ),
   );
