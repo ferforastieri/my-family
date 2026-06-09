@@ -191,39 +191,10 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _editMessage(ChatMessage message) async {
-    final controller = TextEditingController(text: message.text);
     final value = await showAppSheet<String>(
       context: context,
-      builder: (sheetContext) => SizedBox(
-        width: 520,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const AppSheetHeader(
-              title: 'Editar mensagem',
-              icon: Icons.edit_outlined,
-            ),
-            const SizedBox(height: 18),
-            TextField(
-              controller: controller,
-              autofocus: true,
-              minLines: 2,
-              maxLines: 6,
-              decoration: const InputDecoration(labelText: 'Mensagem'),
-            ),
-            const SizedBox(height: 18),
-            AppSheetActions(
-              onCancel: () => Navigator.pop(sheetContext),
-              onSave: () {
-                final text = controller.text.trim();
-                if (text.isNotEmpty) Navigator.pop(sheetContext, text);
-              },
-            ),
-          ],
-        ),
-      ),
+      builder: (_) => _EditMessageSheet(initialText: message.text ?? ''),
     );
-    controller.dispose();
     if (value == null || !mounted) return;
     try {
       await widget.chat.editMessage(message, value);
@@ -360,6 +331,61 @@ class _ChatPageState extends State<ChatPage> {
     } else {
       context.go('/');
     }
+  }
+}
+
+class _EditMessageSheet extends StatefulWidget {
+  const _EditMessageSheet({required this.initialText});
+
+  final String initialText;
+
+  @override
+  State<_EditMessageSheet> createState() => _EditMessageSheetState();
+}
+
+class _EditMessageSheetState extends State<_EditMessageSheet> {
+  late final TextEditingController controller =
+      TextEditingController(text: widget.initialText);
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final value = controller.text.trim();
+    if (value.isNotEmpty) Navigator.pop(context, value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 520,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const AppSheetHeader(
+            title: 'Editar mensagem',
+            icon: Icons.edit_outlined,
+          ),
+          const SizedBox(height: 18),
+          TextField(
+            controller: controller,
+            autofocus: true,
+            minLines: 2,
+            maxLines: 6,
+            decoration: const InputDecoration(labelText: 'Mensagem'),
+            textInputAction: TextInputAction.newline,
+          ),
+          const SizedBox(height: 18),
+          AppSheetActions(
+            onCancel: () => Navigator.pop(context),
+            onSave: _save,
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -838,18 +864,24 @@ class _MessageBubble extends StatelessWidget {
                     tooltip: 'Opções da mensagem',
                     position: PopupMenuPosition.under,
                     padding: EdgeInsets.zero,
-                    iconSize: 17,
-                    constraints:
-                        const BoxConstraints.tightFor(width: 28, height: 28),
+                    constraints: const BoxConstraints(
+                      minWidth: 132,
+                      maxWidth: 180,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                       side: BorderSide(color: palette.border),
                     ),
                     color: palette.card,
                     elevation: 6,
-                    icon: Icon(
-                      Icons.keyboard_arrow_down,
-                      color: palette.muted,
+                    child: SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: Icon(
+                        Icons.keyboard_arrow_down,
+                        size: 17,
+                        color: palette.muted,
+                      ),
                     ),
                     onSelected: (action) {
                       if (action == _MessageAction.edit) {
