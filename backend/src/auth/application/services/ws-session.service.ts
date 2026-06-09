@@ -32,7 +32,6 @@ export class WsSessionService {
   }
 
   async getUser(client: Socket): Promise<UserEntity | null> {
-    if (client.data.user) return client.data.user as UserEntity;
     const token = this.tokenFromClient(client);
     if (!token) return null;
     try {
