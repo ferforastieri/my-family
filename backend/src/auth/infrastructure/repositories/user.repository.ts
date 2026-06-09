@@ -14,7 +14,6 @@ import {
 } from '@shared/infrastructure/database/mongo.utils';
 import {
   normalizeAccessKeys,
-  normalizeUserRole,
   type UserAccessKey,
   type UserEntity,
   type UserRole,
@@ -41,7 +40,7 @@ export class UserRepository {
       email: doc.email,
       passwordHash: doc.passwordHash ?? null,
       name: doc.name ?? null,
-      role: normalizeUserRole(doc.role),
+      role: doc.role,
       access: normalizeAccessKeys(doc.access),
       avatarPath: doc.avatarPath ?? null,
       createdAt: doc.createdAt,

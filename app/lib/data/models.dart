@@ -20,7 +20,7 @@ class AppUser {
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
         id: json['id'].toString(),
         email: json['email'] as String,
-        role: _normalizeRole(json['role']?.toString()),
+        role: (json['role'] ?? 'friends') as String,
         access: ((json['access'] as List?) ?? const [])
             .map((key) => key.toString())
             .where(appAccessKeys.contains)
@@ -32,12 +32,12 @@ class AppUser {
             : DateTime.tryParse(json['createdAt'].toString()),
       );
 
-  bool get isAdmin => role == 'marido' || role == 'esposa';
+  bool get isAdmin => role == 'husband' || role == 'wife';
 
   bool canAccess(String key) => isAdmin || access.contains(key);
 }
 
-const appUserRoles = ['marido', 'esposa', 'filhos', 'amigos'];
+const appUserRoles = ['husband', 'wife', 'children', 'friends'];
 
 const appAccessKeys = [
   'memorias',
@@ -49,17 +49,6 @@ const appAccessKeys = [
   'chat',
   'nossaHistoria',
 ];
-
-String _normalizeRole(String? role) {
-  return switch (role) {
-    'admin' => 'marido',
-    'wife' => 'esposa',
-    'child' => 'filhos',
-    'friend' => 'amigos',
-    final value when appUserRoles.contains(value) => value!,
-    _ => 'amigos',
-  };
-}
 
 class PaginatedResult<T> {
   const PaginatedResult({

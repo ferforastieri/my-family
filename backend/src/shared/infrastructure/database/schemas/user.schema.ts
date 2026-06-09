@@ -16,7 +16,7 @@ export class UserDocument {
   @Prop()
   name?: string;
 
-  @Prop({ required: true, default: 'amigos' })
+  @Prop({ required: true, default: 'friends' })
   role: UserRole;
 
   @Prop({ type: [String], default: [] })

@@ -5,6 +5,6 @@ export const ROLES_KEY = 'roles';
 
 /**
  * Define quais roles podem acessar o endpoint.
- * Ex.: @Roles('marido', 'esposa')
+ * Ex.: @Roles('husband', 'wife')
  */
 export const Roles = (...roles: UserRole[]) => SetMetadata(ROLES_KEY, roles);

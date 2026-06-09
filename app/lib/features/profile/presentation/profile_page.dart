@@ -220,10 +220,10 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
 
 String _roleLabel(String role) {
   return switch (role) {
-    'marido' => 'Marido',
-    'esposa' => 'Esposa',
-    'filhos' => 'Filhos',
-    'amigos' => 'Amigos',
+    'husband' => 'Marido',
+    'wife' => 'Esposa',
+    'children' => 'Filhos',
+    'friends' => 'Amigos',
     _ => 'Perfil',
   };
 }
