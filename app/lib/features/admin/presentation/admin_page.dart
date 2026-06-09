@@ -150,7 +150,7 @@ class _AdminPageState extends State<AdminPage> {
           children: [
             Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1180),
+                constraints: const BoxConstraints(maxWidth: 1200),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -171,18 +171,7 @@ class _AdminPageState extends State<AdminPage> {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            _AdminMetrics(
-                              users: usersPagination?.total ?? users.length,
-                              notifications: notificationsPagination?.total ??
-                                  notifications.length,
-                              games: (questionsPagination?.total ??
-                                      questions.length) +
-                                  (wordsPagination?.total ?? words.length),
-                              stats: stats.fold<int>(
-                                  0, (total, stat) => total + stat.count),
-                            ),
                             if (loadError != null) ...[
-                              const SizedBox(height: 14),
                               _AdminErrorBanner(message: loadError!),
                             ],
                             const SizedBox(height: 16),
@@ -481,6 +470,32 @@ class _AdminData {
 
 enum _AdminSection { users, notifications, games, stats }
 
+const _roleOptions = [
+  _UserOption('marido', 'Marido', Icons.admin_panel_settings_outlined),
+  _UserOption('esposa', 'Esposa', Icons.admin_panel_settings_outlined),
+  _UserOption('filhos', 'Filhos', Icons.child_care_outlined),
+  _UserOption('amigos', 'Amigos', Icons.favorite_outline),
+];
+
+const _accessOptions = [
+  _UserOption('memorias', 'Memórias em Fotos', Icons.photo_library_outlined),
+  _UserOption('playlist', 'Nossa Playlist', Icons.music_note_outlined),
+  _UserOption('cartas', 'Cartas de Amor', Icons.card_giftcard_outlined),
+  _UserOption('jogos', 'Jogos', Icons.sports_esports_outlined),
+  _UserOption('listas', 'Listas', Icons.checklist_outlined),
+  _UserOption('localizacao', 'Localização', Icons.location_on_outlined),
+  _UserOption('chat', 'Chat', Icons.chat_bubble_outline),
+  _UserOption('nossaHistoria', 'Nossa Jornada', Icons.auto_stories_outlined),
+];
+
+class _UserOption {
+  const _UserOption(this.value, this.label, this.icon);
+
+  final String value;
+  final String label;
+  final IconData icon;
+}
+
 const _adminRealtimeEvents = [
   'users.created',
   'users.updated',
@@ -523,91 +538,6 @@ class _AdminHero extends StatelessWidget {
       title: 'Administração',
       subtitle: 'Usuários, notificações, jogos e estatísticas.',
       icon: Icons.admin_panel_settings_outlined,
-    );
-  }
-}
-
-class _AdminMetrics extends StatelessWidget {
-  const _AdminMetrics({
-    required this.users,
-    required this.notifications,
-    required this.games,
-    required this.stats,
-  });
-
-  final int users;
-  final int notifications;
-  final int games;
-  final int stats;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final wide = constraints.maxWidth >= 760;
-        final cards = [
-          _MetricData('Usuários', users, Icons.people_outline),
-          _MetricData(
-              'Notificações', notifications, Icons.notifications_outlined),
-          _MetricData('Itens dos jogos', games, Icons.sports_esports_outlined),
-          _MetricData('Conclusões', stats, Icons.query_stats_outlined),
-        ];
-        return GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: wide ? 4 : 2,
-          childAspectRatio: wide ? 2.45 : 1.7,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          children: cards.map((card) => _MetricCard(card)).toList(),
-        );
-      },
-    );
-  }
-}
-
-class _MetricData {
-  const _MetricData(this.label, this.value, this.icon);
-  final String label;
-  final int value;
-  final IconData icon;
-}
-
-class _MetricCard extends StatelessWidget {
-  const _MetricCard(this.data);
-
-  final _MetricData data;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
-    return LovePanel(
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: palette.primary.withValues(alpha: .12),
-            foregroundColor: palette.primary,
-            child: Icon(data.icon),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('${data.value}',
-                    style: const TextStyle(
-                        fontSize: 24, fontWeight: FontWeight.w900)),
-                Text(data.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: palette.muted, fontSize: 12)),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -1335,13 +1265,16 @@ class _UserSheet extends StatefulWidget {
 class _UserSheetState extends State<_UserSheet> {
   late final TextEditingController name;
   late String role;
+  late Set<String> access;
   bool saving = false;
 
   @override
   void initState() {
     super.initState();
     name = TextEditingController(text: widget.user.name ?? '');
-    role = widget.user.role;
+    role =
+        appUserRoles.contains(widget.user.role) ? widget.user.role : 'amigos';
+    access = widget.user.access.toSet();
   }
 
   @override
@@ -1353,7 +1286,11 @@ class _UserSheetState extends State<_UserSheet> {
   Future<void> _save() async {
     setState(() => saving = true);
     try {
-      await widget.onSave({'name': name.text, 'role': role});
+      await widget.onSave({
+        'name': name.text,
+        'role': role,
+        'access': access.toList(),
+      });
       if (mounted) Navigator.pop(context);
     } finally {
       if (mounted) setState(() => saving = false);
@@ -1383,20 +1320,49 @@ class _UserSheetState extends State<_UserSheet> {
             onSubmitted: (_) => _save(),
           ),
           const SizedBox(height: 12),
-          SegmentedButton<String>(
-            segments: const [
-              ButtonSegment(
-                  value: 'friend',
-                  icon: Icon(Icons.favorite_outline),
-                  label: Text('Pessoa')),
-              ButtonSegment(
-                  value: 'admin',
-                  icon: Icon(Icons.admin_panel_settings_outlined),
-                  label: Text('Admin')),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final option in _roleOptions)
+                ChoiceChip(
+                  avatar: Icon(option.icon, size: 16),
+                  label: Text(option.label),
+                  selected: role == option.value,
+                  onSelected: (_) => setState(() => role = option.value),
+                ),
             ],
-            selected: {role},
-            onSelectionChanged: (value) => setState(() => role = value.first),
           ),
+          const SizedBox(height: 18),
+          Text(
+            'Acessos',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            role == 'marido' || role == 'esposa'
+                ? 'Marido e esposa acessam tudo automaticamente.'
+                : 'Marque os módulos liberados para esta conta.',
+          ),
+          const SizedBox(height: 10),
+          for (final option in _accessOptions)
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              secondary: Icon(option.icon),
+              title: Text(option.label),
+              value: access.contains(option.value),
+              onChanged: (checked) {
+                setState(() {
+                  if (checked == true) {
+                    access.add(option.value);
+                  } else {
+                    access.remove(option.value);
+                  }
+                });
+              },
+            ),
           const SizedBox(height: 18),
           AppSheetActions(
             onCancel: saving ? null : () => Navigator.pop(context),

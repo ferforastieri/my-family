@@ -22,12 +22,17 @@ export class FotosGateway {
   ) {}
 
   @SubscribeMessage('fotos.list')
-  list(@MessageBody() query?: PaginationQuery) {
+  async list(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() query?: PaginationQuery,
+  ) {
+    await this.session.requireAccess(client, 'memorias');
     return this.fotos.findAll(query);
   }
 
   @SubscribeMessage('fotos.albums')
-  albums() {
+  async albums(@ConnectedSocket() client: Socket) {
+    await this.session.requireAccess(client, 'memorias');
     return this.fotos.findAlbums();
   }
 
@@ -36,7 +41,7 @@ export class FotosGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: FotoWriteDto,
   ) {
-    await this.session.requireUser(client);
+    await this.session.requireAccess(client, 'memorias');
     const row = await this.fotos.create(data);
     this.server.emit('fotos.created', row);
     return { message: 'Memória salva com sucesso.', ...row };
@@ -47,7 +52,7 @@ export class FotosGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() body: { id: string; data: Partial<FotoWriteDto> },
   ) {
-    await this.session.requireUser(client);
+    await this.session.requireAccess(client, 'memorias');
     const row = await this.fotos.update(body.id, body.data);
     if (row) this.server.emit('fotos.updated', row);
     return row ? { message: 'Memória atualizada.', ...row } : row;
@@ -58,7 +63,7 @@ export class FotosGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() body: { id: string },
   ) {
-    await this.session.requireUser(client);
+    await this.session.requireAccess(client, 'memorias');
     const ok = await this.fotos.delete(body.id);
     if (ok) this.server.emit('fotos.deleted', { id: body.id });
     return { ok, message: 'Memória removida.' };

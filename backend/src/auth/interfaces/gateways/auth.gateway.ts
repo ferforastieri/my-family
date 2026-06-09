@@ -68,6 +68,7 @@ export class AuthGateway {
         email: user.email,
         name: user.name,
         role: user.role,
+        access: user.access,
         avatarPath: user.avatarPath,
       },
     };
@@ -92,6 +93,7 @@ export class AuthGateway {
             email: updated.email,
             name: updated.name,
             role: updated.role,
+            access: updated.access,
             avatarPath: updated.avatarPath,
           }
         : null,
@@ -120,7 +122,7 @@ export class AuthGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() query?: PaginationQuery,
   ) {
-    await this.session.requireRole(client, ['admin']);
+    await this.session.requireAdmin(client);
     return this.users.list(query);
   }
 
@@ -129,10 +131,11 @@ export class AuthGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() body: { id: string } & UpdateUserDto,
   ) {
-    await this.session.requireRole(client, ['admin']);
+    await this.session.requireAdmin(client);
     const row = await this.users.update(body.id, {
       name: body.name,
       role: body.role,
+      access: body.access,
     });
     if (row) this.server.emit('users.updated', row);
     return row ? { message: 'Usuário atualizado.', ...row } : row;
@@ -143,7 +146,7 @@ export class AuthGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() body: { id: string },
   ) {
-    await this.session.requireRole(client, ['admin']);
+    await this.session.requireAdmin(client);
     const ok = await this.users.delete(body.id);
     if (ok) this.server.emit('users.deleted', { id: body.id });
     return { ok, message: 'Usuário removido.' };

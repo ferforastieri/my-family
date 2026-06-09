@@ -109,7 +109,7 @@ class _GamesHub extends StatelessWidget {
         children: [
           Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1120),
+              constraints: const BoxConstraints(maxWidth: 1200),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -122,7 +122,7 @@ class _GamesHub extends StatelessWidget {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         crossAxisCount: wide ? 2 : 1,
-                        childAspectRatio: wide ? 1.55 : 1.38,
+                        childAspectRatio: wide ? 2.45 : 1.72,
                         crossAxisSpacing: 14,
                         mainAxisSpacing: 14,
                         children: [
@@ -132,6 +132,13 @@ class _GamesHub extends StatelessWidget {
                             body:
                                 'Perguntas dinâmicas para testar carinho, memória e pequenos detalhes da família.',
                             color: palette.primary,
+                            accent: const Color(0xffdf5198),
+                            metric: 'Quiz',
+                            details: const [
+                              'Respostas rápidas',
+                              'Pontuação no final',
+                              'Perguntas editáveis',
+                            ],
                             footer: 'Perguntas editáveis pelo admin',
                             onTap: () => onOpen(_GameView.quiz),
                           ),
@@ -141,6 +148,13 @@ class _GamesHub extends StatelessWidget {
                             body:
                                 'Palavras familiares e românticas sorteadas a cada partida.',
                             color: palette.primaryDark,
+                            accent: const Color(0xff9333ea),
+                            metric: '12x12',
+                            details: const [
+                              'Arraste nas letras',
+                              'Horizontal, vertical e diagonal',
+                              'Novo sorteio a cada rodada',
+                            ],
                             footer: 'Sorteio novo a cada rodada',
                             onTap: () => onOpen(_GameView.wordSearch),
                           ),
@@ -177,6 +191,9 @@ class _GameCard extends StatelessWidget {
     required this.title,
     required this.body,
     required this.color,
+    required this.accent,
+    required this.metric,
+    required this.details,
     required this.footer,
     required this.onTap,
   });
@@ -185,45 +202,128 @@ class _GameCard extends StatelessWidget {
   final String title;
   final String body;
   final Color color;
+  final Color accent;
+  final String metric;
+  final List<String> details;
   final String footer;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: LoveActionCard(
-            title: title,
-            description: body,
-            icon: icon,
-            onTap: onTap,
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 56),
-          ),
-        ),
-        Positioned(
-          left: 20,
-          right: 16,
-          bottom: 14,
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: LovePanel(
+          padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              Expanded(
-                child: Text(
-                  footer,
-                  style: TextStyle(
-                    color: color,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
+              Container(
+                width: 74,
+                height: double.infinity,
+                constraints: const BoxConstraints(minHeight: 104),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      color.withValues(alpha: .92),
+                      accent.withValues(alpha: .92),
+                    ],
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(icon, color: Colors.white, size: 30),
+                    const SizedBox(height: 8),
+                    Text(
+                      metric,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: color),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: palette.foreground,
+                        fontSize: 21,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      body,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: palette.muted,
+                        height: 1.32,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Icon(Icons.check_circle_outline,
+                            color: color, size: 16),
+                        const SizedBox(width: 7),
+                        Expanded(
+                          child: Text(
+                            details.first,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: palette.foreground,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            footer,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: color,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        Icon(Icons.chevron_right, color: color),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
-      ],
+      ),
     );
   }
 }
@@ -294,7 +394,7 @@ class _QuizGameState extends State<_QuizGame> {
         children: [
           Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 840),
+              constraints: const BoxConstraints(maxWidth: 1200),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -398,22 +498,38 @@ class _QuizQuestionView extends StatelessWidget {
           ),
           const SizedBox(height: 12),
         ],
-        for (var i = 0; i < question.options.length; i++)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: OutlinedButton.icon(
-              onPressed: () => onAnswer(i),
-              icon: Icon(Icons.favorite_border, color: palette.primary),
-              label: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(question.options[i]),
-              ),
-              style: OutlinedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-              ),
-            ),
-          ),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final columns = constraints.maxWidth >= 680 ? 2 : 1;
+            return GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: columns,
+              childAspectRatio: columns == 2 ? 4.2 : 6.0,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              children: [
+                for (var i = 0; i < question.options.length; i++)
+                  OutlinedButton.icon(
+                    onPressed: () => onAnswer(i),
+                    icon: Icon(Icons.favorite_border, color: palette.primary),
+                    label: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        question.options[i],
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
       ],
     );
   }
@@ -531,7 +647,6 @@ class _WordSearchGameState extends State<_WordSearchGame> {
 
   @override
   Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
     return RefreshIndicator(
       onRefresh: () async =>
           invalidateQueries(context, QueryKeys.wordSearchWords()),
@@ -541,7 +656,7 @@ class _WordSearchGameState extends State<_WordSearchGame> {
         children: [
           Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 900),
+              constraints: const BoxConstraints(maxWidth: 1200),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -562,79 +677,18 @@ class _WordSearchGameState extends State<_WordSearchGame> {
                         if (_wordsChanged(remoteWords) || words.isEmpty) {
                           _newGame(remoteWords);
                         }
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            if (widget.auth.user == null) ...[
-                              TextField(
-                                controller: name,
-                                decoration: const InputDecoration(
-                                    labelText: 'Seu nome'),
-                                textInputAction: TextInputAction.done,
-                                onSubmitted: (_) =>
-                                    FocusScope.of(context).unfocus(),
-                              ),
-                              const SizedBox(height: 14),
-                            ],
-                            Text(
-                                'Encontre as palavras na horizontal, vertical e diagonal.',
-                                style: TextStyle(color: palette.muted)),
-                            const SizedBox(height: 18),
-                            _WordSearchBoard(
-                              puzzle: puzzle,
-                              foundCells: foundCells,
-                              selectedCells: selectedCells,
-                              onSelectionStart: _startSelection,
-                              onSelectionUpdate: _updateSelection,
-                              onSelectionEnd: _endSelection,
-                            ),
-                            const SizedBox(height: 20),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                for (final word in words)
-                                  Chip(
-                                    avatar: Icon(
-                                      found.contains(word)
-                                          ? Icons.check_circle
-                                          : Icons.search,
-                                      size: 18,
-                                      color: found.contains(word)
-                                          ? Colors.green
-                                          : palette.primary,
-                                    ),
-                                    label: Text(
-                                      word,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w900,
-                                        decoration: found.contains(word)
-                                            ? TextDecoration.lineThrough
-                                            : null,
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            LinearProgressIndicator(
-                              value: words.isEmpty
-                                  ? 0
-                                  : found.length / words.length,
-                              minHeight: 8,
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            const SizedBox(height: 10),
-                            Text('Encontradas: ${found.length}/${words.length}',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w900)),
-                            const SizedBox(height: 12),
-                            FilledButton.icon(
-                              onPressed: () => setState(_newGame),
-                              icon: const Icon(Icons.shuffle),
-                              label: const Text('Novo sorteio'),
-                            ),
-                          ],
+                        return _WordSearchContent(
+                          name: name,
+                          showName: widget.auth.user == null,
+                          puzzle: puzzle,
+                          words: words,
+                          found: found,
+                          foundCells: foundCells,
+                          selectedCells: selectedCells,
+                          onSelectionStart: _startSelection,
+                          onSelectionUpdate: _updateSelection,
+                          onSelectionEnd: _endSelection,
+                          onNewGame: () => setState(_newGame),
                         );
                       },
                     ),
@@ -658,6 +712,189 @@ class _WordSearchGameState extends State<_WordSearchGame> {
       }
     }
     return false;
+  }
+}
+
+class _WordSearchContent extends StatelessWidget {
+  const _WordSearchContent({
+    required this.name,
+    required this.showName,
+    required this.puzzle,
+    required this.words,
+    required this.found,
+    required this.foundCells,
+    required this.selectedCells,
+    required this.onSelectionStart,
+    required this.onSelectionUpdate,
+    required this.onSelectionEnd,
+    required this.onNewGame,
+  });
+
+  final TextEditingController name;
+  final bool showName;
+  final _WordPuzzle puzzle;
+  final List<String> words;
+  final Set<String> found;
+  final Set<int> foundCells;
+  final List<int> selectedCells;
+  final ValueChanged<int> onSelectionStart;
+  final ValueChanged<int> onSelectionUpdate;
+  final Future<void> Function() onSelectionEnd;
+  final VoidCallback onNewGame;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final progress = words.isEmpty ? 0.0 : found.length / words.length;
+    final board = _WordSearchBoard(
+      puzzle: puzzle,
+      foundCells: foundCells,
+      selectedCells: selectedCells,
+      onSelectionStart: onSelectionStart,
+      onSelectionUpdate: onSelectionUpdate,
+      onSelectionEnd: onSelectionEnd,
+    );
+    final side = _WordSearchSidePanel(
+      words: words,
+      found: found,
+      progress: progress,
+      onNewGame: onNewGame,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (showName) ...[
+          TextField(
+            controller: name,
+            decoration: const InputDecoration(labelText: 'Seu nome'),
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => FocusScope.of(context).unfocus(),
+          ),
+          const SizedBox(height: 14),
+        ],
+        Text(
+          'Encontre as palavras na horizontal, vertical e diagonal.',
+          style: TextStyle(color: palette.muted),
+        ),
+        const SizedBox(height: 18),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final wide = constraints.maxWidth >= 820;
+            if (!wide) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  board,
+                  const SizedBox(height: 18),
+                  side,
+                ],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 3, child: board),
+                const SizedBox(width: 20),
+                Expanded(flex: 2, child: side),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _WordSearchSidePanel extends StatelessWidget {
+  const _WordSearchSidePanel({
+    required this.words,
+    required this.found,
+    required this.progress,
+    required this.onNewGame,
+  });
+
+  final List<String> words;
+  final Set<String> found;
+  final double progress;
+  final VoidCallback onNewGame;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: palette.card.withValues(alpha: .72),
+        border: Border.all(color: palette.border),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Palavras',
+                    style: TextStyle(
+                      color: palette.foreground,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                Text(
+                  '${found.length}/${words.length}',
+                  style: TextStyle(
+                    color: palette.primary,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            LinearProgressIndicator(
+              value: progress,
+              minHeight: 8,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final word in words)
+                  Chip(
+                    avatar: Icon(
+                      found.contains(word) ? Icons.check_circle : Icons.search,
+                      size: 18,
+                      color:
+                          found.contains(word) ? Colors.green : palette.primary,
+                    ),
+                    label: Text(
+                      word,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        decoration: found.contains(word)
+                            ? TextDecoration.lineThrough
+                            : null,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            FilledButton.icon(
+              onPressed: onNewGame,
+              icon: const Icon(Icons.shuffle),
+              label: const Text('Novo sorteio'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

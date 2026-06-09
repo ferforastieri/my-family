@@ -12,13 +12,20 @@ import {
   PaginationQuery,
   toId,
 } from '@shared/infrastructure/database/mongo.utils';
-import type { UserEntity, UserRole } from '@auth/domain/entities/user.entity';
+import {
+  normalizeAccessKeys,
+  normalizeUserRole,
+  type UserAccessKey,
+  type UserEntity,
+  type UserRole,
+} from '@auth/domain/entities/user.entity';
 
 export type CreateUserData = {
   email: string;
   passwordHash: string;
   name?: string;
   role?: UserRole;
+  access?: UserAccessKey[];
 };
 
 @Injectable()
@@ -34,7 +41,8 @@ export class UserRepository {
       email: doc.email,
       passwordHash: doc.passwordHash ?? null,
       name: doc.name ?? null,
-      role: doc.role,
+      role: normalizeUserRole(doc.role),
+      access: normalizeAccessKeys(doc.access),
       avatarPath: doc.avatarPath ?? null,
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
@@ -79,6 +87,7 @@ export class UserRepository {
     data: {
       name?: string;
       role?: UserRole;
+      access?: UserAccessKey[];
       avatarPath?: string;
       passwordHash?: string;
     },

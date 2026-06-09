@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
-import type { UserRole } from '@auth/domain/entities/user.entity';
+import { isAdminRole, type UserRole } from '@auth/domain/entities/user.entity';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -26,7 +26,11 @@ export class RolesGuard implements CanActivate {
     const user = req.user as { role?: string } | undefined;
     const role = user?.role as UserRole | undefined;
 
-    if (!role || !requiredRoles.includes(role)) {
+    const adminAllowed = requiredRoles.some((role) => isAdminRole(role));
+    if (
+      !role ||
+      (!requiredRoles.includes(role) && !(adminAllowed && isAdminRole(role)))
+    ) {
       throw new ForbiddenException('Acesso não autorizado para sua role.');
     }
     return true;

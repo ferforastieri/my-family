@@ -113,7 +113,7 @@ class _EditableTextCollectionPageState
                 children: [
                   Center(
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1100),
+                      constraints: const BoxConstraints(maxWidth: 1200),
                       child: AppPageHeader(
                         title: widget.title,
                         subtitle: canWrite
@@ -129,7 +129,7 @@ class _EditableTextCollectionPageState
                   const SizedBox(height: 16),
                   Center(
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1100),
+                      constraints: const BoxConstraints(maxWidth: 1200),
                       child: items.isEmpty
                           ? LovePanel(
                               child: Text(

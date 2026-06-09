@@ -22,7 +22,11 @@ export class MusicasGateway {
   ) {}
 
   @SubscribeMessage('musicas.list')
-  list(@MessageBody() query?: PaginationQuery) {
+  async list(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() query?: PaginationQuery,
+  ) {
+    await this.session.requireAccess(client, 'playlist');
     return this.musicas.findAll(query);
   }
 
@@ -31,7 +35,7 @@ export class MusicasGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: MusicaWriteDto,
   ) {
-    await this.session.requireUser(client);
+    await this.session.requireAccess(client, 'playlist');
     const row = await this.musicas.create(data);
     this.server.emit('musicas.created', row);
     return { message: 'Música salva com sucesso.', ...row };
@@ -42,7 +46,7 @@ export class MusicasGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() body: { id: string; data: Partial<MusicaWriteDto> },
   ) {
-    await this.session.requireUser(client);
+    await this.session.requireAccess(client, 'playlist');
     const row = await this.musicas.update(body.id, body.data);
     if (row) this.server.emit('musicas.updated', row);
     return row ? { message: 'Música atualizada.', ...row } : row;
@@ -53,7 +57,7 @@ export class MusicasGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() body: { id: string },
   ) {
-    await this.session.requireUser(client);
+    await this.session.requireAccess(client, 'playlist');
     const ok = await this.musicas.delete(body.id);
     if (ok) this.server.emit('musicas.deleted', { id: body.id });
     return { ok, message: 'Música removida.' };
