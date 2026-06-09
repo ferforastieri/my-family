@@ -256,6 +256,14 @@ class _ResourcePageState extends State<ResourcePage> {
   }
 
   void _openPhotoViewer(FamilyItem item) {
+    if (widget.resource == 'cartas') {
+      showDialog<void>(
+        context: context,
+        barrierColor: Colors.black.withValues(alpha: .58),
+        builder: (_) => _LetterReader(item: item),
+      );
+      return;
+    }
     showAppSheet<void>(
       context: context,
       builder: (_) => _PhotoViewer(item: item),
@@ -650,6 +658,7 @@ class _ResourceGrid extends StatelessWidget {
                 item: item,
                 onEdit: onEdit,
                 onDelete: onDelete,
+                onView: onView,
               );
             }
             return _TextResourceCard(
@@ -890,106 +899,113 @@ class _LetterCard extends StatelessWidget {
     required this.item,
     required this.onEdit,
     required this.onDelete,
+    required this.onView,
   });
 
   final FamilyItem item;
   final ValueChanged<FamilyItem> onEdit;
   final ValueChanged<FamilyItem> onDelete;
+  final ValueChanged<FamilyItem> onView;
 
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     final preview = item.subtitle.trim();
-    return LovePanel(
-      padding: EdgeInsets.zero,
+    return Material(
+      color: Colors.transparent,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        borderRadius: BorderRadius.circular(8),
+        child: Stack(
           children: [
-            Expanded(
-              child: InkWell(
-                onTap: () => onEdit(item),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    ColoredBox(color: palette.card.withValues(alpha: .82)),
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      height: 7,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              palette.primary,
-                              const Color(0xffff73b9),
-                              const Color(0xff9333ea),
-                            ],
+            Positioned.fill(
+              child: ColoredBox(
+                color: palette.primary.withValues(alpha: .06),
+              ),
+            ),
+            Positioned(
+              left: 18,
+              right: 18,
+              top: 18,
+              bottom: 58,
+              child: Material(
+                color: const Color(0xfffffbf6),
+                elevation: 3,
+                shadowColor: Colors.black.withValues(alpha: .12),
+                borderRadius: BorderRadius.circular(4),
+                child: InkWell(
+                  onTap: () => onView(item),
+                  borderRadius: BorderRadius.circular(4),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 18, 18, 52),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'PARA MEU AMOR',
+                          style: TextStyle(
+                            color: palette.primary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 22, 18, 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 52,
-                            height: 52,
-                            decoration: BoxDecoration(
-                              color: palette.primary.withValues(alpha: .10),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                  color:
-                                      palette.primary.withValues(alpha: .14)),
-                            ),
-                            child: Icon(Icons.favorite_outline,
-                                color: palette.primary, size: 28),
-                          ),
-                          const SizedBox(height: 14),
-                          Text(
-                            item.title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: palette.foreground,
-                              fontSize: 21,
-                              fontWeight: FontWeight.w900,
-                              height: 1.08,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Expanded(
-                            child: Text(
-                              preview.isEmpty
-                                  ? 'Uma carta esperando palavras de amor.'
-                                  : preview,
-                              maxLines: 5,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: palette.muted,
-                                height: 1.35,
-                                fontWeight: FontWeight.w700,
+                        const SizedBox(height: 10),
+                        Text(
+                          item.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context)
+                              .extension<AppTextThemes>()!
+                              .display
+                              .copyWith(
+                                color: const Color(0xff382b32),
+                                fontSize: 21,
+                                fontWeight: FontWeight.w800,
+                                height: 1.08,
                               ),
+                        ),
+                        const SizedBox(height: 9),
+                        Expanded(
+                          child: Text(
+                            preview.isEmpty
+                                ? 'Uma carta esperando palavras de amor.'
+                                : preview,
+                            maxLines: 4,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xff705e67),
+                              height: 1.42,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: 112,
+              child: IgnorePointer(
+                child: CustomPaint(
+                  painter: _EnvelopePainter(
+                    color: palette.primary.withValues(alpha: .30),
+                    lineColor: palette.primary.withValues(alpha: .42),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 14,
+              right: 8,
+              bottom: 5,
               child: Row(
                 children: [
                   Expanded(
                     child: Text(
-                      'Carta de amor',
+                      'Abrir carta',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -1000,13 +1016,15 @@ class _LetterCard extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                      onPressed: () => onEdit(item),
-                      icon: const Icon(Icons.edit_outlined),
-                      tooltip: 'Editar'),
+                    onPressed: () => onEdit(item),
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: 'Editar',
+                  ),
                   IconButton(
-                      onPressed: () => onDelete(item),
-                      icon: const Icon(Icons.delete_outline),
-                      tooltip: 'Excluir'),
+                    onPressed: () => onDelete(item),
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: 'Excluir',
+                  ),
                 ],
               ),
             ),
@@ -1190,15 +1208,24 @@ class _ResourceDialogState extends State<ResourceDialog> {
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _save()),
           TextField(
-              controller: subtitle,
-              decoration: const InputDecoration(labelText: 'Texto / artista'),
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => _save()),
-          TextField(
-              controller: extra,
-              decoration: const InputDecoration(labelText: 'Extra'),
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => _save()),
+            controller: subtitle,
+            decoration: InputDecoration(
+              labelText:
+                  widget.resource == 'cartas' ? 'Carta' : 'Texto / artista',
+            ),
+            minLines: widget.resource == 'cartas' ? 7 : 1,
+            maxLines: widget.resource == 'cartas' ? 12 : 1,
+            textInputAction: widget.resource == 'cartas'
+                ? TextInputAction.newline
+                : TextInputAction.done,
+            onSubmitted: widget.resource == 'cartas' ? null : (_) => _save(),
+          ),
+          if (widget.resource != 'cartas')
+            TextField(
+                controller: extra,
+                decoration: const InputDecoration(labelText: 'Extra'),
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _save()),
           const SizedBox(height: 18),
           AppSheetActions(
             onCancel: saving ? null : () => Navigator.pop(context),
@@ -1401,6 +1428,209 @@ String _datePayload(DateTime value) {
   final month = value.month.toString().padLeft(2, '0');
   final day = value.day.toString().padLeft(2, '0');
   return '${value.year}-$month-$day';
+}
+
+class _LetterReader extends StatelessWidget {
+  const _LetterReader({required this.item});
+
+  final FamilyItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final date = item.data['data']?.toString().split('T').first ?? '';
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    return Dialog(
+      insetPadding: const EdgeInsets.all(18),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 900,
+          maxHeight: screenHeight * .90,
+        ),
+        child: SingleChildScrollView(
+          child: Material(
+            color: const Color(0xfffffbf6),
+            elevation: 8,
+            shadowColor: Colors.black.withValues(alpha: .18),
+            borderRadius: BorderRadius.circular(4),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(30, 30, 30, 34),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'PARA MEU AMOR',
+                          style: TextStyle(
+                            color: Color(0xffb42d6c),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      if (date.isNotEmpty)
+                        Text(
+                          date,
+                          style: const TextStyle(
+                            color: Color(0xff8b747e),
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    item.title,
+                    style: Theme.of(context)
+                        .extension<AppTextThemes>()!
+                        .display
+                        .copyWith(
+                          color: const Color(0xff382b32),
+                          fontSize: 30,
+                          fontWeight: FontWeight.w800,
+                          height: 1.12,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: 52,
+                    height: 2,
+                    color: palette.primary.withValues(alpha: .48),
+                  ),
+                  const SizedBox(height: 22),
+                  Text(
+                    item.subtitle,
+                    style: const TextStyle(
+                      color: Color(0xff4b3b43),
+                      fontSize: 17,
+                      height: 1.72,
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text(
+                          'Com todo o meu amor,',
+                          style: TextStyle(
+                            color: Color(0xff705e67),
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Icon(Icons.favorite, color: palette.primary, size: 22),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EnvelopePainter extends CustomPainter {
+  const _EnvelopePainter({required this.color, required this.lineColor});
+
+  final Color color;
+  final Color lineColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final back = Paint()..color = Color.alphaBlend(color, Colors.white);
+    final flap = Paint()
+      ..color = Color.alphaBlend(
+        color.withValues(alpha: .78),
+        Colors.white,
+      );
+    final front = Paint()
+      ..color = Color.alphaBlend(
+        color.withValues(alpha: .92),
+        Colors.white,
+      );
+    final line = Paint()
+      ..color = lineColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+    final rect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      const Radius.circular(8),
+    );
+    canvas.drawRRect(rect, back);
+
+    final openFlap = Path()
+      ..moveTo(5, size.height * .22)
+      ..lineTo(size.width / 2, size.height * .68)
+      ..lineTo(size.width - 5, size.height * .22)
+      ..lineTo(size.width / 2, 0)
+      ..close();
+    canvas.drawPath(openFlap, flap);
+    canvas.drawPath(openFlap, line);
+
+    final leftFold = Path()
+      ..moveTo(0, size.height * .28)
+      ..lineTo(size.width / 2, size.height * .66)
+      ..lineTo(0, size.height)
+      ..close();
+    final rightFold = Path()
+      ..moveTo(size.width, size.height * .28)
+      ..lineTo(size.width / 2, size.height * .66)
+      ..lineTo(size.width, size.height)
+      ..close();
+    canvas.drawPath(leftFold, front);
+    canvas.drawPath(rightFold, front);
+
+    final frontFold = Path()
+      ..moveTo(0, size.height)
+      ..lineTo(size.width / 2, size.height * .57)
+      ..lineTo(size.width, size.height)
+      ..close();
+    canvas.drawPath(frontFold, front);
+    canvas.drawPath(leftFold, line);
+    canvas.drawPath(rightFold, line);
+    canvas.drawPath(frontFold, line);
+
+    final sealCenter = Offset(size.width / 2, size.height * .60);
+    canvas.drawCircle(
+      sealCenter,
+      14,
+      Paint()..color = const Color(0xffc93f78),
+    );
+    final heart = Path()
+      ..moveTo(sealCenter.dx, sealCenter.dy + 5)
+      ..cubicTo(
+        sealCenter.dx - 12,
+        sealCenter.dy - 2,
+        sealCenter.dx - 7,
+        sealCenter.dy - 10,
+        sealCenter.dx,
+        sealCenter.dy - 4,
+      )
+      ..cubicTo(
+        sealCenter.dx + 7,
+        sealCenter.dy - 10,
+        sealCenter.dx + 12,
+        sealCenter.dy - 2,
+        sealCenter.dx,
+        sealCenter.dy + 5,
+      );
+    canvas.drawPath(heart, Paint()..color = Colors.white);
+  }
+
+  @override
+  bool shouldRepaint(_EnvelopePainter oldDelegate) {
+    return color != oldDelegate.color || lineColor != oldDelegate.lineColor;
+  }
 }
 
 class _PhotoViewer extends StatelessWidget {

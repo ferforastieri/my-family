@@ -7,7 +7,6 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/services/ws-session.service';
-import type { UserAccessKey } from '@auth/domain/entities/user.entity';
 import { CartasService } from '../../application/services/cartas.service';
 import type { CartaWriteDto } from '../dto/carta.dto';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
@@ -27,8 +26,8 @@ export class CartasGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() query?: PaginationQuery,
   ) {
-    await this.session.requireAccess(client, this.accessKeyForQuery(query));
-    return this.cartas.findAll(query);
+    await this.session.requireAccess(client, 'cartas');
+    return this.cartas.findAll('letter', query);
   }
 
   @SubscribeMessage('cartas.create')
@@ -36,8 +35,8 @@ export class CartasGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: CartaWriteDto,
   ) {
-    await this.session.requireAccess(client, this.accessKeyForCarta(data));
-    const row = await this.cartas.create(data);
+    await this.session.requireAccess(client, 'cartas');
+    const row = await this.cartas.create('letter', data);
     this.server.emit('cartas.created', row);
     return { message: 'Texto salvo.', ...row };
   }
@@ -47,8 +46,8 @@ export class CartasGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() body: { id: string; data: Partial<CartaWriteDto> },
   ) {
-    await this.session.requireAccess(client, this.accessKeyForCarta(body.data));
-    const row = await this.cartas.update(body.id, body.data);
+    await this.session.requireAccess(client, 'cartas');
+    const row = await this.cartas.update(body.id, 'letter', body.data);
     if (row) this.server.emit('cartas.updated', row);
     return row ? { message: 'Texto atualizado.', ...row } : row;
   }
@@ -59,18 +58,50 @@ export class CartasGateway {
     @MessageBody() body: { id: string },
   ) {
     await this.session.requireAccess(client, 'cartas');
-    const ok = await this.cartas.delete(body.id);
+    const ok = await this.cartas.delete(body.id, 'letter');
     if (ok) this.server.emit('cartas.deleted', { id: body.id });
     return { ok, message: 'Texto removido.' };
   }
 
-  private accessKeyForQuery(query?: PaginationQuery): UserAccessKey {
-    const titlePrefix = (query as { titlePrefix?: string } | undefined)
-      ?.titlePrefix;
-    return titlePrefix?.startsWith('journey:') ? 'nossaHistoria' : 'cartas';
+  @SubscribeMessage('journey.list')
+  async listJourney(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() query?: PaginationQuery,
+  ) {
+    await this.session.requireAccess(client, 'nossaHistoria');
+    return this.cartas.findAll('journey', query);
   }
 
-  private accessKeyForCarta(data?: Partial<CartaWriteDto>): UserAccessKey {
-    return data?.titulo?.startsWith('journey:') ? 'nossaHistoria' : 'cartas';
+  @SubscribeMessage('journey.create')
+  async createJourney(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: CartaWriteDto,
+  ) {
+    await this.session.requireAccess(client, 'nossaHistoria');
+    const row = await this.cartas.create('journey', data);
+    this.server.emit('journey.created', row);
+    return { message: 'Capítulo salvo.', ...row };
+  }
+
+  @SubscribeMessage('journey.update')
+  async updateJourney(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { id: string; data: Partial<CartaWriteDto> },
+  ) {
+    await this.session.requireAccess(client, 'nossaHistoria');
+    const row = await this.cartas.update(body.id, 'journey', body.data);
+    if (row) this.server.emit('journey.updated', row);
+    return row ? { message: 'Capítulo atualizado.', ...row } : row;
+  }
+
+  @SubscribeMessage('journey.delete')
+  async deleteJourney(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { id: string },
+  ) {
+    await this.session.requireAccess(client, 'nossaHistoria');
+    const ok = await this.cartas.delete(body.id, 'journey');
+    if (ok) this.server.emit('journey.deleted', { id: body.id });
+    return { ok, message: 'Capítulo removido.' };
   }
 }

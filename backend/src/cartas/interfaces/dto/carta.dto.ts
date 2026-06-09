@@ -14,6 +14,7 @@ export class CartaWriteDto {
 
 export class CartaResponseDto {
   id: string;
+  tipo: 'letter' | 'journey';
   titulo: string;
   conteudo: string;
   data: Date;

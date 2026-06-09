@@ -78,7 +78,7 @@ class _ChatPageState extends State<ChatPage> {
     _lastScrolledConversationId = conversationId;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !messagesScroll.hasClients) return;
-      final end = messagesScroll.position.maxScrollExtent;
+      final end = messagesScroll.position.minScrollExtent;
       if (animate) {
         messagesScroll.animateTo(
           end,
@@ -618,11 +618,13 @@ class _MessagePane extends StatelessWidget {
                     ? const _MessagesSkeleton()
                     : ListView.builder(
                         controller: messagesScroll,
+                        reverse: true,
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.all(18),
                         itemCount: chat.messages.length,
                         itemBuilder: (context, index) {
-                          final message = chat.messages[index];
+                          final message =
+                              chat.messages[chat.messages.length - 1 - index];
                           return _MessageBubble(
                             message: message,
                             isMine: _isMine(message, auth.user),

@@ -13,7 +13,6 @@ export function cleanUndefined<T extends Record<string, unknown>>(
 export type PaginationQuery = {
   page?: number | string;
   limit?: number | string;
-  titlePrefix?: string;
   album?: string;
 };
 

@@ -22,30 +22,30 @@ export class CartasController {
 
   @Get()
   async findAll() {
-    return this.cartasService.findAll();
+    return this.cartasService.findAll('letter');
   }
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    return this.cartasService.findOne(id);
+    return this.cartasService.findOne(id, 'letter');
   }
 
   @Post()
   async create(@Body() data: CartaWriteDto) {
-    const row = await this.cartasService.create(data);
+    const row = await this.cartasService.create('letter', data);
     return { message: 'Texto salvo.', ...row };
   }
 
   @Put(':id')
   async update(@Param('id') id: string, @Body() data: Partial<CartaWriteDto>) {
-    const row = await this.cartasService.update(id, data);
+    const row = await this.cartasService.update(id, 'letter', data);
     return row ? { message: 'Texto atualizado.', ...row } : row;
   }
 
   @Delete(':id')
   async delete(@Param('id') id: string) {
     return {
-      ok: await this.cartasService.delete(id),
+      ok: await this.cartasService.delete(id, 'letter'),
       message: 'Texto removido.',
     };
   }
