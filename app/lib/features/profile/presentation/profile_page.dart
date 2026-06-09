@@ -147,27 +147,6 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    _StatusChip(
-                      icon: Icons.verified_user_outlined,
-                      label: user.isAdmin
-                          ? 'Administrador'
-                          : _roleLabel(user.role),
-                    ),
-                    _StatusChip(
-                      icon: Icons.lock_outline,
-                      label: 'Conta conectada',
-                    ),
-                    _StatusChip(
-                      icon: Icons.favorite_outline,
-                      label: 'Nossa Família',
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 22),
                 Text(
                   'Conta',
                   style: TextStyle(
@@ -467,41 +446,6 @@ class _InitialAvatar extends StatelessWidget {
         color: color,
         fontSize: 30,
         fontWeight: FontWeight.w900,
-      ),
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-      decoration: BoxDecoration(
-        color: palette.primary.withValues(alpha: .08),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: palette.border),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: palette.primary),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              color: palette.primary,
-              fontWeight: FontWeight.w800,
-              fontSize: 12,
-            ),
-          ),
-        ],
       ),
     );
   }
