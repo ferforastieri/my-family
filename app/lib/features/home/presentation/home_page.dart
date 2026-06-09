@@ -42,11 +42,11 @@ class _HomePageState extends State<HomePage> {
         onRefresh: () async => setState(() => counters = _buildCounters()),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
+          padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
           children: [
             Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1152),
+                constraints: const BoxConstraints(maxWidth: 1200),
                 child: Column(
                   children: [
                     const _HomeIntro(),
@@ -58,9 +58,9 @@ class _HomePageState extends State<HomePage> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           crossAxisCount: wide ? 3 : 1,
-                          childAspectRatio: wide ? 1.05 : 1.22,
-                          crossAxisSpacing: 20,
-                          mainAxisSpacing: 20,
+                          childAspectRatio: wide ? 1.58 : 1.42,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
                           children: counters
                               .map((counter) => CounterCard(counter))
                               .toList(),
@@ -346,15 +346,15 @@ class CounterCard extends StatelessWidget {
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
                 child: Column(
                   children: [
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          width: 48,
-                          height: 48,
+                          width: 44,
+                          height: 44,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(colors: info.colors),
@@ -368,7 +368,7 @@ class CounterCard extends StatelessWidget {
                             ],
                           ),
                           child: Text(info.icon,
-                              style: const TextStyle(fontSize: 26)),
+                              style: const TextStyle(fontSize: 24)),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -382,7 +382,7 @@ class CounterCard extends StatelessWidget {
                                 style: TextStyle(
                                   color: palette.foreground,
                                   fontWeight: FontWeight.w900,
-                                  fontSize: 18,
+                                  fontSize: 17,
                                   height: 1.1,
                                 ),
                               ),
@@ -400,10 +400,12 @@ class CounterCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 10),
                     Text(
                       info.message,
                       textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: palette.muted,
                         fontSize: 13,
@@ -411,7 +413,7 @@ class CounterCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const Spacer(),
+                    const SizedBox(height: 12),
                     Row(
                       children: values
                           .map(
@@ -420,7 +422,7 @@ class CounterCard extends StatelessWidget {
                                 margin:
                                     const EdgeInsets.symmetric(horizontal: 3),
                                 padding:
-                                    const EdgeInsets.symmetric(vertical: 10),
+                                    const EdgeInsets.symmetric(vertical: 8),
                                 decoration: BoxDecoration(
                                   color: palette.primary.withValues(alpha: .06),
                                   borderRadius: BorderRadius.circular(12),
@@ -436,7 +438,7 @@ class CounterCard extends StatelessWidget {
                                       style: TextStyle(
                                         color: palette.foreground,
                                         fontWeight: FontWeight.w900,
-                                        fontSize: 23,
+                                        fontSize: 22,
                                       ),
                                     ),
                                     Text(
@@ -454,11 +456,11 @@ class CounterCard extends StatelessWidget {
                           )
                           .toList(),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 9),
+                          horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: info.colors.last.withValues(alpha: .08),
                         border: Border.all(
@@ -468,8 +470,11 @@ class CounterCard extends StatelessWidget {
                       child: Text(
                         '${info.elapsed.isFuture ? 'Faltam' : 'Já se passaram'} ${info.elapsed.totalDays} dias',
                         textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: palette.foreground,
+                          fontSize: 13,
                           fontWeight: FontWeight.w900,
                           height: 1.2,
                         ),

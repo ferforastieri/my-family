@@ -67,6 +67,14 @@ class _ResourcePageState extends State<ResourcePage> {
     _invalidate();
   }
 
+  void _selectAlbum(String? album) {
+    setState(() {
+      selectedAlbum = album;
+      page = 1;
+    });
+    _invalidate();
+  }
+
   void _invalidate() {
     invalidateQueries(context, QueryKeys.resourceScope(widget.resource));
   }
@@ -86,6 +94,7 @@ class _ResourcePageState extends State<ResourcePage> {
           loading: const PageSkeleton(),
           builder: (context, albums, _) =>
               AppQuery<PaginatedResult<FamilyItem>>(
+            key: ValueKey('${widget.resource}-$page-${selectedAlbum ?? 'all'}'),
             queryKey: QueryKeys.resource(
               widget.resource,
               page,
@@ -114,8 +123,7 @@ class _ResourcePageState extends State<ResourcePage> {
                   children: [
                     Center(
                       child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                            maxWidth: widget.resource == 'fotos' ? 1280 : 1200),
+                        constraints: const BoxConstraints(maxWidth: 1200),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
@@ -126,24 +134,23 @@ class _ResourcePageState extends State<ResourcePage> {
                               actionLabel: _actionLabelFor(widget.resource),
                               onPressed: () => _openCreate(context),
                             ),
-                            const SizedBox(height: 14),
-                            _ResourceMetrics(
-                              resource: widget.resource,
-                              total: result.total,
-                              visible: items.length,
-                              albums: albums.length,
-                            ),
+                            if (widget.resource != 'fotos' &&
+                                widget.resource != 'musicas' &&
+                                widget.resource != 'cartas') ...[
+                              const SizedBox(height: 14),
+                              _ResourceMetrics(
+                                resource: widget.resource,
+                                total: result.total,
+                                visible: items.length,
+                                albums: albums.length,
+                              ),
+                            ],
                             if (widget.resource == 'fotos') ...[
-                              const SizedBox(height: 16),
+                              const SizedBox(height: 14),
                               _AlbumFilter(
                                 albums: albums,
                                 selectedAlbum: selectedAlbum,
-                                onSelected: (album) {
-                                  setState(() {
-                                    selectedAlbum = album;
-                                    page = 1;
-                                  });
-                                },
+                                onSelected: _selectAlbum,
                               ),
                             ],
                             const SizedBox(height: 16),
@@ -383,6 +390,8 @@ class _AlbumFilter extends StatelessWidget {
     required this.onSelected,
   });
 
+  static const _allAlbumsValue = '__all_albums__';
+
   final List<PhotoAlbumSummary> albums;
   final String? selectedAlbum;
   final ValueChanged<String?> onSelected;
@@ -391,72 +400,158 @@ class _AlbumFilter extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     final total = albums.fold<int>(0, (sum, album) => sum + album.count);
+    final selectedLabel = selectedAlbum ?? 'Todos os álbuns';
     return LovePanel(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      child: Row(
         children: [
-          Row(
-            children: [
-              Icon(Icons.collections_bookmark_outlined,
-                  color: palette.primary, size: 20),
-              const SizedBox(width: 8),
-              const Text(
-                'Álbuns',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
-              ),
-            ],
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: palette.primary.withValues(alpha: .10),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(Icons.collections_bookmark_outlined,
+                color: palette.primary),
           ),
-          const SizedBox(height: 12),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _AlbumChip(
-                  label: 'Todos',
-                  count: total,
-                  selected: selectedAlbum == null,
-                  onTap: () => onSelected(null),
-                ),
-                for (final album in albums) ...[
-                  const SizedBox(width: 8),
-                  _AlbumChip(
-                    label: album.album,
-                    count: album.count,
-                    selected: selectedAlbum == album.album,
-                    onTap: () => onSelected(album.album),
+          const SizedBox(width: 12),
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () => _openAlbumSheet(context, total),
+              style: OutlinedButton.styleFrom(
+                alignment: Alignment.centerLeft,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                side: BorderSide(color: palette.border),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Filtrar por álbum',
+                          style: TextStyle(
+                            color: palette.muted,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          selectedAlbum == null
+                              ? '$selectedLabel ($total)'
+                              : selectedLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: palette.foreground,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                  Icon(Icons.keyboard_arrow_down, color: palette.primary),
                 ],
-              ],
+              ),
             ),
           ),
         ],
       ),
     );
   }
+
+  Future<void> _openAlbumSheet(BuildContext context, int total) async {
+    final selected = await showAppSheet<String?>(
+      context: context,
+      builder: (_) => _AlbumOptionsSheet(
+        albums: albums,
+        selectedAlbum: selectedAlbum,
+        total: total,
+      ),
+    );
+    if (selected == _allAlbumsValue) {
+      onSelected(null);
+    } else if (selected != null) {
+      onSelected(selected);
+    }
+  }
 }
 
-class _AlbumChip extends StatelessWidget {
-  const _AlbumChip({
-    required this.label,
-    required this.count,
+class _AlbumOptionsSheet extends StatelessWidget {
+  const _AlbumOptionsSheet({
+    required this.albums,
+    required this.selectedAlbum,
+    required this.total,
+  });
+
+  final List<PhotoAlbumSummary> albums;
+  final String? selectedAlbum;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const AppSheetHeader(
+          title: 'Escolher álbum',
+          subtitle: 'Filtre as memórias pelo álbum desejado.',
+          icon: Icons.collections_bookmark_outlined,
+        ),
+        const SizedBox(height: 12),
+        _OptionTile(
+          icon: Icons.photo_library_outlined,
+          title: 'Todos os álbuns',
+          subtitle: '$total memórias',
+          selected: selectedAlbum == null,
+          onTap: () => Navigator.pop(context, _AlbumFilter._allAlbumsValue),
+        ),
+        for (final album in albums)
+          _OptionTile(
+            icon: Icons.photo_album_outlined,
+            title: album.album,
+            subtitle: '${album.count} memórias',
+            selected: selectedAlbum == album.album,
+            onTap: () => Navigator.pop(context, album.album),
+          ),
+      ],
+    );
+  }
+}
+
+class _OptionTile extends StatelessWidget {
+  const _OptionTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
     required this.selected,
     required this.onTap,
   });
 
-  final String label;
-  final int count;
+  final IconData icon;
+  final String title;
+  final String subtitle;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return ChoiceChip(
-      selected: selected,
-      onSelected: (_) => onTap(),
-      avatar: const Icon(Icons.photo_album_outlined, size: 18),
-      label: Text('$label ($count)'),
-      labelStyle: const TextStyle(fontWeight: FontWeight.w800),
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return ListTile(
+      onTap: onTap,
+      leading: Icon(icon, color: selected ? palette.primary : palette.muted),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
+      subtitle: Text(subtitle),
+      trailing:
+          selected ? Icon(Icons.check_circle, color: palette.primary) : null,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
     );
   }
 }
@@ -512,7 +607,10 @@ class _ResourceGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = resource == 'fotos'
+        final visualCards = resource == 'fotos' ||
+            resource == 'musicas' ||
+            resource == 'cartas';
+        final columns = visualCards
             ? (constraints.maxWidth >= 1280
                 ? 4
                 : constraints.maxWidth >= 1024
@@ -529,7 +627,7 @@ class _ResourceGrid extends StatelessWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           crossAxisCount: columns,
-          childAspectRatio: resource == 'fotos' ? 1.05 : 1.08,
+          childAspectRatio: visualCards ? 1.05 : 1.08,
           crossAxisSpacing: 32,
           mainAxisSpacing: 32,
           children: items.map((item) {
@@ -539,6 +637,20 @@ class _ResourceGrid extends StatelessWidget {
                   onEdit: onEdit,
                   onDelete: onDelete,
                   onView: onView);
+            }
+            if (resource == 'musicas') {
+              return _MusicCard(
+                item: item,
+                onEdit: onEdit,
+                onDelete: onDelete,
+              );
+            }
+            if (resource == 'cartas') {
+              return _LetterCard(
+                item: item,
+                onEdit: onEdit,
+                onDelete: onDelete,
+              );
             }
             return _TextResourceCard(
               resource: resource,
@@ -612,6 +724,294 @@ class _TextResourceCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MusicCard extends StatelessWidget {
+  const _MusicCard({
+    required this.item,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final FamilyItem item;
+  final ValueChanged<FamilyItem> onEdit;
+  final ValueChanged<FamilyItem> onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final moment = item.data['momento']?.toString().trim();
+    final link = item.data['linkSpotify']?.toString().trim();
+    final hasLink = link != null && link.isNotEmpty;
+    return LovePanel(
+      padding: EdgeInsets.zero,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: InkWell(
+                onTap: () => onEdit(item),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            palette.primary.withValues(alpha: .88),
+                            const Color(0xffdf5198),
+                            const Color(0xff9333ea),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: 18,
+                      right: 18,
+                      bottom: 18,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: .22),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                  color: Colors.white.withValues(alpha: .26)),
+                            ),
+                            child: const Icon(Icons.music_note,
+                                color: Colors.white, size: 30),
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            item.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                              height: 1.08,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            item.subtitle.isEmpty
+                                ? 'Artista não informado'
+                                : item.subtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: .86),
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (moment != null && moment.isNotEmpty)
+                      Positioned(
+                        top: 10,
+                        left: 10,
+                        right: 10,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: .32),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 6),
+                              child: Text(
+                                moment,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 8, 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      hasLink ? 'Link do Spotify salvo' : 'Sem link do Spotify',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: hasLink ? palette.primary : palette.muted,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                      onPressed: () => onEdit(item),
+                      icon: const Icon(Icons.edit_outlined),
+                      tooltip: 'Editar'),
+                  IconButton(
+                      onPressed: () => onDelete(item),
+                      icon: const Icon(Icons.delete_outline),
+                      tooltip: 'Excluir'),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LetterCard extends StatelessWidget {
+  const _LetterCard({
+    required this.item,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final FamilyItem item;
+  final ValueChanged<FamilyItem> onEdit;
+  final ValueChanged<FamilyItem> onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final preview = item.subtitle.trim();
+    return LovePanel(
+      padding: EdgeInsets.zero,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: InkWell(
+                onTap: () => onEdit(item),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ColoredBox(color: palette.card.withValues(alpha: .82)),
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: 7,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              palette.primary,
+                              const Color(0xffff73b9),
+                              const Color(0xff9333ea),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 22, 18, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              color: palette.primary.withValues(alpha: .10),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                  color:
+                                      palette.primary.withValues(alpha: .14)),
+                            ),
+                            child: Icon(Icons.favorite_outline,
+                                color: palette.primary, size: 28),
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            item.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: palette.foreground,
+                              fontSize: 21,
+                              fontWeight: FontWeight.w900,
+                              height: 1.08,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Expanded(
+                            child: Text(
+                              preview.isEmpty
+                                  ? 'Uma carta esperando palavras de amor.'
+                                  : preview,
+                              maxLines: 5,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: palette.muted,
+                                height: 1.35,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Carta de amor',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: palette.primary,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                      onPressed: () => onEdit(item),
+                      icon: const Icon(Icons.edit_outlined),
+                      tooltip: 'Editar'),
+                  IconButton(
+                      onPressed: () => onDelete(item),
+                      icon: const Icon(Icons.delete_outline),
+                      tooltip: 'Excluir'),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

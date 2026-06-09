@@ -121,6 +121,13 @@ class _DesktopMainNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
+    final user = auth.user;
+    final hasMemories = user?.canAccess('memorias') == true ||
+        user?.canAccess('playlist') == true ||
+        user?.canAccess('cartas') == true;
+    final hasMore = user?.canAccess('jogos') == true ||
+        user?.canAccess('listas') == true ||
+        user?.canAccess('localizacao') == true;
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 760),
       child: Row(
@@ -137,15 +144,15 @@ class _DesktopMainNavigation extends StatelessWidget {
             icon: Icons.photo_library_outlined,
             selectedIcon: Icons.photo_library,
             label: 'Memórias',
-            selected: auth.user != null &&
+            selected: hasMemories &&
                 (_isSelected('/atalhos/memorias', currentLocation) ||
                     currentLocation == '/galeria' ||
                     currentLocation == '/playlist' ||
                     currentLocation == '/carta-de-amor'),
             onTap: () {
-              if (auth.user == null) {
+              if (user == null) {
                 onLogin();
-              } else {
+              } else if (hasMemories) {
                 context.openAppRoute('/atalhos/memorias');
               }
             },
@@ -153,7 +160,13 @@ class _DesktopMainNavigation extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: InkWell(
-              onTap: () => context.openAppRoute('/chat'),
+              onTap: () {
+                if (user == null) {
+                  onLogin();
+                } else if (user.canAccess('chat')) {
+                  context.openAppRoute('/chat');
+                }
+              },
               customBorder: const CircleBorder(),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
@@ -188,11 +201,18 @@ class _DesktopMainNavigation extends StatelessWidget {
             icon: Icons.apps_outlined,
             selectedIcon: Icons.apps,
             label: 'Mais',
-            selected: _isSelected('/atalhos/mais', currentLocation) ||
-                currentLocation == '/jogos' ||
-                currentLocation == '/listas' ||
-                currentLocation == '/localizacao',
-            onTap: () => context.openAppRoute('/atalhos/mais'),
+            selected: hasMore &&
+                (_isSelected('/atalhos/mais', currentLocation) ||
+                    currentLocation == '/jogos' ||
+                    currentLocation == '/listas' ||
+                    currentLocation == '/localizacao'),
+            onTap: () {
+              if (user == null) {
+                onLogin();
+              } else if (hasMore) {
+                context.openAppRoute('/atalhos/mais');
+              }
+            },
           ),
           _DesktopNavPill(
             icon: Icons.person_outline,
@@ -386,6 +406,13 @@ class _MobileBottomNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
+    final user = auth.user;
+    final hasMemories = user?.canAccess('memorias') == true ||
+        user?.canAccess('playlist') == true ||
+        user?.canAccess('cartas') == true;
+    final hasMore = user?.canAccess('jogos') == true ||
+        user?.canAccess('listas') == true ||
+        user?.canAccess('localizacao') == true;
     return SafeArea(
       top: false,
       child: DecoratedBox(
@@ -415,15 +442,15 @@ class _MobileBottomNavigation extends StatelessWidget {
                 icon: Icons.photo_library_outlined,
                 selectedIcon: Icons.photo_library,
                 label: 'Memórias',
-                selected: auth.user != null &&
+                selected: hasMemories &&
                     (_isSelected('/atalhos/memorias', currentLocation) ||
                         currentLocation == '/galeria' ||
                         currentLocation == '/playlist' ||
                         currentLocation == '/carta-de-amor'),
                 onTap: () {
-                  if (auth.user == null) {
+                  if (user == null) {
                     onLogin();
-                  } else {
+                  } else if (hasMemories) {
                     context.openAppRoute('/atalhos/memorias');
                   }
                 },
@@ -433,7 +460,13 @@ class _MobileBottomNavigation extends StatelessWidget {
                   child: Transform.translate(
                     offset: const Offset(0, -16),
                     child: InkWell(
-                      onTap: () => context.openAppRoute('/chat'),
+                      onTap: () {
+                        if (user == null) {
+                          onLogin();
+                        } else if (user.canAccess('chat')) {
+                          context.openAppRoute('/chat');
+                        }
+                      },
                       customBorder: const CircleBorder(),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 180),
@@ -470,11 +503,18 @@ class _MobileBottomNavigation extends StatelessWidget {
                 icon: Icons.apps_outlined,
                 selectedIcon: Icons.apps,
                 label: 'Mais',
-                selected: _isSelected('/atalhos/mais', currentLocation) ||
-                    currentLocation == '/jogos' ||
-                    currentLocation == '/listas' ||
-                    currentLocation == '/localizacao',
-                onTap: () => context.openAppRoute('/atalhos/mais'),
+                selected: hasMore &&
+                    (_isSelected('/atalhos/mais', currentLocation) ||
+                        currentLocation == '/jogos' ||
+                        currentLocation == '/listas' ||
+                        currentLocation == '/localizacao'),
+                onTap: () {
+                  if (user == null) {
+                    onLogin();
+                  } else if (hasMore) {
+                    context.openAppRoute('/atalhos/mais');
+                  }
+                },
               ),
               _MobileNavButton(
                 icon: Icons.person_outline,
@@ -574,7 +614,7 @@ class MobileOptionsPage extends StatelessWidget {
           children: [
             Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 720),
+                constraints: const BoxConstraints(maxWidth: 1200),
                 child: AppPageHeader(
                   title: title,
                   subtitle: 'Escolha para onde seguir.',
@@ -592,7 +632,7 @@ class MobileOptionsPage extends StatelessWidget {
                     description: item.description,
                     icon: item.icon,
                     onTap: () => context.openAppRoute(item.path),
-                    maxWidth: 720,
+                    maxWidth: 1200,
                   ),
                 ),
               ),

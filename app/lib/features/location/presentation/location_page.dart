@@ -81,7 +81,7 @@ class _LocationPageState extends State<LocationPage> {
           children: [
             Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 920),
+                constraints: const BoxConstraints(maxWidth: 1200),
                 child: const AppPageHeader(
                   title: 'Localização',
                   subtitle: 'Onde a família está agora e como anda a bateria.',
@@ -92,7 +92,7 @@ class _LocationPageState extends State<LocationPage> {
             const SizedBox(height: 18),
             Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1040),
+                constraints: const BoxConstraints(maxWidth: 1200),
                 child: AppQuery<List<LocationPlace>>(
                   queryKey: QueryKeys.locationPlaces,
                   queryFn: widget.repository.listLocationPlaces,

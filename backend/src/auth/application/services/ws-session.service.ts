@@ -7,7 +7,12 @@ import { JwtService } from '@nestjs/jwt';
 import { Socket } from 'socket.io';
 import { Environment } from '@shared/infrastructure/environment/environment.module';
 import { AuthService } from './auth.service';
-import type { UserEntity, UserRole } from '@auth/domain/entities/user.entity';
+import {
+  isAdminRole,
+  type UserAccessKey,
+  type UserEntity,
+  type UserRole,
+} from '@auth/domain/entities/user.entity';
 
 @Injectable()
 export class WsSessionService {
@@ -53,5 +58,21 @@ export class WsSessionService {
     if (!roles.includes(user.role))
       throw new ForbiddenException('Acesso não autorizado para sua role.');
     return user;
+  }
+
+  async requireAdmin(client: Socket): Promise<UserEntity> {
+    const user = await this.requireUser(client);
+    if (!isAdminRole(user.role))
+      throw new ForbiddenException('Acesso administrativo obrigatório.');
+    return user;
+  }
+
+  async requireAccess(
+    client: Socket,
+    accessKey: UserAccessKey,
+  ): Promise<UserEntity> {
+    const user = await this.requireUser(client);
+    if (isAdminRole(user.role) || user.access.includes(accessKey)) return user;
+    throw new ForbiddenException('Acesso não liberado para este recurso.');
   }
 }

@@ -1,5 +1,10 @@
-import { IsIn, IsOptional, IsString } from 'class-validator';
-import { userRoles, type UserRole } from '@auth/domain/entities/user.entity';
+import { IsArray, IsIn, IsOptional, IsString } from 'class-validator';
+import {
+  userAccessKeys,
+  userRoles,
+  type UserAccessKey,
+  type UserRole,
+} from '@auth/domain/entities/user.entity';
 
 export class UpdateUserDto {
   @IsOptional()
@@ -11,6 +16,11 @@ export class UpdateUserDto {
   role?: UserRole;
 
   @IsOptional()
+  @IsArray()
+  @IsIn(userAccessKeys, { each: true })
+  access?: UserAccessKey[];
+
+  @IsOptional()
   @IsString()
   avatarPath?: string;
 }
@@ -20,6 +30,7 @@ export class UserResponseDto {
   email: string;
   name: string | null;
   role: UserRole;
+  access: UserAccessKey[];
   avatarPath: string | null;
   createdAt: Date;
 }

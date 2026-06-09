@@ -16,7 +16,7 @@ import { UpdateUserDto } from '../dto/user.dto';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
+@Roles('marido', 'esposa')
 export class UsersController {
   constructor(private user: UserService) {}
 

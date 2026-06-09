@@ -6,11 +6,17 @@ import {
   Delete,
   Body,
   Param,
+  UseGuards,
 } from '@nestjs/common';
+import { Access } from '@auth/decorators/access.decorator';
+import { AccessGuard } from '@auth/guards/access.guard';
+import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { MusicasService } from '../../application/services/musicas.service';
 import type { MusicaWriteDto } from '../dto/musica.dto';
 
 @Controller('musicas')
+@UseGuards(JwtAuthGuard, AccessGuard)
+@Access('playlist')
 export class MusicasController {
   constructor(private readonly musicasService: MusicasService) {}
 

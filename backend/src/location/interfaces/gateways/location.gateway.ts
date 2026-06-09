@@ -26,7 +26,7 @@ export class LocationGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: LocationUpdateDto,
   ) {
-    const user = await this.session.requireUser(client);
+    const user = await this.session.requireAccess(client, 'localizacao');
     const row = await this.locations.update(data, user);
     this.server?.emit('location.updated', row);
     return { ok: true, id: row.id, message: 'Localização atualizada.' };
@@ -37,13 +37,13 @@ export class LocationGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() query?: PaginationQuery,
   ) {
-    await this.session.requireUser(client);
+    await this.session.requireAccess(client, 'localizacao');
     return this.locations.latest(query);
   }
 
   @SubscribeMessage('location.places')
   async places(@ConnectedSocket() client: Socket) {
-    await this.session.requireUser(client);
+    await this.session.requireAccess(client, 'localizacao');
     return this.locations.listPlaces();
   }
 
@@ -52,7 +52,7 @@ export class LocationGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: LocationPlaceWriteDto,
   ) {
-    await this.session.requireUser(client);
+    await this.session.requireAccess(client, 'localizacao');
     const row = await this.locations.createPlace(data);
     this.server?.emit('location.places.changed', row);
     return { message: 'Local salvo.', ...row };
@@ -63,7 +63,7 @@ export class LocationGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() body: { id: string; data: LocationPlaceWriteDto },
   ) {
-    await this.session.requireUser(client);
+    await this.session.requireAccess(client, 'localizacao');
     const row = await this.locations.updatePlace(body.id, body.data);
     if (row) this.server?.emit('location.places.changed', row);
     return row ? { message: 'Local atualizado.', ...row } : row;
@@ -74,7 +74,7 @@ export class LocationGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() body: { id: string },
   ) {
-    await this.session.requireUser(client);
+    await this.session.requireAccess(client, 'localizacao');
     const ok = await this.locations.deletePlace(body.id);
     if (ok) this.server?.emit('location.places.changed', { id: body.id });
     return { ok, message: 'Local removido.' };

@@ -16,6 +16,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { StreamableFile } from '@nestjs/common';
 import { createReadStream } from 'fs';
 import { FotosService } from '../../application/services/fotos.service';
+import { Access } from '@auth/decorators/access.decorator';
+import { AccessGuard } from '@auth/guards/access.guard';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { UploadService, UploadContext } from '@shared/infrastructure/upload';
 import type { FotoWriteDto } from '../dto/foto.dto';
@@ -56,7 +58,8 @@ export class FotosController {
   }
 
   @Post('upload')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @Access('memorias')
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('Nenhum arquivo enviado');
@@ -74,21 +77,24 @@ export class FotosController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @Access('memorias')
   async create(@Body() data: FotoWriteDto) {
     const row = await this.fotosService.create(data);
     return { message: 'Memória salva com sucesso.', ...row };
   }
 
   @Put(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @Access('memorias')
   async update(@Param('id') id: string, @Body() data: Partial<FotoWriteDto>) {
     const row = await this.fotosService.update(id, data);
     return row ? { message: 'Memória atualizada.', ...row } : row;
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AccessGuard)
+  @Access('memorias')
   async delete(@Param('id') id: string) {
     return {
       ok: await this.fotosService.delete(id),

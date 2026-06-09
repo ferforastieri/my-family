@@ -26,7 +26,7 @@ export class ChatGateway {
 
   @SubscribeMessage('chat.users')
   async users(@ConnectedSocket() client: Socket) {
-    const user = await this.session.requireUser(client);
+    const user = await this.session.requireAccess(client, 'chat');
     return this.chat.usersForChat(user);
   }
 
@@ -35,7 +35,7 @@ export class ChatGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() query?: PaginationQuery,
   ) {
-    const user = await this.session.getUser(client);
+    const user = await this.session.requireAccess(client, 'chat');
     return this.chat.listConversations(user, query);
   }
 
@@ -44,7 +44,7 @@ export class ChatGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() body: ChatConversationCreateDto,
   ) {
-    const user = await this.session.requireUser(client);
+    const user = await this.session.requireAccess(client, 'chat');
     const conversation = await this.chat.createDirectConversation(user, body);
     this.server?.emit('chat.conversation.created', conversation);
     return { message: 'Conversa criada.', ...conversation };
@@ -55,7 +55,7 @@ export class ChatGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() body: { conversationId: string } & PaginationQuery,
   ) {
-    const user = await this.session.getUser(client);
+    const user = await this.session.requireAccess(client, 'chat');
     return this.chat.listMessages(body.conversationId, user, body);
   }
 
@@ -64,7 +64,7 @@ export class ChatGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() body: ChatMessageSendDto,
   ) {
-    const user = await this.session.getUser(client);
+    const user = await this.session.requireAccess(client, 'chat');
     const message = await this.chat.sendMessage(
       body.conversationId,
       body,

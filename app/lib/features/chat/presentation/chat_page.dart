@@ -186,28 +186,33 @@ class _ChatPageState extends State<ChatPage> {
 
             return Container(
               color: palette.bgStart,
-              padding: const EdgeInsets.all(18),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: palette.card,
-                  border: Border.all(color: palette.border),
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: palette.primary.withValues(alpha: .08),
-                      blurRadius: 18,
-                      offset: const Offset(0, 10),
+              padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1200),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: palette.card,
+                      border: Border.all(color: palette.border),
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: palette.primary.withValues(alpha: .08),
+                          blurRadius: 18,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Row(
-                    children: [
-                      SizedBox(width: 330, child: sidebar),
-                      VerticalDivider(width: 1, color: palette.border),
-                      Expanded(child: messages),
-                    ],
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Row(
+                        children: [
+                          SizedBox(width: 330, child: sidebar),
+                          VerticalDivider(width: 1, color: palette.border),
+                          Expanded(child: messages),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),

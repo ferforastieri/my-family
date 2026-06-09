@@ -33,7 +33,7 @@ export class NotificationsGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() dto: NotificationCreateDto,
   ) {
-    await this.session.requireRole(client, ['admin']);
+    await this.session.requireAdmin(client);
     const row = await this.notifications.create(dto);
     return { message: 'Notificação salva.', ...row };
   }
@@ -43,7 +43,7 @@ export class NotificationsGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() body: { id: string; data: Partial<NotificationCreateDto> },
   ) {
-    await this.session.requireRole(client, ['admin']);
+    await this.session.requireAdmin(client);
     const row = await this.notifications.update(body.id, body.data);
     return row ? { message: 'Notificação atualizada.', ...row } : row;
   }
@@ -53,7 +53,7 @@ export class NotificationsGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() body: { id: string },
   ) {
-    await this.session.requireRole(client, ['admin']);
+    await this.session.requireAdmin(client);
     return {
       ok: await this.notifications.delete(body.id),
       message: 'Notificação removida.',
@@ -72,7 +72,7 @@ export class NotificationsGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() body: NotificationSendDto,
   ) {
-    await this.session.requireRole(client, ['admin']);
+    await this.session.requireAdmin(client);
     if (!body?.title) throw new BadRequestException('title é obrigatório');
     const row = await this.notifications.send(body.title, body.body, body.url);
     return { message: 'Notificação enviada.', ...row };
@@ -84,7 +84,7 @@ export class NotificationsGateway {
     @MessageBody()
     body: { title: string; body?: string; url?: string; scheduledAt: string },
   ) {
-    await this.session.requireRole(client, ['admin']);
+    await this.session.requireAdmin(client);
     if (!body?.title) throw new BadRequestException('title é obrigatório');
     const at = new Date(body.scheduledAt);
     if (Number.isNaN(at.getTime()))

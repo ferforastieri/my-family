@@ -31,8 +31,15 @@ GoRouter buildRouter(
     initialLocation: '/',
     refreshListenable: auth,
     redirect: (context, state) {
-      if (_requiresAuth(state.uri.path) && auth.user == null) return '/perfil';
-      if (state.uri.path == '/admin' && auth.user?.role != 'admin') return '/';
+      final path = state.uri.path;
+      final accessKey = _accessForPath(path);
+      if ((_requiresAuth(path) || accessKey != null) && auth.user == null) {
+        return '/perfil';
+      }
+      if (path == '/admin' && auth.user?.isAdmin != true) return '/';
+      if (accessKey != null && auth.user?.canAccess(accessKey) != true) {
+        return '/';
+      }
       return null;
     },
     routes: [
@@ -52,51 +59,56 @@ GoRouter buildRouter(
             pageBuilder: (context, state) => _page(MobileOptionsPage(
               title: 'Memórias',
               items: [
-                if (auth.user != null)
+                if (auth.user?.canAccess('memorias') == true)
                   const MobileOptionItem(
                     label: 'Memórias em Fotos',
                     description: 'Fotos, vídeos e álbuns da família.',
                     path: '/galeria',
                     icon: Icons.photo_library_outlined,
                   ),
-                const MobileOptionItem(
-                  label: 'Nossa Playlist',
-                  description: 'Músicas que marcaram nossa história.',
-                  path: '/playlist',
-                  icon: Icons.music_note_outlined,
-                ),
-                const MobileOptionItem(
-                  label: 'Carta de Amor',
-                  description: 'Cartas e declarações especiais.',
-                  path: '/carta-de-amor',
-                  icon: Icons.card_giftcard_outlined,
-                ),
+                if (auth.user?.canAccess('playlist') == true)
+                  const MobileOptionItem(
+                    label: 'Nossa Playlist',
+                    description: 'Músicas que marcaram nossa história.',
+                    path: '/playlist',
+                    icon: Icons.music_note_outlined,
+                  ),
+                if (auth.user?.canAccess('cartas') == true)
+                  const MobileOptionItem(
+                    label: 'Carta de Amor',
+                    description: 'Cartas e declarações especiais.',
+                    path: '/carta-de-amor',
+                    icon: Icons.card_giftcard_outlined,
+                  ),
               ],
             )),
           ),
           GoRoute(
             path: '/atalhos/mais',
-            pageBuilder: (context, state) => _page(const MobileOptionsPage(
+            pageBuilder: (context, state) => _page(MobileOptionsPage(
               title: 'Mais opções',
               items: [
-                MobileOptionItem(
-                  label: 'Jogos do Amor',
-                  description: 'Quiz e Caça Palavras em um só lugar.',
-                  path: '/jogos',
-                  icon: Icons.sports_esports_outlined,
-                ),
-                MobileOptionItem(
-                  label: 'Listas',
-                  description: 'Compras, tarefas e combinados.',
-                  path: '/listas',
-                  icon: Icons.checklist_outlined,
-                ),
-                MobileOptionItem(
-                  label: 'Localização',
-                  description: 'Mapa da família e bateria de cada pessoa.',
-                  path: '/localizacao',
-                  icon: Icons.location_on_outlined,
-                ),
+                if (auth.user?.canAccess('jogos') == true)
+                  const MobileOptionItem(
+                    label: 'Jogos do Amor',
+                    description: 'Quiz e Caça Palavras em um só lugar.',
+                    path: '/jogos',
+                    icon: Icons.sports_esports_outlined,
+                  ),
+                if (auth.user?.canAccess('listas') == true)
+                  const MobileOptionItem(
+                    label: 'Listas',
+                    description: 'Compras, tarefas e combinados.',
+                    path: '/listas',
+                    icon: Icons.checklist_outlined,
+                  ),
+                if (auth.user?.canAccess('localizacao') == true)
+                  const MobileOptionItem(
+                    label: 'Localização',
+                    description: 'Mapa da família e bateria de cada pessoa.',
+                    path: '/localizacao',
+                    icon: Icons.location_on_outlined,
+                  ),
               ],
             )),
           ),
@@ -185,10 +197,22 @@ GoRouter buildRouter(
 
 bool _requiresAuth(String path) {
   return path == '/atalhos/memorias' ||
-      path == '/galeria' ||
-      path == '/playlist' ||
-      path == '/carta-de-amor' ||
-      path == '/localizacao';
+      path == '/atalhos/mais' ||
+      path == '/admin';
+}
+
+String? _accessForPath(String path) {
+  return switch (path) {
+    '/galeria' => 'memorias',
+    '/playlist' => 'playlist',
+    '/carta-de-amor' => 'cartas',
+    '/jogos' => 'jogos',
+    '/listas' => 'listas',
+    '/localizacao' => 'localizacao',
+    '/chat' => 'chat',
+    '/nossa-historia' => 'nossaHistoria',
+    _ => null,
+  };
 }
 
 Page<void> _page(Widget child) {

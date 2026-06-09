@@ -6,11 +6,17 @@ import {
   Delete,
   Body,
   Param,
+  UseGuards,
 } from '@nestjs/common';
+import { Access } from '@auth/decorators/access.decorator';
+import { AccessGuard } from '@auth/guards/access.guard';
+import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { CartasService } from '../../application/services/cartas.service';
 import type { CartaWriteDto } from '../dto/carta.dto';
 
 @Controller('cartas')
+@UseGuards(JwtAuthGuard, AccessGuard)
+@Access('cartas')
 export class CartasController {
   constructor(private readonly cartasService: CartasService) {}
 

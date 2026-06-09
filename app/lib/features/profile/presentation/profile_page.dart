@@ -31,62 +31,52 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = auth.user;
     return LoveBackground(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final compact = constraints.maxWidth < 620;
-          return RefreshIndicator(
-            onRefresh: auth.refreshMe,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(
-                compact ? 16 : 28,
-                compact ? 10 : 14,
-                compact ? 16 : 28,
-                116,
-              ),
-              children: [
-                Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 760),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const AppPageHeader(
-                          title: 'Perfil',
-                          subtitle: 'Conta, avatar e opções do app.',
-                          icon: Icons.person_outline,
-                        ),
-                        const SizedBox(height: 14),
-                        user == null
-                            ? _GuestProfileCard(
-                                onLogin: () => showAppSheet<void>(
-                                  context: context,
-                                  builder: (_) =>
-                                      AuthSheet(auth: auth, toast: toast),
-                                ),
-                              )
-                            : _SignedProfileCard(
-                                auth: auth,
-                                toast: toast,
-                                onEditProfile: () => showAppSheet<void>(
-                                  context: context,
-                                  builder: (_) => EditProfileSheet(
-                                      auth: auth, toast: toast),
-                                ),
-                                onAdmin: () => context.openAppRoute('/admin'),
-                                onSignOut: () async {
-                                  await auth.signOut();
-                                  if (context.mounted) context.go('/');
-                                },
-                              ),
-                      ],
+      child: RefreshIndicator(
+        onRefresh: auth.refreshMe,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
+          children: [
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1200),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const AppPageHeader(
+                      title: 'Perfil',
+                      subtitle: 'Conta, avatar e opções do app.',
+                      icon: Icons.person_outline,
                     ),
-                  ),
+                    const SizedBox(height: 14),
+                    user == null
+                        ? _GuestProfileCard(
+                            onLogin: () => showAppSheet<void>(
+                              context: context,
+                              builder: (_) =>
+                                  AuthSheet(auth: auth, toast: toast),
+                            ),
+                          )
+                        : _SignedProfileCard(
+                            auth: auth,
+                            toast: toast,
+                            onEditProfile: () => showAppSheet<void>(
+                              context: context,
+                              builder: (_) =>
+                                  EditProfileSheet(auth: auth, toast: toast),
+                            ),
+                            onAdmin: () => context.openAppRoute('/admin'),
+                            onSignOut: () async {
+                              await auth.signOut();
+                              if (context.mounted) context.go('/');
+                            },
+                          ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          );
-        },
+          ],
+        ),
       ),
     );
   }
@@ -163,7 +153,9 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
                   children: [
                     _StatusChip(
                       icon: Icons.verified_user_outlined,
-                      label: user.role == 'admin' ? 'Administrador' : 'Perfil',
+                      label: user.isAdmin
+                          ? 'Administrador'
+                          : _roleLabel(user.role),
                     ),
                     _StatusChip(
                       icon: Icons.lock_outline,
@@ -191,7 +183,7 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
                   description: 'Atualize seu nome e suas informações.',
                   onTap: widget.onEditProfile,
                 ),
-                if (user.role == 'admin') ...[
+                if (user.isAdmin) ...[
                   const SizedBox(height: 10),
                   _ProfileActionTile(
                     icon: Icons.admin_panel_settings_outlined,
@@ -224,6 +216,16 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
       ),
     );
   }
+}
+
+String _roleLabel(String role) {
+  return switch (role) {
+    'marido' => 'Marido',
+    'esposa' => 'Esposa',
+    'filhos' => 'Filhos',
+    'amigos' => 'Amigos',
+    _ => 'Perfil',
+  };
 }
 
 class _GuestProfileCard extends StatelessWidget {

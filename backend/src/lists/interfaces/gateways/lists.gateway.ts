@@ -23,7 +23,11 @@ export class ListsGateway {
   ) {}
 
   @SubscribeMessage('lists.list')
-  listLists(@MessageBody() query?: PaginationQuery) {
+  async listLists(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() query?: PaginationQuery,
+  ) {
+    await this.session.requireAccess(client, 'listas');
     return this.lists.listLists(query);
   }
 
@@ -32,7 +36,7 @@ export class ListsGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: FamilyListWriteDto,
   ) {
-    const user = await this.session.requireUser(client);
+    const user = await this.session.requireAccess(client, 'listas');
     const row = await this.lists.createList(data, user);
     this.realtime.emitListCreated(row);
     return { message: 'Lista criada.', ...row };
@@ -43,7 +47,7 @@ export class ListsGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() body: { id: string; data: Partial<FamilyListWriteDto> },
   ) {
-    await this.session.requireUser(client);
+    await this.session.requireAccess(client, 'listas');
     const row = await this.lists.updateList(body.id, body.data);
     if (row) this.realtime.emitListUpdated(row);
     return row ? { message: 'Lista atualizada.', ...row } : row;
@@ -54,14 +58,18 @@ export class ListsGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() body: { id: string },
   ) {
-    await this.session.requireUser(client);
+    await this.session.requireAccess(client, 'listas');
     const ok = await this.lists.deleteList(body.id);
     if (ok) this.realtime.emitListDeleted(body.id);
     return { ok, message: 'Lista removida.' };
   }
 
   @SubscribeMessage('lists.items')
-  listItems(@MessageBody() body: { listId: string } & PaginationQuery) {
+  async listItems(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { listId: string } & PaginationQuery,
+  ) {
+    await this.session.requireAccess(client, 'listas');
     return this.lists.listItems(body.listId, body);
   }
 
@@ -70,7 +78,7 @@ export class ListsGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: FamilyListItemWriteDto,
   ) {
-    const user = await this.session.requireUser(client);
+    const user = await this.session.requireAccess(client, 'listas');
     const row = await this.lists.createItem(data, user);
     this.realtime.emitItemCreated(row);
     return { message: 'Item adicionado.', ...row };
@@ -81,7 +89,7 @@ export class ListsGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() body: { id: string; data: Partial<FamilyListItemWriteDto> },
   ) {
-    await this.session.requireUser(client);
+    await this.session.requireAccess(client, 'listas');
     const row = await this.lists.updateItem(body.id, body.data);
     if (row) this.realtime.emitItemUpdated(row);
     return row ? { message: 'Item atualizado.', ...row } : row;
@@ -92,7 +100,7 @@ export class ListsGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() body: { id: string },
   ) {
-    await this.session.requireUser(client);
+    await this.session.requireAccess(client, 'listas');
     const result = await this.lists.deleteItem(body.id);
     if (result.ok) this.realtime.emitItemDeleted(body.id, result.listId);
     return { ok: result.ok, message: 'Item removido.' };
