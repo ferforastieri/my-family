@@ -1,133 +1,132 @@
 # Nossa Familia
 
-Aplicacao familiar privada para servidor pessoal, com backend NestJS, app Flutter para Web/Android e deploy por Docker Compose via Gitea Actions.
+Projeto privado de estudos para experimentar, integrar e documentar tecnologias modernas em um produto familiar completo. A ideia e construir um app real, com frontend, backend, mobile, tempo real, filas, upload, notificacoes, localizacao e deploy automatizado, sem expor dados pessoais ou credenciais no repositorio.
 
-## Visao Geral
+Este repositorio nao deve conter chaves, IPs publicos/privados, senhas, tokens, service accounts ou arquivos de ambiente reais. Todas as configuracoes sensiveis ficam em secrets do Gitea, variaveis de ambiente locais ignoradas pelo Git ou arquivos gerados no build.
 
-O projeto centraliza memorias, cartas, playlist, jogos, notificacoes, perfil e chat em tempo real. O Flutter e o cliente principal: o mesmo codigo gera o site Web e o APK Android.
+## Objetivo De Estudo
 
-Principais caracteristicas:
+O projeto foi criado para estudar na pratica:
 
-- App Flutter em `app/`, com suporte Web e Android.
-- Backend NestJS em `backend/`, usando MongoDB, Socket.IO, Redis/BullMQ e agendamentos via Nest Schedule.
-- Acoes de negocio preferencialmente via WebSocket.
-- REST reservado para endpoints tecnicos, healthcheck e arquivos.
-- Uploads persistidos fora do repositorio, por bind mount no Docker.
-- Push notifications via Firebase.
-- Deploy por Docker Compose com containers persistentes e artefato APK gerado no workflow.
+- Flutter Web e Android com uma base unica de UI.
+- NestJS com arquitetura por dominio.
+- Socket.IO para comunicacao em tempo real.
+- MongoDB com Mongoose.
+- Redis e BullMQ para filas.
+- Firebase Cloud Messaging para notificacoes mobile.
+- Localizacao mobile em background no Android.
+- Uploads e midias fora do repositorio.
+- Docker Compose para orquestracao local/servidor.
+- Gitea Actions para CI/CD e artefatos.
+- Controle de acesso por papeis e permissoes.
+- Boas praticas de seguranca para secrets e configuracao.
 
-## Estrutura
+## Stack
 
-- `app/`: cliente Flutter Web/Android.
-- `backend/`: API NestJS.
-- `nginx/`: configuracoes nginx para Flutter Web, API e WebSocket.
-- `.gitea/workflows/deploy.yml`: build, APK e deploy no servidor.
-- `docker-compose.yml`: MongoDB, Redis, backend e frontend.
-- `Dockerfile.backend`: build e runtime do NestJS.
-- `Dockerfile.front`: build Flutter Web e nginx.
+Frontend/mobile:
 
-## Backend
-
-O backend segue uma divisao por feature:
-
-- `application`: services e casos de uso.
-- `domain`: entidades e tipos puros compartilhados.
-- `infrastructure`: schemas Mongo, repositorios, filas, upload e integracoes.
-- `interfaces`: gateways WebSocket e controllers REST.
-
-Features principais:
-
-- `auth`: login, registro, JWT, perfil e sessoes WebSocket.
-- `fotos`: memorias, albums, upload e arquivos.
-- `musicas`: playlist.
-- `cartas`: cartas e mensagens.
-- `notifications`: notificacoes, agendamento Nest Schedule/Mongo e envio push em fila BullMQ.
-- `chat`: chat global publico e conversas entre usuarios autenticados.
-- `location`: localizacao em tempo real e alerta de bateria baixa em fila.
-- `lists`: listas compartilhadas criadas diretamente ou a partir do chat.
-- `games`: quiz, caca-palavras e estatisticas.
-- `health`: healthcheck REST.
-
-Filas BullMQ:
-
-- `notifications`: envio Firebase Cloud Messaging com retry/backoff.
-- `media`: pos-processamento de upload, metadados e thumbnail WebP para imagens.
-- `location`: alertas derivados de localizacao, como bateria baixa.
-- `cleanup`: limpeza recorrente de uploads orfaos.
-
-Eventos WebSocket principais:
-
-- `auth.*`
-- `users.*`
-- `fotos.*`
-- `musicas.*`
-- `cartas.*`
-- `notifications.*`
-- `chat.*`
-
-Endpoints REST principais:
-
-- `GET /api/health`
-- `POST /api/fotos/upload`
-- `GET /api/fotos/file?path=...`
-- endpoints tecnicos de auth/usuarios quando necessario.
-
-## Flutter
-
-O app em `app/` usa camadas simples:
-
-- `core/`: auth, socket, chat, notifications, tema, toast e widgets globais.
-- `data/`: modelos e repository compartilhado.
-- `features/`: telas e widgets por dominio.
-
-Recursos atuais:
-
-- Shell responsivo para Web e Mobile.
-- Menu, perfil, configuracoes e sheets reutilizaveis.
-- Tema com modo claro/escuro e cores.
-- Toast global no topo.
-- Chat flutuante no canto inferior esquerdo.
-- Upload/listagem/edicao de memorias.
-- Splash e icones Web/Android baseados na logo do projeto.
-
-## Desenvolvimento Local
+- Flutter
+- Dart
+- Firebase Messaging
+- Flutter Local Notifications
+- Geolocator
+- Flutter Map
+- Socket.IO client
 
 Backend:
 
-```bash
-cd backend
-npm install
-npm run start:dev
-```
+- NestJS
+- TypeScript
+- MongoDB/Mongoose
+- Redis/BullMQ
+- Socket.IO
+- Firebase Admin SDK
+- JWT
+- Helmet, CORS, rate limit e CSRF
 
-Flutter Web:
+Infra:
 
-```bash
-cd app
-flutter pub get
-flutter run -d chrome \
-  --dart-define=API_BASE_URL=<backend-url>/api \
-  --dart-define=SOCKET_URL=<backend-url>
-```
+- Docker Compose
+- Nginx
+- Gitea Actions
+- MongoDB
+- Redis
 
-Builds:
+## Estrutura
 
-```bash
-cd backend
-npm run build
-```
+- `app/`: app Flutter Web/Android.
+- `backend/`: API NestJS.
+- `nginx/`: configuracoes nginx.
+- `.gitea/workflows/deploy.yml`: pipeline de build/deploy.
+- `docker-compose.yml`: orquestracao de backend, frontend, banco e filas.
+- `Dockerfile.backend`: imagem do backend.
+- `Dockerfile.front`: build Flutter Web e publicacao via nginx.
 
-```bash
-cd app
-flutter analyze
-flutter test
-flutter build web --release
-flutter build apk --release
-```
+## Funcionalidades
 
-## Variaveis
+- Autenticacao com JWT.
+- Perfil, avatar e configuracoes.
+- Controle de papeis: `husband`, `wife`, `children`, `friends`.
+- Admins: `husband` e `wife`.
+- Permissoes por area gerenciaveis no painel administrativo.
+- Memorias com fotos, albuns e upload.
+- Playlist.
+- Cartas de amor.
+- Listas compartilhadas.
+- Jogos.
+- Chat em tempo real.
+- Notificacoes com historico, envio imediato e agendamento.
+- Localizacao da familia com mapa, lugares e presenca.
+- Tracking Android em background usando foreground service.
+- Alertas derivados de localizacao, como bateria baixa e entrada/saida de locais.
 
-Backend local (`backend/.env`):
+## Mudancas Recentes
+
+UI e experiencia:
+
+- Padronizacao de margens nas paginas.
+- Ajustes de alinhamento e densidade visual em administracao, listas, jogos, playlist, memorias, cartas e home.
+- Remocao de cards de estatistica em telas onde estavam poluindo a interface.
+- Uso de sheets globais para opcoes.
+- Tela de localizacao revisada sem card de pontos importantes.
+- Criacao/edicao de locais por arraste no mapa, sem digitar latitude/longitude.
+
+Permissoes e administracao:
+
+- Enum de usuario consolidado em ingles.
+- Labels em portugues no frontend.
+- `husband` e `wife` com acesso administrativo.
+- Painel administrativo para gerenciar acessos por area.
+- Correcoes de clique/layout em telas com sobreposicoes indevidas.
+
+Notificacoes:
+
+- Ajuste do fluxo mobile para inicializar Firebase no Android pelo `google-services.json`.
+- Geracao de token FCM via `FirebaseMessaging.getToken()`.
+- Envio do token para o backend por `notifications.subscribe`.
+- Backend com envio FCM imediato quando disponivel.
+- Logs e retorno de envio mais claros.
+- Tokens invalidos sao removidos somente quando o Firebase indica token invalido ou nao registrado.
+
+Localizacao:
+
+- Android passou a ter foreground service nativo para tracking em background.
+- O servico usa `FusedLocationProviderClient`.
+- O tracking envia dados para endpoint HTTP autenticado, evitando dependencia de Socket.IO em background.
+- O app continua recebendo atualizacoes em tempo real pela tela de mapa.
+- Reinicio do tracking apos boot/update quando houver configuracao salva.
+
+Backend:
+
+- Endpoint HTTP autenticado para atualizacao de localizacao mobile.
+- Emissao de evento em tempo real quando localizacao chega via HTTP.
+- Build do backend validado apos alteracoes.
+
+## Configuracao
+
+Use arquivos reais de ambiente apenas localmente e nunca versionados. O repositorio deve conter somente exemplos e nomes de variaveis.
+
+Variaveis principais do backend:
 
 - `NODE_ENV`
 - `PORT`
@@ -137,98 +136,15 @@ Backend local (`backend/.env`):
 - `JWT_EXPIRES_IN`
 - `UPLOAD_PATH`
 - `CORS_ORIGIN`
-- `SMTP_*`
-- `EMAIL_FROM`
-- `EMAIL_FROM_NAME`
-- `PASSWORD_RESET_URL`
-- `FIREBASE_SERVICE_ACCOUNT_PATH`
-- `FIREBASE_SERVICE_ACCOUNT_JSON`
 - `REDIS_URL`
-
-Compose/deploy (`.env` ou Gitea secrets):
-
-- `MONGO_ROOT_USER`
-- `MONGO_ROOT_PASSWORD`
-- `MONGO_DB`
-- `BACKEND_PORT`
-- `FRONT_PORT`
-- `MONGO_PORT`
-- `REDIS_PORT`
-- `JWT_SECRET`
-- `JWT_EXPIRES_IN`
-- `CORS_ORIGIN`
-- `API_BASE_URL`
-- `SOCKET_URL`
-- `UPLOAD_HOST_PATH`
-- `SMTP_*`
-- `EMAIL_FROM`
-- `EMAIL_FROM_NAME`
-- `PASSWORD_RESET_URL`
-- `FIREBASE_*`
-
-`UPLOAD_HOST_PATH` e obrigatorio no Docker Compose. O container backend monta esse caminho em `/data/uploads` e usa `UPLOAD_PATH=/data/uploads`.
-
-## Deploy
-
-O deploy e executado pelo workflow `.gitea/workflows/deploy.yml` em pushes para `main` ou `master`.
-
-Fluxo:
-
-1. Checkout do repositorio.
-2. Validacao de secrets obrigatorios.
-3. Geracao do `.env` de deploy.
-4. Build do APK Android release.
-5. Publicacao do APK como artefato `my-family-android-apk`.
-6. Build dos containers.
-7. Subida de `mongo` e `redis`.
-8. Subida de `backend` e `front` com `--remove-orphans`.
-
-Servicos:
-
-- `mongo`: MongoDB 7.
-- `redis`: Redis 7 Alpine para filas BullMQ.
-- `backend`: NestJS em `3001`, exposto pela porta definida em `BACKEND_PORT`.
-- `front`: Flutter Web via nginx, exposto pela porta definida em `FRONT_PORT`.
-
-Portas padrao:
-
-- Backend: `3459 -> 3001`
-- Frontend Web: `3458 -> 80`
-- Mongo: `127.0.0.1:27019 -> 27017`
-- Redis: `127.0.0.1:6389 -> 6379`
-
-## Secrets Do Gitea
-
-Secrets obrigatorios:
-
-- `MONGO_ROOT_PASSWORD`
-- `JWT_SECRET`
-- `UPLOAD_HOST_PATH`
-
-Secrets recomendados:
-
-- `MONGO_ROOT_USER`
-- `MONGO_DB`
-- `BACKEND_PORT`
-- `FRONT_PORT`
-- `MONGO_PORT`
-- `REDIS_PORT`
-- `JWT_EXPIRES_IN`
-- `CORS_ORIGIN`
-- `API_BASE_URL`
-- `SOCKET_URL`
-- `EMAIL_FROM_NAME`
-- `SMTP_PORT`
-
-Secrets opcionais:
-
-- `SMTP_HOST`
-- `SMTP_USER`
-- `SMTP_PASS`
-- `EMAIL_FROM`
-- `PASSWORD_RESET_URL`
+- `CSRF_SECRET`
 - `FIREBASE_SERVICE_ACCOUNT_PATH`
 - `FIREBASE_SERVICE_ACCOUNT_JSON`
+
+Variaveis principais do app/deploy:
+
+- `API_BASE_URL`
+- `SOCKET_URL`
 - `FIREBASE_API_KEY`
 - `FIREBASE_APP_ID`
 - `FIREBASE_MESSAGING_SENDER_ID`
@@ -236,30 +152,102 @@ Secrets opcionais:
 - `FIREBASE_AUTH_DOMAIN`
 - `FIREBASE_STORAGE_BUCKET`
 - `FIREBASE_WEB_PUSH_CERTIFICATE_KEY`
+- `GOOGLE_SERVICES_JSON`
 
-## Verificacao
+Secrets de infraestrutura:
 
-Comandos usados para validar mudancas:
+- `MONGO_ROOT_USER`
+- `MONGO_ROOT_PASSWORD`
+- `MONGO_DB`
+- `JWT_SECRET`
+- `CSRF_SECRET`
+- `UPLOAD_HOST_PATH`
+- `BACKEND_PORT`
+- `FRONT_PORT`
+- `MONGO_PORT`
+- `REDIS_PORT`
+
+## Firebase Mobile
+
+Para notificacoes Android:
+
+- `google-services.json` deve existir no build Android, mas nao deve ser commitado.
+- O service account do Firebase Admin deve ficar em secret, preferencialmente `FIREBASE_SERVICE_ACCOUNT_JSON`.
+- O app gera o token FCM no mobile e envia ao backend em `notifications.subscribe`.
+- O backend persiste tokens na colecao de inscricoes push e usa Firebase Admin para enviar.
+
+## Tracking Android
+
+O tracking em background foi implementado com servico nativo Android:
+
+- Foreground service com notificacao persistente.
+- Permissoes de localizacao e servico em primeiro plano.
+- Envio por HTTP autenticado ao backend.
+- Reinicio apos boot/update quando configurado.
+
+Limites conhecidos:
+
+- O Android pode exigir que o usuario permita localizacao "sempre".
+- Alguns aparelhos aplicam economia de bateria agressiva.
+- Se o app for forcadamente parado pelo usuario, o sistema pode impedir reinicio automatico ate o app ser aberto novamente.
+
+## Deploy
+
+O workflow do Gitea:
+
+1. Faz checkout.
+2. Valida secrets obrigatorios.
+3. Gera `.env` temporario de deploy.
+4. Injeta `google-services.json` a partir de secret.
+5. Gera APK Android release.
+6. Publica o APK como artefato.
+7. Faz build dos containers.
+8. Sobe banco, filas, backend e frontend.
+
+Nenhum valor sensivel deve ser escrito no README, em logs ou em arquivos versionados.
+
+## Desenvolvimento
+
+Backend:
 
 ```bash
-cd backend && npm run build
+cd backend
+npm install
+npm run start:dev
+```
+
+App:
+
+```bash
+cd app
+flutter pub get
+flutter run -d chrome \
+  --dart-define=API_BASE_URL=<api-url> \
+  --dart-define=SOCKET_URL=<socket-url>
+```
+
+Android:
+
+```bash
+cd app
+flutter devices
+flutter run -d <device-id> \
+  --dart-define=API_BASE_URL=<api-url> \
+  --dart-define=SOCKET_URL=<socket-url>
+```
+
+## Validacao
+
+Comandos usados durante desenvolvimento:
+
+```bash
+cd backend
+npm run build
 ```
 
 ```bash
-cd app && flutter analyze
-cd app && flutter test
-cd app && flutter build web --release
-cd app && flutter build apk --release
+cd app
+flutter analyze
+flutter build apk --debug
 ```
 
-```bash
-docker compose --env-file .env -f docker-compose.yml config
-```
-
-## Notas De Arquitetura
-
-- IDs expostos pela API sao strings, compatíveis com Mongo ObjectId.
-- Escritas de negocio exigem autenticacao, exceto fluxos explicitamente publicos.
-- Chat global aceita visitante; conversas privadas exigem usuario autenticado.
-- Imagens enviadas pelo chat autenticado tambem sao salvas em Memorias.
-- Arquivos nao ficam no repositorio e nao dependem da pasta de desenvolvimento.

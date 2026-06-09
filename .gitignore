@@ -8,6 +8,11 @@
 !*.env.example
 !.env.example
 
+app/android/app/google-services.json
+app/ios/Runner/GoogleService-Info.plist
+firebase-service-account*.json
+*service-account*.json
+
 node_modules
 dist
 dist-ssr
