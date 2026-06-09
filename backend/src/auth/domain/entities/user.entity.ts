@@ -1,7 +1,7 @@
-export const userRoles = ['marido', 'esposa', 'filhos', 'amigos'] as const;
+export const userRoles = ['husband', 'wife', 'children', 'friends'] as const;
 export type UserRole = (typeof userRoles)[number];
 
-export const adminRoles: UserRole[] = ['marido', 'esposa'];
+export const adminRoles: UserRole[] = ['husband', 'wife'];
 
 export const userAccessKeys = [
   'memorias',
@@ -16,15 +16,7 @@ export const userAccessKeys = [
 export type UserAccessKey = (typeof userAccessKeys)[number];
 
 export function isAdminRole(role?: string | null): role is UserRole {
-  return role === 'marido' || role === 'esposa';
-}
-
-export function normalizeUserRole(role?: string | null): UserRole {
-  if (role === 'admin') return 'marido';
-  if (role === 'wife') return 'esposa';
-  if (role === 'child') return 'filhos';
-  if (role === 'friend') return 'amigos';
-  return userRoles.includes(role as UserRole) ? (role as UserRole) : 'amigos';
+  return role === 'husband' || role === 'wife';
 }
 
 export function normalizeAccessKeys(

@@ -140,7 +140,6 @@ class _AdminPageState extends State<AdminPage> {
 
   @override
   Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
     return LoveBackground(
       child: RefreshIndicator(
         onRefresh: () async => _invalidateAdmin(),
@@ -175,41 +174,44 @@ class _AdminPageState extends State<AdminPage> {
                               _AdminErrorBanner(message: loadError!),
                             ],
                             const SizedBox(height: 16),
-                            LovePanel(
-                              padding: EdgeInsets.zero,
-                              child: LayoutBuilder(
-                                builder: (context, constraints) {
-                                  final wide = constraints.maxWidth >= 860;
-                                  final content = _sectionContent();
-                                  if (!wide) {
-                                    return Column(
-                                      children: [
-                                        _AdminSegmentedNav(
-                                          selected: selected,
-                                          onChanged: (value) =>
-                                              setState(() => selected = value),
-                                        ),
-                                        SizedBox(height: 640, child: content),
-                                      ],
-                                    );
-                                  }
-                                  return SizedBox(
-                                    height: 720,
-                                    child: Row(
-                                      children: [
-                                        _AdminSideNav(
-                                          selected: selected,
-                                          onChanged: (value) =>
-                                              setState(() => selected = value),
-                                        ),
-                                        VerticalDivider(
-                                            width: 1, color: palette.border),
-                                        Expanded(child: content),
-                                      ],
-                                    ),
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final wide = constraints.maxWidth >= 860;
+                                final content = LovePanel(
+                                  padding: EdgeInsets.zero,
+                                  child: SizedBox(
+                                    height: wide ? 720 : 640,
+                                    child: _sectionContent(),
+                                  ),
+                                );
+                                if (!wide) {
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      _AdminSegmentedNav(
+                                        selected: selected,
+                                        onChanged: (value) =>
+                                            setState(() => selected = value),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      content,
+                                    ],
                                   );
-                                },
-                              ),
+                                }
+                                return Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _AdminSideNav(
+                                      selected: selected,
+                                      onChanged: (value) =>
+                                          setState(() => selected = value),
+                                    ),
+                                    const SizedBox(width: 14),
+                                    Expanded(child: content),
+                                  ],
+                                );
+                              },
                             ),
                           ],
                         );
@@ -471,10 +473,10 @@ class _AdminData {
 enum _AdminSection { users, notifications, games, stats }
 
 const _roleOptions = [
-  _UserOption('marido', 'Marido', Icons.admin_panel_settings_outlined),
-  _UserOption('esposa', 'Esposa', Icons.admin_panel_settings_outlined),
-  _UserOption('filhos', 'Filhos', Icons.child_care_outlined),
-  _UserOption('amigos', 'Amigos', Icons.favorite_outline),
+  _UserOption('husband', 'Marido', Icons.admin_panel_settings_outlined),
+  _UserOption('wife', 'Esposa', Icons.admin_panel_settings_outlined),
+  _UserOption('children', 'Filhos', Icons.child_care_outlined),
+  _UserOption('friends', 'Amigos', Icons.favorite_outline),
 ];
 
 const _accessOptions = [
@@ -494,6 +496,16 @@ class _UserOption {
   final String value;
   final String label;
   final IconData icon;
+}
+
+String _roleLabel(String role) {
+  return switch (role) {
+    'husband' => 'Marido',
+    'wife' => 'Esposa',
+    'children' => 'Filhos',
+    'friends' => 'Amigos',
+    _ => role,
+  };
 }
 
 const _adminRealtimeEvents = [
@@ -779,7 +791,8 @@ class _UsersAdminTab extends StatelessWidget {
                           title: user.name?.isNotEmpty == true
                               ? user.name!
                               : user.email,
-                          subtitle: '${user.email} • ${user.role}',
+                          subtitle: '${user.email} • ${_roleLabel(user.role)}',
+                          onTap: () => onEdit(user),
                           actions: [
                             IconButton(
                               onPressed: () => onEdit(user),
@@ -1173,6 +1186,7 @@ class _AdminTile extends StatelessWidget {
     required this.subtitle,
     this.actions = const [],
     this.trailing,
+    this.onTap,
   });
 
   final IconData icon;
@@ -1180,11 +1194,12 @@ class _AdminTile extends StatelessWidget {
   final String subtitle;
   final List<Widget> actions;
   final Widget? trailing;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    return LovePanel(
+    final panel = LovePanel(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Row(
         children: [
@@ -1217,6 +1232,16 @@ class _AdminTile extends StatelessWidget {
           const SizedBox(width: 8),
           trailing ?? Wrap(spacing: 4, children: actions),
         ],
+      ),
+    );
+    if (onTap == null) return panel;
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: panel,
       ),
     );
   }
@@ -1273,7 +1298,7 @@ class _UserSheetState extends State<_UserSheet> {
     super.initState();
     name = TextEditingController(text: widget.user.name ?? '');
     role =
-        appUserRoles.contains(widget.user.role) ? widget.user.role : 'amigos';
+        appUserRoles.contains(widget.user.role) ? widget.user.role : 'friends';
     access = widget.user.access.toSet();
   }
 
@@ -1342,7 +1367,7 @@ class _UserSheetState extends State<_UserSheet> {
           ),
           const SizedBox(height: 8),
           Text(
-            role == 'marido' || role == 'esposa'
+            role == 'husband' || role == 'wife'
                 ? 'Marido e esposa acessam tudo automaticamente.'
                 : 'Marque os módulos liberados para esta conta.',
           ),
