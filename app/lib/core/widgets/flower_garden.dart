@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
 class FlowerGarden extends StatefulWidget {
-  const FlowerGarden({super.key});
+  const FlowerGarden({super.key, this.ambientOnly = false});
+
+  final bool ambientOnly;
 
   @override
   State<FlowerGarden> createState() => _FlowerGardenState();
@@ -62,6 +64,7 @@ class _FlowerGardenState extends State<FlowerGarden>
               grow: growController.value,
               plantedFlowers: plantedFlowers,
               palette: Theme.of(context).extension<AppPalette>()!,
+              ambientOnly: widget.ambientOnly,
             ),
             child: const SizedBox.expand(),
           ),
@@ -77,12 +80,14 @@ class _FlowerPainter extends CustomPainter {
     required this.grow,
     required this.plantedFlowers,
     required this.palette,
+    required this.ambientOnly,
   });
 
   final double t;
   final double grow;
   final List<Offset> plantedFlowers;
   final AppPalette palette;
+  final bool ambientOnly;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -91,10 +96,18 @@ class _FlowerPainter extends CustomPainter {
     final base = Offset(size.width / 2, size.height * .92);
     final flowerGrow = Curves.easeOutCubic.transform(grow);
 
-    _drawNight(canvas, size);
+    _drawAtmosphere(canvas, size);
+    _drawDistantHills(canvas, size, scale);
     _drawSoftSparkles(canvas, size, scale);
+    _drawButterflies(canvas, size, scale);
+    if (ambientOnly) {
+      _drawAmbientFlowers(canvas, size, scale);
+      return;
+    }
     _drawTrees(canvas, size, scale);
+    _drawGardenPath(canvas, size, scale);
     _drawGrassBed(canvas, size, scale);
+    _drawGrassClumps(canvas, size, scale, backLayer: true);
     _drawGardenFlowers(canvas, size, scale);
     _drawPlantedFlowers(canvas, size, scale);
 
@@ -134,6 +147,7 @@ class _FlowerPainter extends CustomPainter {
     );
 
     _drawSideGrass(canvas, base, scale, flowerGrow);
+    _drawGrassClumps(canvas, size, scale, backLayer: false);
   }
 
   double _growthSince(DateTime start, int adultDays) {
@@ -161,18 +175,103 @@ class _FlowerPainter extends CustomPainter {
     canvas.restore();
   }
 
-  void _drawNight(Canvas canvas, Size size) {
+  void _drawAtmosphere(Canvas canvas, Size size) {
     final paint = Paint()
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          palette.bgStart.withValues(alpha: .10),
-          palette.primary.withValues(alpha: .08),
-          palette.bgEnd.withValues(alpha: .50),
+          palette.bgStart.withValues(alpha: .06),
+          const Color(0xffffedf5).withValues(alpha: .52),
+          const Color(0xffeaf7ef).withValues(alpha: .62),
+          palette.bgEnd.withValues(alpha: .72),
         ],
       ).createShader(Offset.zero & size);
     canvas.drawRect(Offset.zero & size, paint);
+
+    final glowCenter = Offset(size.width * .52, size.height * .26);
+    canvas.drawCircle(
+      glowCenter,
+      size.shortestSide * .26,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            Colors.white.withValues(alpha: .32),
+            const Color(0xffffb6d4).withValues(alpha: .12),
+            Colors.transparent,
+          ],
+        ).createShader(
+          Rect.fromCircle(center: glowCenter, radius: size.shortestSide * .28),
+        ),
+    );
+  }
+
+  void _drawDistantHills(Canvas canvas, Size size, double scale) {
+    final back = Path()
+      ..moveTo(0, size.height * .62)
+      ..cubicTo(size.width * .16, size.height * .50, size.width * .28,
+          size.height * .64, size.width * .44, size.height * .55)
+      ..cubicTo(size.width * .62, size.height * .44, size.width * .77,
+          size.height * .61, size.width, size.height * .50)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(
+      back,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            const Color(0xff8bcf9a).withValues(alpha: .18),
+            const Color(0xff2f7d56).withValues(alpha: .08),
+          ],
+        ).createShader(Offset.zero & size),
+    );
+
+    final front = Path()
+      ..moveTo(0, size.height * .70)
+      ..cubicTo(size.width * .18, size.height * .61, size.width * .31,
+          size.height * .74, size.width * .50, size.height * .65)
+      ..cubicTo(size.width * .68, size.height * .56, size.width * .84,
+          size.height * .73, size.width, size.height * .63)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(
+      front,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            palette.primary.withValues(alpha: .12),
+            palette.primaryDark.withValues(alpha: .10),
+          ],
+        ).createShader(Offset.zero & size),
+    );
+
+    final mistPaint = Paint()
+      ..color = Colors.white.withValues(alpha: .24)
+      ..strokeWidth = 2 * scale
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    for (var i = 0; i < 4; i++) {
+      final y = size.height * (.54 + i * .055);
+      final phase = math.sin(t * math.pi * 2 + i) * 16 * scale;
+      canvas.drawArc(
+        Rect.fromLTWH(
+          -size.width * .08 + phase,
+          y,
+          size.width * 1.16,
+          46 * scale,
+        ),
+        math.pi * 1.03,
+        math.pi * .94,
+        false,
+        mistPaint..color = Colors.white.withValues(alpha: .16 - i * .025),
+      );
+    }
   }
 
   void _drawSoftSparkles(Canvas canvas, Size size, double scale) {
@@ -180,16 +279,68 @@ class _FlowerPainter extends CustomPainter {
       ..color = palette.primary.withValues(alpha: .18)
       ..strokeWidth = 1.4 * scale
       ..strokeCap = StrokeCap.round;
-    for (var i = 0; i < 10; i++) {
+    for (var i = 0; i < 18; i++) {
       final phase = (t + i * .073) % 1;
       final x = (size.width * ((i * 37) % 100) / 100) +
           math.sin(phase * math.pi * 2) * 18 * scale;
-      final y = size.height * (.25 + ((i * 19) % 55) / 100) +
+      final y = size.height * (.18 + ((i * 19) % 54) / 100) +
           math.cos(phase * math.pi * 2) * 12 * scale;
       final len = (3 + i % 3) * scale;
+      paint.color = (i.isEven ? palette.primary : const Color(0xffffb703))
+          .withValues(alpha: .12 + math.sin(phase * math.pi * 2).abs() * .12);
       canvas.drawLine(Offset(x - len, y), Offset(x + len, y), paint);
       canvas.drawLine(Offset(x, y - len), Offset(x, y + len), paint);
     }
+  }
+
+  void _drawButterflies(Canvas canvas, Size size, double scale) {
+    final colors = [
+      const Color(0xffff73b9),
+      const Color(0xffa855f7),
+      const Color(0xffffb703),
+    ];
+    for (var i = 0; i < 3; i++) {
+      final phase = (t + i * .27) % 1;
+      final x = size.width * (.22 + i * .25) +
+          math.sin(phase * math.pi * 2) * 30 * scale;
+      final y = size.height * (.32 + i * .055) +
+          math.cos(phase * math.pi * 2 + i) * 18 * scale;
+      _drawButterfly(canvas, Offset(x, y), scale * (.42 + i * .06), colors[i],
+          phase + i * .13);
+    }
+  }
+
+  void _drawButterfly(
+      Canvas canvas, Offset center, double scale, Color color, double phase) {
+    final flap = .72 + math.sin(phase * math.pi * 10).abs() * .38;
+    final body = Paint()
+      ..color = const Color(0xff5b3a2f).withValues(alpha: .62)
+      ..strokeWidth = 2 * scale
+      ..strokeCap = StrokeCap.round;
+    final wing = Paint()
+      ..color = color.withValues(alpha: .38)
+      ..style = PaintingStyle.fill;
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(math.sin(phase * math.pi * 2) * .18);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(-9 * scale, -2 * scale),
+        width: 18 * scale * flap,
+        height: 25 * scale,
+      ),
+      wing,
+    );
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(9 * scale, -2 * scale),
+        width: 18 * scale * flap,
+        height: 25 * scale,
+      ),
+      wing,
+    );
+    canvas.drawLine(Offset(0, -12 * scale), Offset(0, 13 * scale), body);
+    canvas.restore();
   }
 
   void _drawStem(Canvas canvas, double scale) {
@@ -357,16 +508,26 @@ class _FlowerPainter extends CustomPainter {
 
   void _drawGrassBed(Canvas canvas, Size size, double scale) {
     final rect =
-        Rect.fromLTWH(0, size.height - 86 * scale, size.width, 96 * scale);
-    canvas.drawRect(
-      rect,
+        Rect.fromLTWH(0, size.height - 132 * scale, size.width, 142 * scale);
+    final bed = Path()
+      ..moveTo(0, size.height - 92 * scale)
+      ..cubicTo(size.width * .20, size.height - 142 * scale, size.width * .40,
+          size.height - 62 * scale, size.width * .60, size.height - 116 * scale)
+      ..cubicTo(size.width * .78, size.height - 164 * scale, size.width * .90,
+          size.height - 82 * scale, size.width, size.height - 112 * scale)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(
+      bed,
       Paint()
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            const Color(0xff2d5a27).withValues(alpha: .12),
-            palette.primaryDark.withValues(alpha: .16)
+            const Color(0xff7bcf7e).withValues(alpha: .20),
+            const Color(0xff2d5a27).withValues(alpha: .18),
+            palette.primaryDark.withValues(alpha: .20),
           ],
         ).createShader(rect),
     );
@@ -374,8 +535,8 @@ class _FlowerPainter extends CustomPainter {
     final paint = Paint()
       ..color = palette.primaryDark.withValues(alpha: .28)
       ..style = PaintingStyle.fill;
-    for (var i = 0; i < 58; i++) {
-      final x = size.width * i / 57;
+    for (var i = 0; i < 78; i++) {
+      final x = size.width * i / 77;
       final h = (26 + (i % 9) * 5) *
           scale *
           (1 + math.sin(t * math.pi * 2 + i) * .07);
@@ -385,6 +546,43 @@ class _FlowerPainter extends CustomPainter {
         ..lineTo(x + 6 * scale, size.height - h * .12)
         ..close();
       canvas.drawPath(path, paint);
+    }
+  }
+
+  void _drawGardenPath(Canvas canvas, Size size, double scale) {
+    final path = Path()
+      ..moveTo(size.width * .42, size.height)
+      ..cubicTo(size.width * .46, size.height * .87, size.width * .48,
+          size.height * .78, size.width * .49, size.height * .66)
+      ..cubicTo(size.width * .50, size.height * .78, size.width * .56,
+          size.height * .89, size.width * .64, size.height)
+      ..close();
+    canvas.drawPath(
+      path,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            const Color(0xfffff0d9).withValues(alpha: .26),
+            const Color(0xffd9a86c).withValues(alpha: .18),
+          ],
+        ).createShader(Offset.zero & size),
+    );
+
+    final pebblePaint = Paint()..color = Colors.white.withValues(alpha: .20);
+    for (var i = 0; i < 18; i++) {
+      final y = size.height * (.70 + (i % 9) * .034);
+      final lane = i.isEven ? -.026 : .034;
+      final x = size.width * (.515 + lane + math.sin(i * 2.1) * .012);
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(x, y),
+          width: (7 + i % 4) * scale,
+          height: (4 + i % 3) * scale,
+        ),
+        pebblePaint,
+      );
     }
   }
 
@@ -470,13 +668,93 @@ class _FlowerPainter extends CustomPainter {
       (const Color(0xff3b82f6), const Color(0xff93c5fd)),
       (const Color(0xffffb703), const Color(0xffffe08a)),
     ];
-    for (var i = 0; i < 22; i++) {
-      final x = size.width * (.04 + i * .044);
-      final y = ground + math.sin(i * 1.7) * 12 * scale;
-      final flowerScale = scale * (.30 + (i % 5) * .035);
+    for (var i = 0; i < 42; i++) {
+      final row = i % 3;
+      final x = size.width * ((i * 29 % 100) / 100);
+      final y = ground -
+          row * 26 * scale +
+          math.sin(i * 1.7) * 10 * scale +
+          math.cos(t * math.pi * 2 + i) * 2 * scale;
+      final flowerScale = scale * (.22 + row * .05 + (i % 5) * .025);
       final pair = colors[i % colors.length];
+      if (i % 4 == 0) {
+        _drawTulip(
+            canvas, Offset(x, y), flowerScale * 1.2, pair.$1, pair.$2, i * .21);
+      } else {
+        _drawSmallFlower(
+            canvas, Offset(x, y), flowerScale, pair.$1, pair.$2, i * .21);
+      }
+    }
+  }
+
+  void _drawAmbientFlowers(Canvas canvas, Size size, double scale) {
+    final colors = [
+      (const Color(0xffff69b4), const Color(0xffffc1d8)),
+      (const Color(0xffa855f7), const Color(0xffddd6fe)),
+      (const Color(0xffffb703), const Color(0xffffe08a)),
+      (const Color(0xff3b82f6), const Color(0xffbfdbfe)),
+    ];
+    final bottom = size.height - 18 * scale;
+    for (var i = 0; i < 26; i++) {
+      final side = i.isEven ? 0.0 : 1.0;
+      final edge = side == 0.0
+          ? size.width * (.025 + (i % 7) * .028)
+          : size.width * (.975 - (i % 7) * .028);
+      final y = bottom -
+          (i % 6) * 18 * scale +
+          math.sin(t * math.pi * 2 + i) * 3 * scale;
+      final pair = colors[i % colors.length];
+      final flowerScale = scale * (.18 + (i % 4) * .025);
+      if (i % 5 == 0) {
+        _drawTulip(canvas, Offset(edge, y), flowerScale * 1.15, pair.$1,
+            pair.$2, i * .17);
+      } else {
+        _drawSmallFlower(
+            canvas, Offset(edge, y), flowerScale, pair.$1, pair.$2, i * .17);
+      }
+    }
+
+    for (var i = 0; i < 18; i++) {
+      final x = size.width * (.10 + i * .047);
+      final y = size.height - 24 * scale + math.sin(i * 1.8) * 5 * scale;
+      final pair = colors[(i + 2) % colors.length];
       _drawSmallFlower(
-          canvas, Offset(x, y), flowerScale, pair.$1, pair.$2, i * .21);
+          canvas, Offset(x, y), scale * .15, pair.$1, pair.$2, i * .23);
+    }
+  }
+
+  void _drawGrassClumps(
+    Canvas canvas,
+    Size size,
+    double scale, {
+    required bool backLayer,
+  }) {
+    final count = backLayer ? 46 : 34;
+    final baseY =
+        backLayer ? size.height - 126 * scale : size.height - 34 * scale;
+    final alpha = backLayer ? .22 : .42;
+    for (var i = 0; i < count; i++) {
+      final x = size.width * ((i * 17 % 100) / 100);
+      final y = baseY + math.sin(i * 1.31) * 18 * scale;
+      final blades = backLayer ? 3 : 5;
+      final color = (i.isEven ? const Color(0xff2f7d56) : palette.primaryDark)
+          .withValues(alpha: alpha);
+      for (var j = 0; j < blades; j++) {
+        final h = (backLayer ? 28 : 46) * scale * (.72 + (j % 3) * .18);
+        final lean =
+            (j - blades / 2) * 9 * scale + math.sin(t * math.pi * 2 + i) * 5;
+        final blade = Path()
+          ..moveTo(x, y)
+          ..quadraticBezierTo(x + lean * .25, y - h * .62, x + lean, y - h);
+        canvas.drawPath(
+          blade,
+          Paint()
+            ..color = color
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = (backLayer ? 2.2 : 3.2) * scale
+            ..strokeCap = StrokeCap.round,
+        );
+      }
     }
   }
 
@@ -537,11 +815,52 @@ class _FlowerPainter extends CustomPainter {
         top, 10 * scale, Paint()..color = const Color(0xffffd166));
   }
 
+  void _drawTulip(Canvas canvas, Offset base, double scale, Color dark,
+      Color light, double phase) {
+    final sway = math.sin((t + phase) * math.pi * 2) * .08;
+    final top = base.translate(sway * 18 * scale, -82 * scale);
+    canvas.drawLine(
+      base,
+      top,
+      Paint()
+        ..color = const Color(0xff3f7a38).withValues(alpha: .72)
+        ..strokeWidth = 4 * scale
+        ..strokeCap = StrokeCap.round,
+    );
+    _drawLeaf(canvas, base.translate(0, -34 * scale), scale * .32, 38, false);
+    final bloom = Path()
+      ..moveTo(top.dx, top.dy + 18 * scale)
+      ..cubicTo(top.dx - 28 * scale, top.dy - 6 * scale, top.dx - 18 * scale,
+          top.dy - 40 * scale, top.dx, top.dy - 22 * scale)
+      ..cubicTo(top.dx + 18 * scale, top.dy - 40 * scale, top.dx + 28 * scale,
+          top.dy - 6 * scale, top.dx, top.dy + 18 * scale)
+      ..close();
+    canvas.drawPath(
+      bloom,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: [dark, light],
+        ).createShader(
+          Rect.fromCenter(center: top, width: 64 * scale, height: 70 * scale),
+        ),
+    );
+    canvas.drawPath(
+      bloom,
+      Paint()
+        ..color = Colors.white.withValues(alpha: .18)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.4 * scale,
+    );
+  }
+
   @override
   bool shouldRepaint(covariant _FlowerPainter oldDelegate) {
     return oldDelegate.t != t ||
         oldDelegate.grow != grow ||
         oldDelegate.plantedFlowers.length != plantedFlowers.length ||
-        oldDelegate.palette != palette;
+        oldDelegate.palette != palette ||
+        oldDelegate.ambientOnly != ambientOnly;
   }
 }

@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -20,6 +22,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late Timer timer;
   late List<CounterInfo> counters;
+  Offset? cursorPosition;
 
   @override
   void initState() {
@@ -38,70 +41,79 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return LoveBackground(
-      child: RefreshIndicator(
-        onRefresh: () async => setState(() => counters = _buildCounters()),
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
+      child: MouseRegion(
+        cursor: kIsWeb ? SystemMouseCursors.none : MouseCursor.defer,
+        onHover: kIsWeb
+            ? (event) => setState(() => cursorPosition = event.localPosition)
+            : null,
+        onExit: kIsWeb ? (_) => setState(() => cursorPosition = null) : null,
+        child: Stack(
           children: [
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1200),
-                child: Column(
-                  children: [
-                    const _HomeIntro(),
-                    const SizedBox(height: 16),
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final wide = constraints.maxWidth >= 760;
-                        return GridView.count(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          crossAxisCount: wide ? 3 : 1,
-                          childAspectRatio: wide ? 1.58 : 1.42,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          children: counters
-                              .map((counter) => CounterCard(counter))
-                              .toList(),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    const _HomeMessage(),
-                    const SizedBox(height: 16),
-                    LoveActionCard(
-                      title: 'Nossa Jornada',
-                      description:
-                          'Escreva e guarde os capítulos da caminhada da família.',
-                      icon: Icons.menu_book_outlined,
-                      onTap: () => widget.onNavigate('/nossa-historia'),
-                      maxWidth: 720,
-                    ),
-                  ],
-                ),
+            const Positioned.fill(
+              child: IgnorePointer(
+                child: FlowerGarden(),
               ),
             ),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final wide = constraints.maxWidth >= 900;
-                final height = wide ? 620.0 : 520.0;
-                final lift = wide ? 150.0 : 128.0;
-                return Transform.translate(
-                  offset: Offset(0, -lift),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: height - lift,
-                    child: OverflowBox(
-                      alignment: Alignment.topCenter,
-                      minHeight: height,
-                      maxHeight: height,
-                      child: const SizedBox.expand(child: FlowerGarden()),
+            RefreshIndicator(
+              onRefresh: () async =>
+                  setState(() => counters = _buildCounters()),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
+                children: [
+                  Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1200),
+                      child: Column(
+                        children: [
+                          const _HomeTitle(),
+                          const SizedBox(height: 18),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final wide = constraints.maxWidth >= 760;
+                              return GridView.count(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                crossAxisCount: wide ? 3 : 1,
+                                childAspectRatio: wide ? 1.58 : 1.42,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                                children: counters
+                                    .map((counter) => CounterCard(counter))
+                                    .toList(),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 18),
+                          LoveActionCard(
+                            title: 'Nossa Jornada',
+                            description:
+                                'Escreva e guarde os capítulos da caminhada da família.',
+                            icon: Icons.menu_book_outlined,
+                            onTap: () => widget.onNavigate('/nossa-historia'),
+                            maxWidth: 720,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                );
-              },
+                ],
+              ),
             ),
+            if (kIsWeb && cursorPosition != null)
+              Positioned(
+                left: cursorPosition!.dx - 13,
+                top: cursorPosition!.dy - 13,
+                child: const IgnorePointer(
+                  child: SizedBox(
+                    width: 30,
+                    height: 30,
+                    child: CustomPaint(
+                      painter: _FlowerCursorPainter(),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -109,130 +121,93 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class _HomeIntro extends StatelessWidget {
-  const _HomeIntro();
+class _FlowerCursorPainter extends CustomPainter {
+  const _FlowerCursorPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width * .48, size.height * .46);
+    final petalPaints = [
+      Paint()..color = const Color(0xffff73b9),
+      Paint()..color = const Color(0xffffb6d4),
+    ];
+    for (var i = 0; i < 8; i++) {
+      final angle = i * math.pi / 4;
+      final petalCenter = center.translate(
+        math.cos(angle) * 7,
+        math.sin(angle) * 7,
+      );
+      canvas.save();
+      canvas.translate(petalCenter.dx, petalCenter.dy);
+      canvas.rotate(angle);
+      canvas.drawOval(
+        Rect.fromCenter(center: Offset.zero, width: 8, height: 13),
+        petalPaints[i.isEven ? 0 : 1],
+      );
+      canvas.restore();
+    }
+    canvas.drawCircle(center, 5, Paint()..color = const Color(0xffffd166));
+    final stem = Path()
+      ..moveTo(center.dx + 2, center.dy + 8)
+      ..quadraticBezierTo(size.width * .70, size.height * .78, size.width * .90,
+          size.height * .92);
+    canvas.drawPath(
+      stem,
+      Paint()
+        ..color = const Color(0xff3f7a38)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..strokeCap = StrokeCap.round,
+    );
+    final leaf = Path()
+      ..moveTo(size.width * .70, size.height * .78)
+      ..quadraticBezierTo(size.width * .52, size.height * .76, size.width * .58,
+          size.height * .62)
+      ..quadraticBezierTo(size.width * .74, size.height * .66, size.width * .70,
+          size.height * .78)
+      ..close();
+    canvas.drawPath(
+      leaf,
+      Paint()..color = const Color(0xff47a35a).withValues(alpha: .9),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _FlowerCursorPainter oldDelegate) => false;
+}
+
+class _HomeTitle extends StatelessWidget {
+  const _HomeTitle();
 
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     final text = Theme.of(context).extension<AppTextThemes>()!;
-    return LovePanel(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final compact = constraints.maxWidth < 680;
-          final copy = Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                'Nossa Família',
-                textAlign: TextAlign.center,
-                style: text.display.merge(
-                  TextStyle(
-                    color: palette.primary,
-                    fontSize: compact ? 28 : 34,
-                    fontWeight: FontWeight.w900,
-                    height: 1.05,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Um lugar simples para guardar amor, memórias e pequenos milagres do nosso caminho.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: palette.muted,
-                  fontSize: 15,
-                  height: 1.45,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 8,
-                runSpacing: 8,
-                children: const [
-                  _HomeChip(Icons.favorite_outline, 'Fernando'),
-                  _HomeChip(Icons.favorite, 'Miriam'),
-                  _HomeChip(Icons.child_care_outlined, 'Fernando Filho'),
-                ],
-              ),
-            ],
-          );
-
-          if (compact) {
-            return copy;
-          }
-          return ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 680),
-            child: copy,
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _HomeChip extends StatelessWidget {
-  const _HomeChip(this.icon, this.label);
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: primary.withValues(alpha: .08),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: primary.withValues(alpha: .12)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+      child: Column(
         children: [
-          Icon(icon, size: 15, color: primary),
-          const SizedBox(width: 6),
           Text(
-            label,
-            style: const TextStyle(
-              color: foreground,
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
+            'Nossa Família',
+            textAlign: TextAlign.center,
+            style: text.display.merge(
+              TextStyle(
+                color: palette.primary,
+                fontSize: 34,
+                fontWeight: FontWeight.w900,
+                height: 1.05,
+              ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HomeMessage extends StatelessWidget {
-  const _HomeMessage();
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
-    return LovePanel(
-      maxWidth: 760,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: palette.primary.withValues(alpha: .10),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(Icons.local_florist_outlined, color: palette.primary),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              'Um jardim digital de memórias e amor, onde cada momento representa uma parte especial da nossa história juntos.',
-              style:
-                  TextStyle(color: palette.muted, fontSize: 15, height: 1.45),
+          const SizedBox(height: 6),
+          Text(
+            'Amor, memórias e pequenos milagres do nosso caminho.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: palette.muted,
+              fontSize: 15,
+              height: 1.4,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -352,23 +327,13 @@ class CounterCard extends StatelessWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
+                        SizedBox(
                           width: 44,
                           height: 44,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(colors: info.colors),
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: [
-                              BoxShadow(
-                                color: info.colors.last.withValues(alpha: .22),
-                                blurRadius: 12,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
+                          child: Center(
+                            child: Text(info.icon,
+                                style: const TextStyle(fontSize: 30)),
                           ),
-                          child: Text(info.icon,
-                              style: const TextStyle(fontSize: 24)),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
