@@ -150,74 +150,37 @@ class _AdminPageState extends State<AdminPage> {
             Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 1200),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const _AdminHero(),
-                    const SizedBox(height: 16),
-                    AppQuery<_AdminData>(
-                      queryKey: QueryKeys.adminPage(
-                        usersPage: usersPage,
-                        notificationsPage: notificationsPage,
-                        questionsPage: questionsPage,
-                        wordsPage: wordsPage,
-                        statsPage: statsPage,
+                child: AppQuery<_AdminData>(
+                  queryKey: QueryKeys.adminPage(
+                    usersPage: usersPage,
+                    notificationsPage: notificationsPage,
+                    questionsPage: questionsPage,
+                    wordsPage: wordsPage,
+                    statsPage: statsPage,
+                  ),
+                  queryFn: _fetchAdminData,
+                  loading: _AdminScaffold(
+                    selected: selected,
+                    onChanged: (value) => setState(() => selected = value),
+                    child: const _AdminLoadingState(),
+                  ),
+                  builder: (context, data, _) {
+                    _applyAdminData(data);
+                    return _AdminScaffold(
+                      selected: selected,
+                      onChanged: (value) => setState(() => selected = value),
+                      error: loadError,
+                      child: LovePanel(
+                        padding: EdgeInsets.zero,
+                        child: SizedBox(
+                          height: MediaQuery.sizeOf(context).width >= 860
+                              ? 720
+                              : 640,
+                          child: _sectionContent(),
+                        ),
                       ),
-                      queryFn: _fetchAdminData,
-                      loading: const PageSkeleton(cards: 4),
-                      builder: (context, data, _) {
-                        _applyAdminData(data);
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            if (loadError != null) ...[
-                              _AdminErrorBanner(message: loadError!),
-                            ],
-                            const SizedBox(height: 16),
-                            LayoutBuilder(
-                              builder: (context, constraints) {
-                                final wide = constraints.maxWidth >= 860;
-                                final content = LovePanel(
-                                  padding: EdgeInsets.zero,
-                                  child: SizedBox(
-                                    height: wide ? 720 : 640,
-                                    child: _sectionContent(),
-                                  ),
-                                );
-                                if (!wide) {
-                                  return Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      _AdminSegmentedNav(
-                                        selected: selected,
-                                        onChanged: (value) =>
-                                            setState(() => selected = value),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      content,
-                                    ],
-                                  );
-                                }
-                                return Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _AdminSideNav(
-                                      selected: selected,
-                                      onChanged: (value) =>
-                                          setState(() => selected = value),
-                                    ),
-                                    const SizedBox(width: 14),
-                                    Expanded(child: content),
-                                  ],
-                                );
-                              },
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -452,6 +415,9 @@ class _AdminPageState extends State<AdminPage> {
   }
 }
 
+const _adminContentPadding = EdgeInsets.fromLTRB(18, 14, 18, 14);
+const _adminListPadding = EdgeInsets.fromLTRB(18, 4, 18, 18);
+
 class _AdminData {
   const _AdminData({
     required this.users,
@@ -471,6 +437,86 @@ class _AdminData {
 }
 
 enum _AdminSection { users, notifications, games, stats }
+
+class _AdminScaffold extends StatelessWidget {
+  const _AdminScaffold({
+    required this.selected,
+    required this.onChanged,
+    required this.child,
+    this.error,
+  });
+
+  final _AdminSection selected;
+  final ValueChanged<_AdminSection> onChanged;
+  final Widget child;
+  final String? error;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 860;
+        final main = Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const _AdminHero(),
+            if (error != null) ...[
+              const SizedBox(height: 14),
+              _AdminErrorBanner(message: error!),
+            ],
+            const SizedBox(height: 16),
+            if (!wide) ...[
+              _AdminSegmentedNav(selected: selected, onChanged: onChanged),
+              const SizedBox(height: 12),
+            ],
+            child,
+          ],
+        );
+
+        if (!wide) return main;
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            LovePanel(
+              padding: EdgeInsets.zero,
+              child: _AdminSideNav(selected: selected, onChanged: onChanged),
+            ),
+            const SizedBox(width: 18),
+            Expanded(child: main),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _AdminLoadingState extends StatelessWidget {
+  const _AdminLoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return LovePanel(
+      padding: const EdgeInsets.all(18),
+      child: SizedBox(
+        height: 520,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: const [
+            SkeletonBox(width: 220, height: 26),
+            SizedBox(height: 18),
+            SkeletonBox(height: 78, borderRadius: 8),
+            SizedBox(height: 10),
+            SkeletonBox(height: 78, borderRadius: 8),
+            SizedBox(height: 10),
+            SkeletonBox(height: 78, borderRadius: 8),
+            SizedBox(height: 10),
+            SkeletonBox(height: 78, borderRadius: 8),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 const _roleOptions = [
   _UserOption('husband', 'Marido', Icons.admin_panel_settings_outlined),
@@ -595,25 +641,32 @@ class _AdminSideNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    return Container(
-      width: 236,
-      padding: const EdgeInsets.all(12),
+    return SizedBox(
+      width: 220,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
+            child: Text(
+              'Seções',
+              style: TextStyle(
+                color: palette.muted,
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
           for (final section in _AdminSection.values)
             Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
               child: _AdminNavTile(
                 section: section,
                 selected: selected == section,
                 onTap: () => onChanged(section),
               ),
             ),
-          const Spacer(),
-          Text(
-            'Painel privado',
-            style: TextStyle(color: palette.muted, fontWeight: FontWeight.w700),
-          ),
         ],
       ),
     );
@@ -679,7 +732,7 @@ class _AdminNavTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           child: Row(
             children: [
               Icon(section.icon,
@@ -725,27 +778,123 @@ class _AdminToolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
-      child: Wrap(
-        spacing: 12,
-        runSpacing: 12,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          SizedBox(
-            width: 520,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      padding: _adminContentPadding.copyWith(bottom: 12),
+      child: SizedBox(
+        width: double.infinity,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth < 620;
+            final heading = SizedBox(
+              width: double.infinity,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      textAlign: TextAlign.left,
+                      style: const TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      textAlign: TextAlign.left,
+                      style: TextStyle(color: palette.muted, height: 1.25),
+                    ),
+                  ],
+                ),
+              ),
+            );
+            if (action == null) return heading;
+            if (compact) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  heading,
+                  const SizedBox(height: 12),
+                  Align(alignment: Alignment.centerLeft, child: action!),
+                ],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(title,
-                    style: const TextStyle(
-                        fontSize: 22, fontWeight: FontWeight.w900)),
-                const SizedBox(height: 4),
-                Text(subtitle, style: TextStyle(color: palette.muted)),
+                Expanded(child: heading),
+                const SizedBox(width: 16),
+                action!,
               ],
-            ),
-          ),
-          if (action != null) action!,
-        ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _AdminSectionBody extends StatelessWidget {
+  const _AdminSectionBody({
+    required this.loading,
+    required this.empty,
+    required this.isEmpty,
+    required this.itemCount,
+    required this.itemBuilder,
+  });
+
+  final bool loading;
+  final String empty;
+  final bool isEmpty;
+  final int itemCount;
+  final IndexedWidgetBuilder itemBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) return const _AdminListSkeleton();
+    if (isEmpty) return _EmptyAdminState(empty);
+    return ListView.separated(
+      padding: _adminListPadding,
+      itemCount: itemCount,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: itemBuilder,
+    );
+  }
+}
+
+class _AdminActions extends StatelessWidget {
+  const _AdminActions({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      alignment: WrapAlignment.end,
+      children: children,
+    );
+  }
+}
+
+class _AdminSectionTitle extends StatelessWidget {
+  const _AdminSectionTitle(this.title);
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: palette.foreground,
+          fontSize: 16,
+          fontWeight: FontWeight.w900,
+        ),
       ),
     );
   }
@@ -775,39 +924,34 @@ class _UsersAdminTab extends StatelessWidget {
           subtitle: 'Edite perfil, função e remova acessos quando precisar.',
         ),
         Expanded(
-          child: loading
-              ? const _AdminListSkeleton()
-              : users.isEmpty
-                  ? const _EmptyAdminState('Nenhum usuário cadastrado.')
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 22),
-                      itemCount: users.length + (pagination == null ? 0 : 1),
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (context, index) {
-                        if (index == users.length) return pagination!;
-                        final user = users[index];
-                        return _AdminTile(
-                          icon: Icons.person_outline,
-                          title: user.name?.isNotEmpty == true
-                              ? user.name!
-                              : user.email,
-                          subtitle: '${user.email} • ${_roleLabel(user.role)}',
-                          onTap: () => onEdit(user),
-                          actions: [
-                            IconButton(
-                              onPressed: () => onEdit(user),
-                              icon: const Icon(Icons.edit_outlined),
-                              tooltip: 'Editar',
-                            ),
-                            IconButton(
-                              onPressed: () => onDelete(user),
-                              icon: const Icon(Icons.delete_outline),
-                              tooltip: 'Remover',
-                            ),
-                          ],
-                        );
-                      },
-                    ),
+          child: _AdminSectionBody(
+            loading: loading,
+            isEmpty: users.isEmpty,
+            empty: 'Nenhum usuário cadastrado.',
+            itemCount: users.length + (pagination == null ? 0 : 1),
+            itemBuilder: (context, index) {
+              if (index == users.length) return pagination!;
+              final user = users[index];
+              return _AdminTile(
+                icon: Icons.person_outline,
+                title: user.name?.isNotEmpty == true ? user.name! : user.email,
+                subtitle: '${user.email} • ${_roleLabel(user.role)}',
+                onTap: () => onEdit(user),
+                actions: [
+                  IconButton(
+                    onPressed: () => onEdit(user),
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: 'Editar',
+                  ),
+                  IconButton(
+                    onPressed: () => onDelete(user),
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: 'Remover',
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ],
     );
@@ -844,8 +988,7 @@ class _NotificationsAdminTab extends StatelessWidget {
         _AdminToolbar(
           title: 'Notificações',
           subtitle: 'Crie, edite, envie push e limpe o histórico.',
-          action: Wrap(
-            spacing: 8,
+          action: _AdminActions(
             children: [
               AppButton(
                 onPressed: onAdd,
@@ -861,48 +1004,44 @@ class _NotificationsAdminTab extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: loading
-              ? const _AdminListSkeleton()
-              : notifications.isEmpty
-                  ? const _EmptyAdminState('Nenhuma notificação cadastrada.')
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 22),
-                      itemCount:
-                          notifications.length + (pagination == null ? 0 : 1),
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (context, index) {
-                        if (index == notifications.length) return pagination!;
-                        final notification = notifications[index];
-                        return _AdminTile(
-                          icon: Icons.notifications_outlined,
-                          title: notification.title,
-                          subtitle:
-                              '${notification.body.isEmpty ? 'Sem texto' : notification.body} • ${notification.url}',
-                          actions: [
-                            IconButton(
-                              onPressed: () => onSend(notification),
-                              icon: const Icon(Icons.send_outlined),
-                              tooltip: 'Enviar push',
-                            ),
-                            IconButton(
-                              onPressed: () => onSchedule(notification),
-                              icon: const Icon(Icons.schedule_send_outlined),
-                              tooltip: 'Agendar push',
-                            ),
-                            IconButton(
-                              onPressed: () => onEdit(notification),
-                              icon: const Icon(Icons.edit_outlined),
-                              tooltip: 'Editar',
-                            ),
-                            IconButton(
-                              onPressed: () => onDelete(notification),
-                              icon: const Icon(Icons.delete_outline),
-                              tooltip: 'Remover',
-                            ),
-                          ],
-                        );
-                      },
-                    ),
+          child: _AdminSectionBody(
+            loading: loading,
+            isEmpty: notifications.isEmpty,
+            empty: 'Nenhuma notificação cadastrada.',
+            itemCount: notifications.length + (pagination == null ? 0 : 1),
+            itemBuilder: (context, index) {
+              if (index == notifications.length) return pagination!;
+              final notification = notifications[index];
+              return _AdminTile(
+                icon: Icons.notifications_outlined,
+                title: notification.title,
+                subtitle:
+                    '${notification.body.isEmpty ? 'Sem texto' : notification.body} • ${notification.url}',
+                actions: [
+                  IconButton(
+                    onPressed: () => onSend(notification),
+                    icon: const Icon(Icons.send_outlined),
+                    tooltip: 'Enviar push',
+                  ),
+                  IconButton(
+                    onPressed: () => onSchedule(notification),
+                    icon: const Icon(Icons.schedule_send_outlined),
+                    tooltip: 'Agendar push',
+                  ),
+                  IconButton(
+                    onPressed: () => onEdit(notification),
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: 'Editar',
+                  ),
+                  IconButton(
+                    onPressed: () => onDelete(notification),
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: 'Remover',
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ],
     );
@@ -943,8 +1082,7 @@ class _GamesAdminTab extends StatelessWidget {
         _AdminToolbar(
           title: 'Jogos',
           subtitle: 'Gerencie perguntas do Quiz e palavras do Caça Palavras.',
-          action: Wrap(
-            spacing: 8,
+          action: _AdminActions(
             children: [
               AppButton(
                 onPressed: onAddQuestion,
@@ -1020,7 +1158,7 @@ class _GamesAdminTab extends StatelessWidget {
                     );
                     if (!wide) {
                       return ListView(
-                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 22),
+                        padding: EdgeInsets.zero,
                         children: [
                           questionList,
                           const SizedBox(height: 18),
@@ -1062,14 +1200,11 @@ class _GameSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 22),
+      padding: _adminListPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-          ),
+          _AdminSectionTitle(title),
           const SizedBox(height: 10),
           if (scrollable)
             Expanded(
@@ -1146,33 +1281,29 @@ class _StatsAdminTab extends StatelessWidget {
           subtitle: 'Veja quantas vezes cada pessoa concluiu os jogos.',
         ),
         Expanded(
-          child: loading
-              ? const _AdminListSkeleton()
-              : stats.isEmpty
-                  ? const _EmptyAdminState('Nenhuma conclusão registrada.')
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 22),
-                      itemCount: stats.length + (pagination == null ? 0 : 1),
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (context, index) {
-                        if (index == stats.length) return pagination!;
-                        final stat = stats[index];
-                        return _AdminTile(
-                          icon: stat.game == 'quiz'
-                              ? Icons.favorite_outline
-                              : Icons.grid_on_outlined,
-                          title: stat.playerName,
-                          subtitle: stat.game == 'quiz'
-                              ? 'Quiz do Amor'
-                              : 'Caça Palavras',
-                          trailing: Text(
-                            '${stat.count}x${stat.bestScore == null ? '' : ' • melhor ${stat.bestScore}'}',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w900, fontSize: 16),
-                          ),
-                        );
-                      },
-                    ),
+          child: _AdminSectionBody(
+            loading: loading,
+            isEmpty: stats.isEmpty,
+            empty: 'Nenhuma conclusão registrada.',
+            itemCount: stats.length + (pagination == null ? 0 : 1),
+            itemBuilder: (context, index) {
+              if (index == stats.length) return pagination!;
+              final stat = stats[index];
+              return _AdminTile(
+                icon: stat.game == 'quiz'
+                    ? Icons.favorite_outline
+                    : Icons.grid_on_outlined,
+                title: stat.playerName,
+                subtitle:
+                    stat.game == 'quiz' ? 'Quiz do Amor' : 'Caça Palavras',
+                trailing: Text(
+                  '${stat.count}x${stat.bestScore == null ? '' : ' • melhor ${stat.bestScore}'}',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w900, fontSize: 16),
+                ),
+              );
+            },
+          ),
         ),
       ],
     );
@@ -1253,10 +1384,139 @@ class _AdminListSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 22),
+      padding: _adminListPadding,
       itemCount: 6,
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (_, __) => const SkeletonBox(height: 76, borderRadius: 8),
+    );
+  }
+}
+
+class _AdminCheckRow extends StatelessWidget {
+  const _AdminCheckRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Material(
+        color: palette.primary.withValues(alpha: value ? .08 : .03),
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () => onChanged(!value),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            child: Row(
+              children: [
+                Icon(icon, color: value ? palette.primary : palette.muted),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                ),
+                Checkbox(
+                  value: value,
+                  onChanged: (checked) => onChanged(checked ?? false),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AdminSwitchRow extends StatelessWidget {
+  const _AdminSwitchRow({
+    required this.value,
+    required this.onChanged,
+    required this.label,
+  });
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Material(
+      color: palette.primary.withValues(alpha: .04),
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () => onChanged(!value),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ),
+              Switch(value: value, onChanged: onChanged),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AdminInfoRow extends StatelessWidget {
+  const _AdminInfoRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final Widget title;
+  final Widget subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Material(
+      color: palette.primary.withValues(alpha: .04),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: palette.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  title,
+                  const SizedBox(height: 4),
+                  subtitle,
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1373,14 +1633,13 @@ class _UserSheetState extends State<_UserSheet> {
           ),
           const SizedBox(height: 10),
           for (final option in _accessOptions)
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              secondary: Icon(option.icon),
-              title: Text(option.label),
+            _AdminCheckRow(
+              icon: option.icon,
+              label: option.label,
               value: access.contains(option.value),
               onChanged: (checked) {
                 setState(() {
-                  if (checked == true) {
+                  if (checked) {
                     access.add(option.value);
                   } else {
                     access.remove(option.value);
@@ -1569,9 +1828,8 @@ class _ScheduleNotificationSheetState
             icon: Icons.schedule_send_outlined,
           ),
           const SizedBox(height: 14),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.notifications_outlined),
+          _AdminInfoRow(
+            icon: Icons.notifications_outlined,
             title: Text(widget.notification.title,
                 style: const TextStyle(fontWeight: FontWeight.w900)),
             subtitle: Text(widget.notification.body.isEmpty
@@ -1713,10 +1971,10 @@ class _QuestionSheetState extends State<_QuestionSheet> {
                 ],
               ),
             ),
-          SwitchListTile(
+          _AdminSwitchRow(
             value: active,
             onChanged: (value) => setState(() => active = value),
-            title: const Text('Ativa'),
+            label: 'Ativa',
           ),
           const SizedBox(height: 14),
           AppSheetActions(
@@ -1789,10 +2047,10 @@ class _WordSheetState extends State<_WordSheet> {
             onSubmitted: (_) => _save(),
           ),
           const SizedBox(height: 10),
-          SwitchListTile(
+          _AdminSwitchRow(
             value: active,
             onChanged: (value) => setState(() => active = value),
-            title: const Text('Ativa'),
+            label: 'Ativa',
           ),
           const SizedBox(height: 14),
           AppSheetActions(

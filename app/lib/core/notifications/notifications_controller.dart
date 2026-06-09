@@ -13,10 +13,18 @@ import '../socket/socket_client.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  if (AppConfig.hasFirebaseConfig && Firebase.apps.isEmpty) {
-    await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform);
+  if (Firebase.apps.isEmpty) {
+    await _initializeFirebase();
   }
+}
+
+Future<void> _initializeFirebase() {
+  if (kIsWeb || AppConfig.hasFirebaseConfig) {
+    return Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
+  return Firebase.initializeApp();
 }
 
 class NotificationsController extends ChangeNotifier {
@@ -116,11 +124,10 @@ class NotificationsController extends ChangeNotifier {
             ?.requestNotificationsPermission();
       }
 
-      if (!AppConfig.hasFirebaseConfig) return;
+      if (kIsWeb && !AppConfig.hasFirebaseConfig) return;
 
       if (Firebase.apps.isEmpty) {
-        await Firebase.initializeApp(
-            options: DefaultFirebaseOptions.currentPlatform);
+        await _initializeFirebase();
       }
       FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 

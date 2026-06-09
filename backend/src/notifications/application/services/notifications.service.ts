@@ -1,11 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { readFileSync } from 'node:fs';
 import * as admin from 'firebase-admin';
 import { NotificationsRepository } from '../../infrastructure/repositories/notifications.repository';
 import { NotificationsRealtimeGateway } from '../../interfaces/gateways/notifications-realtime.gateway';
 import { Environment } from '@shared/infrastructure/environment/environment.module';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
-import { JobsService } from '@shared/infrastructure/queue';
 import {
   FcmSubscriptionDto,
   NotificationCreateDto,
@@ -16,13 +15,13 @@ import { notificationMapper } from '../mappers/notification.mapper';
 
 @Injectable()
 export class NotificationsService {
+  private readonly logger = new Logger(NotificationsService.name);
   private fcmEnabled = false;
 
   constructor(
     private repository: NotificationsRepository,
     private env: Environment,
     private realtime: NotificationsRealtimeGateway,
-    private jobs: JobsService,
   ) {
     const serviceAccount = this.loadFirebaseServiceAccount();
     if (serviceAccount && admin.apps.length === 0) {
@@ -105,8 +104,7 @@ export class NotificationsService {
       notificationFactory.createPush(dto),
     );
     this.realtime.emitNotificationUpdated(notificationMapper.toDto(row));
-    await this.jobs.enqueueNotification({ title, body, url });
-    return { sent: 0 };
+    return this.sendNow(title, body, url);
   }
 
   async sendNow(
@@ -114,7 +112,12 @@ export class NotificationsService {
     body?: string,
     url?: string,
   ): Promise<{ sent: number }> {
-    if (!this.fcmEnabled) return { sent: 0 };
+    if (!this.fcmEnabled) {
+      this.logger.warn(
+        'FCM desativado. Configure FIREBASE_SERVICE_ACCOUNT_PATH ou FIREBASE_SERVICE_ACCOUNT_JSON.',
+      );
+      return { sent: 0 };
+    }
 
     const subs = await this.repository.listSubscriptions();
     let sent = 0;
@@ -140,17 +143,29 @@ export class NotificationsService {
           },
           android: {
             notification: {
-              icon: 'ic_launcher',
+              icon: 'ic_notification',
               clickAction: 'FLUTTER_NOTIFICATION_CLICK',
             },
           },
         });
         sent++;
-      } catch {
-        try {
-          await this.repository.deleteSubscription(sub.id);
-        } catch {
-          //
+      } catch (error) {
+        const code =
+          typeof error === 'object' && error !== null && 'code' in error
+            ? String((error as { code?: unknown }).code)
+            : '';
+        this.logger.warn(
+          `Falha ao enviar push para ${sub.platform}: ${code || String(error)}`,
+        );
+        if (
+          code.includes('registration-token-not-registered') ||
+          code.includes('invalid-registration-token')
+        ) {
+          try {
+            await this.repository.deleteSubscription(sub.id);
+          } catch {
+            //
+          }
         }
       }
     }

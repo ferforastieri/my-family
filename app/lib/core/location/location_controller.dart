@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../auth/auth_controller.dart';
 import '../api/socket_api_client.dart';
+import '../config/app_config.dart';
 import '../socket/socket_client.dart';
 
 class LocationController {
@@ -15,6 +17,8 @@ class LocationController {
   final AuthController auth;
   late final SocketApiClient api = SocketApiClient(socket);
   final Battery _battery = Battery();
+  static const MethodChannel _backgroundChannel =
+      MethodChannel('com.viciofer.my_family/background_location');
   StreamSubscription<Position>? _positionSubscription;
   Timer? _timer;
   bool _started = false;
@@ -28,6 +32,11 @@ class LocationController {
     final permission = await _ensurePermission();
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
+      return;
+    }
+
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      await _startAndroidBackgroundService();
       return;
     }
 
@@ -65,7 +74,34 @@ class LocationController {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
+    if (!kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.android &&
+        permission == LocationPermission.whileInUse) {
+      permission = await Geolocator.requestPermission();
+    }
     return permission;
+  }
+
+  Future<void> _startAndroidBackgroundService() async {
+    final token = socket.token;
+    if (token == null) return;
+    try {
+      await _backgroundChannel.invokeMethod<bool>('start', {
+        'token': token,
+        'apiBaseUrl': AppConfig.apiBaseUrl,
+      });
+    } catch (_) {
+      unawaited(_sendCurrentPosition());
+    }
+  }
+
+  Future<void> _stopAndroidBackgroundService() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    try {
+      await _backgroundChannel.invokeMethod<bool>('stop');
+    } catch (_) {
+      //
+    }
   }
 
   Future<void> _sendCurrentPosition() async {
@@ -133,6 +169,7 @@ class LocationController {
     _timer = null;
     _positionSubscription?.cancel();
     _positionSubscription = null;
+    unawaited(_stopAndroidBackgroundService());
     _started = false;
   }
 

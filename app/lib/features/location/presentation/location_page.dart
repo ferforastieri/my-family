@@ -6,7 +6,6 @@ import '../../../core/api/query_keys.dart';
 import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
-import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
 import '../../../core/widgets/love_action_card.dart';
@@ -48,13 +47,11 @@ class _LocationPageState extends State<LocationPage> {
   }
 
   void _handleLocationUpdated(dynamic _) {
-    if (!mounted) return;
-    invalidateQueries(context, QueryKeys.locations);
+    if (mounted) invalidateQueries(context, QueryKeys.locations);
   }
 
   void _handleLocationPlaceChanged(dynamic _) {
-    if (!mounted) return;
-    invalidateQueries(context, QueryKeys.locationPlaces);
+    if (mounted) invalidateQueries(context, QueryKeys.locationPlaces);
   }
 
   void _invalidateAll() {
@@ -104,29 +101,20 @@ class _LocationPageState extends State<LocationPage> {
                     loading: const PageSkeleton(cards: 4),
                     builder: (context, locations, refetch) => Column(
                       children: [
-                        _LocationActions(
-                          places: places,
-                          onCreate: () => _openPlaceSheet(locations),
-                        ),
-                        const SizedBox(height: 12),
                         SizedBox(
-                          height: MediaQuery.of(context).size.width >= 840
+                          height: MediaQuery.sizeOf(context).width >= 840
                               ? 620
                               : 460,
                           child: _LocationMap(
                             locations: locations,
                             places: places,
                             onCenterChanged: (center) => mapCenter = center,
+                            onCreatePlace: () => _openPlaceSheet(locations),
+                            onEditPlace: (place) => _openPlaceSheet(
+                              locations,
+                              place: place,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        _PlacesList(
-                          places: places,
-                          onEdit: (place) => _openPlaceSheet(
-                            locations,
-                            place: place,
-                          ),
-                          onDelete: _deletePlace,
                         ),
                         const SizedBox(height: 16),
                         _LocationList(locations: locations),
@@ -149,12 +137,16 @@ class _LocationPageState extends State<LocationPage> {
     final fallback = locations.isNotEmpty
         ? LatLng(locations.first.latitude, locations.first.longitude)
         : const LatLng(0, 0);
-    final center = mapCenter ?? fallback;
+    final initial = place == null
+        ? mapCenter ?? fallback
+        : LatLng(place.latitude, place.longitude);
+
     showAppSheet<void>(
       context: context,
       builder: (_) => _LocationPlaceSheet(
         place: place,
-        initialCenter: center,
+        initialCenter: initial,
+        onDelete: place == null ? null : () => _deletePlace(place),
         onSave: (data) async {
           if (place == null) {
             await widget.repository.createLocationPlace(data);
@@ -180,18 +172,24 @@ class _LocationMap extends StatelessWidget {
     required this.locations,
     required this.places,
     required this.onCenterChanged,
+    required this.onCreatePlace,
+    required this.onEditPlace,
   });
 
   final List<LocationSnapshot> locations;
   final List<LocationPlace> places;
   final ValueChanged<LatLng> onCenterChanged;
+  final VoidCallback onCreatePlace;
+  final ValueChanged<LocationPlace> onEditPlace;
 
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    final center = locations.isEmpty
-        ? const LatLng(0, 0)
-        : LatLng(locations.first.latitude, locations.first.longitude);
+    final center = locations.isNotEmpty
+        ? LatLng(locations.first.latitude, locations.first.longitude)
+        : places.isNotEmpty
+            ? LatLng(places.first.latitude, places.first.longitude)
+            : const LatLng(-23.55052, -46.63331);
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: DecoratedBox(
@@ -200,223 +198,153 @@ class _LocationMap extends StatelessWidget {
           border: Border.all(color: palette.border),
           borderRadius: BorderRadius.circular(16),
         ),
-        child: locations.isEmpty && places.isEmpty
-            ? const Center(child: Text('Nenhuma localização recebida ainda.'))
-            : FlutterMap(
-                options: MapOptions(
-                  initialCenter: center,
-                  initialZoom: 14,
-                  minZoom: 3,
-                  maxZoom: 19,
-                  onPositionChanged: (camera, _) =>
-                      onCenterChanged(camera.center),
+        child: Stack(
+          children: [
+            FlutterMap(
+              options: MapOptions(
+                initialCenter: center,
+                initialZoom: locations.isEmpty && places.isEmpty ? 4 : 14,
+                minZoom: 3,
+                maxZoom: 19,
+                onPositionChanged: (camera, _) =>
+                    onCenterChanged(camera.center),
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.viciofer.my_family',
                 ),
-                children: [
-                  TileLayer(
-                    urlTemplate:
-                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.viciofer.my_family',
-                  ),
-                  CircleLayer(
-                    circles: [
-                      for (final place in places)
-                        CircleMarker(
-                          point: LatLng(place.latitude, place.longitude),
-                          radius: place.radiusMeters.toDouble(),
-                          useRadiusInMeter: true,
-                          color: palette.primary.withValues(alpha: .12),
-                          borderColor: palette.primary.withValues(alpha: .55),
-                          borderStrokeWidth: 2,
-                        ),
-                    ],
-                  ),
-                  MarkerLayer(
-                    markers: [
-                      for (final place in places)
-                        Marker(
-                          point: LatLng(place.latitude, place.longitude),
-                          width: 120,
-                          height: 70,
+                CircleLayer(
+                  circles: [
+                    for (final place in places)
+                      CircleMarker(
+                        point: LatLng(place.latitude, place.longitude),
+                        radius: place.radiusMeters.toDouble(),
+                        useRadiusInMeter: true,
+                        color: palette.primary.withValues(alpha: .12),
+                        borderColor: palette.primary.withValues(alpha: .55),
+                        borderStrokeWidth: 2,
+                      ),
+                  ],
+                ),
+                MarkerLayer(
+                  markers: [
+                    for (final place in places)
+                      Marker(
+                        point: LatLng(place.latitude, place.longitude),
+                        width: 132,
+                        height: 76,
+                        child: GestureDetector(
+                          onTap: () => onEditPlace(place),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.home_work_outlined,
                                   color: palette.primary, size: 32),
-                              DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color: palette.card,
-                                  borderRadius: BorderRadius.circular(999),
-                                  border: Border.all(color: palette.border),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 3),
-                                  child: Text(
-                                    place.name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w900),
-                                  ),
-                                ),
-                              ),
+                              _MapLabel(text: place.name),
                             ],
                           ),
                         ),
-                      for (final location in locations)
-                        Marker(
-                          point: LatLng(location.latitude, location.longitude),
-                          width: 96,
-                          height: 74,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color: palette.card,
-                                  borderRadius: BorderRadius.circular(999),
-                                  border: Border.all(color: palette.primary),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 3),
-                                  child: Text(
-                                    _shortName(location),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w900),
-                                  ),
-                                ),
-                              ),
-                              Icon(Icons.location_on,
-                                  color: palette.primary, size: 38),
-                            ],
-                          ),
+                      ),
+                    for (final location in locations)
+                      Marker(
+                        point: LatLng(location.latitude, location.longitude),
+                        width: 96,
+                        height: 74,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _MapLabel(
+                              text: _shortName(location),
+                              highlighted: true,
+                            ),
+                            Icon(Icons.location_on,
+                                color: palette.primary, size: 38),
+                          ],
                         ),
-                    ],
+                      ),
+                  ],
+                ),
+              ],
+            ),
+            if (locations.isEmpty && places.isEmpty)
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: _MapHint(
+                    text:
+                        'Nenhuma localização recebida ainda. Você pode criar um local pelo botão acima.',
                   ),
-                ],
+                ),
               ),
+            Positioned(
+              right: 14,
+              top: 14,
+              child: FilledButton.icon(
+                onPressed: onCreatePlace,
+                icon: const Icon(Icons.add_location_alt_outlined),
+                label: const Text('Novo local'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _LocationActions extends StatelessWidget {
-  const _LocationActions({
-    required this.places,
-    required this.onCreate,
-  });
+class _MapLabel extends StatelessWidget {
+  const _MapLabel({required this.text, this.highlighted = false});
 
-  final List<LocationPlace> places;
-  final VoidCallback onCreate;
+  final String text;
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    return LovePanel(
-      maxWidth: 1040,
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: palette.primary.withValues(alpha: .14),
-            foregroundColor: palette.primary,
-            child: const Icon(Icons.add_location_alt_outlined),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Locais importantes',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
-                ),
-                Text(
-                  places.isEmpty
-                      ? 'Crie locais como casa, igreja ou trabalho.'
-                      : '${places.length} locais monitorados.',
-                  style: TextStyle(
-                    color: palette.muted,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          IconButton.filled(
-            onPressed: onCreate,
-            icon: const Icon(Icons.add_location_alt_outlined),
-            tooltip: 'Novo local',
-          ),
-        ],
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: palette.card,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: highlighted ? palette.primary : palette.border,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        child: Text(
+          text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
+        ),
       ),
     );
   }
 }
 
-class _PlacesList extends StatelessWidget {
-  const _PlacesList({
-    required this.places,
-    required this.onEdit,
-    required this.onDelete,
-  });
+class _MapHint extends StatelessWidget {
+  const _MapHint({required this.text});
 
-  final List<LocationPlace> places;
-  final ValueChanged<LocationPlace> onEdit;
-  final ValueChanged<LocationPlace> onDelete;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
-    return LovePanel(
-      maxWidth: 1040,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const _LocationPanelTitle(
-            title: 'Locais',
-            description: 'Alertas automáticos de chegada e saída.',
-            icon: Icons.home_work_outlined,
-          ),
-          const SizedBox(height: 12),
-          if (places.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(18),
-              child: Text('Nenhum local monitorado ainda.'),
-            )
-          else
-            for (final place in places)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const CircleAvatar(
-                  child: Icon(Icons.place_outlined),
-                ),
-                title: Text(place.name,
-                    style: const TextStyle(fontWeight: FontWeight.w900)),
-                subtitle: Text(
-                  '${place.radiusMeters}m de raio - ${place.latitude.toStringAsFixed(5)}, ${place.longitude.toStringAsFixed(5)}',
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      onPressed: () => onEdit(place),
-                      icon: const Icon(Icons.edit_outlined),
-                      tooltip: 'Editar',
-                    ),
-                    IconButton(
-                      onPressed: () => onDelete(place),
-                      icon: const Icon(Icons.delete_outline),
-                      tooltip: 'Excluir',
-                    ),
-                  ],
-                ),
-              ),
-        ],
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: palette.card.withValues(alpha: .92),
+        border: Border.all(color: palette.border),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: palette.muted, fontWeight: FontWeight.w700),
+        ),
       ),
     );
   }
@@ -512,31 +440,46 @@ class _LocationTile extends StatelessWidget {
             : battery <= 45
                 ? Colors.orange
                 : Colors.green;
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: CircleAvatar(
-        backgroundColor: palette.primary.withValues(alpha: .14),
-        foregroundColor: palette.primary,
-        child: const Icon(Icons.person_pin_circle_outlined),
-      ),
-      title: Text(_shortName(location),
-          style: const TextStyle(fontWeight: FontWeight.w900)),
-      subtitle: Text(
-        '${location.latitude.toStringAsFixed(5)}, ${location.longitude.toStringAsFixed(5)}',
-      ),
-      trailing: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
         children: [
-          Icon(
-            location.isCharging == true
-                ? Icons.battery_charging_full
-                : Icons.battery_std,
-            color: batteryColor,
+          CircleAvatar(
+            backgroundColor: palette.primary.withValues(alpha: .14),
+            foregroundColor: palette.primary,
+            child: const Icon(Icons.person_pin_circle_outlined),
           ),
-          Text(
-            battery == null ? '--%' : '$battery%',
-            style: TextStyle(color: batteryColor, fontWeight: FontWeight.w900),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_shortName(location),
+                    style: const TextStyle(fontWeight: FontWeight.w900)),
+                Text(
+                  '${location.latitude.toStringAsFixed(5)}, ${location.longitude.toStringAsFixed(5)}',
+                  style: TextStyle(color: palette.muted),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Icon(
+                location.isCharging == true
+                    ? Icons.battery_charging_full
+                    : Icons.battery_std,
+                color: batteryColor,
+              ),
+              Text(
+                battery == null ? '--%' : '$battery%',
+                style:
+                    TextStyle(color: batteryColor, fontWeight: FontWeight.w900),
+              ),
+            ],
           ),
         ],
       ),
@@ -548,12 +491,14 @@ class _LocationPlaceSheet extends StatefulWidget {
   const _LocationPlaceSheet({
     required this.initialCenter,
     required this.onSave,
+    this.onDelete,
     this.place,
   });
 
   final LatLng initialCenter;
   final LocationPlace? place;
   final Future<void> Function(Map<String, dynamic> data) onSave;
+  final Future<void> Function()? onDelete;
 
   @override
   State<_LocationPlaceSheet> createState() => _LocationPlaceSheetState();
@@ -562,24 +507,19 @@ class _LocationPlaceSheet extends StatefulWidget {
 class _LocationPlaceSheetState extends State<_LocationPlaceSheet> {
   late final TextEditingController name;
   late final TextEditingController description;
-  late final TextEditingController latitude;
-  late final TextEditingController longitude;
   late final TextEditingController radius;
+  late LatLng selected;
+  bool saving = false;
 
   @override
   void initState() {
     super.initState();
     final place = widget.place;
+    selected = place == null
+        ? widget.initialCenter
+        : LatLng(place.latitude, place.longitude);
     name = TextEditingController(text: place?.name ?? '');
     description = TextEditingController(text: place?.description ?? '');
-    latitude = TextEditingController(
-      text:
-          (place?.latitude ?? widget.initialCenter.latitude).toStringAsFixed(6),
-    );
-    longitude = TextEditingController(
-      text: (place?.longitude ?? widget.initialCenter.longitude)
-          .toStringAsFixed(6),
-    );
     radius = TextEditingController(text: '${place?.radiusMeters ?? 120}');
   }
 
@@ -587,23 +527,24 @@ class _LocationPlaceSheetState extends State<_LocationPlaceSheet> {
   void dispose() {
     name.dispose();
     description.dispose();
-    latitude.dispose();
-    longitude.dispose();
     radius.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final radiusMeters = int.tryParse(radius.text.trim()) ?? 120;
     return SizedBox(
-      width: 540,
+      width: 620,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            widget.place == null ? 'Novo local' : 'Editar local',
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+          AppSheetHeader(
+            title: widget.place == null ? 'Novo local' : 'Editar local',
+            subtitle: 'Arraste o mapa e deixe o marcador no ponto desejado.',
+            icon: Icons.add_location_alt_outlined,
           ),
           const SizedBox(height: 16),
           TextField(
@@ -618,29 +559,54 @@ class _LocationPlaceSheetState extends State<_LocationPlaceSheet> {
             decoration: const InputDecoration(labelText: 'Descrição'),
             textInputAction: TextInputAction.next,
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: latitude,
-                  decoration: const InputDecoration(labelText: 'Latitude'),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  textInputAction: TextInputAction.next,
-                ),
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              height: 320,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  FlutterMap(
+                    options: MapOptions(
+                      initialCenter: selected,
+                      initialZoom: 16,
+                      minZoom: 3,
+                      maxZoom: 19,
+                      onPositionChanged: (camera, _) {
+                        setState(() => selected = camera.center);
+                      },
+                    ),
+                    children: [
+                      TileLayer(
+                        urlTemplate:
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.viciofer.my_family',
+                      ),
+                      CircleLayer(
+                        circles: [
+                          CircleMarker(
+                            point: selected,
+                            radius: radiusMeters.toDouble(),
+                            useRadiusInMeter: true,
+                            color: palette.primary.withValues(alpha: .12),
+                            borderColor: palette.primary.withValues(alpha: .55),
+                            borderStrokeWidth: 2,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  IgnorePointer(
+                    child: Icon(
+                      Icons.location_on,
+                      color: palette.primary,
+                      size: 48,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  controller: longitude,
-                  decoration: const InputDecoration(labelText: 'Longitude'),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  textInputAction: TextInputAction.next,
-                ),
-              ),
-            ],
+            ),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -648,13 +614,30 @@ class _LocationPlaceSheetState extends State<_LocationPlaceSheet> {
             decoration: const InputDecoration(labelText: 'Raio em metros'),
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.done,
+            onChanged: (_) => setState(() {}),
             onSubmitted: (_) => _save(),
           ),
           const SizedBox(height: 16),
-          AppButton(
-            onPressed: _save,
-            label: 'Salvar local',
-            icon: Icons.save_outlined,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (widget.onDelete != null) ...[
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton.icon(
+                    onPressed: saving ? null : _delete,
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Excluir'),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              AppSheetActions(
+                onCancel: saving ? null : () => Navigator.pop(context),
+                onSave: saving ? null : _save,
+                loading: saving,
+              ),
+            ],
           ),
         ],
       ),
@@ -662,15 +645,32 @@ class _LocationPlaceSheetState extends State<_LocationPlaceSheet> {
   }
 
   Future<void> _save() async {
-    await widget.onSave({
-      'name': name.text.trim(),
-      'description': description.text.trim(),
-      'latitude': double.tryParse(latitude.text.trim().replaceAll(',', '.')),
-      'longitude': double.tryParse(longitude.text.trim().replaceAll(',', '.')),
-      'radiusMeters': int.tryParse(radius.text.trim()),
-      'active': true,
-    });
-    if (mounted) Navigator.pop(context);
+    setState(() => saving = true);
+    try {
+      await widget.onSave({
+        'name': name.text.trim(),
+        'description': description.text.trim(),
+        'latitude': selected.latitude,
+        'longitude': selected.longitude,
+        'radiusMeters': int.tryParse(radius.text.trim()),
+        'active': true,
+      });
+      if (mounted) Navigator.pop(context);
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
+  }
+
+  Future<void> _delete() async {
+    final onDelete = widget.onDelete;
+    if (onDelete == null) return;
+    setState(() => saving = true);
+    try {
+      await onDelete();
+      if (mounted) Navigator.pop(context);
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
   }
 }
 

@@ -21,6 +21,10 @@ export class LocationGateway {
     private session: WsSessionService,
   ) {}
 
+  emitLocationUpdated(row: unknown) {
+    this.server?.emit('location.updated', row);
+  }
+
   @SubscribeMessage('location.update')
   async update(
     @ConnectedSocket() client: Socket,
@@ -28,7 +32,7 @@ export class LocationGateway {
   ) {
     const user = await this.session.requireAccess(client, 'localizacao');
     const row = await this.locations.update(data, user);
-    this.server?.emit('location.updated', row);
+    this.emitLocationUpdated(row);
     return { ok: true, id: row.id, message: 'Localização atualizada.' };
   }
 

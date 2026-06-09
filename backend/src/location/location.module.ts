@@ -5,6 +5,7 @@ import { MongoModelsModule } from '@shared/infrastructure/database/database.prov
 import { NotificationsModule } from '../notifications/notifications.module';
 import { LocationService } from './application/services/location.service';
 import { LocationRepository } from './infrastructure/repositories/location.repository';
+import { LocationController } from './interfaces/controllers/location.controller';
 import { LocationGateway } from './interfaces/gateways/location.gateway';
 import { LocationQueueProcessor } from './infrastructure/queues/location-queue.processor';
 
@@ -16,5 +17,6 @@ import { LocationQueueProcessor } from './infrastructure/queues/location-queue.p
     LocationGateway,
     LocationQueueProcessor,
   ],
+  controllers: [LocationController],
 })
 export class LocationModule {}
