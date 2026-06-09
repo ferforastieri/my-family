@@ -39,7 +39,11 @@ class AppShell extends StatelessWidget {
         final wide = constraints.maxWidth >= 860;
         return Scaffold(
           appBar: wide ? _buildDesktopAppBar(context) : null,
-          body: child,
+          body: AppHeaderActionsScope(
+            onNotifications: () => _openNotificationsSheet(context),
+            onTheme: () => _openThemeSheet(context),
+            child: child,
+          ),
           bottomNavigationBar: wide
               ? null
               : _MobileBottomNavigation(
@@ -124,7 +128,8 @@ class _DesktopMainNavigation extends StatelessWidget {
     final user = auth.user;
     final hasMemories = user?.canAccess('memorias') == true ||
         user?.canAccess('playlist') == true ||
-        user?.canAccess('cartas') == true;
+        user?.canAccess('cartas') == true ||
+        user?.canAccess('nossaHistoria') == true;
     final hasMore = user?.canAccess('jogos') == true ||
         user?.canAccess('listas') == true ||
         user?.canAccess('localizacao') == true;
@@ -148,7 +153,8 @@ class _DesktopMainNavigation extends StatelessWidget {
                 (_isSelected('/atalhos/memorias', currentLocation) ||
                     currentLocation == '/galeria' ||
                     currentLocation == '/playlist' ||
-                    currentLocation == '/carta-de-amor'),
+                    currentLocation == '/carta-de-amor' ||
+                    currentLocation == '/nossa-historia'),
             onTap: () {
               if (user == null) {
                 onLogin();
@@ -286,63 +292,81 @@ class _ThemeSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Cor e tema',
+    return SizedBox(
+      width: 420,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            'Cor e tema',
+            textAlign: TextAlign.center,
             style: TextStyle(
-                color: palette.primary,
-                fontSize: 22,
-                fontWeight: FontWeight.w900)),
-        const SizedBox(height: 16),
-        const Text('Cor', style: TextStyle(fontWeight: FontWeight.w700)),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            _ColorChoice(
-                theme: theme,
-                toast: toast,
-                value: ThemeColorChoice.rosa,
-                color: const Color(0xffff69b4),
-                label: 'Rosa'),
-            _ColorChoice(
-                theme: theme,
-                toast: toast,
-                value: ThemeColorChoice.azul,
-                color: const Color(0xff3b82f6),
-                label: 'Azul'),
-            _ColorChoice(
-                theme: theme,
-                toast: toast,
-                value: ThemeColorChoice.vermelho,
-                color: const Color(0xffef4444),
-                label: 'Vermelho'),
-          ],
-        ),
-        const SizedBox(height: 18),
-        const Text('Modo', style: TextStyle(fontWeight: FontWeight.w700)),
-        const SizedBox(height: 10),
-        SegmentedButton<ThemeMode>(
-          segments: const [
-            ButtonSegment(
-                value: ThemeMode.light,
-                icon: Icon(Icons.light_mode_outlined),
-                label: Text('Claro')),
-            ButtonSegment(
-                value: ThemeMode.dark,
-                icon: Icon(Icons.dark_mode_outlined),
-                label: Text('Escuro')),
-          ],
-          selected: {theme.mode},
-          onSelectionChanged: (value) {
-            theme.setMode(value.first);
-            toast.success(value.first == ThemeMode.dark
-                ? 'Modo escuro ativado.'
-                : 'Modo claro ativado.');
-          },
-        ),
-      ],
+              color: palette.primary,
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 18),
+          const Text(
+            'Cor',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _ColorChoice(
+                  theme: theme,
+                  toast: toast,
+                  value: ThemeColorChoice.rosa,
+                  color: const Color(0xffff69b4),
+                  label: 'Rosa'),
+              _ColorChoice(
+                  theme: theme,
+                  toast: toast,
+                  value: ThemeColorChoice.azul,
+                  color: const Color(0xff3b82f6),
+                  label: 'Azul'),
+              _ColorChoice(
+                  theme: theme,
+                  toast: toast,
+                  value: ThemeColorChoice.vermelho,
+                  color: const Color(0xffef4444),
+                  label: 'Vermelho'),
+            ],
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Modo',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 10),
+          Center(
+            child: SegmentedButton<ThemeMode>(
+              segments: const [
+                ButtonSegment(
+                    value: ThemeMode.light,
+                    icon: Icon(Icons.light_mode_outlined),
+                    label: Text('Claro')),
+                ButtonSegment(
+                    value: ThemeMode.dark,
+                    icon: Icon(Icons.dark_mode_outlined),
+                    label: Text('Escuro')),
+              ],
+              selected: {theme.mode},
+              onSelectionChanged: (value) {
+                theme.setMode(value.first);
+                toast.success(value.first == ThemeMode.dark
+                    ? 'Modo escuro ativado.'
+                    : 'Modo claro ativado.');
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -365,7 +389,7 @@ class _ColorChoice extends StatelessWidget {
   Widget build(BuildContext context) {
     final selected = theme.color == value;
     return Padding(
-      padding: const EdgeInsets.only(right: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 5),
       child: Tooltip(
         message: label,
         child: InkWell(
@@ -409,7 +433,8 @@ class _MobileBottomNavigation extends StatelessWidget {
     final user = auth.user;
     final hasMemories = user?.canAccess('memorias') == true ||
         user?.canAccess('playlist') == true ||
-        user?.canAccess('cartas') == true;
+        user?.canAccess('cartas') == true ||
+        user?.canAccess('nossaHistoria') == true;
     final hasMore = user?.canAccess('jogos') == true ||
         user?.canAccess('listas') == true ||
         user?.canAccess('localizacao') == true;
@@ -446,7 +471,8 @@ class _MobileBottomNavigation extends StatelessWidget {
                     (_isSelected('/atalhos/memorias', currentLocation) ||
                         currentLocation == '/galeria' ||
                         currentLocation == '/playlist' ||
-                        currentLocation == '/carta-de-amor'),
+                        currentLocation == '/carta-de-amor' ||
+                        currentLocation == '/nossa-historia'),
                 onTap: () {
                   if (user == null) {
                     onLogin();

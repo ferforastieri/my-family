@@ -33,6 +33,10 @@ class _LocationPageState extends State<LocationPage> {
   @override
   void initState() {
     super.initState();
+    assert(() {
+      debugPrint('[LocationPage] init');
+      return true;
+    }());
     widget.repository.socket.on('location.updated', _handleLocationUpdated);
     widget.repository.socket
         .on('location.places.changed', _handleLocationPlaceChanged);
@@ -40,6 +44,10 @@ class _LocationPageState extends State<LocationPage> {
 
   @override
   void dispose() {
+    assert(() {
+      debugPrint('[LocationPage] dispose');
+      return true;
+    }());
     widget.repository.socket.off('location.updated', _handleLocationUpdated);
     widget.repository.socket
         .off('location.places.changed', _handleLocationPlaceChanged);
@@ -74,7 +82,7 @@ class _LocationPageState extends State<LocationPage> {
         onRefresh: () async => _invalidateAll(),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 112),
           children: [
             Center(
               child: ConstrainedBox(
@@ -93,19 +101,23 @@ class _LocationPageState extends State<LocationPage> {
                 child: AppQuery<List<LocationPlace>>(
                   queryKey: QueryKeys.locationPlaces,
                   queryFn: widget.repository.listLocationPlaces,
-                  loading: const PageSkeleton(cards: 3),
+                  loading: const _LocationLoadingSkeleton(),
                   builder: (context, places, _) =>
                       AppQuery<List<LocationSnapshot>>(
                     queryKey: QueryKeys.locations,
                     queryFn: widget.repository.listLocations,
-                    loading: const PageSkeleton(cards: 4),
-                    builder: (context, locations, refetch) => Column(
-                      children: [
-                        SizedBox(
-                          height: MediaQuery.sizeOf(context).width >= 840
-                              ? 620
-                              : 460,
-                          child: _LocationMap(
+                    loading: const _LocationLoadingSkeleton(),
+                    builder: (context, locations, refetch) {
+                      assert(() {
+                        debugPrint(
+                          '[LocationPage] loaded places=${places.length} '
+                          'locations=${locations.length}',
+                        );
+                        return true;
+                      }());
+                      return Column(
+                        children: [
+                          _LocationMapPanel(
                             locations: locations,
                             places: places,
                             onCenterChanged: (center) => mapCenter = center,
@@ -115,11 +127,11 @@ class _LocationPageState extends State<LocationPage> {
                               place: place,
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        _LocationList(locations: locations),
-                      ],
-                    ),
+                          const SizedBox(height: 16),
+                          _LocationList(locations: locations),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ),
@@ -167,8 +179,8 @@ class _LocationPageState extends State<LocationPage> {
   }
 }
 
-class _LocationMap extends StatelessWidget {
-  const _LocationMap({
+class _LocationMapPanel extends StatelessWidget {
+  const _LocationMapPanel({
     required this.locations,
     required this.places,
     required this.onCenterChanged,
@@ -190,52 +202,81 @@ class _LocationMap extends StatelessWidget {
         : places.isNotEmpty
             ? LatLng(places.first.latitude, places.first.longitude)
             : const LatLng(-23.55052, -46.63331);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: palette.card,
-          border: Border.all(color: palette.border),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Stack(
-          children: [
-            FlutterMap(
-              options: MapOptions(
-                initialCenter: center,
-                initialZoom: locations.isEmpty && places.isEmpty ? 4 : 14,
-                minZoom: 3,
-                maxZoom: 19,
-                onPositionChanged: (camera, _) =>
-                    onCenterChanged(camera.center),
+    final desktop = MediaQuery.sizeOf(context).width >= 840;
+    return LovePanel(
+      maxWidth: 1200,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              _LocationPanelTitle(
+                title: 'Mapa',
+                description: locations.isEmpty
+                    ? 'Aguardando localizações.'
+                    : '${locations.length} pessoas no mapa.',
+                icon: Icons.map_outlined,
               ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.viciofer.my_family',
+              FilledButton.icon(
+                onPressed: onCreatePlace,
+                icon: const Icon(Icons.add_location_alt_outlined),
+                label: const Text('Novo local'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: SizedBox(
+              height: desktop ? 460 : 320,
+              child: FlutterMap(
+                options: MapOptions(
+                  initialCenter: center,
+                  initialZoom: locations.isEmpty && places.isEmpty ? 4 : 14,
+                  minZoom: 3,
+                  maxZoom: 19,
+                  interactionOptions: const InteractionOptions(
+                    flags: InteractiveFlag.drag |
+                        InteractiveFlag.pinchMove |
+                        InteractiveFlag.pinchZoom |
+                        InteractiveFlag.scrollWheelZoom |
+                        InteractiveFlag.doubleTapZoom,
+                  ),
+                  onPositionChanged: (camera, hasGesture) {
+                    if (hasGesture) onCenterChanged(camera.center);
+                  },
                 ),
-                CircleLayer(
-                  circles: [
-                    for (final place in places)
-                      CircleMarker(
-                        point: LatLng(place.latitude, place.longitude),
-                        radius: place.radiusMeters.toDouble(),
-                        useRadiusInMeter: true,
-                        color: palette.primary.withValues(alpha: .12),
-                        borderColor: palette.primary.withValues(alpha: .55),
-                        borderStrokeWidth: 2,
-                      ),
-                  ],
-                ),
-                MarkerLayer(
-                  markers: [
-                    for (final place in places)
-                      Marker(
-                        point: LatLng(place.latitude, place.longitude),
-                        width: 132,
-                        height: 76,
-                        child: GestureDetector(
-                          onTap: () => onEditPlace(place),
+                children: [
+                  TileLayer(
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.viciofer.my_family',
+                  ),
+                  CircleLayer(
+                    circles: [
+                      for (final place in places)
+                        CircleMarker(
+                          point: LatLng(place.latitude, place.longitude),
+                          radius: place.radiusMeters.toDouble(),
+                          useRadiusInMeter: true,
+                          color: palette.primary.withValues(alpha: .12),
+                          borderColor: palette.primary.withValues(alpha: .55),
+                          borderStrokeWidth: 2,
+                        ),
+                    ],
+                  ),
+                  MarkerLayer(
+                    markers: [
+                      for (final place in places)
+                        Marker(
+                          point: LatLng(place.latitude, place.longitude),
+                          width: 132,
+                          height: 76,
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -245,50 +286,83 @@ class _LocationMap extends StatelessWidget {
                             ],
                           ),
                         ),
-                      ),
-                    for (final location in locations)
-                      Marker(
-                        point: LatLng(location.latitude, location.longitude),
-                        width: 96,
-                        height: 74,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _MapLabel(
-                              text: _shortName(location),
-                              highlighted: true,
-                            ),
-                            Icon(Icons.location_on,
-                                color: palette.primary, size: 38),
-                          ],
+                      for (final location in locations)
+                        Marker(
+                          point: LatLng(location.latitude, location.longitude),
+                          width: 96,
+                          height: 74,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _MapLabel(
+                                text: _shortName(location),
+                                highlighted: true,
+                              ),
+                              Icon(Icons.location_on,
+                                  color: palette.primary, size: 38),
+                            ],
+                          ),
                         ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-            if (locations.isEmpty && places.isEmpty)
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: _MapHint(
-                    text:
-                        'Nenhuma localização recebida ainda. Você pode criar um local pelo botão acima.',
+                    ],
                   ),
-                ),
+                ],
               ),
-            Positioned(
-              right: 14,
-              top: 14,
-              child: FilledButton.icon(
-                onPressed: onCreatePlace,
-                icon: const Icon(Icons.add_location_alt_outlined),
-                label: const Text('Novo local'),
-              ),
+            ),
+          ),
+          if (locations.isEmpty && places.isEmpty) ...[
+            const SizedBox(height: 12),
+            const _MapHint(
+              text:
+                  'Nenhuma localização recebida ainda. Crie um local pelo botão acima.',
             ),
           ],
-        ),
+          if (places.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Text(
+              'Locais cadastrados',
+              style: TextStyle(
+                color: palette.foreground,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final place in places)
+                  OutlinedButton.icon(
+                    onPressed: () => onEditPlace(place),
+                    icon: const Icon(Icons.edit_location_alt_outlined),
+                    label: Text(place.name),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _LocationLoadingSkeleton extends StatelessWidget {
+  const _LocationLoadingSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return LovePanel(
+      maxWidth: 1200,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: const [
+          SkeletonBox(width: 220, height: 24),
+          SizedBox(height: 16),
+          SkeletonBox(height: 320, borderRadius: 14),
+          SizedBox(height: 16),
+          SkeletonBox(width: 180, height: 22),
+          SizedBox(height: 12),
+          SkeletonBox(height: 72, borderRadius: 14),
+        ],
       ),
     );
   }
@@ -358,7 +432,7 @@ class _LocationList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LovePanel(
-      maxWidth: 1040,
+      maxWidth: 1200,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

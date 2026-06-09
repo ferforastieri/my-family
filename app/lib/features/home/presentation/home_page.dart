@@ -51,7 +51,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             const Positioned.fill(
               child: IgnorePointer(
-                child: FlowerGarden(),
+                child: _HomeGardenLayer(),
               ),
             ),
             RefreshIndicator(
@@ -64,36 +64,27 @@ class _HomePageState extends State<HomePage> {
                   Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 1200),
-                      child: Column(
-                        children: [
-                          const _HomeTitle(),
-                          const SizedBox(height: 18),
-                          LayoutBuilder(
-                            builder: (context, constraints) {
-                              final wide = constraints.maxWidth >= 760;
-                              return GridView.count(
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final wide = constraints.maxWidth >= 760;
+                          return Column(
+                            children: [
+                              const _HomeTitle(),
+                              const SizedBox(height: 14),
+                              GridView.count(
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
                                 crossAxisCount: wide ? 3 : 1,
-                                childAspectRatio: wide ? 1.58 : 1.42,
+                                childAspectRatio: wide ? 1.58 : 2.08,
                                 crossAxisSpacing: 16,
-                                mainAxisSpacing: 16,
+                                mainAxisSpacing: 14,
                                 children: counters
                                     .map((counter) => CounterCard(counter))
                                     .toList(),
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 18),
-                          LoveActionCard(
-                            title: 'Nossa Jornada',
-                            description:
-                                'Escreva e guarde os capítulos da caminhada da família.',
-                            icon: Icons.menu_book_outlined,
-                            onTap: () => widget.onNavigate('/nossa-historia'),
-                            maxWidth: 720,
-                          ),
-                        ],
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ),
                   ),
@@ -117,6 +108,41 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _HomeGardenLayer extends StatelessWidget {
+  const _HomeGardenLayer();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final mobile = constraints.maxWidth < 760;
+        if (!mobile) return const FlowerGarden();
+
+        final visibleHeight = math.min(
+          constraints.maxHeight * .50,
+          430.0,
+        );
+        final paintHeight = visibleHeight + 90;
+        return Align(
+          alignment: Alignment.bottomCenter,
+          child: SizedBox(
+            width: double.infinity,
+            height: visibleHeight,
+            child: OverflowBox(
+              alignment: Alignment.bottomCenter,
+              minHeight: paintHeight,
+              maxHeight: paintHeight,
+              child: const SizedBox.expand(
+                child: FlowerGarden(compactFlowers: true),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -301,6 +327,7 @@ class CounterCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
+    final compact = MediaQuery.sizeOf(context).width < 760;
     final values = [
       ('${info.elapsed.years}', 'Anos'),
       ('${info.elapsed.months}', 'Meses'),
@@ -321,21 +348,26 @@ class CounterCard extends StatelessWidget {
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                padding: EdgeInsets.fromLTRB(
+                  compact ? 14 : 16,
+                  compact ? 10 : 14,
+                  compact ? 14 : 16,
+                  compact ? 10 : 14,
+                ),
                 child: Column(
                   children: [
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SizedBox(
-                          width: 44,
-                          height: 44,
+                          width: compact ? 38 : 44,
+                          height: compact ? 38 : 44,
                           child: Center(
                             child: Text(info.icon,
-                                style: const TextStyle(fontSize: 30)),
+                                style: TextStyle(fontSize: compact ? 26 : 30)),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: compact ? 10 : 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -347,11 +379,11 @@ class CounterCard extends StatelessWidget {
                                 style: TextStyle(
                                   color: palette.foreground,
                                   fontWeight: FontWeight.w900,
-                                  fontSize: 17,
+                                  fontSize: compact ? 16 : 17,
                                   height: 1.1,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              SizedBox(height: compact ? 2 : 4),
                               Text(
                                 _formatDate(info.date),
                                 style: TextStyle(
@@ -365,7 +397,7 @@ class CounterCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: compact ? 6 : 10),
                     Text(
                       info.message,
                       textAlign: TextAlign.center,
@@ -378,7 +410,7 @@ class CounterCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: compact ? 7 : 12),
                     Row(
                       children: values
                           .map(
@@ -386,8 +418,8 @@ class CounterCard extends StatelessWidget {
                               child: Container(
                                 margin:
                                     const EdgeInsets.symmetric(horizontal: 3),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 8),
+                                padding: EdgeInsets.symmetric(
+                                    vertical: compact ? 5 : 8),
                                 decoration: BoxDecoration(
                                   color: palette.primary.withValues(alpha: .06),
                                   borderRadius: BorderRadius.circular(12),
@@ -403,7 +435,7 @@ class CounterCard extends StatelessWidget {
                                       style: TextStyle(
                                         color: palette.foreground,
                                         fontWeight: FontWeight.w900,
-                                        fontSize: 22,
+                                        fontSize: compact ? 19 : 22,
                                       ),
                                     ),
                                     Text(
@@ -421,11 +453,13 @@ class CounterCard extends StatelessWidget {
                           )
                           .toList(),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: compact ? 6 : 8),
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: compact ? 6 : 8,
+                      ),
                       decoration: BoxDecoration(
                         color: info.colors.last.withValues(alpha: .08),
                         border: Border.all(

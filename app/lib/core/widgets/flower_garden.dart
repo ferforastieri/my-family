@@ -5,9 +5,14 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
 class FlowerGarden extends StatefulWidget {
-  const FlowerGarden({super.key, this.ambientOnly = false});
+  const FlowerGarden({
+    super.key,
+    this.ambientOnly = false,
+    this.compactFlowers = false,
+  });
 
   final bool ambientOnly;
+  final bool compactFlowers;
 
   @override
   State<FlowerGarden> createState() => _FlowerGardenState();
@@ -65,6 +70,7 @@ class _FlowerGardenState extends State<FlowerGarden>
               plantedFlowers: plantedFlowers,
               palette: Theme.of(context).extension<AppPalette>()!,
               ambientOnly: widget.ambientOnly,
+              compactFlowers: widget.compactFlowers,
             ),
             child: const SizedBox.expand(),
           ),
@@ -81,6 +87,7 @@ class _FlowerPainter extends CustomPainter {
     required this.plantedFlowers,
     required this.palette,
     required this.ambientOnly,
+    required this.compactFlowers,
   });
 
   final double t;
@@ -88,12 +95,14 @@ class _FlowerPainter extends CustomPainter {
   final List<Offset> plantedFlowers;
   final AppPalette palette;
   final bool ambientOnly;
+  final bool compactFlowers;
 
   @override
   void paint(Canvas canvas, Size size) {
     final shortest = math.min(size.width, size.height);
     final scale = shortest / 760;
-    final base = Offset(size.width / 2, size.height * .92);
+    final flowerScaleFactor = compactFlowers ? .68 : 1.0;
+    final base = Offset(size.width / 2, size.height * .96);
     final flowerGrow = Curves.easeOutCubic.transform(grow);
 
     _drawAtmosphere(canvas, size);
@@ -118,7 +127,7 @@ class _FlowerPainter extends CustomPainter {
     _drawFlower(
       canvas,
       base.translate(-86 * scale, 0),
-      scale * .96,
+      scale * .96 * flowerScaleFactor,
       fernandoGrow,
       1,
       -.10,
@@ -128,7 +137,7 @@ class _FlowerPainter extends CustomPainter {
     _drawFlower(
       canvas,
       base.translate(86 * scale, 0),
-      scale * .96,
+      scale * .96 * flowerScaleFactor,
       miriamGrow,
       1,
       .10,
@@ -138,7 +147,7 @@ class _FlowerPainter extends CustomPainter {
     _drawFlower(
       canvas,
       base.translate(0, 34 * scale),
-      scale * .62,
+      scale * .62 * flowerScaleFactor,
       sonGrow,
       .92,
       0,
@@ -861,6 +870,7 @@ class _FlowerPainter extends CustomPainter {
         oldDelegate.grow != grow ||
         oldDelegate.plantedFlowers.length != plantedFlowers.length ||
         oldDelegate.palette != palette ||
-        oldDelegate.ambientOnly != ambientOnly;
+        oldDelegate.ambientOnly != ambientOnly ||
+        oldDelegate.compactFlowers != compactFlowers;
   }
 }
