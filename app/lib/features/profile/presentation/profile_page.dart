@@ -136,7 +136,7 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
           _ProfileHero(
             displayName: displayName,
             email: user.email,
-            role: user.role,
+            role: _roleLabel(user.role),
             initial: _initialFor(user.name ?? user.email),
             avatarPath: user.avatarPath,
             uploadingAvatar: uploadingAvatar,
