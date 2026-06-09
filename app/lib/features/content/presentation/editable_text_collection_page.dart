@@ -45,14 +45,14 @@ class _EditableTextCollectionPageState
   @override
   void initState() {
     super.initState();
-    for (final event in _events) {
+    for (final event in _journeyEvents) {
       widget.repository.socket.on(event, _handleRealtimeChange);
     }
   }
 
   @override
   void dispose() {
-    for (final event in _events) {
+    for (final event in _journeyEvents) {
       widget.repository.socket.off(event, _handleRealtimeChange);
     }
     super.dispose();
@@ -69,25 +69,11 @@ class _EditableTextCollectionPageState
 
   Future<PaginatedResult<FamilyItem>> _fetchTexts() async {
     final result = await widget.repository.listPage(
-      'cartas',
+      'journey',
       page,
       _pageLimit,
-      titlePrefix: '${widget.prefix}:',
     );
-    return PaginatedResult<FamilyItem>(
-      items: result.items.map(_withoutPrefix).toList(),
-      page: result.page,
-      limit: result.limit,
-      total: result.total,
-      pages: result.pages,
-    );
-  }
-
-  FamilyItem _withoutPrefix(FamilyItem item) {
-    final data = Map<String, dynamic>.from(item.data);
-    data['titulo'] = item.title
-        .replaceFirst(RegExp('^${RegExp.escape(widget.prefix)}:\\s*'), '');
-    return FamilyItem(data);
+    return result;
   }
 
   @override
@@ -144,78 +130,89 @@ class _EditableTextCollectionPageState
                               builder: (context, constraints) {
                                 final columns =
                                     constraints.maxWidth >= 860 ? 2 : 1;
-                                return GridView.count(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  crossAxisCount: columns,
-                                  childAspectRatio: columns == 1 ? 1.75 : 1.18,
-                                  crossAxisSpacing: 24,
-                                  mainAxisSpacing: 24,
+                                return Column(
                                   children: [
-                                    for (final item in items)
-                                      InkWell(
-                                        onLongPress: canWrite
-                                            ? () => _openEditor(item)
-                                            : null,
-                                        child: Stack(
-                                          children: [
-                                            Positioned.fill(
-                                              child: LoveTextCard(
-                                                title: item.title,
-                                                body: item.subtitle,
-                                                footer: item.data['data']
-                                                        ?.toString()
-                                                        .split('T')
-                                                        .first ??
-                                                    '',
-                                              ),
-                                            ),
-                                            if (canWrite)
-                                              Positioned(
-                                                right: 8,
-                                                top: 8,
-                                                child: Row(
-                                                  children: [
-                                                    IconButton(
-                                                      onPressed: () =>
-                                                          _openEditor(item),
-                                                      icon: const Icon(
-                                                          Icons.edit_outlined),
-                                                    ),
-                                                    IconButton(
-                                                      onPressed: () =>
-                                                          _delete(item),
-                                                      icon: const Icon(
-                                                          Icons.delete_outline),
-                                                    ),
-                                                  ],
+                                    GridView.builder(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      itemCount: items.length,
+                                      gridDelegate:
+                                          SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: columns,
+                                        mainAxisExtent:
+                                            columns == 1 ? 250 : 240,
+                                        crossAxisSpacing: 24,
+                                        mainAxisSpacing: 24,
+                                      ),
+                                      itemBuilder: (context, index) {
+                                        final item = items[index];
+                                        return InkWell(
+                                          onTap: () => _openReader(item),
+                                          onLongPress: canWrite
+                                              ? () => _openEditor(item)
+                                              : null,
+                                          child: Stack(
+                                            children: [
+                                              Positioned.fill(
+                                                child: LoveTextCard(
+                                                  title: item.title,
+                                                  body: item.subtitle,
+                                                  footer: item.data['data']
+                                                          ?.toString()
+                                                          .split('T')
+                                                          .first ??
+                                                      '',
                                                 ),
                                               ),
-                                            if (result.pages > 1) ...[
-                                              const SizedBox(height: 12),
-                                              AppPagination(
-                                                page: result.page,
-                                                pages: result.pages,
-                                                total: result.total,
-                                                onPrevious: result.hasPrevious
-                                                    ? () {
-                                                        setState(() {
-                                                          page -= 1;
-                                                        });
-                                                      }
-                                                    : null,
-                                                onNext: result.hasNext
-                                                    ? () {
-                                                        setState(() {
-                                                          page += 1;
-                                                        });
-                                                      }
-                                                    : null,
-                                              ),
+                                              if (canWrite)
+                                                Positioned(
+                                                  right: 8,
+                                                  top: 8,
+                                                  child: Row(
+                                                    children: [
+                                                      IconButton(
+                                                        onPressed: () =>
+                                                            _openEditor(item),
+                                                        icon: const Icon(Icons
+                                                            .edit_outlined),
+                                                      ),
+                                                      IconButton(
+                                                        onPressed: () =>
+                                                            _delete(item),
+                                                        icon: const Icon(Icons
+                                                            .delete_outline),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
                                             ],
-                                          ],
-                                        ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    if (result.pages > 1) ...[
+                                      const SizedBox(height: 16),
+                                      AppPagination(
+                                        page: result.page,
+                                        pages: result.pages,
+                                        total: result.total,
+                                        onPrevious: result.hasPrevious
+                                            ? () {
+                                                setState(() {
+                                                  page -= 1;
+                                                });
+                                              }
+                                            : null,
+                                        onNext: result.hasNext
+                                            ? () {
+                                                setState(() {
+                                                  page += 1;
+                                                });
+                                              }
+                                            : null,
                                       ),
+                                    ],
                                   ],
                                 );
                               },
@@ -239,14 +236,14 @@ class _EditableTextCollectionPageState
         item: item,
         onSave: (data) async {
           final payload = {
-            'titulo': '${widget.prefix}: ${data['titulo']}',
+            'titulo': data['titulo'],
             'conteudo': data['conteudo'],
           };
           if (item == null) {
-            await widget.repository.create('cartas', payload);
+            await widget.repository.create('journey', payload);
             page = 1;
           } else {
-            await widget.repository.update('cartas', item.id, payload);
+            await widget.repository.update('journey', item.id, payload);
           }
           widget.toast.backendSuccess(widget.repository.takeMessage());
           _invalidate();
@@ -255,14 +252,72 @@ class _EditableTextCollectionPageState
     );
   }
 
+  void _openReader(FamilyItem item) {
+    showAppSheet<void>(
+      context: context,
+      builder: (_) => _TextReaderSheet(item: item),
+    );
+  }
+
   Future<void> _delete(FamilyItem item) async {
-    await widget.repository.delete('cartas', item.id);
+    await widget.repository.delete('journey', item.id);
     widget.toast.backendSuccess(widget.repository.takeMessage());
     _invalidate();
   }
 }
 
-const _events = ['cartas.created', 'cartas.updated', 'cartas.deleted'];
+const _journeyEvents = [
+  'journey.created',
+  'journey.updated',
+  'journey.deleted',
+];
+
+class _TextReaderSheet extends StatelessWidget {
+  const _TextReaderSheet({required this.item});
+
+  final FamilyItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final date = item.data['data']?.toString().split('T').first ?? '';
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 680),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppSheetHeader(
+            title: item.title,
+            icon: Icons.auto_stories_outlined,
+          ),
+          const SizedBox(height: 18),
+          Text(
+            item.subtitle,
+            style: TextStyle(
+              color: palette.foreground,
+              fontSize: 17,
+              height: 1.55,
+            ),
+          ),
+          if (date.isNotEmpty) ...[
+            const SizedBox(height: 18),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                date,
+                style: TextStyle(
+                  color: palette.primary,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
 
 class _TextEntrySheet extends StatefulWidget {
   const _TextEntrySheet({required this.title, required this.onSave, this.item});

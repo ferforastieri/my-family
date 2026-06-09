@@ -28,6 +28,8 @@ class LoveTextCard extends StatelessWidget {
         children: [
           Text(
             title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: Theme.of(context).extension<AppTextThemes>()!.display.merge(
                   const TextStyle(
                     color: foreground,
@@ -36,12 +38,15 @@ class LoveTextCard extends StatelessWidget {
                   ),
                 ),
           ),
-          const SizedBox(height: 14),
-          Text(body,
-              style:
-                  TextStyle(color: palette.muted, fontSize: 17, height: 1.5)),
+          const SizedBox(height: 12),
+          Text(
+            body,
+            maxLines: 5,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: palette.muted, fontSize: 16, height: 1.42),
+          ),
           if (footer != null) ...[
-            const Spacer(),
+            const SizedBox(height: 12),
             Align(
               alignment: Alignment.centerRight,
               child: Text(footer!,

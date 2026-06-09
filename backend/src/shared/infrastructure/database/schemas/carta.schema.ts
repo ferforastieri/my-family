@@ -3,6 +3,9 @@ import { HydratedDocument } from 'mongoose';
 
 @Schema({ timestamps: true, collection: 'cartas' })
 export class CartaDocument {
+  @Prop({ required: true, enum: ['letter', 'journey'], index: true })
+  tipo: 'letter' | 'journey';
+
   @Prop({ required: true })
   titulo: string;
 

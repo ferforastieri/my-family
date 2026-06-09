@@ -20,13 +20,11 @@ class FamilyRepository {
     String resource,
     int page,
     int limit, {
-    String? titlePrefix,
     String? album,
   }) async {
     final data = await api.query<dynamic>('$resource.list', {
       'page': page,
       'limit': limit,
-      if (titlePrefix != null) 'titlePrefix': titlePrefix,
       if (album != null && album.trim().isNotEmpty) 'album': album.trim(),
     });
     return _paginated(

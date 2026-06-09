@@ -6,6 +6,7 @@ export class CartaMapper implements Mapper<CartaEntity, CartaResponseDto> {
   toDto(source: CartaEntity): CartaResponseDto {
     return {
       id: source.id,
+      tipo: source.tipo,
       titulo: source.titulo,
       conteudo: source.conteudo,
       data: source.data,
