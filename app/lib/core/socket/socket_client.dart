@@ -36,7 +36,7 @@ class SocketClient {
         ? <String, dynamic>{}
         : {'Authorization': 'Bearer $token'};
     _socket = io.io(
-      AppConfig.socketUrl,
+      _normalizeSocketIoUrl(AppConfig.socketUrl),
       io.OptionBuilder()
           .setTransports(kIsWeb ? ['polling', 'websocket'] : ['websocket'])
           .disableAutoConnect()
@@ -140,5 +140,11 @@ class SocketClient {
     _socket?.disconnect();
     _socket?.dispose();
     _socket = null;
+  }
+
+  String _normalizeSocketIoUrl(String url) {
+    if (url.startsWith('ws://')) return 'http://${url.substring(5)}';
+    if (url.startsWith('wss://')) return 'https://${url.substring(6)}';
+    return url;
   }
 }
