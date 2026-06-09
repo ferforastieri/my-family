@@ -28,6 +28,7 @@ GoRouter buildRouter(
   FamilyRepository repository,
 ) {
   return GoRouter(
+    navigatorKey: notifications.navigatorKey,
     initialLocation: '/',
     refreshListenable: auth,
     redirect: (context, state) {
@@ -138,8 +139,14 @@ GoRouter buildRouter(
           ),
           GoRoute(
             path: '/chat',
-            pageBuilder: (context, state) =>
-                _page(ChatPage(chat: chat, auth: auth, toast: toast)),
+            pageBuilder: (context, state) => _page(ChatPage(
+              key: ValueKey(state.uri.toString()),
+              chat: chat,
+              auth: auth,
+              toast: toast,
+              initialConversationId:
+                  state.uri.queryParameters['conversationId'],
+            )),
           ),
           GoRoute(
             path: '/carta-de-amor',

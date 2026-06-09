@@ -95,6 +95,7 @@ export class NotificationsGateway {
 
   @SubscribeMessage('notifications.subscribe')
   async subscribe(
+    @ConnectedSocket() client: Socket,
     @MessageBody()
     body: {
       subscription: {
@@ -104,8 +105,13 @@ export class NotificationsGateway {
       userAgent?: string;
     },
   ) {
+    const user = await this.session.requireUser(client);
     if (body.subscription?.token) {
-      await this.notifications.pushSubscribe(body.subscription, body.userAgent);
+      await this.notifications.pushSubscribe(
+        body.subscription,
+        user,
+        body.userAgent,
+      );
     }
     return { ok: true, message: 'Notificações ativadas.' };
   }

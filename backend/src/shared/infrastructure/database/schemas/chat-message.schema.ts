@@ -21,8 +21,17 @@ export class ChatMessageDocument {
   @Prop()
   mediaUrl?: string;
 
-  @Prop({ enum: ['image', 'video'] })
-  mediaType?: 'image' | 'video';
+  @Prop({ enum: ['image', 'video', 'sticker'] })
+  mediaType?: 'image' | 'video' | 'sticker';
+
+  @Prop({ type: [String], default: [] })
+  readBy: string[];
+
+  @Prop()
+  editedAt?: Date;
+
+  @Prop()
+  deletedAt?: Date;
 
   createdAt: Date;
 }

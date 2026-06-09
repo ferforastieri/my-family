@@ -169,6 +169,9 @@ class ChatMessage {
     this.text,
     this.mediaUrl,
     this.mediaType,
+    this.readBy = const [],
+    this.editedAt,
+    this.deletedAt,
   });
 
   final String id;
@@ -178,7 +181,24 @@ class ChatMessage {
   final String? text;
   final String? mediaUrl;
   final String? mediaType;
+  final List<String> readBy;
+  final DateTime? editedAt;
+  final DateTime? deletedAt;
   final DateTime at;
+
+  ChatMessage copyWith({List<String>? readBy}) => ChatMessage(
+        id: id,
+        conversationId: conversationId,
+        senderId: senderId,
+        senderName: senderName,
+        text: text,
+        mediaUrl: mediaUrl,
+        mediaType: mediaType,
+        readBy: readBy ?? this.readBy,
+        editedAt: editedAt,
+        deletedAt: deletedAt,
+        at: at,
+      );
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
         id: json['id'].toString(),
@@ -188,6 +208,17 @@ class ChatMessage {
         text: json['text']?.toString(),
         mediaUrl: json['mediaUrl']?.toString(),
         mediaType: json['mediaType']?.toString(),
+        readBy: ((json['readBy'] as List?) ?? const [])
+            .map((id) => id.toString())
+            .toList(),
+        editedAt: json['editedAt'] == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(
+                (json['editedAt'] as num).toInt()),
+        deletedAt: json['deletedAt'] == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(
+                (json['deletedAt'] as num).toInt()),
         at: DateTime.fromMillisecondsSinceEpoch((json['at'] as num?)?.toInt() ??
             DateTime.now().millisecondsSinceEpoch),
       );

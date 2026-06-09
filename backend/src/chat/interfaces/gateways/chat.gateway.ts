@@ -11,7 +11,10 @@ import { ChatService } from '../../application/services/chat.service';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 import type {
   ChatConversationCreateDto,
+  ChatMessageActionDto,
+  ChatMessageEditDto,
   ChatMessageSendDto,
+  ChatMessagesReadDto,
 } from '../dto/chat.dto';
 
 @WebSocketGateway({ cors: { origin: '*' } })
@@ -72,5 +75,38 @@ export class ChatGateway {
     );
     this.server?.emit('chat.message.created', message);
     return { message: 'Mensagem enviada.', ...message };
+  }
+
+  @SubscribeMessage('chat.message.edit')
+  async edit(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: ChatMessageEditDto,
+  ) {
+    const user = await this.session.requireAccess(client, 'chat');
+    const message = await this.chat.editMessage(body, user);
+    this.server?.emit('chat.message.updated', message);
+    return { message: 'Mensagem editada.', ...message };
+  }
+
+  @SubscribeMessage('chat.message.delete')
+  async delete(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: ChatMessageActionDto,
+  ) {
+    const user = await this.session.requireAccess(client, 'chat');
+    const message = await this.chat.deleteMessage(body.messageId, user);
+    this.server?.emit('chat.message.updated', message);
+    return { message: 'Mensagem apagada.', ...message };
+  }
+
+  @SubscribeMessage('chat.messages.read')
+  async read(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: ChatMessagesReadDto,
+  ) {
+    const user = await this.session.requireAccess(client, 'chat');
+    const receipt = await this.chat.markMessagesRead(body.conversationId, user);
+    this.server?.emit('chat.messages.read', receipt);
+    return receipt;
   }
 }

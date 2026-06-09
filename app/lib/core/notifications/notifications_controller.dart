@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../data/models.dart';
 import '../../firebase_options.dart';
@@ -34,12 +36,15 @@ class NotificationsController extends ChangeNotifier {
   late final SocketApiClient api = SocketApiClient(socket);
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
+  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
   final List<AppNotification> notifications = [];
   bool loading = false;
   bool pushReady = false;
   String? fcmToken;
+  String? pushError;
   bool _pushListenersBound = false;
+  String? _pendingUrl;
 
   Future<void> bootstrap() async {
     socket.on('notifications.created', (data) {
@@ -79,7 +84,11 @@ class NotificationsController extends ChangeNotifier {
     });
     socket.on('connect', (_) {
       final token = fcmToken;
-      if (token != null) unawaited(_subscribeTokenSafely(token));
+      if (token != null) {
+        unawaited(_subscribeTokenSafely(token));
+      } else if (!pushReady) {
+        unawaited(configurePush());
+      }
     });
 
     await configurePush();
@@ -113,15 +122,37 @@ class NotificationsController extends ChangeNotifier {
 
   Future<void> configurePush() async {
     try {
+      pushError = null;
       if (!kIsWeb) {
         await _localNotifications.initialize(
           settings: const InitializationSettings(
-              android: AndroidInitializationSettings('ic_notification')),
+            android: AndroidInitializationSettings('ic_notification'),
+            iOS: DarwinInitializationSettings(),
+          ),
+          onDidReceiveNotificationResponse: (response) {
+            _openUrl(response.payload);
+          },
         );
-        await _localNotifications
-            .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin>()
-            ?.requestNotificationsPermission();
+        final android =
+            _localNotifications.resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>();
+        await android?.createNotificationChannel(
+          const AndroidNotificationChannel(
+            'chat_messages',
+            'Mensagens',
+            description: 'Mensagens privadas e do chat da família.',
+            importance: Importance.max,
+            playSound: true,
+            enableVibration: true,
+          ),
+        );
+        await android?.requestNotificationsPermission();
+
+        final launchDetails =
+            await _localNotifications.getNotificationAppLaunchDetails();
+        if (launchDetails?.didNotificationLaunchApp == true) {
+          _openUrl(launchDetails?.notificationResponse?.payload);
+        }
       }
 
       if (kIsWeb && !AppConfig.hasFirebaseConfig) return;
@@ -131,44 +162,83 @@ class NotificationsController extends ChangeNotifier {
       }
       FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-      await FirebaseMessaging.instance
+      await FirebaseMessaging.instance.setAutoInitEnabled(true);
+      final permission = await FirebaseMessaging.instance
           .requestPermission(alert: true, badge: true, sound: true);
-      fcmToken = await FirebaseMessaging.instance.getToken(
-        vapidKey: kIsWeb && AppConfig.firebaseWebPushCertificateKey.isNotEmpty
-            ? AppConfig.firebaseWebPushCertificateKey
-            : null,
-      );
-      if (fcmToken != null) unawaited(_subscribeTokenSafely(fcmToken!));
+      if (permission.authorizationStatus == AuthorizationStatus.denied) {
+        throw StateError('Permissão de notificações negada.');
+      }
+      fcmToken = await _getTokenWithRetry();
+      await _subscribeToken(fcmToken!);
 
       if (!_pushListenersBound) {
         FirebaseMessaging.instance.onTokenRefresh.listen(_subscribeTokenSafely);
         FirebaseMessaging.onMessage.listen((message) {
           final notification = message.notification;
           if (notification != null && !kIsWeb) {
+            final isChat = message.data['type'] == 'chat';
+            final conversationId = message.data['conversationId'];
             _localNotifications.show(
-              id: notification.hashCode,
+              id: message.messageId?.hashCode ?? notification.hashCode,
               title: notification.title,
               body: notification.body,
-              notificationDetails: const NotificationDetails(
+              payload: message.data['url'],
+              notificationDetails: NotificationDetails(
                 android: AndroidNotificationDetails(
-                  'my_family_notifications',
-                  'Nossa Família',
+                  isChat ? 'chat_messages' : 'my_family_notifications',
+                  isChat ? 'Mensagens' : 'Nossa Família',
                   icon: 'ic_notification',
-                  importance: Importance.high,
-                  priority: Priority.high,
+                  importance: Importance.max,
+                  priority: Priority.max,
+                  category: isChat
+                      ? AndroidNotificationCategory.message
+                      : AndroidNotificationCategory.status,
+                  groupKey: isChat && conversationId != null
+                      ? 'chat-$conversationId'
+                      : null,
+                  playSound: true,
+                  enableVibration: true,
+                ),
+                iOS: DarwinNotificationDetails(
+                  presentAlert: true,
+                  presentBadge: true,
+                  presentSound: true,
+                  threadIdentifier: isChat && conversationId != null
+                      ? 'chat-$conversationId'
+                      : null,
                 ),
               ),
             );
           }
         });
+        FirebaseMessaging.onMessageOpenedApp.listen(
+          (message) => _openUrl(message.data['url']),
+        );
         _pushListenersBound = true;
       }
+      final initialMessage =
+          await FirebaseMessaging.instance.getInitialMessage();
+      if (initialMessage != null) _openUrl(initialMessage.data['url']);
       pushReady = true;
       notifyListeners();
-    } catch (_) {
+    } catch (error) {
       pushReady = false;
+      pushError = _pushErrorMessage(error);
       notifyListeners();
     }
+  }
+
+  Future<String> _getTokenWithRetry() async {
+    for (var attempt = 0; attempt < 4; attempt++) {
+      final token = await FirebaseMessaging.instance.getToken(
+        vapidKey: kIsWeb && AppConfig.firebaseWebPushCertificateKey.isNotEmpty
+            ? AppConfig.firebaseWebPushCertificateKey
+            : null,
+      );
+      if (token?.isNotEmpty == true) return token!;
+      await Future<void>.delayed(Duration(seconds: attempt + 1));
+    }
+    throw StateError('O Firebase não forneceu um token para este aparelho.');
   }
 
   Future<void> _subscribeToken(String token) async {
@@ -179,6 +249,9 @@ class NotificationsController extends ChangeNotifier {
         'platform': _platform,
       },
     });
+    pushReady = true;
+    pushError = null;
+    notifyListeners();
   }
 
   Future<void> _subscribeTokenSafely(String token) async {
@@ -186,7 +259,28 @@ class NotificationsController extends ChangeNotifier {
       await _subscribeToken(token);
     } catch (_) {
       fcmToken = token;
+      pushReady = false;
+      pushError = 'Não foi possível registrar este aparelho no servidor.';
+      notifyListeners();
     }
+  }
+
+  void _openUrl(Object? rawUrl) {
+    final url = rawUrl?.toString();
+    if (url == null || !url.startsWith('/')) return;
+    final context = navigatorKey.currentContext;
+    if (context == null) {
+      _pendingUrl = url;
+      WidgetsBinding.instance.addPostFrameCallback((_) => openPendingUrl());
+      return;
+    }
+    _pendingUrl = null;
+    GoRouter.of(context).go(url);
+  }
+
+  void openPendingUrl() {
+    final url = _pendingUrl;
+    if (url != null) _openUrl(url);
   }
 
   String get _platform {
@@ -194,5 +288,12 @@ class NotificationsController extends ChangeNotifier {
     if (defaultTargetPlatform == TargetPlatform.android) return 'android';
     if (defaultTargetPlatform == TargetPlatform.iOS) return 'ios';
     return 'unknown';
+  }
+
+  String _pushErrorMessage(Object error) {
+    final message = error.toString().replaceFirst('Bad state: ', '');
+    return message.isEmpty
+        ? 'Não foi possível ativar as notificações.'
+        : message;
   }
 }

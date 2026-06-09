@@ -15,6 +15,9 @@ export interface ChatMessageEntity {
   senderName: string;
   text?: string | null;
   mediaUrl?: string | null;
-  mediaType?: 'image' | 'video' | null;
+  mediaType?: 'image' | 'video' | 'sticker' | null;
+  readBy: string[];
+  editedAt?: Date | null;
+  deletedAt?: Date | null;
   createdAt: Date;
 }

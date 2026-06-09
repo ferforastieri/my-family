@@ -31,7 +31,35 @@ class ChatController extends ChangeNotifier {
         if (messages.any((item) => item.id == message.id)) return;
         messages.add(message);
         notifyListeners();
+        markRead(message.conversationId);
       }
+    });
+    socket.on('chat.message.updated', (data) {
+      if (data is! Map) return;
+      final message = ChatMessage.fromJson(Map<String, dynamic>.from(data));
+      final index = messages.indexWhere((item) => item.id == message.id);
+      if (index == -1) return;
+      messages[index] = message;
+      notifyListeners();
+    });
+    socket.on('chat.messages.read', (data) {
+      if (data is! Map) return;
+      final receipt = Map<String, dynamic>.from(data);
+      final conversationId = receipt['conversationId']?.toString();
+      final userId = receipt['userId']?.toString();
+      if (conversationId == null || userId == null) return;
+      var changed = false;
+      for (var index = 0; index < messages.length; index++) {
+        final message = messages[index];
+        if (message.conversationId != conversationId ||
+            message.senderId == userId ||
+            message.readBy.contains(userId)) {
+          continue;
+        }
+        messages[index] = message.copyWith(readBy: [...message.readBy, userId]);
+        changed = true;
+      }
+      if (changed) notifyListeners();
     });
     socket.on('chat.conversation.created', (_) => refreshConversations());
     await refreshConversations(silent: true);
@@ -45,7 +73,7 @@ class ChatController extends ChangeNotifier {
     }
     try {
       final data = await api
-          .query<dynamic>('chat.conversations', {'page': 1, 'limit': 30});
+          .query<dynamic>('chat.conversations', {'page': 1, 'limit': 100});
       final rows = data is List
           ? data
           : ((Map<String, dynamic>.from(data as Map)['items'] as List?) ??
@@ -97,6 +125,7 @@ class ChatController extends ChangeNotifier {
         ..clear()
         ..addAll(rows.map((row) =>
             ChatMessage.fromJson(Map<String, dynamic>.from(row as Map))));
+      await markRead(conversation.id);
     } catch (error) {
       errorMessage = error.toString();
       rethrow;
@@ -104,6 +133,13 @@ class ChatController extends ChangeNotifier {
       loading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> openConversation(String conversationId) async {
+    if (active?.id == conversationId && messages.isNotEmpty) return;
+    final conversation =
+        conversations.where((item) => item.id == conversationId).firstOrNull;
+    if (conversation != null) await loadMessages(conversation);
   }
 
   Future<void> createConversation(ChatUser user) async {
@@ -162,5 +198,51 @@ class ChatController extends ChangeNotifier {
       messages.add(message);
       notifyListeners();
     }
+  }
+
+  Future<void> sendSticker(String sticker, {String? senderName}) async {
+    final conversation = active;
+    if (conversation == null) return;
+    final row = await api.mutate<Map<String, dynamic>>('chat.message.send', {
+      'conversationId': conversation.id,
+      'mediaUrl': sticker,
+      'mediaType': 'sticker',
+      if (senderName != null && senderName.trim().isNotEmpty)
+        'senderName': senderName.trim(),
+    });
+    final message = ChatMessage.fromJson(row);
+    if (!messages.any((item) => item.id == message.id)) {
+      messages.add(message);
+      notifyListeners();
+    }
+  }
+
+  Future<void> markRead(String conversationId) async {
+    await api.mutate<Map<String, dynamic>>(
+      'chat.messages.read',
+      {'conversationId': conversationId},
+    );
+  }
+
+  Future<void> editMessage(ChatMessage message, String text) async {
+    final row = await api.mutate<Map<String, dynamic>>('chat.message.edit', {
+      'messageId': message.id,
+      'text': text.trim(),
+    });
+    _replaceMessage(ChatMessage.fromJson(row));
+  }
+
+  Future<void> deleteMessage(ChatMessage message) async {
+    final row = await api.mutate<Map<String, dynamic>>('chat.message.delete', {
+      'messageId': message.id,
+    });
+    _replaceMessage(ChatMessage.fromJson(row));
+  }
+
+  void _replaceMessage(ChatMessage message) {
+    final index = messages.indexWhere((item) => item.id == message.id);
+    if (index == -1) return;
+    messages[index] = message;
+    notifyListeners();
   }
 }

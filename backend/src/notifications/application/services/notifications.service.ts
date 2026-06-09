@@ -12,6 +12,18 @@ import {
 } from '../../interfaces/dto/notification.dto';
 import { notificationFactory } from '../factories/notification.factory';
 import { notificationMapper } from '../mappers/notification.mapper';
+import type { UserEntity } from '@auth/domain/entities/user.entity';
+
+export type ChatPush = {
+  conversationId: string;
+  conversationTitle: string;
+  conversationType: 'global' | 'direct';
+  senderId: string;
+  senderName: string;
+  recipientUserIds: string[];
+  text?: string | null;
+  mediaType?: 'image' | 'video' | 'sticker' | null;
+};
 
 @Injectable()
 export class NotificationsService {
@@ -82,9 +94,14 @@ export class NotificationsService {
     this.realtime.emitNotificationsCleared();
   }
 
-  async pushSubscribe(subscription: FcmSubscriptionDto, userAgent?: string) {
+  async pushSubscribe(
+    subscription: FcmSubscriptionDto,
+    user: UserEntity,
+    userAgent?: string,
+  ) {
     await this.repository.upsertFcmToken({
       fcmToken: subscription.token,
+      userId: user.id,
       platform: subscription.platform ?? 'unknown',
       userAgent,
     });
@@ -170,5 +187,93 @@ export class NotificationsService {
       }
     }
     return { sent };
+  }
+
+  async sendChatMessage(push: ChatPush): Promise<{ sent: number }> {
+    const recipientIds = Array.from(
+      new Set(push.recipientUserIds.filter((id) => id !== push.senderId)),
+    );
+    if (!this.fcmEnabled || recipientIds.length === 0) return { sent: 0 };
+
+    const subscriptions =
+      await this.repository.listSubscriptionsForUsers(recipientIds);
+    const title =
+      push.conversationType === 'global'
+        ? `${push.senderName} em ${push.conversationTitle}`
+        : push.senderName;
+    const body = this.chatPreview(push);
+    let sent = 0;
+
+    for (const subscription of subscriptions) {
+      if (!subscription.fcmToken) continue;
+      try {
+        await admin.messaging().send({
+          token: subscription.fcmToken,
+          notification: { title, body },
+          data: {
+            type: 'chat',
+            url: `/chat?conversationId=${push.conversationId}`,
+            conversationId: push.conversationId,
+            senderId: push.senderId,
+            senderName: push.senderName,
+          },
+          android: {
+            priority: 'high',
+            notification: {
+              channelId: 'chat_messages',
+              icon: 'ic_notification',
+              sound: 'default',
+              clickAction: 'FLUTTER_NOTIFICATION_CLICK',
+              tag: `chat-${push.conversationId}`,
+            },
+          },
+          apns: {
+            payload: {
+              aps: {
+                sound: 'default',
+                threadId: `chat-${push.conversationId}`,
+              },
+            },
+          },
+        });
+        sent++;
+      } catch (error) {
+        await this.handlePushError(
+          subscription.id,
+          subscription.platform,
+          error,
+        );
+      }
+    }
+    return { sent };
+  }
+
+  private chatPreview(push: ChatPush) {
+    const text = push.text?.trim();
+    if (text) return text.length > 120 ? `${text.slice(0, 117)}...` : text;
+    if (push.mediaType === 'image') return 'Foto';
+    if (push.mediaType === 'video') return 'Vídeo';
+    if (push.mediaType === 'sticker') return 'Figurinha';
+    return 'Nova mensagem';
+  }
+
+  private async handlePushError(
+    subscriptionId: string,
+    platform: string | null | undefined,
+    error: unknown,
+  ) {
+    const code =
+      typeof error === 'object' && error !== null && 'code' in error
+        ? String((error as { code?: unknown }).code)
+        : '';
+    this.logger.warn(
+      `Falha ao enviar push para ${platform}: ${code || String(error)}`,
+    );
+    if (
+      code.includes('registration-token-not-registered') ||
+      code.includes('invalid-registration-token')
+    ) {
+      await this.repository.deleteSubscription(subscriptionId);
+    }
   }
 }

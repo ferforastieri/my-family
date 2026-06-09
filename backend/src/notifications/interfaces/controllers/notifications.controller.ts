@@ -4,12 +4,15 @@ import {
   Post,
   Patch,
   Delete,
+  Req,
   Body,
   Param,
   NotFoundException,
   UseGuards,
   BadRequestException,
 } from '@nestjs/common';
+import type { Request } from 'express';
+import type { UserEntity } from '@auth/domain/entities/user.entity';
 import { NotificationsService } from '../../application/services/notifications.service';
 import { NotificationSchedulerService } from '../../application/services/notification-scheduler.service';
 import {
@@ -33,11 +36,17 @@ export class NotificationsController {
   }
 
   @Post('subscribe')
+  @UseGuards(JwtAuthGuard)
   async subscribe(
+    @Req() request: Request & { user: UserEntity },
     @Body() body: { subscription: FcmSubscriptionDto; userAgent?: string },
   ) {
     if (body.subscription?.token) {
-      await this.notifications.pushSubscribe(body.subscription, body.userAgent);
+      await this.notifications.pushSubscribe(
+        body.subscription,
+        request.user,
+        body.userAgent,
+      );
     }
     return { ok: true, message: 'Notificações ativadas.' };
   }
