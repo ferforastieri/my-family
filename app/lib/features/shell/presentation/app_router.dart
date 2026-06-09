@@ -80,6 +80,14 @@ GoRouter buildRouter(
                     path: '/carta-de-amor',
                     icon: Icons.card_giftcard_outlined,
                   ),
+                if (auth.user?.canAccess('nossaHistoria') == true)
+                  const MobileOptionItem(
+                    label: 'Nossa Jornada',
+                    description:
+                        'Capítulos e registros da história da família.',
+                    path: '/nossa-historia',
+                    icon: Icons.menu_book_outlined,
+                  ),
               ],
             )),
           ),

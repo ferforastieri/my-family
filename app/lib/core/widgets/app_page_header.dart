@@ -5,6 +5,28 @@ import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import 'app_button.dart';
 
+class AppHeaderActionsScope extends InheritedWidget {
+  const AppHeaderActionsScope({
+    super.key,
+    required this.onNotifications,
+    required this.onTheme,
+    required super.child,
+  });
+
+  final VoidCallback onNotifications;
+  final VoidCallback onTheme;
+
+  static AppHeaderActionsScope? maybeOf(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<AppHeaderActionsScope>();
+  }
+
+  @override
+  bool updateShouldNotify(AppHeaderActionsScope oldWidget) {
+    return onNotifications != oldWidget.onNotifications ||
+        onTheme != oldWidget.onTheme;
+  }
+}
+
 class AppPageHeader extends StatelessWidget {
   const AppPageHeader({
     super.key,
@@ -40,32 +62,43 @@ class AppPageHeader extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 560;
+        final mobileActions =
+            desktop ? null : AppHeaderActionsScope.maybeOf(context);
         final titleRow = Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             if (!desktop) ...[
-              IconButton(
+              _HeaderIconButton(
                 onPressed: onBack ?? () => _defaultBack(context),
                 icon: const Icon(Icons.arrow_back),
                 tooltip: 'Voltar',
-                color: palette.foreground,
               ),
-              const SizedBox(width: 2),
-              Icon(icon, color: primary, size: 22),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
             ],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: palette.foreground,
-                      fontSize: desktop ? 24 : 20,
-                      fontWeight: FontWeight.w900,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: palette.foreground,
+                            fontSize: desktop ? 24 : 20,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      if (!desktop) ...[
+                        const SizedBox(width: 8),
+                        Icon(icon, color: primary, size: 22),
+                      ],
+                    ],
                   ),
                   if (!desktop && subtitle != null && subtitle!.isNotEmpty) ...[
                     const SizedBox(height: 2),
@@ -79,6 +112,22 @@ class AppPageHeader extends StatelessWidget {
                 ],
               ),
             ),
+            if (!desktop) ...[
+              const SizedBox(width: 10),
+              if (mobileActions != null) ...[
+                _HeaderIconButton(
+                  onPressed: mobileActions.onNotifications,
+                  icon: const Icon(Icons.notifications_outlined),
+                  tooltip: 'Notificações',
+                ),
+                const SizedBox(width: 6),
+                _HeaderIconButton(
+                  onPressed: mobileActions.onTheme,
+                  icon: const Icon(Icons.palette_outlined),
+                  tooltip: 'Cor e tema',
+                ),
+              ],
+            ],
           ],
         );
 
@@ -120,5 +169,44 @@ class AppPageHeader extends StatelessWidget {
       return;
     }
     context.go('/');
+  }
+}
+
+class _HeaderIconButton extends StatelessWidget {
+  const _HeaderIconButton({
+    required this.onPressed,
+    required this.icon,
+    required this.tooltip,
+  });
+
+  final VoidCallback onPressed;
+  final Widget icon;
+  final String tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: primary.withValues(alpha: .10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: primary.withValues(alpha: .16)),
+        ),
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(14),
+          child: IconTheme(
+            data: IconThemeData(color: palette.foreground, size: 21),
+            child: SizedBox(
+              width: 40,
+              height: 40,
+              child: Center(child: icon),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

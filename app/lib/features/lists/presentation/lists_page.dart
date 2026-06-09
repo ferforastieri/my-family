@@ -127,6 +127,24 @@ class _ListsPageState extends State<ListsPage> {
     );
   }
 
+  Future<void> _deleteList(FamilyList list) async {
+    if (!_ensureLogged()) return;
+    final confirmed = await showAppSheet<bool>(
+      context: context,
+      builder: (_) => _DeleteListSheet(list: list),
+    );
+    if (confirmed != true) return;
+
+    await widget.repository.deleteFamilyList(list.id);
+    if (!mounted) return;
+    if (selectedListId == list.id) {
+      setState(() => selectedListId = null);
+    }
+    _invalidateLists();
+    invalidateQueries(context, QueryKeys.familyListItems(list.id));
+    widget.toast.backendSuccess(widget.repository.takeMessage());
+  }
+
   bool _ensureLogged() {
     if (widget.auth.user != null) return true;
     widget.toast.info('Entre para editar as listas da família.');
@@ -182,6 +200,7 @@ class _ListsPageState extends State<ListsPage> {
                               setState(() => selectedListId = list.id),
                           onCreate: _createList,
                           onAdd: _addItem,
+                          onDeleteList: _deleteList,
                           invalidateItems: _invalidateItems,
                         );
                       },
@@ -215,6 +234,7 @@ class _ListsLayout extends StatelessWidget {
     required this.onSelect,
     required this.onCreate,
     required this.onAdd,
+    required this.onDeleteList,
     required this.invalidateItems,
   });
 
@@ -226,6 +246,7 @@ class _ListsLayout extends StatelessWidget {
   final ValueChanged<FamilyList> onSelect;
   final VoidCallback onCreate;
   final VoidCallback onAdd;
+  final ValueChanged<FamilyList> onDeleteList;
   final void Function(String listId) invalidateItems;
 
   @override
@@ -247,6 +268,7 @@ class _ListsLayout extends StatelessWidget {
         onSelect: onSelect,
         onCreate: onCreate,
         onAdd: onAdd,
+        onDeleteList: onDeleteList,
         onToggle: (item) async {
           if (!ensureLogged()) return;
           await repository
@@ -314,6 +336,7 @@ class _SimpleListsPanel extends StatelessWidget {
     required this.onSelect,
     required this.onCreate,
     required this.onAdd,
+    required this.onDeleteList,
     required this.onToggle,
     required this.onDelete,
   });
@@ -325,6 +348,7 @@ class _SimpleListsPanel extends StatelessWidget {
   final ValueChanged<FamilyList> onSelect;
   final VoidCallback onCreate;
   final VoidCallback onAdd;
+  final ValueChanged<FamilyList> onDeleteList;
   final ValueChanged<FamilyListItem> onToggle;
   final ValueChanged<FamilyListItem> onDelete;
 
@@ -457,6 +481,14 @@ class _SimpleListsPanel extends StatelessWidget {
                               ],
                             ),
                           ),
+                          IconButton(
+                            onPressed: selected == null
+                                ? null
+                                : () => onDeleteList(selected!),
+                            icon: const Icon(Icons.delete_outline),
+                            tooltip: 'Excluir lista',
+                          ),
+                          const SizedBox(width: 4),
                           IconButton.filled(
                             onPressed: selected == null ? null : onAdd,
                             icon: const Icon(Icons.add_task_outlined),
@@ -705,6 +737,68 @@ class _ListItemRow extends StatelessWidget {
             onPressed: onDelete,
             icon: const Icon(Icons.delete_outline),
             tooltip: 'Excluir',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DeleteListSheet extends StatelessWidget {
+  const _DeleteListSheet({required this.list});
+
+  final FamilyList list;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return SizedBox(
+      width: 520,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const AppSheetHeader(
+            title: 'Excluir lista',
+            subtitle: 'Esta ação remove a lista e todos os itens dela.',
+            icon: Icons.delete_outline,
+          ),
+          const SizedBox(height: 14),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: palette.card.withValues(alpha: .72),
+              border: Border.all(color: palette.border),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Text(
+                list.title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancelar'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: () => Navigator.pop(context, true),
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('Excluir'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
