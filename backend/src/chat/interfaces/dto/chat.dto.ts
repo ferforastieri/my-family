@@ -23,12 +23,30 @@ export class ChatMessageSendDto {
   mediaUrl?: string;
 
   @IsOptional()
-  @IsIn(['image', 'video'])
-  mediaType?: 'image' | 'video';
+  @IsIn(['image', 'video', 'sticker'])
+  mediaType?: 'image' | 'video' | 'sticker';
 
   @IsOptional()
   @IsString()
   senderName?: string;
+}
+
+export class ChatMessageEditDto {
+  @IsString()
+  messageId: string;
+
+  @IsString()
+  text: string;
+}
+
+export class ChatMessageActionDto {
+  @IsString()
+  messageId: string;
+}
+
+export class ChatMessagesReadDto {
+  @IsString()
+  conversationId: string;
 }
 
 export class ChatConversationResponseDto {
@@ -48,6 +66,9 @@ export class ChatMessageResponseDto {
   senderName: string;
   text: string | null;
   mediaUrl: string | null;
-  mediaType: 'image' | 'video' | null;
+  mediaType: 'image' | 'video' | 'sticker' | null;
+  readBy: string[];
+  editedAt: number | null;
+  deletedAt: number | null;
   at: number;
 }

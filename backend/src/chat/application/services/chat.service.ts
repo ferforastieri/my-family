@@ -10,6 +10,8 @@ import { ChatRepository } from '../../infrastructure/repositories/chat.repositor
 import { ListsService } from '../../../lists/application/services/lists.service';
 import { ListsRealtimeGateway } from '../../../lists/interfaces/gateways/lists-realtime.gateway';
 import { FotosService } from '../../../fotos/application/services/fotos.service';
+import { NotificationsService } from '../../../notifications/application/services/notifications.service';
+import { isAdminRole } from '@auth/domain/entities/user.entity';
 import {
   chatConversationFactory,
   chatMessageFactory,
@@ -20,6 +22,7 @@ import {
 } from '../mappers/chat.mapper';
 import type {
   ChatConversationCreateDto,
+  ChatMessageEditDto,
   ChatMessageSendDto,
 } from '../../interfaces/dto/chat.dto';
 
@@ -31,6 +34,7 @@ export class ChatService {
     private lists: ListsService,
     private listsRealtime: ListsRealtimeGateway,
     private fotos: FotosService,
+    private notifications: NotificationsService,
   ) {}
 
   async usersForChat(currentUser: UserEntity) {
@@ -134,6 +138,72 @@ export class ChatService {
       });
       await this.fotos.processUpload(body.mediaUrl);
     }
+    const recipients =
+      conversation.type === 'direct'
+        ? conversation.participantIds
+        : await this.chatNotificationRecipients();
+    await this.notifications.sendChatMessage({
+      conversationId: conversation.id,
+      conversationTitle:
+        conversation.type === 'global' ? 'Chat da família' : conversation.title,
+      conversationType: conversation.type,
+      senderId: user?.id ?? '',
+      senderName,
+      recipientUserIds: recipients,
+      text: message.text,
+      mediaType: message.mediaType,
+    });
     return chatMessageMapper.toDto(message);
+  }
+
+  private async chatNotificationRecipients() {
+    const page = await this.users.list({ page: 1, limit: 100 });
+    return page.items
+      .filter(
+        (candidate) =>
+          isAdminRole(candidate.role) || candidate.access.includes('chat'),
+      )
+      .map((candidate) => candidate.id);
+  }
+
+  async editMessage(body: ChatMessageEditDto, user: UserEntity) {
+    const message = await this.chat.findMessage(body.messageId);
+    if (!message) throw new ForbiddenException('Mensagem não encontrada.');
+    if (message.senderId !== user.id) {
+      throw new ForbiddenException('Você só pode editar suas mensagens.');
+    }
+    if (message.deletedAt) {
+      throw new BadRequestException('Esta mensagem foi apagada.');
+    }
+    const text = body.text.trim();
+    if (!text) throw new BadRequestException('Escreva uma mensagem.');
+    const updated = await this.chat.editMessage(message.id, text);
+    if (!updated) throw new ForbiddenException('Mensagem não encontrada.');
+    return chatMessageMapper.toDto(updated);
+  }
+
+  async deleteMessage(messageId: string, user: UserEntity) {
+    const message = await this.chat.findMessage(messageId);
+    if (!message) throw new ForbiddenException('Mensagem não encontrada.');
+    if (message.senderId !== user.id) {
+      throw new ForbiddenException('Você só pode apagar suas mensagens.');
+    }
+    if (message.deletedAt) return chatMessageMapper.toDto(message);
+    const deleted = await this.chat.deleteMessage(message.id);
+    if (!deleted) throw new ForbiddenException('Mensagem não encontrada.');
+    return chatMessageMapper.toDto(deleted);
+  }
+
+  async markMessagesRead(conversationId: string, user: UserEntity) {
+    const conversation = await this.chat.findConversation(conversationId);
+    if (!conversation) throw new ForbiddenException('Conversa não encontrada.');
+    if (
+      conversation.type === 'direct' &&
+      !conversation.participantIds.includes(user.id)
+    ) {
+      throw new ForbiddenException('Sem acesso a esta conversa.');
+    }
+    await this.chat.markMessagesRead(conversationId, user.id);
+    return { conversationId, userId: user.id };
   }
 }

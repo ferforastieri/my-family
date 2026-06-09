@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -17,11 +18,13 @@ class ChatPage extends StatefulWidget {
     required this.chat,
     required this.auth,
     required this.toast,
+    this.initialConversationId,
   });
 
   final ChatController chat;
   final AuthController auth;
   final ToastController toast;
+  final String? initialConversationId;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -39,6 +42,10 @@ class _ChatPageState extends State<ChatPage> {
       try {
         await widget.chat.bootstrap();
         await widget.chat.refreshConversations();
+        final conversationId = widget.initialConversationId;
+        if (conversationId != null) {
+          await widget.chat.openConversation(conversationId);
+        }
       } catch (error) {
         widget.toast.error(error.toString());
       }
@@ -78,6 +85,41 @@ class _ChatPageState extends State<ChatPage> {
     } finally {
       if (mounted) setState(() => sending = false);
     }
+  }
+
+  Future<void> _sendSticker(String sticker) async {
+    setState(() => sending = true);
+    try {
+      await widget.chat.sendSticker(sticker, senderName: _senderName);
+    } catch (error) {
+      widget.toast.error(error.toString());
+    } finally {
+      if (mounted) setState(() => sending = false);
+    }
+  }
+
+  void _insertEmoji(String emoji) {
+    final selection = text.selection;
+    final start = selection.isValid ? selection.start : text.text.length;
+    final end = selection.isValid ? selection.end : text.text.length;
+    final value = text.text.replaceRange(start, end, emoji);
+    text.value = TextEditingValue(
+      text: value,
+      selection: TextSelection.collapsed(offset: start + emoji.length),
+    );
+  }
+
+  void _openEmojiPanel() {
+    showAppSheet<void>(
+      context: context,
+      builder: (_) => _EmojiStickerSheet(
+        onEmoji: _insertEmoji,
+        onSticker: (sticker) {
+          Navigator.pop(context);
+          _sendSticker(sticker);
+        },
+      ),
+    );
   }
 
   String get _senderName {
@@ -148,6 +190,81 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  Future<void> _editMessage(ChatMessage message) async {
+    final controller = TextEditingController(text: message.text);
+    final value = await showAppSheet<String>(
+      context: context,
+      builder: (sheetContext) => SizedBox(
+        width: 520,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const AppSheetHeader(
+              title: 'Editar mensagem',
+              icon: Icons.edit_outlined,
+            ),
+            const SizedBox(height: 18),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              minLines: 2,
+              maxLines: 6,
+              decoration: const InputDecoration(labelText: 'Mensagem'),
+            ),
+            const SizedBox(height: 18),
+            AppSheetActions(
+              onCancel: () => Navigator.pop(sheetContext),
+              onSave: () {
+                final text = controller.text.trim();
+                if (text.isNotEmpty) Navigator.pop(sheetContext, text);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+    controller.dispose();
+    if (value == null || !mounted) return;
+    try {
+      await widget.chat.editMessage(message, value);
+      widget.toast.backendSuccess(widget.chat.repository.takeMessage());
+    } catch (error) {
+      widget.toast.error(error.toString());
+    }
+  }
+
+  Future<void> _deleteMessage(ChatMessage message) async {
+    final confirmed = await showAppSheet<bool>(
+      context: context,
+      builder: (sheetContext) => SizedBox(
+        width: 480,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const AppSheetHeader(
+              title: 'Apagar mensagem?',
+              subtitle: 'Ela continuará aparecendo como mensagem apagada.',
+              icon: Icons.delete_outline,
+            ),
+            const SizedBox(height: 20),
+            AppSheetActions(
+              onCancel: () => Navigator.pop(sheetContext, false),
+              onSave: () => Navigator.pop(sheetContext, true),
+              saveLabel: 'Apagar',
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await widget.chat.deleteMessage(message);
+      widget.toast.backendSuccess(widget.chat.repository.takeMessage());
+    } catch (error) {
+      widget.toast.error(error.toString());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
@@ -171,6 +288,9 @@ class _ChatPageState extends State<ChatPage> {
               sending: sending,
               onSendText: _sendText,
               onSendImage: _sendImage,
+              onOpenEmojiPanel: _openEmojiPanel,
+              onEditMessage: _editMessage,
+              onDeleteMessage: _deleteMessage,
               onRefresh: _refreshMessages,
               compact: !wide,
               onBack: () => _goBack(context),
@@ -346,6 +466,9 @@ class _MessagePane extends StatelessWidget {
     required this.sending,
     required this.onSendText,
     required this.onSendImage,
+    required this.onOpenEmojiPanel,
+    required this.onEditMessage,
+    required this.onDeleteMessage,
     required this.onRefresh,
     required this.compact,
     required this.onBack,
@@ -359,6 +482,9 @@ class _MessagePane extends StatelessWidget {
   final bool sending;
   final VoidCallback onSendText;
   final VoidCallback onSendImage;
+  final VoidCallback onOpenEmojiPanel;
+  final ValueChanged<ChatMessage> onEditMessage;
+  final ValueChanged<ChatMessage> onDeleteMessage;
   final Future<void> Function() onRefresh;
   final bool compact;
   final VoidCallback onBack;
@@ -446,6 +572,8 @@ class _MessagePane extends StatelessWidget {
                             isMine: _isMine(message, auth.user),
                             currentUser: auth.user,
                             compact: compact,
+                            onEdit: () => onEditMessage(message),
+                            onDelete: () => onDeleteMessage(message),
                           );
                         },
                       ),
@@ -476,21 +604,40 @@ class _MessagePane extends StatelessWidget {
           child: Row(
             children: [
               IconButton(
+                onPressed: sending ? null : onOpenEmojiPanel,
+                icon: const Icon(Icons.sentiment_satisfied_alt_outlined),
+                tooltip: 'Emojis e figurinhas',
+              ),
+              IconButton(
                 onPressed: sending ? null : onSendImage,
                 icon: const Icon(Icons.image_outlined),
                 tooltip: 'Enviar imagem',
               ),
               Expanded(
-                child: TextField(
-                  controller: text,
-                  minLines: 1,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    hintText: 'Escreva uma mensagem...',
-                    isDense: true,
+                child: Focus(
+                  onKeyEvent: (_, event) {
+                    if (event is! KeyDownEvent ||
+                        event.logicalKey != LogicalKeyboardKey.enter) {
+                      return KeyEventResult.ignored;
+                    }
+                    if (HardwareKeyboard.instance.isShiftPressed) {
+                      return KeyEventResult.ignored;
+                    }
+                    if (!sending && text.text.trim().isNotEmpty) {
+                      onSendText();
+                    }
+                    return KeyEventResult.handled;
+                  },
+                  child: TextField(
+                    controller: text,
+                    minLines: 1,
+                    maxLines: 4,
+                    decoration: const InputDecoration(
+                      hintText: 'Escreva uma mensagem...',
+                      isDense: true,
+                    ),
+                    textInputAction: TextInputAction.newline,
                   ),
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (_) => onSendText(),
                 ),
               ),
               SizedBox(width: compact ? 6 : 8),
@@ -525,24 +672,37 @@ class _MessageBubble extends StatelessWidget {
     required this.isMine,
     required this.currentUser,
     required this.compact,
+    required this.onEdit,
+    required this.onDelete,
   });
 
   final ChatMessage message;
   final bool isMine;
   final AppUser? currentUser;
   final bool compact;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
+    final isSticker = message.mediaType == 'sticker';
+    final isDeleted = message.deletedAt != null;
+    final wasRead = message.readBy.any((id) => id != message.senderId);
     final bubble = Flexible(
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: isMine ? palette.primary.withValues(alpha: .18) : palette.card,
+          color: isSticker
+              ? Colors.transparent
+              : isMine
+                  ? palette.primary.withValues(alpha: .18)
+                  : palette.card,
           border: Border.all(
-            color: isMine
-                ? palette.primary.withValues(alpha: .24)
-                : palette.border,
+            color: isSticker
+                ? Colors.transparent
+                : isMine
+                    ? palette.primary.withValues(alpha: .24)
+                    : palette.border,
           ),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
@@ -550,7 +710,7 @@ class _MessageBubble extends StatelessWidget {
             bottomLeft: Radius.circular(isMine ? 16 : 5),
             bottomRight: Radius.circular(isMine ? 5 : 16),
           ),
-          boxShadow: compact
+          boxShadow: compact && !isSticker
               ? [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: .04),
@@ -562,53 +722,164 @@ class _MessageBubble extends StatelessWidget {
         ),
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: compact ? 280 : 560),
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              compact ? 10 : 12,
-              compact ? 8 : 12,
-              compact ? 10 : 12,
-              compact ? 7 : 12,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (!isMine)
-                  Text(message.senderName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+          child: Stack(
+            children: [
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  compact ? 10 : 12,
+                  compact ? 8 : 12,
+                  isMine && !isDeleted ? 34 : (compact ? 10 : 12),
+                  compact ? 7 : 12,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (!isMine)
+                      Text(
+                        message.senderName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
                           color: palette.primary,
                           fontSize: 12,
-                          fontWeight: FontWeight.w900)),
-                if (message.mediaUrl != null) ...[
-                  SizedBox(height: isMine ? 0 : 6),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: InkWell(
-                      onTap: () => _openImagePreview(
-                          context, _mediaUrl(message.mediaUrl!)),
-                      child: Image.network(_mediaUrl(message.mediaUrl!),
-                          height: compact ? 180 : 220,
-                          width: double.infinity,
-                          fit: BoxFit.cover),
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    if (isDeleted)
+                      Text(
+                        'Mensagem apagada',
+                        style: TextStyle(
+                          color: palette.muted,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      )
+                    else if (isSticker && message.mediaUrl != null) ...[
+                      SizedBox(height: isMine ? 0 : 4),
+                      Text(
+                        message.mediaUrl!,
+                        style:
+                            TextStyle(fontSize: compact ? 72 : 92, height: 1),
+                      ),
+                    ] else if (message.mediaUrl != null) ...[
+                      SizedBox(height: isMine ? 0 : 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: InkWell(
+                          onTap: () => _openImagePreview(
+                              context, _mediaUrl(message.mediaUrl!)),
+                          child: Image.network(
+                            _mediaUrl(message.mediaUrl!),
+                            height: compact ? 180 : 220,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, progress) {
+                              if (progress == null) return child;
+                              return SizedBox(
+                                height: compact ? 180 : 220,
+                                child: const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            },
+                            errorBuilder: (_, __, ___) => SizedBox(
+                              height: compact ? 120 : 150,
+                              child: const Center(
+                                child:
+                                    Icon(Icons.broken_image_outlined, size: 38),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                    if (message.text?.isNotEmpty == true) ...[
+                      SizedBox(height: message.mediaUrl == null ? 0 : 6),
+                      Text(message.text!,
+                          style: TextStyle(height: compact ? 1.28 : 1.35)),
+                    ],
+                    if (!isSticker) const SizedBox(height: 4),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (message.editedAt != null) ...[
+                            Text(
+                              'editada',
+                              style:
+                                  TextStyle(fontSize: 11, color: palette.muted),
+                            ),
+                            const SizedBox(width: 4),
+                          ],
+                          Text(
+                            _timeLabel(message.at),
+                            style:
+                                TextStyle(fontSize: 11, color: palette.muted),
+                          ),
+                          if (isMine) ...[
+                            const SizedBox(width: 3),
+                            Icon(
+                              wasRead ? Icons.done_all : Icons.done,
+                              size: 16,
+                              color: wasRead ? palette.primary : palette.muted,
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-                if (message.text?.isNotEmpty == true) ...[
-                  SizedBox(height: message.mediaUrl == null ? 0 : 6),
-                  Text(message.text!,
-                      style: TextStyle(height: compact ? 1.28 : 1.35)),
-                ],
-                const SizedBox(height: 4),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    _timeLabel(message.at),
-                    style: TextStyle(fontSize: 11, color: palette.muted),
+                  ],
+                ),
+              ),
+              if (isMine && !isDeleted)
+                Positioned(
+                  top: 1,
+                  right: 1,
+                  child: PopupMenuButton<_MessageAction>(
+                    tooltip: 'Opções da mensagem',
+                    position: PopupMenuPosition.under,
+                    padding: EdgeInsets.zero,
+                    iconSize: 17,
+                    constraints:
+                        const BoxConstraints.tightFor(width: 28, height: 28),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(color: palette.border),
+                    ),
+                    color: palette.card,
+                    elevation: 6,
+                    icon: Icon(
+                      Icons.keyboard_arrow_down,
+                      color: palette.muted,
+                    ),
+                    onSelected: (action) {
+                      if (action == _MessageAction.edit) {
+                        onEdit();
+                      } else {
+                        onDelete();
+                      }
+                    },
+                    itemBuilder: (_) => [
+                      if (message.text?.isNotEmpty == true)
+                        const PopupMenuItem(
+                          value: _MessageAction.edit,
+                          height: 40,
+                          child: _MessageMenuItem(
+                            icon: Icons.edit_outlined,
+                            label: 'Editar',
+                          ),
+                        ),
+                      const PopupMenuItem(
+                        value: _MessageAction.delete,
+                        height: 40,
+                        child: _MessageMenuItem(
+                          icon: Icons.delete_outline,
+                          label: 'Apagar',
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+            ],
           ),
         ),
       ),
@@ -648,6 +919,179 @@ class _MessageBubble extends StatelessWidget {
                 bubble,
                 const Spacer(),
               ],
+      ),
+    );
+  }
+}
+
+class _EmojiStickerSheet extends StatelessWidget {
+  const _EmojiStickerSheet({
+    required this.onEmoji,
+    required this.onSticker,
+  });
+
+  final ValueChanged<String> onEmoji;
+  final ValueChanged<String> onSticker;
+
+  static const emojis = [
+    '😀',
+    '😂',
+    '🥰',
+    '😍',
+    '😊',
+    '😉',
+    '🥹',
+    '😘',
+    '😋',
+    '😎',
+    '🤩',
+    '🥳',
+    '😭',
+    '😡',
+    '🤔',
+    '🫶',
+    '👍',
+    '👏',
+    '🙏',
+    '💪',
+    '❤️',
+    '💕',
+    '💖',
+    '💘',
+    '🌸',
+    '🌹',
+    '✨',
+    '🎉',
+    '🔥',
+    '⭐',
+    '☀️',
+    '🌙',
+  ];
+
+  static const stickers = [
+    '🥰',
+    '😂',
+    '😭',
+    '😡',
+    '🥳',
+    '🤩',
+    '🫶',
+    '❤️',
+    '💐',
+    '🌹',
+    '🎉',
+    '🔥',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return SizedBox(
+      width: 520,
+      child: DefaultTabController(
+        length: 2,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const AppSheetHeader(
+              title: 'Emojis e figurinhas',
+              subtitle: 'Escolha um emoji ou envie uma figurinha.',
+              icon: Icons.sentiment_satisfied_alt_outlined,
+            ),
+            const SizedBox(height: 12),
+            TabBar(
+              tabs: const [
+                Tab(icon: Icon(Icons.emoji_emotions_outlined), text: 'Emojis'),
+                Tab(
+                    icon: Icon(Icons.sticky_note_2_outlined),
+                    text: 'Figurinhas'),
+              ],
+              labelColor: palette.primary,
+              indicatorColor: palette.primary,
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 280,
+              child: TabBarView(
+                children: [
+                  GridView.builder(
+                    padding: const EdgeInsets.all(4),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 8,
+                      mainAxisSpacing: 6,
+                      crossAxisSpacing: 6,
+                    ),
+                    itemCount: emojis.length,
+                    itemBuilder: (_, index) => _EmojiButton(
+                      emoji: emojis[index],
+                      onTap: () => onEmoji(emojis[index]),
+                    ),
+                  ),
+                  GridView.builder(
+                    padding: const EdgeInsets.all(6),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
+                    ),
+                    itemCount: stickers.length,
+                    itemBuilder: (_, index) => _StickerButton(
+                      sticker: stickers[index],
+                      onTap: () => onSticker(stickers[index]),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmojiButton extends StatelessWidget {
+  const _EmojiButton({required this.emoji, required this.onTap});
+
+  final String emoji;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Center(
+        child: Text(emoji, style: const TextStyle(fontSize: 27)),
+      ),
+    );
+  }
+}
+
+class _StickerButton extends StatelessWidget {
+  const _StickerButton({required this.sticker, required this.onTap});
+
+  final String sticker;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: palette.primary.withValues(alpha: .07),
+          border: Border.all(color: palette.border),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Center(
+          child: Text(sticker, style: const TextStyle(fontSize: 52)),
+        ),
       ),
     );
   }
@@ -706,6 +1150,27 @@ class _MessageAvatar extends StatelessWidget {
                 fontSize: compact ? 12 : 13,
               ),
             ),
+    );
+  }
+}
+
+enum _MessageAction { edit, delete }
+
+class _MessageMenuItem extends StatelessWidget {
+  const _MessageMenuItem({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 19),
+        const SizedBox(width: 10),
+        Text(label),
+      ],
     );
   }
 }
@@ -800,7 +1265,31 @@ void _openImagePreview(BuildContext context, String url) {
             child: InteractiveViewer(
               minScale: .8,
               maxScale: 4,
-              child: Image.network(url, fit: BoxFit.contain),
+              child: Image.network(
+                url,
+                fit: BoxFit.contain,
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
+                  return const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  );
+                },
+                errorBuilder: (_, __, ___) => const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.broken_image_outlined,
+                      color: Colors.white,
+                      size: 54,
+                    ),
+                    SizedBox(height: 12),
+                    Text(
+                      'Não foi possível carregar a imagem.',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
           SafeArea(

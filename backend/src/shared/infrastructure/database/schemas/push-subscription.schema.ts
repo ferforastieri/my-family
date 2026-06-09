@@ -9,6 +9,9 @@ export class PushSubscriptionDocument {
   @Prop({ required: true, unique: true })
   fcmToken?: string;
 
+  @Prop({ index: true })
+  userId?: string;
+
   @Prop({ default: 'unknown' })
   platform?: 'web' | 'android' | 'ios' | 'unknown';
 

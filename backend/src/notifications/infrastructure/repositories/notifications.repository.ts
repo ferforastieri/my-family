@@ -56,6 +56,7 @@ export class NotificationsRepository {
     return {
       id: toId(doc),
       fcmToken: doc.fcmToken ?? null,
+      userId: doc.userId ?? null,
       platform: doc.platform ?? 'unknown',
       userAgent: doc.userAgent ?? null,
       createdAt: doc.createdAt,
@@ -159,6 +160,7 @@ export class NotificationsRepository {
 
   async upsertFcmToken(data: {
     fcmToken: string;
+    userId: string;
     platform?: 'web' | 'android' | 'ios' | 'unknown';
     userAgent?: string;
   }) {
@@ -179,6 +181,13 @@ export class NotificationsRepository {
     return (await this.subscriptions.find().exec()).map(
       (doc) => this.toSubscription(doc)!,
     );
+  }
+
+  async listSubscriptionsForUsers(userIds: string[]) {
+    if (userIds.length === 0) return [];
+    return (
+      await this.subscriptions.find({ userId: { $in: userIds } }).exec()
+    ).map((doc) => this.toSubscription(doc)!);
   }
 
   async deleteSubscription(id: string) {

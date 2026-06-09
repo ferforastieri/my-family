@@ -36,7 +36,8 @@ class NotificationsSheet extends StatelessWidget {
               const SizedBox(height: 8),
               if (!notifications.pushReady)
                 Text(
-                  'Push Firebase ainda não configurado neste build.',
+                  notifications.pushError ??
+                      'Este aparelho ainda não está registrado para receber notificações.',
                   style: TextStyle(
                       color: palette.muted, fontWeight: FontWeight.w700),
                 ),

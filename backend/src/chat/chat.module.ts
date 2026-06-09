@@ -7,6 +7,7 @@ import { ChatRepository } from './infrastructure/repositories/chat.repository';
 import { ChatGateway } from './interfaces/gateways/chat.gateway';
 import { ListsModule } from '../lists/lists.module';
 import { FotosModule } from '../fotos/fotos.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { FotosModule } from '../fotos/fotos.module';
     AuthModule,
     ListsModule,
     FotosModule,
+    NotificationsModule,
   ],
   providers: [ChatService, ChatRepository, ChatGateway],
 })

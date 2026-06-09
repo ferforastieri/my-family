@@ -10,6 +10,7 @@ export interface NotificationEntity {
 export interface PushSubscriptionEntity {
   id: string;
   fcmToken?: string | null;
+  userId?: string | null;
   platform?: 'web' | 'android' | 'ios' | 'unknown' | null;
   userAgent?: string | null;
   createdAt: Date;

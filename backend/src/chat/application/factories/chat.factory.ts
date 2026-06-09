@@ -43,6 +43,7 @@ export class ChatMessageFactory implements Factory<
       text: input.text?.trim(),
       mediaUrl: input.mediaUrl,
       mediaType: input.mediaType,
+      readBy: input.senderId ? [input.senderId] : [],
     };
   }
 }

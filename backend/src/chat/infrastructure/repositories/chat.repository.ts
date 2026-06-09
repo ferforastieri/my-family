@@ -24,7 +24,8 @@ export type ChatMessageWrite = {
   senderName: string;
   text?: string;
   mediaUrl?: string;
-  mediaType?: 'image' | 'video';
+  mediaType?: 'image' | 'video' | 'sticker';
+  readBy?: string[];
 };
 
 @Injectable()
@@ -63,6 +64,9 @@ export class ChatRepository {
       text: doc.text ?? null,
       mediaUrl: doc.mediaUrl ?? null,
       mediaType: doc.mediaType ?? null,
+      readBy: doc.readBy ?? [],
+      editedAt: doc.editedAt ?? null,
+      deletedAt: doc.deletedAt ?? null,
       createdAt: doc.createdAt,
     };
   }
@@ -152,5 +156,53 @@ export class ChatRepository {
       })
       .exec();
     return message;
+  }
+
+  async findMessage(id: string) {
+    return this.toMessage(await this.messages.findById(id).exec());
+  }
+
+  async editMessage(id: string, text: string) {
+    return this.toMessage(
+      await this.messages
+        .findByIdAndUpdate(
+          id,
+          { $set: { text, editedAt: new Date() } },
+          { new: true },
+        )
+        .exec(),
+    );
+  }
+
+  async deleteMessage(id: string) {
+    return this.toMessage(
+      await this.messages
+        .findByIdAndUpdate(
+          id,
+          {
+            $set: {
+              text: null,
+              mediaUrl: null,
+              mediaType: null,
+              deletedAt: new Date(),
+            },
+          },
+          { new: true },
+        )
+        .exec(),
+    );
+  }
+
+  async markMessagesRead(conversationId: string, userId: string) {
+    await this.messages
+      .updateMany(
+        {
+          conversationId,
+          senderId: { $ne: userId },
+          readBy: { $ne: userId },
+        },
+        { $addToSet: { readBy: userId } },
+      )
+      .exec();
   }
 }
