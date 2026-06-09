@@ -141,18 +141,21 @@ class ChatConversation {
     required this.type,
     required this.title,
     required this.participantIds,
+    this.avatarPath,
   });
 
   final String id;
   final String type;
   final String title;
   final List<String> participantIds;
+  final String? avatarPath;
 
   factory ChatConversation.fromJson(Map<String, dynamic> json) =>
       ChatConversation(
         id: json['id'].toString(),
         type: (json['type'] ?? 'global').toString(),
         title: (json['title'] ?? 'Chat').toString(),
+        avatarPath: json['avatarPath']?.toString(),
         participantIds: ((json['participantIds'] as List?) ?? const [])
             .map((id) => id.toString())
             .toList(),
@@ -225,11 +228,17 @@ class ChatMessage {
 }
 
 class ChatUser {
-  const ChatUser({required this.id, required this.name, required this.email});
+  const ChatUser({
+    required this.id,
+    required this.name,
+    required this.email,
+    this.avatarPath,
+  });
 
   final String id;
   final String? name;
   final String email;
+  final String? avatarPath;
 
   String get label => name?.isNotEmpty == true ? name! : email;
 
@@ -237,6 +246,7 @@ class ChatUser {
         id: json['id'].toString(),
         name: json['name']?.toString(),
         email: (json['email'] ?? '').toString(),
+        avatarPath: json['avatarPath']?.toString(),
       );
 }
 
