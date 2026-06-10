@@ -159,14 +159,28 @@ jobs:
           FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
           FIREBASE_WEB_PUSH_CERTIFICATE_KEY: ${{ secrets.FIREBASE_WEB_PUSH_CERTIFICATE_KEY }}
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           set -eu
+          test -n "$ANDROID_KEYSTORE_BASE64" || { echo "Missing secret ANDROID_KEYSTORE_BASE64"; exit 1; }
+          test -n "$ANDROID_KEYSTORE_PASSWORD" || { echo "Missing secret ANDROID_KEYSTORE_PASSWORD"; exit 1; }
+          test -n "$ANDROID_KEY_ALIAS" || { echo "Missing secret ANDROID_KEY_ALIAS"; exit 1; }
+          test -n "$ANDROID_KEY_PASSWORD" || { echo "Missing secret ANDROID_KEY_PASSWORD"; exit 1; }
+
           if [ -n "${GOOGLE_SERVICES_JSON:-}" ]; then
             printf '%s' "$GOOGLE_SERVICES_JSON" > app/android/app/google-services.json
           fi
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > app/android/app/release-keystore.jks
 
           docker run --rm \
             -v "$PWD/app:/app" \
+            -e ANDROID_KEYSTORE_PATH=/app/android/app/release-keystore.jks \
+            -e ANDROID_KEYSTORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD" \
+            -e ANDROID_KEY_ALIAS="$ANDROID_KEY_ALIAS" \
+            -e ANDROID_KEY_PASSWORD="$ANDROID_KEY_PASSWORD" \
             -w /app \
             ghcr.io/cirruslabs/flutter:stable \
             flutter build apk --release \
