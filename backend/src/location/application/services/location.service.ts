@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import type { UserEntity } from '@auth/domain/entities/user.entity';
 import { NotificationsService } from '@notifications/application/services/notifications.service';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
@@ -28,6 +28,9 @@ export class LocationService {
   ) {}
 
   async update(data: LocationUpdateDto, user?: UserEntity | null) {
+    if (data.platform === 'web') {
+      throw new BadRequestException('Localização web não é rastreada.');
+    }
     const row = await this.locations.create(
       locationUpdateFactory.create({ dto: data, user }),
     );
