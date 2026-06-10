@@ -27,27 +27,12 @@ class AuthController extends ChangeNotifier {
   Future<void> bootstrap() async {
     token = await tokenStore.read();
     _bindConnectListener();
-    try {
-      await socket.ensureConnected(token: token);
-    } catch (_) {
-      loading = false;
-      notifyListeners();
-      return;
-    }
-    if (token != null) {
-      try {
-        final response = await api.query<Map<String, dynamic>>('auth.me');
-        user = AppUser.fromJson(
-            Map<String, dynamic>.from(response['user'] as Map));
-      } catch (error) {
-        if (_looksLikeAuthError(error)) {
-          await tokenStore.clear();
-          token = null;
-        }
-      }
-    }
+    socket.connect(token: token);
     loading = false;
     notifyListeners();
+    if (token != null) {
+      unawaited(_loadCurrentUser(clearInvalidToken: true));
+    }
   }
 
   void _bindConnectListener() {
