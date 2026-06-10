@@ -19,56 +19,61 @@ class ChatController extends ChangeNotifier {
   ChatConversation? active;
   bool loading = false;
   bool bootstrapped = false;
+  bool _listenersBound = false;
   String? errorMessage;
 
   Future<void> bootstrap() async {
-    if (bootstrapped) return;
-    bootstrapped = true;
-    socket.on('chat.message.created', (data) {
-      if (data is! Map) return;
-      final message = ChatMessage.fromJson(Map<String, dynamic>.from(data));
-      if (message.conversationId == active?.id) {
-        if (messages.any((item) => item.id == message.id)) return;
-        messages.add(message);
-        notifyListeners();
-        markRead(message.conversationId);
-      }
-    });
-    socket.on('chat.message.updated', (data) {
-      if (data is! Map) return;
-      final message = ChatMessage.fromJson(Map<String, dynamic>.from(data));
-      final index = messages.indexWhere((item) => item.id == message.id);
-      if (index == -1) return;
-      messages[index] = message;
-      notifyListeners();
-    });
-    socket.on('chat.messages.read', (data) {
-      if (data is! Map) return;
-      final receipt = Map<String, dynamic>.from(data);
-      final conversationId = receipt['conversationId']?.toString();
-      final userId = receipt['userId']?.toString();
-      if (conversationId == null || userId == null) return;
-      var changed = false;
-      for (var index = 0; index < messages.length; index++) {
-        final message = messages[index];
-        if (message.conversationId != conversationId ||
-            message.senderId == userId ||
-            message.readBy.contains(userId)) {
-          continue;
+    if (!_listenersBound) {
+      _listenersBound = true;
+      socket.on('chat.message.created', (data) {
+        if (data is! Map) return;
+        final message = ChatMessage.fromJson(Map<String, dynamic>.from(data));
+        if (message.conversationId == active?.id) {
+          if (messages.any((item) => item.id == message.id)) return;
+          messages.add(message);
+          notifyListeners();
+          markRead(message.conversationId);
         }
-        messages[index] = message.copyWith(readBy: [...message.readBy, userId]);
-        changed = true;
-      }
-      if (changed) notifyListeners();
-    });
-    socket.on('chat.conversation.created', (_) => refreshConversations());
-    socket.on('connect', (_) {
-      if (conversations.isEmpty) {
-        refreshConversations(silent: true).catchError((_) {});
-      }
-    });
+      });
+      socket.on('chat.message.updated', (data) {
+        if (data is! Map) return;
+        final message = ChatMessage.fromJson(Map<String, dynamic>.from(data));
+        final index = messages.indexWhere((item) => item.id == message.id);
+        if (index == -1) return;
+        messages[index] = message;
+        notifyListeners();
+      });
+      socket.on('chat.messages.read', (data) {
+        if (data is! Map) return;
+        final receipt = Map<String, dynamic>.from(data);
+        final conversationId = receipt['conversationId']?.toString();
+        final userId = receipt['userId']?.toString();
+        if (conversationId == null || userId == null) return;
+        var changed = false;
+        for (var index = 0; index < messages.length; index++) {
+          final message = messages[index];
+          if (message.conversationId != conversationId ||
+              message.senderId == userId ||
+              message.readBy.contains(userId)) {
+            continue;
+          }
+          messages[index] =
+              message.copyWith(readBy: [...message.readBy, userId]);
+          changed = true;
+        }
+        if (changed) notifyListeners();
+      });
+      socket.on('chat.conversation.created', (_) => refreshConversations());
+      socket.on('connect', (_) {
+        if (conversations.isEmpty) {
+          refreshConversations(silent: true).catchError((_) {});
+        }
+      });
+    }
+    if (bootstrapped && conversations.isNotEmpty) return;
     try {
       await refreshConversations(silent: true);
+      bootstrapped = true;
     } catch (_) {
       //
     }

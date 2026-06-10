@@ -43,10 +43,13 @@ class NotificationsController extends ChangeNotifier {
   bool pushReady = false;
   String? fcmToken;
   String? pushError;
+  bool _bootstrapped = false;
   bool _pushListenersBound = false;
   String? _pendingUrl;
 
   Future<void> bootstrap() async {
+    if (_bootstrapped) return;
+    _bootstrapped = true;
     socket.on('notifications.created', (data) {
       if (data is Map) {
         final item = AppNotification.fromJson(Map<String, dynamic>.from(data));

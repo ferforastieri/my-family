@@ -107,11 +107,19 @@ export class NotificationsGateway {
   ) {
     const user = await this.session.requireUser(client);
     if (body.subscription?.token) {
-      await this.notifications.pushSubscribe(
-        body.subscription,
-        user,
-        body.userAgent,
-      );
+      try {
+        await this.notifications.pushSubscribe(
+          body.subscription,
+          user,
+          body.userAgent,
+        );
+      } catch {
+        return {
+          ok: false,
+          message:
+            'Não foi possível ativar notificações agora. O app tentará novamente.',
+        };
+      }
     }
     return { ok: true, message: 'Notificações ativadas.' };
   }

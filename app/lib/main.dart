@@ -47,13 +47,23 @@ void main() {
         toast: toast,
         repository: repository),
   ));
-  Future<void>(() async {
-    await auth.bootstrap();
+
+  var protectedServicesStarted = false;
+  Future<void> startProtectedServices() async {
+    if (protectedServicesStarted || auth.user == null) return;
+    protectedServicesStarted = true;
     await notifications.bootstrap();
     unawaited(location.bootstrap());
-    await Future.wait([
-      chat.bootstrap(),
-    ]);
+    unawaited(chat.bootstrap());
+  }
+
+  auth.addListener(() {
+    unawaited(startProtectedServices());
+  });
+
+  Future<void>(() async {
+    await auth.bootstrap();
+    await startProtectedServices();
   }).catchError((_) {});
   theme.bootstrap();
 }
