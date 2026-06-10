@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
 import '../config/app_config.dart';
@@ -40,13 +41,13 @@ class SocketClient {
     _socket = io.io(
       _normalizeSocketIoUrl(AppConfig.socketUrl),
       io.OptionBuilder()
-          .setTransports(['polling', 'websocket'])
+          .setTransports(kIsWeb ? ['polling', 'websocket'] : ['websocket'])
           .disableAutoConnect()
           .enableReconnection()
           .setReconnectionAttempts(20)
           .setReconnectionDelay(800)
           .setReconnectionDelayMax(4000)
-          .setTimeout(10000)
+          .setTimeout(5000)
           .setAuth(auth)
           .setExtraHeaders(headers)
           .build(),
@@ -78,22 +79,10 @@ class SocketClient {
 
   Future<void> ensureConnected({String? token}) async {
     final targetToken = token ?? _token;
-    Object? lastError;
-    for (var attempt = 0; attempt < 4; attempt++) {
-      connect(token: targetToken, force: attempt > 0);
-      if (_socket?.connected == true) return;
-      try {
-        await (_connectCompleter?.future ?? Future<void>.value())
-            .timeout(const Duration(seconds: 8));
-        if (_socket?.connected == true) return;
-      } catch (error) {
-        lastError = error;
-        await Future<void>.delayed(Duration(milliseconds: 450 * (attempt + 1)));
-      }
-    }
-    throw lastError ??
-        TimeoutException(
-            'Não foi possível conectar em ${AppConfig.socketUrl}.');
+    connect(token: targetToken);
+    if (_socket?.connected == true) return;
+    await (_connectCompleter?.future ?? Future<void>.value())
+        .timeout(const Duration(seconds: 5));
   }
 
   Future<T> emitAck<T>(String event, [Object? payload]) async {
