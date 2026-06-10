@@ -5,6 +5,7 @@ import '../../../core/api/query_keys.dart';
 import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
+import '../../../core/widgets/app_fixed_header_scroll_view.dart';
 import '../../../core/widgets/app_pagination.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
@@ -89,138 +90,120 @@ class _EditableTextCollectionPageState
           loading: const PageSkeleton(cards: 3),
           builder: (context, result, refetch) {
             final items = result.items;
-            return RefreshIndicator(
+            return AppFixedHeaderScrollView(
               onRefresh: () async {
                 await refetch();
               },
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
-                children: [
-                  Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1200),
-                      child: AppPageHeader(
-                        title: widget.title,
-                        subtitle: canWrite
-                            ? 'Escreva e edite os textos desta página.'
-                            : 'Textos publicados para a família.',
-                        icon: Icons.edit_note_outlined,
-                        actionLabel: canWrite ? 'Escrever' : null,
-                        actionIcon: Icons.edit_outlined,
-                        onAction: canWrite ? () => _openEditor() : null,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1200),
-                      child: items.isEmpty
-                          ? LovePanel(
-                              child: Text(
-                                canWrite
-                                    ? 'Nenhum texto escrito ainda.'
-                                    : 'Ainda não há textos publicados.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: palette.muted),
-                              ),
-                            )
-                          : LayoutBuilder(
-                              builder: (context, constraints) {
-                                final columns =
-                                    constraints.maxWidth >= 860 ? 2 : 1;
-                                return Column(
-                                  children: [
-                                    GridView.builder(
-                                      shrinkWrap: true,
-                                      physics:
-                                          const NeverScrollableScrollPhysics(),
-                                      itemCount: items.length,
-                                      gridDelegate:
-                                          SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: columns,
-                                        mainAxisExtent:
-                                            columns == 1 ? 250 : 240,
-                                        crossAxisSpacing: 24,
-                                        mainAxisSpacing: 24,
-                                      ),
-                                      itemBuilder: (context, index) {
-                                        final item = items[index];
-                                        return InkWell(
-                                          onTap: () => _openReader(item),
-                                          onLongPress: canWrite
-                                              ? () => _openEditor(item)
-                                              : null,
-                                          child: Stack(
-                                            children: [
-                                              Positioned.fill(
-                                                child: LoveTextCard(
-                                                  title: item.title,
-                                                  body: item.subtitle,
-                                                  footer: item.data['data']
-                                                          ?.toString()
-                                                          .split('T')
-                                                          .first ??
-                                                      '',
-                                                ),
-                                              ),
-                                              if (canWrite)
-                                                Positioned(
-                                                  right: 8,
-                                                  top: 8,
-                                                  child: Row(
-                                                    children: [
-                                                      IconButton(
-                                                        onPressed: () =>
-                                                            _openEditor(item),
-                                                        icon: const Icon(Icons
-                                                            .edit_outlined),
-                                                      ),
-                                                      IconButton(
-                                                        onPressed: () =>
-                                                            _delete(item),
-                                                        icon: const Icon(Icons
-                                                            .delete_outline),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                    if (result.pages > 1) ...[
-                                      const SizedBox(height: 16),
-                                      AppPagination(
-                                        page: result.page,
-                                        pages: result.pages,
-                                        total: result.total,
-                                        onPrevious: result.hasPrevious
-                                            ? () {
-                                                setState(() {
-                                                  page -= 1;
-                                                });
-                                              }
-                                            : null,
-                                        onNext: result.hasNext
-                                            ? () {
-                                                setState(() {
-                                                  page += 1;
-                                                });
-                                              }
-                                            : null,
-                                      ),
-                                    ],
-                                  ],
-                                );
-                              },
-                            ),
-                    ),
-                  ),
-                ],
+              header: AppPageHeader(
+                title: widget.title,
+                subtitle: canWrite
+                    ? 'Escreva e edite os textos desta página.'
+                    : 'Textos publicados para a família.',
+                icon: Icons.edit_note_outlined,
+                actionLabel: canWrite ? 'Escrever' : null,
+                actionIcon: Icons.edit_outlined,
+                onAction: canWrite ? () => _openEditor() : null,
               ),
+              children: [
+                items.isEmpty
+                    ? LovePanel(
+                        child: Text(
+                          canWrite
+                              ? 'Nenhum texto escrito ainda.'
+                              : 'Ainda não há textos publicados.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: palette.muted),
+                        ),
+                      )
+                    : LayoutBuilder(
+                        builder: (context, constraints) {
+                          final columns = constraints.maxWidth >= 860 ? 2 : 1;
+                          return Column(
+                            children: [
+                              GridView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: items.length,
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: columns,
+                                  mainAxisExtent: columns == 1 ? 250 : 240,
+                                  crossAxisSpacing: 24,
+                                  mainAxisSpacing: 24,
+                                ),
+                                itemBuilder: (context, index) {
+                                  final item = items[index];
+                                  return InkWell(
+                                    onTap: () => _openReader(item),
+                                    onLongPress: canWrite
+                                        ? () => _openEditor(item)
+                                        : null,
+                                    child: Stack(
+                                      children: [
+                                        Positioned.fill(
+                                          child: LoveTextCard(
+                                            title: item.title,
+                                            body: item.subtitle,
+                                            footer: item.data['data']
+                                                    ?.toString()
+                                                    .split('T')
+                                                    .first ??
+                                                '',
+                                          ),
+                                        ),
+                                        if (canWrite)
+                                          Positioned(
+                                            right: 8,
+                                            top: 8,
+                                            child: Row(
+                                              children: [
+                                                IconButton(
+                                                  onPressed: () =>
+                                                      _openEditor(item),
+                                                  icon: const Icon(
+                                                      Icons.edit_outlined),
+                                                ),
+                                                IconButton(
+                                                  onPressed: () =>
+                                                      _delete(item),
+                                                  icon: const Icon(
+                                                      Icons.delete_outline),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                              if (result.pages > 1) ...[
+                                const SizedBox(height: 16),
+                                AppPagination(
+                                  page: result.page,
+                                  pages: result.pages,
+                                  total: result.total,
+                                  onPrevious: result.hasPrevious
+                                      ? () {
+                                          setState(() {
+                                            page -= 1;
+                                          });
+                                        }
+                                      : null,
+                                  onNext: result.hasNext
+                                      ? () {
+                                          setState(() {
+                                            page += 1;
+                                          });
+                                        }
+                                      : null,
+                                ),
+                              ],
+                            ],
+                          );
+                        },
+                      ),
+              ],
             );
           },
         ),

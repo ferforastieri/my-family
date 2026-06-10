@@ -10,6 +10,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_fixed_header_scroll_view.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
 import '../../../core/widgets/love_action_card.dart';
@@ -31,52 +32,35 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = auth.user;
     return LoveBackground(
-      child: RefreshIndicator(
+      child: AppFixedHeaderScrollView(
         onRefresh: auth.refreshMe,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
-          children: [
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1200),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const AppPageHeader(
-                      title: 'Perfil',
-                      subtitle: 'Conta, avatar e opções do app.',
-                      icon: Icons.person_outline,
-                    ),
-                    const SizedBox(height: 14),
-                    user == null
-                        ? _GuestProfileCard(
-                            onLogin: () => showAppSheet<void>(
-                              context: context,
-                              builder: (_) =>
-                                  AuthSheet(auth: auth, toast: toast),
-                            ),
-                          )
-                        : _SignedProfileCard(
-                            auth: auth,
-                            toast: toast,
-                            onEditProfile: () => showAppSheet<void>(
-                              context: context,
-                              builder: (_) =>
-                                  EditProfileSheet(auth: auth, toast: toast),
-                            ),
-                            onAdmin: () => context.openAppRoute('/admin'),
-                            onSignOut: () async {
-                              await auth.signOut();
-                              if (context.mounted) context.go('/');
-                            },
-                          ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+        header: const AppPageHeader(
+          title: 'Perfil',
+          subtitle: 'Conta, avatar e opções do app.',
+          icon: Icons.person_outline,
         ),
+        children: [
+          user == null
+              ? _GuestProfileCard(
+                  onLogin: () => showAppSheet<void>(
+                    context: context,
+                    builder: (_) => AuthSheet(auth: auth, toast: toast),
+                  ),
+                )
+              : _SignedProfileCard(
+                  auth: auth,
+                  toast: toast,
+                  onEditProfile: () => showAppSheet<void>(
+                    context: context,
+                    builder: (_) => EditProfileSheet(auth: auth, toast: toast),
+                  ),
+                  onAdmin: () => context.openAppRoute('/admin'),
+                  onSignOut: () async {
+                    await auth.signOut();
+                    if (context.mounted) context.go('/');
+                  },
+                ),
+        ],
       ),
     );
   }

@@ -6,6 +6,7 @@ import '../../../core/api/query_keys.dart';
 import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
+import '../../../core/widgets/app_fixed_header_scroll_view.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
 import '../../../core/widgets/love_action_card.dart';
@@ -78,66 +79,51 @@ class _LocationPageState extends State<LocationPage> {
           colors: [palette.bgStart, palette.bgEnd],
         ),
       ),
-      child: RefreshIndicator(
+      child: AppFixedHeaderScrollView(
         onRefresh: () async => _invalidateAll(),
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(18, 18, 18, 112),
-          children: [
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1200),
-                child: const AppPageHeader(
-                  title: 'Localização',
-                  subtitle: 'Onde a família está agora e como anda a bateria.',
-                  icon: Icons.location_on_outlined,
-                ),
-              ),
-            ),
-            const SizedBox(height: 18),
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1200),
-                child: AppQuery<List<LocationPlace>>(
-                  queryKey: QueryKeys.locationPlaces,
-                  queryFn: widget.repository.listLocationPlaces,
-                  loading: const _LocationLoadingSkeleton(),
-                  builder: (context, places, _) =>
-                      AppQuery<List<LocationSnapshot>>(
-                    queryKey: QueryKeys.locations,
-                    queryFn: widget.repository.listLocations,
-                    loading: const _LocationLoadingSkeleton(),
-                    builder: (context, locations, refetch) {
-                      assert(() {
-                        debugPrint(
-                          '[LocationPage] loaded places=${places.length} '
-                          'locations=${locations.length}',
-                        );
-                        return true;
-                      }());
-                      return Column(
-                        children: [
-                          _LocationMapPanel(
-                            locations: locations,
-                            places: places,
-                            onCenterChanged: (center) => mapCenter = center,
-                            onCreatePlace: () => _openPlaceSheet(locations),
-                            onEditPlace: (place) => _openPlaceSheet(
-                              locations,
-                              place: place,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          _LocationList(locations: locations),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
-          ],
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 112),
+        header: const AppPageHeader(
+          title: 'Localização',
+          subtitle: 'Onde a família está agora e como anda a bateria.',
+          icon: Icons.location_on_outlined,
         ),
+        children: [
+          AppQuery<List<LocationPlace>>(
+            queryKey: QueryKeys.locationPlaces,
+            queryFn: widget.repository.listLocationPlaces,
+            loading: const _LocationLoadingSkeleton(),
+            builder: (context, places, _) => AppQuery<List<LocationSnapshot>>(
+              queryKey: QueryKeys.locations,
+              queryFn: widget.repository.listLocations,
+              loading: const _LocationLoadingSkeleton(),
+              builder: (context, locations, refetch) {
+                assert(() {
+                  debugPrint(
+                    '[LocationPage] loaded places=${places.length} '
+                    'locations=${locations.length}',
+                  );
+                  return true;
+                }());
+                return Column(
+                  children: [
+                    _LocationMapPanel(
+                      locations: locations,
+                      places: places,
+                      onCenterChanged: (center) => mapCenter = center,
+                      onCreatePlace: () => _openPlaceSheet(locations),
+                      onEditPlace: (place) => _openPlaceSheet(
+                        locations,
+                        place: place,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _LocationList(locations: locations),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

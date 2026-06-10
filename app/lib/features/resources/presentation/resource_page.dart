@@ -8,6 +8,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_fixed_header_scroll_view.dart';
 import '../../../core/widgets/app_pagination.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
@@ -110,84 +111,68 @@ class _ResourcePageState extends State<ResourcePage> {
             loading: const PageSkeleton(),
             builder: (context, result, refetch) {
               final items = result.items;
-              return RefreshIndicator(
+              return AppFixedHeaderScrollView(
                 onRefresh: () async {
                   setState(() => page = 1);
                   await refetch();
                   widget.toast
                       .info('Atualizando ${widget.title.toLowerCase()}...');
                 },
-                child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
-                  children: [
-                    Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1200),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _ResourceHero(
-                              resource: widget.resource,
-                              title: _titleFor(widget.resource, widget.title),
-                              subtitle: _subtitleFor(widget.resource),
-                              actionLabel: _actionLabelFor(widget.resource),
-                              onPressed: () => _openCreate(context),
-                            ),
-                            if (widget.resource != 'fotos' &&
-                                widget.resource != 'musicas' &&
-                                widget.resource != 'cartas') ...[
-                              const SizedBox(height: 14),
-                              _ResourceMetrics(
-                                resource: widget.resource,
-                                total: result.total,
-                                visible: items.length,
-                                albums: albums.length,
-                              ),
-                            ],
-                            if (widget.resource == 'fotos') ...[
-                              const SizedBox(height: 14),
-                              _AlbumFilter(
-                                albums: albums,
-                                selectedAlbum: selectedAlbum,
-                                onSelected: _selectAlbum,
-                              ),
-                            ],
-                            const SizedBox(height: 16),
-                            items.isEmpty
-                                ? _EmptyResourceState(
-                                    title: selectedAlbum == null
-                                        ? '${widget.title} ainda está vazio.'
-                                        : 'Nenhuma memória nesse álbum.',
-                                    actionLabel:
-                                        _actionLabelFor(widget.resource),
-                                    onPressed: () => _openCreate(context),
-                                  )
-                                : _ResourceGrid(
-                                    resource: widget.resource,
-                                    items: items,
-                                    onEdit: _openEdit,
-                                    onDelete: _deleteItem,
-                                    onView: _openPhotoViewer,
-                                  ),
-                            const SizedBox(height: 12),
-                            AppPagination(
-                              page: result.page,
-                              pages: result.pages,
-                              total: result.total,
-                              onPrevious: result.hasPrevious
-                                  ? () => _reload(nextPage: result.page - 1)
-                                  : null,
-                              onNext: result.hasNext
-                                  ? () => _reload(nextPage: result.page + 1)
-                                  : null,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                header: _ResourceHero(
+                  resource: widget.resource,
+                  title: _titleFor(widget.resource, widget.title),
+                  subtitle: _subtitleFor(widget.resource),
+                  actionLabel: _actionLabelFor(widget.resource),
+                  onPressed: () => _openCreate(context),
                 ),
+                children: [
+                  if (widget.resource != 'fotos' &&
+                      widget.resource != 'musicas' &&
+                      widget.resource != 'cartas') ...[
+                    _ResourceMetrics(
+                      resource: widget.resource,
+                      total: result.total,
+                      visible: items.length,
+                      albums: albums.length,
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+                  if (widget.resource == 'fotos') ...[
+                    _AlbumFilter(
+                      albums: albums,
+                      selectedAlbum: selectedAlbum,
+                      onSelected: _selectAlbum,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  items.isEmpty
+                      ? _EmptyResourceState(
+                          title: selectedAlbum == null
+                              ? '${widget.title} ainda está vazio.'
+                              : 'Nenhuma memória nesse álbum.',
+                          actionLabel: _actionLabelFor(widget.resource),
+                          onPressed: () => _openCreate(context),
+                        )
+                      : _ResourceGrid(
+                          resource: widget.resource,
+                          items: items,
+                          onEdit: _openEdit,
+                          onDelete: _deleteItem,
+                          onView: _openPhotoViewer,
+                        ),
+                  const SizedBox(height: 12),
+                  AppPagination(
+                    page: result.page,
+                    pages: result.pages,
+                    total: result.total,
+                    onPrevious: result.hasPrevious
+                        ? () => _reload(nextPage: result.page - 1)
+                        : null,
+                    onNext: result.hasNext
+                        ? () => _reload(nextPage: result.page + 1)
+                        : null,
+                  ),
+                ],
               );
             },
           ),
