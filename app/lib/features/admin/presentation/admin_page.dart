@@ -345,13 +345,19 @@ class _AdminPageState extends State<AdminPage> {
       builder: (_) => _ScheduleNotificationSheet(
         notification: notification,
         onSchedule: (scheduledAt) async {
-          await widget.repository.scheduleNotification(
-            title: notification.title,
-            body: notification.body,
-            url: notification.url,
-            scheduledAt: scheduledAt,
-          );
-          widget.toast.backendSuccess(widget.repository.takeMessage());
+          try {
+            await widget.repository.scheduleNotification(
+              title: notification.title,
+              body: notification.body,
+              url: notification.url,
+              scheduledAt: scheduledAt,
+            );
+            widget.toast.backendSuccess(widget.repository.takeMessage());
+            _invalidateAdmin();
+          } catch (error) {
+            widget.toast.error(_friendlyError(error));
+            rethrow;
+          }
         },
       ),
     );
@@ -1325,40 +1331,67 @@ class _AdminTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    final panel = LovePanel(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: palette.primary.withValues(alpha: .12),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: palette.primary),
+    final actionBar = trailing ?? Wrap(spacing: 4, children: actions);
+    final panel = LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 620 && actions.length > 2;
+        final leading = Container(
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(
+            color: palette.primary.withValues(alpha: .12),
+            borderRadius: BorderRadius.circular(14),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w900)),
-                const SizedBox(height: 4),
-                Text(subtitle,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: palette.muted)),
-              ],
-            ),
+          child: Icon(icon, color: palette.primary),
+        );
+        final text = Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w900)),
+              const SizedBox(height: 4),
+              Text(subtitle,
+                  maxLines: compact ? 3 : 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: palette.muted)),
+            ],
           ),
-          const SizedBox(width: 8),
-          trailing ?? Wrap(spacing: 4, children: actions),
-        ],
-      ),
+        );
+
+        return LovePanel(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: compact
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        leading,
+                        const SizedBox(width: 14),
+                        text,
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: actionBar,
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    leading,
+                    const SizedBox(width: 14),
+                    text,
+                    const SizedBox(width: 8),
+                    actionBar,
+                  ],
+                ),
+        );
+      },
     );
     if (onTap == null) return panel;
     return Material(
@@ -1800,6 +1833,7 @@ class _ScheduleNotificationSheetState
   }
 
   Future<void> _schedule() async {
+    if (scheduledAt.isBefore(DateTime.now())) return;
     setState(() => saving = true);
     try {
       await widget.onSchedule(scheduledAt);
@@ -1855,7 +1889,9 @@ class _ScheduleNotificationSheetState
           const SizedBox(height: 18),
           AppSheetActions(
             onCancel: saving ? null : () => Navigator.pop(context),
-            onSave: saving ? null : _schedule,
+            onSave: saving || scheduledAt.isBefore(DateTime.now())
+                ? null
+                : _schedule,
             loading: saving,
             saveLabel: 'Agendar',
           ),
