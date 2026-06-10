@@ -484,43 +484,40 @@ class _MobileBottomNavigation extends StatelessWidget {
               ),
               Expanded(
                 child: Center(
-                  child: Transform.translate(
-                    offset: const Offset(0, -16),
-                    child: InkWell(
-                      onTap: () {
-                        if (user == null) {
-                          onLogin();
-                        } else if (user.canAccess('chat')) {
-                          context.openAppRoute('/chat');
-                        }
-                      },
-                      customBorder: const CircleBorder(),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        width: 72,
-                        height: 72,
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: palette.card,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: _isSelected('/chat', currentLocation)
-                                ? palette.primary
-                                : palette.border,
-                            width: 2,
+                  child: InkWell(
+                    onTap: () {
+                      if (user == null) {
+                        onLogin();
+                      } else if (user.canAccess('chat')) {
+                        context.openAppRoute('/chat');
+                      }
+                    },
+                    customBorder: const CircleBorder(),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      width: 66,
+                      height: 66,
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: palette.card,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: _isSelected('/chat', currentLocation)
+                              ? palette.primary
+                              : palette.border,
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: palette.primary.withValues(alpha: .14),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: palette.primary.withValues(alpha: .20),
-                              blurRadius: 18,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: Image.asset(
-                          'assets/brand/family-logo.png',
-                          fit: BoxFit.contain,
-                        ),
+                        ],
+                      ),
+                      child: Image.asset(
+                        'assets/brand/family-logo.png',
+                        fit: BoxFit.contain,
                       ),
                     ),
                   ),
