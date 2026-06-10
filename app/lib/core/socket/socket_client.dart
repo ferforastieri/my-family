@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
 import '../config/app_config.dart';
@@ -26,8 +25,11 @@ class SocketClient {
     return message?.isNotEmpty == true ? message : null;
   }
 
-  void connect({String? token}) {
-    if (_socket?.connected == true && _token == token) return;
+  void connect({String? token, bool force = false}) {
+    if (!force && _token == token && _socket != null) {
+      if (_socket!.connected) return;
+      if (_connectCompleter?.isCompleted == false) return;
+    }
     _token = token;
     _socket?.dispose();
     _connectCompleter = Completer<void>();
@@ -38,8 +40,13 @@ class SocketClient {
     _socket = io.io(
       _normalizeSocketIoUrl(AppConfig.socketUrl),
       io.OptionBuilder()
-          .setTransports(kIsWeb ? ['polling', 'websocket'] : ['websocket'])
+          .setTransports(['polling', 'websocket'])
           .disableAutoConnect()
+          .enableReconnection()
+          .setReconnectionAttempts(20)
+          .setReconnectionDelay(800)
+          .setReconnectionDelayMax(4000)
+          .setTimeout(10000)
           .setAuth(auth)
           .setExtraHeaders(headers)
           .build(),
@@ -70,10 +77,23 @@ class SocketClient {
   }
 
   Future<void> ensureConnected({String? token}) async {
-    connect(token: token ?? _token);
-    if (_socket?.connected == true) return;
-    await (_connectCompleter?.future ?? Future<void>.value())
-        .timeout(const Duration(seconds: 8));
+    final targetToken = token ?? _token;
+    Object? lastError;
+    for (var attempt = 0; attempt < 4; attempt++) {
+      connect(token: targetToken, force: attempt > 0);
+      if (_socket?.connected == true) return;
+      try {
+        await (_connectCompleter?.future ?? Future<void>.value())
+            .timeout(const Duration(seconds: 8));
+        if (_socket?.connected == true) return;
+      } catch (error) {
+        lastError = error;
+        await Future<void>.delayed(Duration(milliseconds: 450 * (attempt + 1)));
+      }
+    }
+    throw lastError ??
+        TimeoutException(
+            'Não foi possível conectar em ${AppConfig.socketUrl}.');
   }
 
   Future<T> emitAck<T>(String event, [Object? payload]) async {

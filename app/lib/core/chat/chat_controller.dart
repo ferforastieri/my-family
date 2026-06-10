@@ -62,7 +62,16 @@ class ChatController extends ChangeNotifier {
       if (changed) notifyListeners();
     });
     socket.on('chat.conversation.created', (_) => refreshConversations());
-    await refreshConversations(silent: true);
+    socket.on('connect', (_) {
+      if (conversations.isEmpty) {
+        refreshConversations(silent: true).catchError((_) {});
+      }
+    });
+    try {
+      await refreshConversations(silent: true);
+    } catch (_) {
+      //
+    }
   }
 
   Future<void> refreshConversations({bool silent = false}) async {

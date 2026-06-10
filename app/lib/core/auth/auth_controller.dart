@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -20,23 +21,58 @@ class AuthController extends ChangeNotifier {
   AppUser? user;
   bool loading = true;
   String? token;
+  bool _connectListenerBound = false;
   String? takeMessage() => socket.takeLastMessage();
 
   Future<void> bootstrap() async {
     token = await tokenStore.read();
-    socket.connect(token: token);
+    _bindConnectListener();
+    try {
+      await socket.ensureConnected(token: token);
+    } catch (_) {
+      loading = false;
+      notifyListeners();
+      return;
+    }
     if (token != null) {
       try {
         final response = await api.query<Map<String, dynamic>>('auth.me');
         user = AppUser.fromJson(
             Map<String, dynamic>.from(response['user'] as Map));
-      } catch (_) {
-        await tokenStore.clear();
-        token = null;
+      } catch (error) {
+        if (_looksLikeAuthError(error)) {
+          await tokenStore.clear();
+          token = null;
+        }
       }
     }
     loading = false;
     notifyListeners();
+  }
+
+  void _bindConnectListener() {
+    if (_connectListenerBound) return;
+    socket.on('connect', (_) {
+      if (!loading && token != null && user == null) {
+        unawaited(_loadCurrentUser(clearInvalidToken: true));
+      }
+    });
+    _connectListenerBound = true;
+  }
+
+  Future<void> _loadCurrentUser({required bool clearInvalidToken}) async {
+    try {
+      final response = await api.query<Map<String, dynamic>>('auth.me');
+      user =
+          AppUser.fromJson(Map<String, dynamic>.from(response['user'] as Map));
+      notifyListeners();
+    } catch (error) {
+      if (clearInvalidToken && _looksLikeAuthError(error)) {
+        await tokenStore.clear();
+        token = null;
+        notifyListeners();
+      }
+    }
   }
 
   Future<void> signIn(String email, String password) async {
@@ -143,4 +179,15 @@ class AuthController extends ChangeNotifier {
 Map<String, dynamic> _decodeJsonMap(String body) {
   return Map<String, dynamic>.from(
       const JsonDecoder().convert(body) as Map<dynamic, dynamic>);
+}
+
+bool _looksLikeAuthError(Object error) {
+  final message = error.toString().toLowerCase();
+  return message.contains('unauthorized') ||
+      message.contains('não autorizado') ||
+      message.contains('nao autorizado') ||
+      message.contains('invalid token') ||
+      message.contains('token inválido') ||
+      message.contains('token invalido') ||
+      message.contains('jwt');
 }
