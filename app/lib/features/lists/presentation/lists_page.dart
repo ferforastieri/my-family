@@ -6,6 +6,7 @@ import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_fixed_header_scroll_view.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
 import '../../../core/widgets/love_action_card.dart';
@@ -154,63 +155,44 @@ class _ListsPageState extends State<ListsPage> {
   @override
   Widget build(BuildContext context) {
     return LoveBackground(
-      child: RefreshIndicator(
+      child: AppFixedHeaderScrollView(
         onRefresh: () async => _invalidateLists(),
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
-          children: [
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1200),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const AppPageHeader(
-                      title: 'Listas',
-                      subtitle:
-                          'Compras, tarefas e qualquer combinado da família.',
-                      icon: Icons.checklist_outlined,
-                    ),
-                    const SizedBox(height: 18),
-                    AppQuery<List<FamilyList>>(
-                      queryKey: QueryKeys.familyLists,
-                      queryFn: widget.repository.listFamilyLists,
-                      loading: const _ListsPageSkeleton(),
-                      builder: (context, lists, _) {
-                        final effectiveSelectedId = selectedListId ??
-                            (lists.isNotEmpty ? lists.first.id : null);
-                        if (selectedListId == null &&
-                            effectiveSelectedId != null) {
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (mounted && selectedListId == null) {
-                              setState(
-                                  () => selectedListId = effectiveSelectedId);
-                            }
-                          });
-                        }
-                        final selected = _findList(lists, effectiveSelectedId);
-                        return _ListsLayout(
-                          lists: lists,
-                          selectedListId: effectiveSelectedId,
-                          selected: selected,
-                          repository: widget.repository,
-                          ensureLogged: _ensureLogged,
-                          onSelect: (list) =>
-                              setState(() => selectedListId = list.id),
-                          onCreate: _createList,
-                          onAdd: _addItem,
-                          onDeleteList: _deleteList,
-                          invalidateItems: _invalidateItems,
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+        header: const AppPageHeader(
+          title: 'Listas',
+          subtitle: 'Compras, tarefas e qualquer combinado da família.',
+          icon: Icons.checklist_outlined,
         ),
+        children: [
+          AppQuery<List<FamilyList>>(
+            queryKey: QueryKeys.familyLists,
+            queryFn: widget.repository.listFamilyLists,
+            loading: const _ListsPageSkeleton(),
+            builder: (context, lists, _) {
+              final effectiveSelectedId =
+                  selectedListId ?? (lists.isNotEmpty ? lists.first.id : null);
+              if (selectedListId == null && effectiveSelectedId != null) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted && selectedListId == null) {
+                    setState(() => selectedListId = effectiveSelectedId);
+                  }
+                });
+              }
+              final selected = _findList(lists, effectiveSelectedId);
+              return _ListsLayout(
+                lists: lists,
+                selectedListId: effectiveSelectedId,
+                selected: selected,
+                repository: widget.repository,
+                ensureLogged: _ensureLogged,
+                onSelect: (list) => setState(() => selectedListId = list.id),
+                onCreate: _createList,
+                onAdd: _addItem,
+                onDeleteList: _deleteList,
+                invalidateItems: _invalidateItems,
+              );
+            },
+          ),
+        ],
       ),
     );
   }

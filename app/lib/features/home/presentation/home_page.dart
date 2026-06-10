@@ -47,65 +47,100 @@ class _HomePageState extends State<HomePage> {
             ? (event) => setState(() => cursorPosition = event.localPosition)
             : null,
         onExit: kIsWeb ? (_) => setState(() => cursorPosition = null) : null,
-        child: Stack(
-          children: [
-            const Positioned.fill(
-              child: IgnorePointer(
-                child: _HomeGardenLayer(),
-              ),
-            ),
-            RefreshIndicator(
-              onRefresh: () async =>
-                  setState(() => counters = _buildCounters()),
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
-                children: [
-                  Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1200),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final wide = constraints.maxWidth >= 760;
-                          return Column(
-                            children: [
-                              const _HomeTitle(),
-                              const SizedBox(height: 14),
-                              GridView.count(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                crossAxisCount: wide ? 3 : 1,
-                                childAspectRatio: wide ? 1.58 : 2.08,
-                                crossAxisSpacing: 16,
-                                mainAxisSpacing: 14,
-                                children: counters
-                                    .map((counter) => CounterCard(counter))
-                                    .toList(),
-                              ),
-                            ],
-                          );
-                        },
+        child: LayoutBuilder(
+          builder: (context, viewport) {
+            final mobile = viewport.maxWidth < 760;
+            return Stack(
+              children: [
+                if (!mobile)
+                  const Positioned.fill(
+                    child: IgnorePointer(
+                      child: _HomeGardenLayer(),
+                    ),
+                  ),
+                RefreshIndicator(
+                  onRefresh: () async =>
+                      setState(() => counters = _buildCounters()),
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.fromLTRB(18, 10, 18, mobile ? 0 : 112),
+                    children: [
+                      Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1200),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final wide = constraints.maxWidth >= 760;
+                              return Column(
+                                children: [
+                                  const _HomeTitle(),
+                                  const SizedBox(height: 14),
+                                  GridView.count(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    crossAxisCount: wide ? 3 : 1,
+                                    childAspectRatio: wide ? 1.58 : 2.08,
+                                    crossAxisSpacing: 16,
+                                    mainAxisSpacing: 14,
+                                    children: counters
+                                        .map((counter) => CounterCard(counter))
+                                        .toList(),
+                                  ),
+                                  if (mobile) ...[
+                                    const SizedBox(height: 4),
+                                    const _MobileGardenSection(),
+                                  ],
+                                ],
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (kIsWeb && cursorPosition != null)
+                  Positioned(
+                    left: cursorPosition!.dx - 13,
+                    top: cursorPosition!.dy - 13,
+                    child: const IgnorePointer(
+                      child: SizedBox(
+                        width: 30,
+                        height: 30,
+                        child: CustomPaint(
+                          painter: _FlowerCursorPainter(),
+                        ),
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-            if (kIsWeb && cursorPosition != null)
-              Positioned(
-                left: cursorPosition!.dx - 13,
-                top: cursorPosition!.dy - 13,
-                child: const IgnorePointer(
-                  child: SizedBox(
-                    width: 30,
-                    height: 30,
-                    child: CustomPaint(
-                      painter: _FlowerCursorPainter(),
-                    ),
-                  ),
-                ),
-              ),
-          ],
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _MobileGardenSection extends StatelessWidget {
+  const _MobileGardenSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      height: 240,
+      width: double.infinity,
+      child: IgnorePointer(
+        child: OverflowBox(
+          alignment: Alignment.bottomCenter,
+          minHeight: 430,
+          maxHeight: 430,
+          child: SizedBox(
+            width: double.infinity,
+            height: 430,
+            child: FlowerGarden(compactFlowers: true),
+          ),
         ),
       ),
     );

@@ -6,6 +6,7 @@ import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_fixed_header_scroll_view.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_pagination.dart';
 import '../../../core/widgets/app_sheet.dart';
@@ -141,51 +142,43 @@ class _AdminPageState extends State<AdminPage> {
   @override
   Widget build(BuildContext context) {
     return LoveBackground(
-      child: RefreshIndicator(
+      child: AppFixedHeaderScrollView(
         onRefresh: () async => _invalidateAdmin(),
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
-          children: [
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1200),
-                child: AppQuery<_AdminData>(
-                  queryKey: QueryKeys.adminPage(
-                    usersPage: usersPage,
-                    notificationsPage: notificationsPage,
-                    questionsPage: questionsPage,
-                    wordsPage: wordsPage,
-                    statsPage: statsPage,
-                  ),
-                  queryFn: _fetchAdminData,
-                  loading: _AdminScaffold(
-                    selected: selected,
-                    onChanged: (value) => setState(() => selected = value),
-                    child: const _AdminLoadingState(),
-                  ),
-                  builder: (context, data, _) {
-                    _applyAdminData(data);
-                    return _AdminScaffold(
-                      selected: selected,
-                      onChanged: (value) => setState(() => selected = value),
-                      error: loadError,
-                      child: LovePanel(
-                        padding: EdgeInsets.zero,
-                        child: SizedBox(
-                          height: MediaQuery.sizeOf(context).width >= 860
-                              ? 720
-                              : 640,
-                          child: _sectionContent(),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
+        header: const _AdminHero(),
+        children: [
+          AppQuery<_AdminData>(
+            queryKey: QueryKeys.adminPage(
+              usersPage: usersPage,
+              notificationsPage: notificationsPage,
+              questionsPage: questionsPage,
+              wordsPage: wordsPage,
+              statsPage: statsPage,
             ),
-          ],
-        ),
+            queryFn: _fetchAdminData,
+            loading: _AdminScaffold(
+              selected: selected,
+              onChanged: (value) => setState(() => selected = value),
+              showHero: false,
+              child: const _AdminLoadingState(),
+            ),
+            builder: (context, data, _) {
+              _applyAdminData(data);
+              return _AdminScaffold(
+                selected: selected,
+                onChanged: (value) => setState(() => selected = value),
+                error: loadError,
+                showHero: false,
+                child: LovePanel(
+                  padding: EdgeInsets.zero,
+                  child: SizedBox(
+                    height: MediaQuery.sizeOf(context).width >= 860 ? 720 : 640,
+                    child: _sectionContent(),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -444,12 +437,14 @@ class _AdminScaffold extends StatelessWidget {
     required this.onChanged,
     required this.child,
     this.error,
+    this.showHero = true,
   });
 
   final _AdminSection selected;
   final ValueChanged<_AdminSection> onChanged;
   final Widget child;
   final String? error;
+  final bool showHero;
 
   @override
   Widget build(BuildContext context) {
@@ -459,12 +454,12 @@ class _AdminScaffold extends StatelessWidget {
         final main = Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const _AdminHero(),
+            if (showHero) const _AdminHero(),
             if (error != null) ...[
-              const SizedBox(height: 14),
+              if (showHero) const SizedBox(height: 14),
               _AdminErrorBanner(message: error!),
             ],
-            const SizedBox(height: 16),
+            if (showHero || error != null) const SizedBox(height: 16),
             if (!wide) ...[
               _AdminSegmentedNav(selected: selected, onChanged: onChanged),
               const SizedBox(height: 12),

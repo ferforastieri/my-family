@@ -7,6 +7,7 @@ import '../../../core/api/query_keys.dart';
 import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
+import '../../../core/widgets/app_fixed_header_scroll_view.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/love_action_card.dart';
 import '../../../core/widgets/love_background.dart';
@@ -101,73 +102,59 @@ class _GamesHub extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    return RefreshIndicator(
+    return AppFixedHeaderScrollView(
       onRefresh: () async {},
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
-        children: [
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1200),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const _GamesHero(),
-                  const SizedBox(height: 14),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final wide = constraints.maxWidth >= 820;
-                      return GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: wide ? 2 : 1,
-                        childAspectRatio: wide ? 2.45 : 1.72,
-                        crossAxisSpacing: 14,
-                        mainAxisSpacing: 14,
-                        children: [
-                          _GameCard(
-                            icon: Icons.favorite,
-                            title: 'Quiz do Amor',
-                            body:
-                                'Perguntas dinâmicas para testar carinho, memória e pequenos detalhes da família.',
-                            color: palette.primary,
-                            accent: const Color(0xffdf5198),
-                            metric: 'Quiz',
-                            details: const [
-                              'Respostas rápidas',
-                              'Pontuação no final',
-                              'Perguntas editáveis',
-                            ],
-                            footer: 'Perguntas editáveis pelo admin',
-                            onTap: () => onOpen(_GameView.quiz),
-                          ),
-                          _GameCard(
-                            icon: Icons.grid_on,
-                            title: 'Caça Palavras',
-                            body:
-                                'Palavras familiares e românticas sorteadas a cada partida.',
-                            color: palette.primaryDark,
-                            accent: const Color(0xff9333ea),
-                            metric: '12x12',
-                            details: const [
-                              'Arraste nas letras',
-                              'Horizontal, vertical e diagonal',
-                              'Novo sorteio a cada rodada',
-                            ],
-                            footer: 'Sorteio novo a cada rodada',
-                            onTap: () => onOpen(_GameView.wordSearch),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+      header: const _GamesHero(),
+      headerGap: 14,
+      children: [
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final wide = constraints.maxWidth >= 820;
+            return GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: wide ? 2 : 1,
+              childAspectRatio: wide ? 2.45 : 1.72,
+              crossAxisSpacing: 14,
+              mainAxisSpacing: 14,
+              children: [
+                _GameCard(
+                  icon: Icons.favorite,
+                  title: 'Quiz do Amor',
+                  body:
+                      'Perguntas dinâmicas para testar carinho, memória e pequenos detalhes da família.',
+                  color: palette.primary,
+                  accent: const Color(0xffdf5198),
+                  metric: 'Quiz',
+                  details: const [
+                    'Respostas rápidas',
+                    'Pontuação no final',
+                    'Perguntas editáveis',
+                  ],
+                  footer: 'Perguntas editáveis pelo admin',
+                  onTap: () => onOpen(_GameView.quiz),
+                ),
+                _GameCard(
+                  icon: Icons.grid_on,
+                  title: 'Caça Palavras',
+                  body:
+                      'Palavras familiares e românticas sorteadas a cada partida.',
+                  color: palette.primaryDark,
+                  accent: const Color(0xff9333ea),
+                  metric: '12x12',
+                  details: const [
+                    'Arraste nas letras',
+                    'Horizontal, vertical e diagonal',
+                    'Novo sorteio a cada rodada',
+                  ],
+                  footer: 'Sorteio novo a cada rodada',
+                  onTap: () => onOpen(_GameView.wordSearch),
+                ),
+              ],
+            );
+          },
+        ),
+      ],
     );
   }
 }
@@ -385,65 +372,50 @@ class _QuizGameState extends State<_QuizGame> {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
+    return AppFixedHeaderScrollView(
       onRefresh: () async =>
           invalidateQueries(context, QueryKeys.quizQuestions()),
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
-        children: [
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1200),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _GamePlayHeader(
-                    title: 'Quiz do Amor',
-                    subtitle: 'Responda uma pergunta por vez.',
-                    icon: Icons.favorite_outline,
-                    onBack: widget.onBack,
-                  ),
-                  const SizedBox(height: 14),
-                  _GamePanel(
-                    child: AppQuery<List<QuizQuestion>>(
-                      queryKey: QueryKeys.quizQuestions(),
-                      queryFn: widget.repository.listQuizQuestions,
-                      loading: const Center(child: CircularProgressIndicator()),
-                      builder: (context, questions, _) {
-                        if (questions.isEmpty) {
-                          return const _GameEmptyState(
-                              text: 'Nenhuma pergunta ativa no momento.');
-                        }
-                        if (index >= questions.length) {
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (mounted) _restart();
-                          });
-                        }
-                        return finished
-                            ? _QuizFinished(
-                                score: score,
-                                total: questions.length,
-                                onRestart: _restart,
-                              )
-                            : _QuizQuestionView(
-                                question: questions[index],
-                                index: index,
-                                total: questions.length,
-                                name: name,
-                                showName: widget.auth.user == null,
-                                onAnswer: (selected) =>
-                                    _answer(questions, selected),
-                              );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+      header: _GamePlayHeader(
+        title: 'Quiz do Amor',
+        subtitle: 'Responda uma pergunta por vez.',
+        icon: Icons.favorite_outline,
+        onBack: widget.onBack,
       ),
+      headerGap: 14,
+      children: [
+        _GamePanel(
+          child: AppQuery<List<QuizQuestion>>(
+            queryKey: QueryKeys.quizQuestions(),
+            queryFn: widget.repository.listQuizQuestions,
+            loading: const Center(child: CircularProgressIndicator()),
+            builder: (context, questions, _) {
+              if (questions.isEmpty) {
+                return const _GameEmptyState(
+                    text: 'Nenhuma pergunta ativa no momento.');
+              }
+              if (index >= questions.length) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) _restart();
+                });
+              }
+              return finished
+                  ? _QuizFinished(
+                      score: score,
+                      total: questions.length,
+                      onRestart: _restart,
+                    )
+                  : _QuizQuestionView(
+                      question: questions[index],
+                      index: index,
+                      total: questions.length,
+                      name: name,
+                      showName: widget.auth.user == null,
+                      onAnswer: (selected) => _answer(questions, selected),
+                    );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
@@ -647,58 +619,43 @@ class _WordSearchGameState extends State<_WordSearchGame> {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
+    return AppFixedHeaderScrollView(
       onRefresh: () async =>
           invalidateQueries(context, QueryKeys.wordSearchWords()),
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
-        children: [
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1200),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _GamePlayHeader(
-                    title: 'Caça Palavras',
-                    subtitle:
-                        'Arraste sobre as letras para formar cada palavra.',
-                    icon: Icons.grid_on_outlined,
-                    onBack: widget.onBack,
-                  ),
-                  const SizedBox(height: 14),
-                  _GamePanel(
-                    child: AppQuery<List<GameWord>>(
-                      queryKey: QueryKeys.wordSearchWords(),
-                      queryFn: widget.repository.listGameWords,
-                      loading: const SkeletonBox(height: 320, borderRadius: 8),
-                      builder: (context, remoteWords, _) {
-                        if (_wordsChanged(remoteWords) || words.isEmpty) {
-                          _newGame(remoteWords);
-                        }
-                        return _WordSearchContent(
-                          name: name,
-                          showName: widget.auth.user == null,
-                          puzzle: puzzle,
-                          words: words,
-                          found: found,
-                          foundCells: foundCells,
-                          selectedCells: selectedCells,
-                          onSelectionStart: _startSelection,
-                          onSelectionUpdate: _updateSelection,
-                          onSelectionEnd: _endSelection,
-                          onNewGame: () => setState(_newGame),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+      header: _GamePlayHeader(
+        title: 'Caça Palavras',
+        subtitle: 'Arraste sobre as letras para formar cada palavra.',
+        icon: Icons.grid_on_outlined,
+        onBack: widget.onBack,
       ),
+      headerGap: 14,
+      children: [
+        _GamePanel(
+          child: AppQuery<List<GameWord>>(
+            queryKey: QueryKeys.wordSearchWords(),
+            queryFn: widget.repository.listGameWords,
+            loading: const SkeletonBox(height: 320, borderRadius: 8),
+            builder: (context, remoteWords, _) {
+              if (_wordsChanged(remoteWords) || words.isEmpty) {
+                _newGame(remoteWords);
+              }
+              return _WordSearchContent(
+                name: name,
+                showName: widget.auth.user == null,
+                puzzle: puzzle,
+                words: words,
+                found: found,
+                foundCells: foundCells,
+                selectedCells: selectedCells,
+                onSelectionStart: _startSelection,
+                onSelectionUpdate: _updateSelection,
+                onSelectionEnd: _endSelection,
+                onNewGame: () => setState(_newGame),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 

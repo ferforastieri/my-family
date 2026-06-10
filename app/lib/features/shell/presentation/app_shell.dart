@@ -6,6 +6,7 @@ import '../../../core/navigation/app_navigation.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/toast/toast_controller.dart';
+import '../../../core/widgets/app_fixed_header_scroll_view.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
 import '../../../core/widgets/love_action_card.dart';
@@ -632,38 +633,27 @@ class MobileOptionsPage extends StatelessWidget {
           colors: [palette.bgStart, palette.bgEnd],
         ),
       ),
-      child: RefreshIndicator(
+      child: AppFixedHeaderScrollView(
         onRefresh: () async {},
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(18, 10, 18, 112),
-          children: [
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1200),
-                child: AppPageHeader(
-                  title: title,
-                  subtitle: 'Escolha para onde seguir.',
-                  icon: Icons.favorite_outline,
-                ),
+        header: AppPageHeader(
+          title: title,
+          subtitle: 'Escolha para onde seguir.',
+          icon: Icons.favorite_outline,
+        ),
+        headerGap: 22,
+        children: [
+          for (final item in items)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: LoveActionCard(
+                title: item.label,
+                description: item.description,
+                icon: item.icon,
+                onTap: () => context.openAppRoute(item.path),
+                maxWidth: 1200,
               ),
             ),
-            const SizedBox(height: 22),
-            for (final item in items)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Center(
-                  child: LoveActionCard(
-                    title: item.label,
-                    description: item.description,
-                    icon: item.icon,
-                    onTap: () => context.openAppRoute(item.path),
-                    maxWidth: 1200,
-                  ),
-                ),
-              ),
-          ],
-        ),
+        ],
       ),
     );
   }
