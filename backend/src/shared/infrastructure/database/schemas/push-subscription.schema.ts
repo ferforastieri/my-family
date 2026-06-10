@@ -6,7 +6,7 @@ import { HydratedDocument } from 'mongoose';
   collection: 'push_subscriptions',
 })
 export class PushSubscriptionDocument {
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true })
   fcmToken?: string;
 
   @Prop({ index: true })
@@ -25,4 +25,13 @@ export type PushSubscriptionMongoDocument =
   HydratedDocument<PushSubscriptionDocument>;
 export const PushSubscriptionSchema = SchemaFactory.createForClass(
   PushSubscriptionDocument,
+);
+
+PushSubscriptionSchema.index(
+  { fcmToken: 1 },
+  {
+    name: 'fcmToken_unique_string',
+    unique: true,
+    partialFilterExpression: { fcmToken: { $type: 'string' } },
+  },
 );

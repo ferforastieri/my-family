@@ -9,6 +9,7 @@ class SocketClient {
   io.Socket? _socket;
   String? _token;
   Completer<void>? _connectCompleter;
+  String? _lastConnectError;
   final Map<String, List<void Function(dynamic data)>> _handlers = {};
   String? _lastMessage;
 
@@ -34,6 +35,7 @@ class SocketClient {
     _token = token;
     _socket?.dispose();
     _connectCompleter = Completer<void>();
+    _lastConnectError = null;
     final auth = token == null ? <String, dynamic>{} : {'token': token};
     final headers = token == null
         ? <String, dynamic>{}
@@ -58,21 +60,18 @@ class SocketClient {
       }
     }
     _socket!.onConnect((_) {
+      _lastConnectError = null;
       if (_connectCompleter?.isCompleted == false) {
         _connectCompleter!.complete();
       }
     });
     _socket!.onConnectError((dynamic error) {
-      if (_connectCompleter?.isCompleted == false) {
-        _connectCompleter!.completeError(
-            'Erro ao conectar em ${AppConfig.socketUrl}: ${_socketErrorMessage(error)}');
-      }
+      _lastConnectError =
+          'Erro ao conectar em ${AppConfig.socketUrl}: ${_socketErrorMessage(error)}';
     });
     _socket!.onError((dynamic error) {
-      if (_connectCompleter?.isCompleted == false) {
-        _connectCompleter!.completeError(
-            'Erro no socket em ${AppConfig.socketUrl}: ${_socketErrorMessage(error)}');
-      }
+      _lastConnectError =
+          'Erro no socket em ${AppConfig.socketUrl}: ${_socketErrorMessage(error)}';
     });
     _socket!.connect();
   }
@@ -81,24 +80,22 @@ class SocketClient {
     final targetToken = token ?? _token;
     connect(token: targetToken);
     if (_socket?.connected == true) return;
-    await (_connectCompleter?.future ?? Future<void>.value())
-        .timeout(const Duration(seconds: 5));
+    await (_connectCompleter?.future ?? Future<void>.value()).timeout(
+      const Duration(seconds: 8),
+      onTimeout: () {
+        throw TimeoutException(_lastConnectError ??
+            'Tempo esgotado conectando em ${AppConfig.socketUrl}.');
+      },
+    );
   }
 
   Future<T> emitAck<T>(String event, [Object? payload]) async {
     await ensureConnected();
     final completer = Completer<T>();
-    void exceptionHandler(dynamic error) {
-      if (completer.isCompleted) return;
-      completer.completeError(_socketErrorMessage(error));
-    }
-
-    _socket!.once('exception', exceptionHandler);
     _socket!.emitWithAck(
       event,
       payload,
       ack: (dynamic data) {
-        _socket?.off('exception', exceptionHandler);
         if (data is Map && (data['status'] == 'error' || data['ok'] == false)) {
           completer.completeError(data['message'] ?? 'Erro no servidor');
           return;

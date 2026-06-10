@@ -119,7 +119,7 @@ class BackgroundLocationService : Service() {
     private fun sendLocation(config: ServiceConfig, location: Location) {
         executor.execute {
             try {
-                val endpoint = "${config.apiBaseUrl.trimEnd('/')}/api/location/update"
+                val endpoint = locationUpdateEndpoint(config.apiBaseUrl)
                 val connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
                     requestMethod = "POST"
                     connectTimeout = 10_000
@@ -147,6 +147,15 @@ class BackgroundLocationService : Service() {
             } catch (_: Exception) {
                 // The next location tick retries. Avoid killing the foreground service.
             }
+        }
+    }
+
+    private fun locationUpdateEndpoint(apiBaseUrl: String): String {
+        val baseUrl = apiBaseUrl.trim().trimEnd('/')
+        return if (baseUrl.endsWith("/api")) {
+            "$baseUrl/location/update"
+        } else {
+            "$baseUrl/api/location/update"
         }
     }
 

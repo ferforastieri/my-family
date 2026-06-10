@@ -15,13 +15,19 @@ export class ApiExceptionFilter
 {
   catch(exception: unknown, host: ArgumentsHost) {
     if (host.getType() === 'ws') {
-      const client = host.switchToWs().getClient();
-      client.emit('exception', {
+      const ack = host.getArgByIndex<unknown>(2);
+      const payload = {
         ok: false,
         message: exceptionMessage(exception),
         error: exceptionName(exception),
         timestamp: new Date().toISOString(),
-      });
+      };
+      if (typeof ack === 'function') {
+        ack(payload);
+        return;
+      }
+      const client = host.switchToWs().getClient();
+      client.emit('exception', payload);
       return;
     }
 
