@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -10,7 +11,7 @@ import '../api/socket_api_client.dart';
 import '../config/app_config.dart';
 import '../socket/socket_client.dart';
 
-class LocationController {
+class LocationController with WidgetsBindingObserver {
   LocationController(this.socket, this.auth);
 
   final SocketClient socket;
@@ -22,45 +23,74 @@ class LocationController {
   StreamSubscription<Position>? _positionSubscription;
   Timer? _timer;
   bool _started = false;
+  bool _starting = false;
   bool _authListenerBound = false;
+  bool _lifecycleListenerBound = false;
+  bool _openedBackgroundSettings = false;
 
   Future<void> bootstrap() async {
     _bindAuthListener();
+    _bindLifecycleListener();
     if (kIsWeb) {
       stop();
       return;
     }
     if (auth.user == null || socket.token == null) return;
-    if (_started) return;
-    _started = true;
-    final permission = await _ensurePermission();
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      return;
-    }
+    if (_started || _starting) return;
+    _starting = true;
+    try {
+      final permission = await _ensurePermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        _starting = false;
+        return;
+      }
 
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      await _startAndroidBackgroundService();
-      return;
-    }
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+        await _startAndroidBackgroundService();
+        _started = true;
+        _starting = false;
+        return;
+      }
 
-    unawaited(_sendCurrentPosition());
-    _timer = Timer.periodic(
-      const Duration(minutes: 5),
-      (_) => unawaited(_sendCurrentPosition()),
-    );
-    _positionSubscription = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 20,
-      ),
-    ).listen((position) => unawaited(_sendPosition(position)));
+      unawaited(_sendCurrentPosition());
+      _timer = Timer.periodic(
+        const Duration(minutes: 5),
+        (_) => unawaited(_sendCurrentPosition()),
+      );
+      _positionSubscription = Geolocator.getPositionStream(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 20,
+        ),
+      ).listen((position) => unawaited(_sendPosition(position)));
+      _started = true;
+      _starting = false;
+    } catch (_) {
+      _starting = false;
+    }
   }
 
   void _bindAuthListener() {
     if (_authListenerBound) return;
     auth.addListener(_handleAuthChanged);
     _authListenerBound = true;
+  }
+
+  void _bindLifecycleListener() {
+    if (_lifecycleListenerBound) return;
+    WidgetsBinding.instance.addObserver(this);
+    _lifecycleListenerBound = true;
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        auth.user != null &&
+        socket.token != null &&
+        !_started) {
+      unawaited(bootstrap());
+    }
   }
 
   void _handleAuthChanged() {
@@ -78,7 +108,10 @@ class LocationController {
   Future<LocationPermission> _ensurePermission() async {
     if (kIsWeb) return LocationPermission.denied;
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return LocationPermission.denied;
+    if (!serviceEnabled) {
+      await Geolocator.openLocationSettings();
+      return LocationPermission.denied;
+    }
     var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
@@ -87,6 +120,12 @@ class LocationController {
         defaultTargetPlatform == TargetPlatform.android &&
         permission == LocationPermission.whileInUse) {
       permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.whileInUse &&
+          !_openedBackgroundSettings) {
+        _openedBackgroundSettings = true;
+        await Geolocator.openAppSettings();
+        return LocationPermission.denied;
+      }
     }
     return permission;
   }
@@ -182,6 +221,7 @@ class LocationController {
     _positionSubscription = null;
     unawaited(_stopAndroidBackgroundService());
     _started = false;
+    _starting = false;
   }
 
   void dispose() {
@@ -189,6 +229,10 @@ class LocationController {
     if (_authListenerBound) {
       auth.removeListener(_handleAuthChanged);
       _authListenerBound = false;
+    }
+    if (_lifecycleListenerBound) {
+      WidgetsBinding.instance.removeObserver(this);
+      _lifecycleListenerBound = false;
     }
   }
 }
