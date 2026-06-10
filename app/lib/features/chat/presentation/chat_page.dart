@@ -186,10 +186,13 @@ class _ChatPageState extends State<ChatPage> {
                 ListTile(
                   leading: const Icon(Icons.person_outline),
                   title: Text(user.label),
-                  onTap: () {
-                    Navigator.pop(context);
-                    widget.chat.createConversation(user).catchError(
-                        (error) => widget.toast.error(error.toString()));
+                  onTap: () async {
+                    Navigator.of(context).pop();
+                    try {
+                      await widget.chat.createConversation(user);
+                    } catch (error) {
+                      widget.toast.error(error.toString());
+                    }
                   },
                 ),
             ],

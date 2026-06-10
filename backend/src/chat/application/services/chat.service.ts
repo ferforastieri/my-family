@@ -68,6 +68,10 @@ export class ChatService {
             : null;
         return {
           ...chatConversationMapper.toDto(item),
+          title:
+            item.type === 'direct'
+              ? this.chatUserLabel(participant) || item.title
+              : item.title,
           avatarPath: participant?.avatarPath ?? null,
         };
       }),
@@ -96,8 +100,15 @@ export class ChatService {
       : null;
     return {
       ...chatConversationMapper.toDto(conversation),
+      title: this.chatUserLabel(participant) || conversation.title,
       avatarPath: participant?.avatarPath ?? null,
     };
+  }
+
+  private chatUserLabel(user?: { name?: string | null; email?: string } | null) {
+    const name = user?.name?.trim();
+    if (name) return name;
+    return user?.email ?? '';
   }
 
   async listMessages(
