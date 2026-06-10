@@ -126,7 +126,12 @@ export class LocationRepository {
       maxLimit: 100,
     });
     const [result] = await this.model.aggregate([
-      { $match: { userId: { $nin: [null, ''] } } },
+      {
+        $match: {
+          userId: { $nin: [null, ''] },
+          platform: { $in: ['android', 'ios'] },
+        },
+      },
       { $sort: { createdAt: -1 } },
       {
         $group: {

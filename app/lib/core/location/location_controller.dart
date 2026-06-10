@@ -26,6 +26,10 @@ class LocationController {
 
   Future<void> bootstrap() async {
     _bindAuthListener();
+    if (kIsWeb) {
+      stop();
+      return;
+    }
     if (auth.user == null || socket.token == null) return;
     if (_started) return;
     _started = true;
@@ -60,6 +64,10 @@ class LocationController {
   }
 
   void _handleAuthChanged() {
+    if (kIsWeb) {
+      stop();
+      return;
+    }
     if (auth.user != null && socket.token != null) {
       unawaited(bootstrap());
     } else {
@@ -68,6 +76,7 @@ class LocationController {
   }
 
   Future<LocationPermission> _ensurePermission() async {
+    if (kIsWeb) return LocationPermission.denied;
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) return LocationPermission.denied;
     var permission = await Geolocator.checkPermission();
@@ -105,6 +114,7 @@ class LocationController {
   }
 
   Future<void> _sendCurrentPosition() async {
+    if (kIsWeb) return;
     if (auth.user == null || socket.token == null) return;
     try {
       final position = await Geolocator.getCurrentPosition(
@@ -119,6 +129,7 @@ class LocationController {
   }
 
   Future<void> _sendPosition(Position position) async {
+    if (kIsWeb) return;
     if (auth.user == null || socket.token == null) return;
     try {
       final batteryLevel = await _safeBatteryLevel();
