@@ -32,7 +32,6 @@ class ProfilePage extends StatelessWidget {
     final user = auth.user;
     return LoveBackground(
       child: AppFixedHeaderScrollView(
-        onRefresh: auth.refreshMe,
         header: const AppPageHeader(
           title: 'Perfil',
           subtitle: 'Conta, avatar e opções do app.',

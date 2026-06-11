@@ -111,12 +111,6 @@ class _ResourcePageState extends State<ResourcePage> {
             builder: (context, result, refetch) {
               final items = result.items;
               return AppFixedHeaderScrollView(
-                onRefresh: () async {
-                  setState(() => page = 1);
-                  await refetch();
-                  widget.toast
-                      .info('Atualizando ${widget.title.toLowerCase()}...');
-                },
                 header: _ResourceHero(
                   resource: widget.resource,
                   title: _titleFor(widget.resource, widget.title),

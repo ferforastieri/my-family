@@ -57,47 +57,42 @@ class _HomePageState extends State<HomePage> {
                       child: _HomeGardenLayer(),
                     ),
                   ),
-                RefreshIndicator(
-                  onRefresh: () async =>
-                      setState(() => counters = _buildCounters()),
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.fromLTRB(18, 10, 18, mobile ? 0 : 112),
-                    children: [
-                      Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 1200),
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
-                              final wide = constraints.maxWidth >= 760;
-                              return Column(
-                                children: [
-                                  const _HomeTitle(),
-                                  const SizedBox(height: 14),
-                                  GridView.count(
-                                    shrinkWrap: true,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    crossAxisCount: wide ? 3 : 1,
-                                    childAspectRatio: wide ? 1.58 : 2.08,
-                                    crossAxisSpacing: 16,
-                                    mainAxisSpacing: 14,
-                                    children: counters
-                                        .map((counter) => CounterCard(counter))
-                                        .toList(),
-                                  ),
-                                  if (mobile) ...[
-                                    const SizedBox(height: 4),
-                                    const _MobileGardenSection(),
-                                  ],
+                ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(18, 10, 18, mobile ? 0 : 112),
+                  children: [
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1200),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final wide = constraints.maxWidth >= 760;
+                            return Column(
+                              children: [
+                                const _HomeTitle(),
+                                const SizedBox(height: 14),
+                                GridView.count(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  crossAxisCount: wide ? 3 : 1,
+                                  childAspectRatio: wide ? 1.58 : 2.08,
+                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 14,
+                                  children: counters
+                                      .map((counter) => CounterCard(counter))
+                                      .toList(),
+                                ),
+                                if (mobile) ...[
+                                  const SizedBox(height: 4),
+                                  const _MobileGardenSection(),
                                 ],
-                              );
-                            },
-                          ),
+                              ],
+                            );
+                          },
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
                 if (kIsWeb && cursorPosition != null)
                   Positioned(

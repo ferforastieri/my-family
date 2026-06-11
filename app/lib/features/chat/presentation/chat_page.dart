@@ -203,27 +203,6 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  Future<void> _refreshChat() async {
-    try {
-      await widget.chat.refreshConversations();
-    } catch (error) {
-      widget.toast.error(error.toString());
-    }
-  }
-
-  Future<void> _refreshMessages() async {
-    try {
-      final active = widget.chat.active;
-      if (active == null) {
-        await widget.chat.refreshConversations();
-      } else {
-        await widget.chat.loadMessages(active);
-      }
-    } catch (error) {
-      widget.toast.error(error.toString());
-    }
-  }
-
   Future<void> _editMessage(ChatMessage message) async {
     final value = await showAppSheet<String>(
       context: context,
@@ -284,7 +263,6 @@ class _ChatPageState extends State<ChatPage> {
               chat: widget.chat,
               auth: widget.auth,
               onNewConversation: _openPeoplePicker,
-              onRefresh: _refreshChat,
             );
             final messages = _MessagePane(
               chat: widget.chat,
@@ -298,7 +276,6 @@ class _ChatPageState extends State<ChatPage> {
               onOpenEmojiPanel: _openEmojiPanel,
               onEditMessage: _editMessage,
               onDeleteMessage: _deleteMessage,
-              onRefresh: _refreshMessages,
               compact: !wide,
               onBack: () => _goBack(context),
               onOpenConversations: _openConversationsSheet,
@@ -363,7 +340,6 @@ class _ChatPageState extends State<ChatPage> {
             Navigator.of(sheetContext).pop();
             _openPeoplePicker();
           },
-          onRefresh: _refreshChat,
           onConversationSelected: (conversation) {
             Navigator.of(sheetContext).pop();
             widget.chat
@@ -444,14 +420,12 @@ class _ConversationList extends StatelessWidget {
     required this.chat,
     required this.auth,
     required this.onNewConversation,
-    required this.onRefresh,
     this.onConversationSelected,
   });
 
   final ChatController chat;
   final AuthController auth;
   final VoidCallback onNewConversation;
-  final Future<void> Function() onRefresh;
   final ValueChanged<ChatConversation>? onConversationSelected;
 
   @override
@@ -492,49 +466,45 @@ class _ConversationList extends StatelessWidget {
                 style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ),
         Expanded(
-          child: RefreshIndicator(
-            onRefresh: onRefresh,
-            child: chat.loading && chat.conversations.isEmpty
-                ? const _ConversationSkeleton()
-                : ListView.separated(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    itemCount: chat.conversations.length,
-                    separatorBuilder: (_, __) =>
-                        Divider(height: 1, color: palette.border),
-                    itemBuilder: (context, index) {
-                      final conversation = chat.conversations[index];
-                      final selected = chat.active?.id == conversation.id;
-                      return ListTile(
-                        selected: selected,
-                        selectedTileColor:
-                            palette.primary.withValues(alpha: .08),
-                        leading: _ConversationAvatar(
-                          conversation: conversation,
-                          size: 40,
-                        ),
-                        title: Text(conversation.type == 'global'
-                            ? 'Chat'
-                            : conversation.title),
-                        subtitle: Text(conversation.type == 'global'
-                            ? 'Todos podem conversar'
-                            : 'Conversa privada'),
-                        trailing: conversation.unreadCount > 0
-                            ? _UnreadBadge(count: conversation.unreadCount)
-                            : null,
-                        onTap: () {
-                          final handler = onConversationSelected;
-                          if (handler != null) {
-                            handler(conversation);
-                            return;
-                          }
-                          chat
-                              .loadMessages(conversation)
-                              .catchError((error) => null);
-                        },
-                      );
-                    },
-                  ),
-          ),
+          child: chat.loading && chat.conversations.isEmpty
+              ? const _ConversationSkeleton()
+              : ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  itemCount: chat.conversations.length,
+                  separatorBuilder: (_, __) =>
+                      Divider(height: 1, color: palette.border),
+                  itemBuilder: (context, index) {
+                    final conversation = chat.conversations[index];
+                    final selected = chat.active?.id == conversation.id;
+                    return ListTile(
+                      selected: selected,
+                      selectedTileColor: palette.primary.withValues(alpha: .08),
+                      leading: _ConversationAvatar(
+                        conversation: conversation,
+                        size: 40,
+                      ),
+                      title: Text(conversation.type == 'global'
+                          ? 'Chat'
+                          : conversation.title),
+                      subtitle: Text(conversation.type == 'global'
+                          ? 'Todos podem conversar'
+                          : 'Conversa privada'),
+                      trailing: conversation.unreadCount > 0
+                          ? _UnreadBadge(count: conversation.unreadCount)
+                          : null,
+                      onTap: () {
+                        final handler = onConversationSelected;
+                        if (handler != null) {
+                          handler(conversation);
+                          return;
+                        }
+                        chat
+                            .loadMessages(conversation)
+                            .catchError((error) => null);
+                      },
+                    );
+                  },
+                ),
         ),
       ],
     );
@@ -554,7 +524,6 @@ class _MessagePane extends StatelessWidget {
     required this.onOpenEmojiPanel,
     required this.onEditMessage,
     required this.onDeleteMessage,
-    required this.onRefresh,
     required this.compact,
     required this.onBack,
     required this.onOpenConversations,
@@ -571,7 +540,6 @@ class _MessagePane extends StatelessWidget {
   final VoidCallback onOpenEmojiPanel;
   final ValueChanged<ChatMessage> onEditMessage;
   final ValueChanged<ChatMessage> onDeleteMessage;
-  final Future<void> Function() onRefresh;
   final bool compact;
   final VoidCallback onBack;
   final VoidCallback onOpenConversations;
@@ -632,38 +600,35 @@ class _MessagePane extends StatelessWidget {
         ),
         Divider(height: 1, color: palette.border),
         Expanded(
-          child: RefreshIndicator(
-            onRefresh: onRefresh,
-            child: active == null
-                ? ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    children: const [
-                      SizedBox(height: 180),
-                      Center(child: Text('Nenhuma conversa disponível.')),
-                    ],
-                  )
-                : chat.loading
-                    ? const _MessagesSkeleton()
-                    : ListView.builder(
-                        controller: messagesScroll,
-                        reverse: true,
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.all(18),
-                        itemCount: chat.messages.length,
-                        itemBuilder: (context, index) {
-                          final message =
-                              chat.messages[chat.messages.length - 1 - index];
-                          return _MessageBubble(
-                            message: message,
-                            isMine: _isMine(message, auth.user),
-                            currentUser: auth.user,
-                            compact: compact,
-                            onEdit: () => onEditMessage(message),
-                            onDelete: () => onDeleteMessage(message),
-                          );
-                        },
-                      ),
-          ),
+          child: active == null
+              ? ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: const [
+                    SizedBox(height: 180),
+                    Center(child: Text('Nenhuma conversa disponível.')),
+                  ],
+                )
+              : chat.loading
+                  ? const _MessagesSkeleton()
+                  : ListView.builder(
+                      controller: messagesScroll,
+                      reverse: true,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(18),
+                      itemCount: chat.messages.length,
+                      itemBuilder: (context, index) {
+                        final message =
+                            chat.messages[chat.messages.length - 1 - index];
+                        return _MessageBubble(
+                          message: message,
+                          isMine: _isMine(message, auth.user),
+                          currentUser: auth.user,
+                          compact: compact,
+                          onEdit: () => onEditMessage(message),
+                          onDelete: () => onDeleteMessage(message),
+                        );
+                      },
+                    ),
         ),
         Divider(height: 1, color: palette.border),
         if (auth.user == null)

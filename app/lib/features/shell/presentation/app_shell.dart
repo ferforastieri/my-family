@@ -650,7 +650,6 @@ class MobileOptionsPage extends StatelessWidget {
         ),
       ),
       child: AppFixedHeaderScrollView(
-        onRefresh: () async {},
         header: AppPageHeader(
           title: title,
           subtitle: 'Escolha para onde seguir.',

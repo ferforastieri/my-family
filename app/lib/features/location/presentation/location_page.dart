@@ -63,11 +63,6 @@ class _LocationPageState extends State<LocationPage> {
     if (mounted) invalidateQueries(context, QueryKeys.locationPlaces);
   }
 
-  void _invalidateAll() {
-    invalidateQueries(context, QueryKeys.locations);
-    invalidateQueries(context, QueryKeys.locationPlaces);
-  }
-
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
@@ -80,7 +75,6 @@ class _LocationPageState extends State<LocationPage> {
         ),
       ),
       child: AppFixedHeaderScrollView(
-        onRefresh: () async => _invalidateAll(),
         padding: const EdgeInsets.fromLTRB(18, 18, 18, 112),
         header: const AppPageHeader(
           title: 'Localização',
