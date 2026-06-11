@@ -870,7 +870,10 @@ class _AdminToolbar extends StatelessWidget {
                 children: [
                   heading,
                   const SizedBox(height: 12),
-                  Align(alignment: Alignment.centerLeft, child: action!),
+                  Align(
+                    alignment: Alignment.center,
+                    child: SizedBox(width: double.infinity, child: action!),
+                  ),
                 ],
               );
             }
@@ -918,17 +921,46 @@ class _AdminSectionBody extends StatelessWidget {
 }
 
 class _AdminActions extends StatelessWidget {
-  const _AdminActions({required this.children});
+  const _AdminActions({
+    required this.children,
+    this.fullWidthOnCompact = false,
+  });
 
   final List<Widget> children;
+  final bool fullWidthOnCompact;
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      alignment: WrapAlignment.end,
-      children: children,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 520;
+        if (compact && fullWidthOnCompact) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var index = 0; index < children.length; index++) ...[
+                SizedBox(width: double.infinity, child: children[index]),
+                if (index != children.length - 1) const SizedBox(height: 8),
+              ],
+            ],
+          );
+        }
+        return Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          alignment: compact ? WrapAlignment.center : WrapAlignment.end,
+          children: [
+            for (final child in children)
+              if (compact)
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: 132),
+                  child: child,
+                )
+              else
+                child,
+          ],
+        );
+      },
     );
   }
 }
@@ -1103,7 +1135,7 @@ class _NotificationsAdminTab extends StatelessWidget {
   }
 }
 
-enum _GamesAdminSection { quiz, words, miniGames }
+enum _GamesAdminSection { quiz, words, memoryMatch, loveOrder, thisOrThat }
 
 class _GamesAdminTab extends StatefulWidget {
   const _GamesAdminTab({
@@ -1155,24 +1187,22 @@ class _GamesAdminTabState extends State<_GamesAdminTab> {
       children: [
         _AdminToolbar(
           title: 'Jogos',
-          subtitle: 'Configure cada jogo com perguntas, palavras e respostas.',
+          subtitle: 'Configure cada jogo separadamente.',
           action: _AdminActions(
+            fullWidthOnCompact: true,
             children: [
-              AppButton(
-                onPressed: widget.onAddQuestion,
-                label: 'Pergunta',
-                icon: Icons.add,
-              ),
-              OutlinedButton.icon(
-                onPressed: widget.onAddWord,
-                icon: const Icon(Icons.add),
-                label: const Text('Palavra'),
-              ),
-              OutlinedButton.icon(
-                onPressed: widget.onAddMiniGame,
-                icon: const Icon(Icons.add),
-                label: const Text('Mini jogo'),
-              ),
+              if (section == _GamesAdminSection.quiz)
+                AppButton(
+                  onPressed: widget.onAddQuestion,
+                  label: 'Pergunta',
+                  icon: Icons.add,
+                ),
+              if (section == _GamesAdminSection.words)
+                AppButton(
+                  onPressed: widget.onAddWord,
+                  label: 'Palavra',
+                  icon: Icons.add,
+                ),
             ],
           ),
         ),
@@ -1243,37 +1273,80 @@ class _GamesAdminTabState extends State<_GamesAdminTab> {
                           ),
                       ],
                     ),
-                  _GamesAdminSection.miniGames => _GameSection(
-                      title: 'Mini jogos',
-                      empty: 'Nenhum mini jogo cadastrado.',
-                      scrollable: true,
-                      pagination: widget.miniGamesPagination,
-                      children: [
-                        for (final miniGame in widget.miniGames)
-                          _AdminTile(
-                            icon: _miniGameAdminIcon(miniGame.type),
-                            title: miniGame.title,
-                            subtitle:
-                                '${_miniGameAdminLabel(miniGame.type)} • ${miniGame.items.length} itens • ${miniGame.active ? 'ativo' : 'inativo'}',
-                            actions: [
-                              IconButton(
-                                onPressed: () =>
-                                    widget.onEditMiniGame(miniGame),
-                                icon: const Icon(Icons.edit_outlined),
-                                tooltip: 'Editar',
-                              ),
-                              IconButton(
-                                onPressed: () =>
-                                    widget.onDeleteMiniGame(miniGame),
-                                icon: const Icon(Icons.delete_outline),
-                                tooltip: 'Remover',
-                              ),
-                            ],
-                          ),
-                      ],
+                  _GamesAdminSection.memoryMatch => _MiniGameConfigSection(
+                      title: 'Memória da Família',
+                      empty: 'Nenhuma configuração de memória cadastrada.',
+                      games: _configsByType('memory_match'),
+                      onEdit: widget.onEditMiniGame,
+                      onDelete: widget.onDeleteMiniGame,
+                    ),
+                  _GamesAdminSection.loveOrder => _MiniGameConfigSection(
+                      title: 'Linha do Amor',
+                      empty: 'Nenhuma configuração de linha cadastrada.',
+                      games: _configsByType('love_order'),
+                      onEdit: widget.onEditMiniGame,
+                      onDelete: widget.onDeleteMiniGame,
+                    ),
+                  _GamesAdminSection.thisOrThat => _MiniGameConfigSection(
+                      title: 'Isso ou Aquilo',
+                      empty: 'Nenhuma configuração de escolhas cadastrada.',
+                      games: _configsByType('this_or_that'),
+                      onEdit: widget.onEditMiniGame,
+                      onDelete: widget.onDeleteMiniGame,
                     ),
                 },
         ),
+      ],
+    );
+  }
+
+  List<MiniGameConfig> _configsByType(String type) {
+    return widget.miniGames.where((game) => game.type == type).toList();
+  }
+}
+
+class _MiniGameConfigSection extends StatelessWidget {
+  const _MiniGameConfigSection({
+    required this.title,
+    required this.empty,
+    required this.games,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final String title;
+  final String empty;
+  final List<MiniGameConfig> games;
+  final ValueChanged<MiniGameConfig> onEdit;
+  final ValueChanged<MiniGameConfig> onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GameSection(
+      title: title,
+      empty: empty,
+      scrollable: true,
+      pagination: null,
+      children: [
+        for (final miniGame in games)
+          _AdminTile(
+            icon: _miniGameAdminIcon(miniGame.type),
+            title: miniGame.title,
+            subtitle:
+                '${_miniGameAdminLabel(miniGame.type)} • ${miniGame.items.length} itens • ${miniGame.active ? 'ativo' : 'inativo'}',
+            actions: [
+              IconButton(
+                onPressed: () => onEdit(miniGame),
+                icon: const Icon(Icons.edit_outlined),
+                tooltip: 'Editar',
+              ),
+              IconButton(
+                onPressed: () => onDelete(miniGame),
+                icon: const Icon(Icons.delete_outline),
+                tooltip: 'Remover',
+              ),
+            ],
+          ),
       ],
     );
   }
@@ -1287,26 +1360,39 @@ class _GameAdminNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SegmentedButton<_GamesAdminSection>(
-      segments: const [
-        ButtonSegment(
-          value: _GamesAdminSection.quiz,
-          icon: Icon(Icons.quiz_outlined),
-          label: Text('Quiz'),
-        ),
-        ButtonSegment(
-          value: _GamesAdminSection.words,
-          icon: Icon(Icons.grid_on_outlined),
-          label: Text('Palavras'),
-        ),
-        ButtonSegment(
-          value: _GamesAdminSection.miniGames,
-          icon: Icon(Icons.extension_outlined),
-          label: Text('Mini jogos'),
-        ),
-      ],
-      selected: {selected},
-      onSelectionChanged: (values) => onChanged(values.first),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SegmentedButton<_GamesAdminSection>(
+        segments: const [
+          ButtonSegment(
+            value: _GamesAdminSection.quiz,
+            icon: Icon(Icons.quiz_outlined),
+            label: Text('Quiz do Amor'),
+          ),
+          ButtonSegment(
+            value: _GamesAdminSection.words,
+            icon: Icon(Icons.grid_on_outlined),
+            label: Text('Caça Palavras'),
+          ),
+          ButtonSegment(
+            value: _GamesAdminSection.memoryMatch,
+            icon: Icon(Icons.style_outlined),
+            label: Text('Memória da Família'),
+          ),
+          ButtonSegment(
+            value: _GamesAdminSection.loveOrder,
+            icon: Icon(Icons.timeline_outlined),
+            label: Text('Linha do Amor'),
+          ),
+          ButtonSegment(
+            value: _GamesAdminSection.thisOrThat,
+            icon: Icon(Icons.compare_arrows_outlined),
+            label: Text('Isso ou Aquilo'),
+          ),
+        ],
+        selected: {selected},
+        onSelectionChanged: (values) => onChanged(values.first),
+      ),
     );
   }
 }
@@ -2234,9 +2320,10 @@ class _MiniGameSheetState extends State<_MiniGameSheet> {
   late String type;
   late final TextEditingController title;
   late final TextEditingController instructions;
-  late final TextEditingController items;
+  late final List<List<TextEditingController>> itemFields;
   bool active = true;
   bool saving = false;
+  String? formError;
 
   @override
   void initState() {
@@ -2245,8 +2332,11 @@ class _MiniGameSheetState extends State<_MiniGameSheet> {
     type = current?.type ?? miniGameTypes.first;
     title = TextEditingController(text: current?.title ?? '');
     instructions = TextEditingController(text: current?.instructions ?? '');
-    items =
-        TextEditingController(text: (current?.items ?? const []).join('\n'));
+    itemFields = [
+      for (final item in current?.items ?? const <String>[])
+        _fieldsForItem(type, item),
+    ];
+    if (itemFields.isEmpty) itemFields.add(_emptyFields(type));
     active = current?.active ?? true;
   }
 
@@ -2254,22 +2344,108 @@ class _MiniGameSheetState extends State<_MiniGameSheet> {
   void dispose() {
     title.dispose();
     instructions.dispose();
-    items.dispose();
+    for (final fields in itemFields) {
+      for (final field in fields) {
+        field.dispose();
+      }
+    }
     super.dispose();
   }
 
+  List<TextEditingController> _fieldsForItem(String type, String item) {
+    final parts = item.split('|').map((part) => part.trim()).toList();
+    if (type == 'this_or_that') {
+      return [
+        TextEditingController(text: parts.isNotEmpty ? parts[0] : ''),
+        TextEditingController(text: parts.length > 1 ? parts[1] : ''),
+        TextEditingController(text: parts.length > 2 ? parts[2] : ''),
+      ];
+    }
+    return [TextEditingController(text: item.trim())];
+  }
+
+  List<TextEditingController> _emptyFields(String type) {
+    if (type == 'this_or_that') {
+      return [
+        TextEditingController(),
+        TextEditingController(),
+        TextEditingController(),
+      ];
+    }
+    return [TextEditingController()];
+  }
+
+  void _addItem() {
+    setState(() => itemFields.add(_emptyFields(type)));
+  }
+
+  void _removeItem(int index) {
+    if (itemFields.length == 1) {
+      for (final field in itemFields[index]) {
+        field.clear();
+      }
+      setState(() {});
+      return;
+    }
+    final removed = itemFields.removeAt(index);
+    for (final field in removed) {
+      field.dispose();
+    }
+    setState(() {});
+  }
+
+  List<String> _serializedItems() {
+    return itemFields
+        .map((fields) {
+          if (type == 'this_or_that') {
+            final values = fields.map((field) => field.text.trim()).toList();
+            if (values.length < 3 || values.any((value) => value.isEmpty)) {
+              return '';
+            }
+            return values.take(3).join('|');
+          }
+          return fields.first.text.trim();
+        })
+        .where((item) => item.isNotEmpty)
+        .toList();
+  }
+
+  String get _itemsTitle {
+    return switch (type) {
+      'memory_match' => 'Pares da memória',
+      'love_order' => 'Passos da linha',
+      'this_or_that' => 'Rodadas de escolha',
+      _ => 'Itens',
+    };
+  }
+
+  String get _itemsHelp {
+    return switch (type) {
+      'memory_match' => 'Cada item vira um par no jogo da memória.',
+      'love_order' => 'A ordem cadastrada aqui será a ordem correta do jogo.',
+      'this_or_that' =>
+        'Cada rodada tem uma pergunta e duas opções. Não existe resposta certa.',
+      _ => 'Cadastre os itens do jogo.',
+    };
+  }
+
   Future<void> _save() async {
+    final items = _serializedItems();
+    if (title.text.trim().isEmpty || items.isEmpty) {
+      setState(() {
+        formError = title.text.trim().isEmpty
+            ? 'Informe o título do jogo.'
+            : 'Cadastre pelo menos um item completo.';
+      });
+      return;
+    }
     setState(() => saving = true);
     try {
       await widget.onSave({
         'type': type,
-        'title': title.text,
+        'title': title.text.trim(),
         'instructions': instructions.text,
-        'items': items.text
-            .split('\n')
-            .map((line) => line.trim())
-            .where((line) => line.isNotEmpty)
-            .toList(),
+        'items': items,
         'active': active,
       });
       if (mounted) Navigator.pop(context);
@@ -2281,34 +2457,19 @@ class _MiniGameSheetState extends State<_MiniGameSheet> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 560,
+      width: 620,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           AppSheetHeader(
-            title:
-                widget.miniGame == null ? 'Novo mini jogo' : 'Editar mini jogo',
-            subtitle:
-                'Configure título, instrução e itens. Memória: um item por linha. Linha do Amor: ordem correta, um passo por linha. Isso ou Aquilo: Pergunta|Opção A|Opção B|Resposta correta.',
-            icon: Icons.extension_outlined,
+            title: widget.miniGame == null
+                ? 'Novo ${_miniGameAdminLabel(type)}'
+                : 'Editar ${_miniGameAdminLabel(type)}',
+            subtitle: _itemsHelp,
+            icon: _miniGameAdminIcon(type),
           ),
           const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final option in miniGameTypes)
-                ChoiceChip(
-                  selected: type == option,
-                  label: Text(_miniGameAdminLabel(option)),
-                  onSelected: widget.miniGame == null
-                      ? (_) => setState(() => type = option)
-                      : null,
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
           TextField(
             controller: title,
             decoration: const InputDecoration(labelText: 'Título'),
@@ -2322,12 +2483,23 @@ class _MiniGameSheetState extends State<_MiniGameSheet> {
             textInputAction: TextInputAction.newline,
           ),
           const SizedBox(height: 10),
-          TextField(
-            controller: items,
-            decoration: const InputDecoration(labelText: 'Itens'),
-            minLines: 5,
-            maxLines: 8,
+          _MiniGameItemsEditor(
+            title: _itemsTitle,
+            type: type,
+            fields: itemFields,
+            onAdd: _addItem,
+            onRemove: _removeItem,
           ),
+          if (formError != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              formError!,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
           const SizedBox(height: 10),
           _AdminSwitchRow(
             value: active,
@@ -2344,4 +2516,184 @@ class _MiniGameSheetState extends State<_MiniGameSheet> {
       ),
     );
   }
+}
+
+class _MiniGameItemsEditor extends StatelessWidget {
+  const _MiniGameItemsEditor({
+    required this.title,
+    required this.type,
+    required this.fields,
+    required this.onAdd,
+    required this.onRemove,
+  });
+
+  final String title;
+  final String type;
+  final List<List<TextEditingController>> fields;
+  final VoidCallback onAdd;
+  final ValueChanged<int> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: palette.bgStart.withValues(alpha: .42),
+        border: Border.all(color: palette.border),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                IconButton.filledTonal(
+                  onPressed: onAdd,
+                  icon: const Icon(Icons.add),
+                  tooltip: 'Adicionar',
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            for (var index = 0; index < fields.length; index++) ...[
+              _MiniGameItemFields(
+                type: type,
+                index: index,
+                fields: fields[index],
+                onRemove: () => onRemove(index),
+              ),
+              if (index != fields.length - 1) const SizedBox(height: 10),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniGameItemFields extends StatelessWidget {
+  const _MiniGameItemFields({
+    required this.type,
+    required this.index,
+    required this.fields,
+    required this.onRemove,
+  });
+
+  final String type;
+  final int index;
+  final List<TextEditingController> fields;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: palette.card.withValues(alpha: .70),
+        border: Border.all(color: palette.border),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '${index + 1}. ${_miniGameItemTitle(type)}',
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                ),
+                IconButton(
+                  onPressed: onRemove,
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: 'Remover',
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (type == 'this_or_that')
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final compact = constraints.maxWidth < 420;
+                  final optionA = TextField(
+                    controller: fields[1],
+                    decoration: const InputDecoration(labelText: 'Opção A'),
+                    textInputAction: TextInputAction.next,
+                  );
+                  final optionB = TextField(
+                    controller: fields[2],
+                    decoration: const InputDecoration(labelText: 'Opção B'),
+                    textInputAction: TextInputAction.next,
+                  );
+                  return Column(
+                    children: [
+                      TextField(
+                        controller: fields[0],
+                        decoration:
+                            const InputDecoration(labelText: 'Pergunta'),
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 8),
+                      if (compact)
+                        Column(
+                          children: [
+                            optionA,
+                            const SizedBox(height: 8),
+                            optionB,
+                          ],
+                        )
+                      else
+                        Row(
+                          children: [
+                            Expanded(child: optionA),
+                            const SizedBox(width: 8),
+                            Expanded(child: optionB),
+                          ],
+                        ),
+                    ],
+                  );
+                },
+              )
+            else
+              TextField(
+                controller: fields.first,
+                decoration:
+                    InputDecoration(labelText: _miniGameItemLabel(type)),
+                textInputAction: TextInputAction.next,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _miniGameItemTitle(String type) {
+  return switch (type) {
+    'memory_match' => 'Par',
+    'love_order' => 'Passo',
+    'this_or_that' => 'Rodada',
+    _ => 'Item',
+  };
+}
+
+String _miniGameItemLabel(String type) {
+  return switch (type) {
+    'memory_match' => 'Texto do par',
+    'love_order' => 'Momento da história',
+    _ => 'Item',
+  };
 }

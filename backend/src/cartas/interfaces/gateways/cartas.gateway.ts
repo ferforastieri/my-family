@@ -35,8 +35,8 @@ export class CartasGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: CartaWriteDto,
   ) {
-    await this.session.requireAccess(client, 'cartas');
-    const row = await this.cartas.create('letter', data);
+    const user = await this.session.requireAccess(client, 'cartas');
+    const row = await this.cartas.create('letter', data, user);
     this.server.emit('cartas.created', row);
     return { message: 'Texto salvo.', ...row };
   }
@@ -77,8 +77,8 @@ export class CartasGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: CartaWriteDto,
   ) {
-    await this.session.requireAccess(client, 'nossaHistoria');
-    const row = await this.cartas.create('journey', data);
+    const user = await this.session.requireAccess(client, 'nossaHistoria');
+    const row = await this.cartas.create('journey', data, user);
     this.server.emit('journey.created', row);
     return { message: 'Capítulo salvo.', ...row };
   }

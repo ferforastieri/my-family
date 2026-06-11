@@ -16,6 +16,7 @@ export type MediaJob = {
 };
 
 export type LowBatteryJob = {
+  userId?: string | null;
   name: string;
   batteryLevel: number;
 };

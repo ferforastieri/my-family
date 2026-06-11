@@ -189,25 +189,9 @@ class _LocationMapPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              _LocationPanelTitle(
-                title: 'Mapa',
-                description: locations.isEmpty
-                    ? 'Aguardando localizações.'
-                    : '${locations.length} pessoas no mapa.',
-                icon: Icons.map_outlined,
-              ),
-              FilledButton.icon(
-                onPressed: onCreatePlace,
-                icon: const Icon(Icons.add_location_alt_outlined),
-                label: const Text('Novo local'),
-              ),
-            ],
+          _LocationMapHeader(
+            locationsCount: locations.length,
+            onCreatePlace: onCreatePlace,
           ),
           const SizedBox(height: 14),
           ClipRRect(
@@ -400,6 +384,55 @@ class _MapHint extends StatelessWidget {
           style: TextStyle(color: palette.muted, fontWeight: FontWeight.w700),
         ),
       ),
+    );
+  }
+}
+
+class _LocationMapHeader extends StatelessWidget {
+  const _LocationMapHeader({
+    required this.locationsCount,
+    required this.onCreatePlace,
+  });
+
+  final int locationsCount;
+  final VoidCallback onCreatePlace;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = _LocationPanelTitle(
+      title: 'Mapa',
+      description: locationsCount == 0
+          ? 'Aguardando localizações.'
+          : '$locationsCount pessoas no mapa.',
+      icon: Icons.map_outlined,
+    );
+    final action = FilledButton.icon(
+      onPressed: onCreatePlace,
+      icon: const Icon(Icons.add_location_alt_outlined),
+      label: const Text('Novo local'),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 560;
+        if (!compact) {
+          return Row(
+            children: [
+              Expanded(child: title),
+              const SizedBox(width: 16),
+              action,
+            ],
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            title,
+            const SizedBox(height: 12),
+            SizedBox(width: double.infinity, child: action),
+          ],
+        );
+      },
     );
   }
 }

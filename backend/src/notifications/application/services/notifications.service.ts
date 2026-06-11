@@ -8,7 +8,7 @@ import type { PaginationQuery } from '@shared/infrastructure/database/mongo.util
 import {
   FcmSubscriptionDto,
   NotificationCreateDto,
-  NotificationSendDto,
+  type NotificationType,
 } from '../../interfaces/dto/notification.dto';
 import { notificationFactory } from '../factories/notification.factory';
 import { notificationMapper } from '../mappers/notification.mapper';
@@ -23,6 +23,11 @@ export type ChatPush = {
   recipientUserIds: string[];
   text?: string | null;
   mediaType?: 'image' | 'video' | 'sticker' | null;
+};
+
+export type NotificationSendOptions = {
+  type?: NotificationType;
+  excludeUserIds?: string[];
 };
 
 @Injectable()
@@ -134,19 +139,27 @@ export class NotificationsService {
     title: string,
     body?: string,
     url?: string,
+    options: NotificationSendOptions = {},
   ): Promise<{ sent: number }> {
-    const dto: NotificationSendDto = { title, body, url };
-    const row = await this.repository.upsertByContent(
-      notificationFactory.createPush(dto),
-    );
+    const row = await this.repository.upsertByContent({
+      title,
+      body: body ?? '',
+      url: url ?? '/',
+      icon: '/favicon-192.png',
+      type: options.type ?? 'push',
+    });
+    for (const userId of options.excludeUserIds ?? []) {
+      await this.repository.markRead(row.id, userId);
+    }
     this.realtime.emitNotificationUpdated(notificationMapper.toDto(row));
-    return this.sendNow(title, body, url);
+    return this.sendNow(title, body, url, options);
   }
 
   async sendNow(
     title: string,
     body?: string,
     url?: string,
+    options: NotificationSendOptions = {},
   ): Promise<{ sent: number }> {
     if (!this.fcmEnabled) {
       this.logger.warn(
@@ -155,7 +168,10 @@ export class NotificationsService {
       return { sent: 0 };
     }
 
-    const subs = await this.repository.listSubscriptions();
+    const excluded = new Set(options.excludeUserIds ?? []);
+    const subs = (await this.repository.listSubscriptions()).filter(
+      (sub) => !sub.userId || !excluded.has(sub.userId),
+    );
     let sent = 0;
     for (const sub of subs) {
       if (!sub.fcmToken) continue;
