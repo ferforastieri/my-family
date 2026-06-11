@@ -476,22 +476,9 @@ class _ConversationList extends StatelessWidget {
                   itemBuilder: (context, index) {
                     final conversation = chat.conversations[index];
                     final selected = chat.active?.id == conversation.id;
-                    return ListTile(
+                    return _ConversationListItem(
+                      conversation: conversation,
                       selected: selected,
-                      selectedTileColor: palette.primary.withValues(alpha: .08),
-                      leading: _ConversationAvatar(
-                        conversation: conversation,
-                        size: 40,
-                      ),
-                      title: Text(conversation.type == 'global'
-                          ? 'Chat'
-                          : conversation.title),
-                      subtitle: Text(conversation.type == 'global'
-                          ? 'Todos podem conversar'
-                          : 'Conversa privada'),
-                      trailing: conversation.unreadCount > 0
-                          ? _UnreadBadge(count: conversation.unreadCount)
-                          : null,
                       onTap: () {
                         final handler = onConversationSelected;
                         if (handler != null) {
@@ -507,6 +494,79 @@ class _ConversationList extends StatelessWidget {
                 ),
         ),
       ],
+    );
+  }
+}
+
+class _ConversationListItem extends StatelessWidget {
+  const _ConversationListItem({
+    required this.conversation,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final ChatConversation conversation;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final title = conversation.type == 'global' ? 'Chat' : conversation.title;
+    final subtitle = conversation.type == 'global'
+        ? 'Todos podem conversar'
+        : 'Conversa privada';
+    return Material(
+      color: selected
+          ? palette.primary.withValues(alpha: .08)
+          : Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox(
+          height: 76,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                _ConversationAvatar(conversation: conversation, size: 40),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: palette.foreground,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: palette.muted,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (conversation.unreadCount > 0) ...[
+                  const SizedBox(width: 10),
+                  _UnreadBadge(count: conversation.unreadCount),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -727,7 +787,11 @@ class _UnreadBadge extends StatelessWidget {
     final palette = Theme.of(context).extension<AppPalette>()!;
     final text = count > 99 ? '99+' : count.toString();
     return Container(
-      constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+      constraints: const BoxConstraints(
+        minWidth: 24,
+        maxHeight: 24,
+        minHeight: 24,
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: palette.primary,

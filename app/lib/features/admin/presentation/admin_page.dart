@@ -502,39 +502,19 @@ class _AdminScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final wide = constraints.maxWidth >= 860;
-        final main = Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (showHero) const _AdminHero(),
-            if (error != null) ...[
-              if (showHero) const SizedBox(height: 14),
-              _AdminErrorBanner(message: error!),
-            ],
-            if (showHero || error != null) const SizedBox(height: 16),
-            if (!wide) ...[
-              _AdminSegmentedNav(selected: selected, onChanged: onChanged),
-              const SizedBox(height: 12),
-            ],
-            child,
-          ],
-        );
-
-        if (!wide) return main;
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            LovePanel(
-              padding: EdgeInsets.zero,
-              child: _AdminSideNav(selected: selected, onChanged: onChanged),
-            ),
-            const SizedBox(width: 18),
-            Expanded(child: main),
-          ],
-        );
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (showHero) const _AdminHero(),
+        if (error != null) ...[
+          if (showHero) const SizedBox(height: 14),
+          _AdminErrorBanner(message: error!),
+        ],
+        if (showHero || error != null) const SizedBox(height: 16),
+        _AdminTopNav(selected: selected, onChanged: onChanged),
+        const SizedBox(height: 14),
+        child,
+      ],
     );
   }
 }
@@ -601,6 +581,13 @@ String _roleLabel(String role) {
     'friends' => 'Amigos',
     _ => role,
   };
+}
+
+String _correctAnswerLabel(QuizQuestion question) {
+  final index = question.correctIndex;
+  if (index == null || question.options.isEmpty) return '-';
+  final safeIndex = index.clamp(0, question.options.length - 1).toInt();
+  return question.options[safeIndex];
 }
 
 String _miniGameAdminLabel(String type) {
@@ -718,62 +705,16 @@ class _AdminErrorBanner extends StatelessWidget {
   }
 }
 
-class _AdminSideNav extends StatelessWidget {
-  const _AdminSideNav({required this.selected, required this.onChanged});
+class _AdminTopNav extends StatelessWidget {
+  const _AdminTopNav({required this.selected, required this.onChanged});
 
   final _AdminSection selected;
   final ValueChanged<_AdminSection> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
-    return SizedBox(
-      width: 220,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
-            child: Text(
-              'Seções',
-              style: TextStyle(
-                color: palette.muted,
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-          for (final section in _AdminSection.values)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-              child: _AdminNavTile(
-                section: section,
-                selected: selected == section,
-                onTap: () => onChanged(section),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AdminSegmentedNav extends StatelessWidget {
-  const _AdminSegmentedNav({required this.selected, required this.onChanged});
-
-  final _AdminSection selected;
-  final ValueChanged<_AdminSection> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: palette.primary.withValues(alpha: .05),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-      ),
+    return LovePanel(
+      padding: const EdgeInsets.all(8),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -781,11 +722,10 @@ class _AdminSegmentedNav extends StatelessWidget {
             for (final section in _AdminSection.values)
               Padding(
                 padding: const EdgeInsets.only(right: 8),
-                child: ChoiceChip(
+                child: _AdminNavTile(
+                  section: section,
                   selected: selected == section,
-                  avatar: Icon(section.icon, size: 16),
-                  label: Text(section.label),
-                  onSelected: (_) => onChanged(section),
+                  onTap: () => onChanged(section),
                 ),
               ),
           ],
@@ -818,19 +758,18 @@ class _AdminNavTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(section.icon,
                   color: selected ? palette.primary : palette.muted),
               const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  section.label,
-                  style: TextStyle(
-                    color: selected ? palette.primary : palette.foreground,
-                    fontWeight: FontWeight.w900,
-                  ),
+              Text(
+                section.label,
+                style: TextStyle(
+                  color: selected ? palette.primary : palette.foreground,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
             ],
@@ -1134,7 +1073,9 @@ class _NotificationsAdminTab extends StatelessWidget {
   }
 }
 
-class _GamesAdminTab extends StatelessWidget {
+enum _GamesAdminSection { quiz, words, miniGames }
+
+class _GamesAdminTab extends StatefulWidget {
   const _GamesAdminTab({
     required this.questions,
     required this.words,
@@ -1172,98 +1113,113 @@ class _GamesAdminTab extends StatelessWidget {
   final Widget? miniGamesPagination;
 
   @override
+  State<_GamesAdminTab> createState() => _GamesAdminTabState();
+}
+
+class _GamesAdminTabState extends State<_GamesAdminTab> {
+  _GamesAdminSection section = _GamesAdminSection.quiz;
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         _AdminToolbar(
           title: 'Jogos',
-          subtitle: 'Gerencie perguntas, palavras e mini jogos.',
+          subtitle: 'Configure cada jogo com perguntas, palavras e respostas.',
           action: _AdminActions(
             children: [
               AppButton(
-                onPressed: onAddQuestion,
+                onPressed: widget.onAddQuestion,
                 label: 'Pergunta',
                 icon: Icons.add,
               ),
               OutlinedButton.icon(
-                onPressed: onAddWord,
+                onPressed: widget.onAddWord,
                 icon: const Icon(Icons.add),
                 label: const Text('Palavra'),
               ),
               OutlinedButton.icon(
-                onPressed: onAddMiniGame,
+                onPressed: widget.onAddMiniGame,
                 icon: const Icon(Icons.add),
                 label: const Text('Mini jogo'),
               ),
             ],
           ),
         ),
+        Padding(
+          padding: _adminContentPadding.copyWith(top: 0, bottom: 12),
+          child: _GameAdminNav(
+            selected: section,
+            onChanged: (value) => setState(() => section = value),
+          ),
+        ),
         Expanded(
-          child: loading
+          child: widget.loading
               ? const _AdminListSkeleton()
-              : LayoutBuilder(
-                  builder: (context, constraints) {
-                    final wide = constraints.maxWidth >= 900;
-                    final questionList = _GameSection(
+              : switch (section) {
+                  _GamesAdminSection.quiz => _GameSection(
                       title: 'Quiz do Amor',
                       empty: 'Nenhuma pergunta cadastrada.',
-                      scrollable: wide,
-                      pagination: questionsPagination,
+                      scrollable: true,
+                      pagination: widget.questionsPagination,
                       children: [
-                        for (final question in questions)
+                        for (final question in widget.questions)
                           _AdminTile(
                             icon: Icons.favorite_outline,
                             title: question.question,
                             subtitle:
-                                '${question.options.length} opções • ${question.active ? 'ativa' : 'inativa'}',
+                                '${question.options.length} opções • correta: ${_correctAnswerLabel(question)} • ${question.active ? 'ativa' : 'inativa'}',
                             actions: [
                               IconButton(
-                                onPressed: () => onEditQuestion(question),
+                                onPressed: () =>
+                                    widget.onEditQuestion(question),
                                 icon: const Icon(Icons.edit_outlined),
                                 tooltip: 'Editar',
                               ),
                               IconButton(
-                                onPressed: () => onDeleteQuestion(question),
+                                onPressed: () =>
+                                    widget.onDeleteQuestion(question),
                                 icon: const Icon(Icons.delete_outline),
                                 tooltip: 'Remover',
                               ),
                             ],
                           ),
                       ],
-                    );
-                    final wordList = _GameSection(
+                    ),
+                  _GamesAdminSection.words => _GameSection(
                       title: 'Caça Palavras',
                       empty: 'Nenhuma palavra cadastrada.',
-                      scrollable: wide,
-                      pagination: wordsPagination,
+                      scrollable: true,
+                      pagination: widget.wordsPagination,
                       children: [
-                        for (final word in words)
+                        for (final word in widget.words)
                           _AdminTile(
                             icon: Icons.grid_on_outlined,
                             title: word.word,
-                            subtitle: word.active ? 'ativa' : 'inativa',
+                            subtitle:
+                                '${word.word.length} letras • ${word.active ? 'ativa' : 'inativa'}',
                             actions: [
                               IconButton(
-                                onPressed: () => onEditWord(word),
+                                onPressed: () => widget.onEditWord(word),
                                 icon: const Icon(Icons.edit_outlined),
                                 tooltip: 'Editar',
                               ),
                               IconButton(
-                                onPressed: () => onDeleteWord(word),
+                                onPressed: () => widget.onDeleteWord(word),
                                 icon: const Icon(Icons.delete_outline),
                                 tooltip: 'Remover',
                               ),
                             ],
                           ),
                       ],
-                    );
-                    final miniGameList = _GameSection(
+                    ),
+                  _GamesAdminSection.miniGames => _GameSection(
                       title: 'Mini jogos',
                       empty: 'Nenhum mini jogo cadastrado.',
-                      scrollable: false,
-                      pagination: miniGamesPagination,
+                      scrollable: true,
+                      pagination: widget.miniGamesPagination,
                       children: [
-                        for (final miniGame in miniGames)
+                        for (final miniGame in widget.miniGames)
                           _AdminTile(
                             icon: _miniGameAdminIcon(miniGame.type),
                             title: miniGame.title,
@@ -1271,51 +1227,56 @@ class _GamesAdminTab extends StatelessWidget {
                                 '${_miniGameAdminLabel(miniGame.type)} • ${miniGame.items.length} itens • ${miniGame.active ? 'ativo' : 'inativo'}',
                             actions: [
                               IconButton(
-                                onPressed: () => onEditMiniGame(miniGame),
+                                onPressed: () =>
+                                    widget.onEditMiniGame(miniGame),
                                 icon: const Icon(Icons.edit_outlined),
                                 tooltip: 'Editar',
                               ),
                               IconButton(
-                                onPressed: () => onDeleteMiniGame(miniGame),
+                                onPressed: () =>
+                                    widget.onDeleteMiniGame(miniGame),
                                 icon: const Icon(Icons.delete_outline),
                                 tooltip: 'Remover',
                               ),
                             ],
                           ),
                       ],
-                    );
-                    if (!wide) {
-                      return ListView(
-                        padding: EdgeInsets.zero,
-                        children: [
-                          questionList,
-                          const SizedBox(height: 18),
-                          wordList,
-                          const SizedBox(height: 18),
-                          miniGameList,
-                        ],
-                      );
-                    }
-                    return Column(
-                      children: [
-                        Expanded(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(child: questionList),
-                              const SizedBox(width: 16),
-                              Expanded(child: wordList),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        miniGameList,
-                      ],
-                    );
-                  },
-                ),
+                    ),
+                },
         ),
       ],
+    );
+  }
+}
+
+class _GameAdminNav extends StatelessWidget {
+  const _GameAdminNav({required this.selected, required this.onChanged});
+
+  final _GamesAdminSection selected;
+  final ValueChanged<_GamesAdminSection> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SegmentedButton<_GamesAdminSection>(
+      segments: const [
+        ButtonSegment(
+          value: _GamesAdminSection.quiz,
+          icon: Icon(Icons.quiz_outlined),
+          label: Text('Quiz'),
+        ),
+        ButtonSegment(
+          value: _GamesAdminSection.words,
+          icon: Icon(Icons.grid_on_outlined),
+          label: Text('Palavras'),
+        ),
+        ButtonSegment(
+          value: _GamesAdminSection.miniGames,
+          icon: Icon(Icons.extension_outlined),
+          label: Text('Mini jogos'),
+        ),
+      ],
+      selected: {selected},
+      onSelectionChanged: (values) => onChanged(values.first),
     );
   }
 }
@@ -2299,7 +2260,7 @@ class _MiniGameSheetState extends State<_MiniGameSheet> {
             title:
                 widget.miniGame == null ? 'Novo mini jogo' : 'Editar mini jogo',
             subtitle:
-                'Configure título, instrução e itens. No Isso ou Aquilo use uma rodada por linha: Opção A|Opção B.',
+                'Configure título, instrução e itens. Memória: um item por linha. Linha do Amor: ordem correta, um passo por linha. Isso ou Aquilo: Pergunta|Opção A|Opção B|Resposta correta.',
             icon: Icons.extension_outlined,
           ),
           const SizedBox(height: 14),

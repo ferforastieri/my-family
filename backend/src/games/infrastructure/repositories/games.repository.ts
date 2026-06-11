@@ -176,14 +176,15 @@ export class GamesRepository {
       },
       {
         type: 'this_or_that',
-        title: 'Isso ou Aquilo',
-        instructions: 'Escolha uma opção em cada rodada e descubra seu placar.',
+        title: 'Quiz Isso ou Aquilo',
+        instructions:
+          'Escolha a resposta correta em cada rodada. Use Pergunta|Opção A|Opção B|Resposta correta.',
         items: [
-          'Shopping|Filme no sofá',
-          'Pizza|Hambúrguer',
-          'Passeio|Casa juntinhos',
-          'Doce|Salgado',
-          'Manhã|Noite',
+          'Onde nos conhecemos?|Mutual|Shopping|Mutual',
+          'Quando começamos a namorar?|12 de outubro de 2024|15 de abril de 2025|12 de outubro de 2024',
+          'Quando casamos?|15 de abril de 2025|12 de outubro de 2024|15 de abril de 2025',
+          'Qual é o nome do nosso cachorro?|Rudy|Fernando|Rudy',
+          'Qual será o nome do nosso filho?|Fernando|Rudy|Fernando',
         ],
         active: true,
       },

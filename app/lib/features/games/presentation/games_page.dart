@@ -640,6 +640,15 @@ class _WordSearchGameState extends State<_WordSearchGame> {
     });
   }
 
+  Future<void> _tapSelection(int index) async {
+    if (dragStart == null || selectedCells.length != 1) {
+      _startSelection(index);
+      return;
+    }
+    _updateSelection(index);
+    await _endSelection();
+  }
+
   Future<void> _endSelection() async {
     if (selectedCells.isEmpty) return;
     final selectedText = selectedCells
@@ -665,7 +674,7 @@ class _WordSearchGameState extends State<_WordSearchGame> {
     return AppFixedHeaderScrollView(
       header: _GamePlayHeader(
         title: 'Caça Palavras',
-        subtitle: 'Toque no início e no fim, ou arraste sobre as letras.',
+        subtitle: 'Toque na primeira letra e depois na última.',
         icon: Icons.grid_on_outlined,
         onBack: widget.onBack,
       ),
@@ -691,6 +700,7 @@ class _WordSearchGameState extends State<_WordSearchGame> {
                 onSelectionStart: _startSelection,
                 onSelectionUpdate: _updateSelection,
                 onSelectionEnd: _endSelection,
+                onSelectionTap: _tapSelection,
                 onNewGame: () => setState(_newGame),
               );
             },
@@ -725,6 +735,7 @@ class _WordSearchContent extends StatelessWidget {
     required this.onSelectionStart,
     required this.onSelectionUpdate,
     required this.onSelectionEnd,
+    required this.onSelectionTap,
     required this.onNewGame,
   });
 
@@ -738,6 +749,7 @@ class _WordSearchContent extends StatelessWidget {
   final ValueChanged<int> onSelectionStart;
   final ValueChanged<int> onSelectionUpdate;
   final Future<void> Function() onSelectionEnd;
+  final Future<void> Function(int index) onSelectionTap;
   final VoidCallback onNewGame;
 
   @override
@@ -751,6 +763,7 @@ class _WordSearchContent extends StatelessWidget {
       onSelectionStart: onSelectionStart,
       onSelectionUpdate: onSelectionUpdate,
       onSelectionEnd: onSelectionEnd,
+      onSelectionTap: onSelectionTap,
     );
     final side = _WordSearchSidePanel(
       words: words,
@@ -904,6 +917,7 @@ class _WordSearchBoard extends StatelessWidget {
     required this.onSelectionStart,
     required this.onSelectionUpdate,
     required this.onSelectionEnd,
+    required this.onSelectionTap,
   });
 
   final _WordPuzzle puzzle;
@@ -912,6 +926,7 @@ class _WordSearchBoard extends StatelessWidget {
   final ValueChanged<int> onSelectionStart;
   final ValueChanged<int> onSelectionUpdate;
   final Future<void> Function() onSelectionEnd;
+  final Future<void> Function(int index) onSelectionTap;
 
   @override
   Widget build(BuildContext context) {
@@ -949,13 +964,7 @@ class _WordSearchBoard extends StatelessWidget {
             onPanEnd: (_) => onSelectionEnd(),
             onTapDown: (details) {
               final index = indexFromOffset(details.localPosition);
-              if (index == null) return;
-              if (selectedCells.length == 1) {
-                onSelectionUpdate(index);
-                onSelectionEnd();
-                return;
-              }
-              onSelectionStart(index);
+              if (index != null) onSelectionTap(index);
             },
             behavior: HitTestBehavior.opaque,
             child: Container(
@@ -1411,7 +1420,7 @@ class _ThisOrThatGame extends StatefulWidget {
 class _ThisOrThatGameState extends State<_ThisOrThatGame> {
   final name = TextEditingController();
   int index = 0;
-  int choices = 0;
+  int score = 0;
 
   @override
   void dispose() {
@@ -1419,26 +1428,33 @@ class _ThisOrThatGameState extends State<_ThisOrThatGame> {
     super.dispose();
   }
 
-  List<List<String>> get rounds {
+  List<_ChoiceRound> get rounds {
     final raw = widget.config.items.isEmpty
         ? [
-            'Shopping|Filme no sofá',
-            'Pizza|Hambúrguer',
-            'Passeio|Casa juntinhos',
-            'Doce|Salgado',
+            'Onde gostamos de passear?|Shopping|Aeroporto|Shopping',
+            'Qual programa combina com sofá?|Filme|Reunião|Filme',
+            'Quem é nosso cachorro?|Rudy|Mutual|Rudy',
+            'Onde nos conhecemos?|Mutual|Mercado|Mutual',
           ]
         : widget.config.items;
     return raw
         .map((item) => item.split('|').map((part) => part.trim()).toList())
-        .where((parts) => parts.length >= 2 && parts[0].isNotEmpty)
-        .map((parts) => [parts[0], parts[1]])
+        .where((parts) => parts.length >= 4 && parts[0].isNotEmpty)
+        .map((parts) => _ChoiceRound(
+              prompt: parts[0],
+              options: [parts[1], parts[2]],
+              correct: parts[3],
+            ))
         .toList();
   }
 
-  Future<void> _choose() async {
+  Future<void> _choose(String option) async {
+    final current = rounds[index];
+    final correct = current.isCorrect(option);
     final next = index + 1;
+    final nextScore = score + (correct ? 1 : 0);
     setState(() {
-      choices++;
+      score = nextScore;
       index = next;
     });
     if (next >= rounds.length) {
@@ -1446,16 +1462,18 @@ class _ThisOrThatGameState extends State<_ThisOrThatGame> {
         common: widget.common,
         game: widget.config.type,
         name: name.text,
-        score: next,
+        score: nextScore,
         total: rounds.length,
       );
+    } else if (!correct) {
+      widget.common.toast.error('Essa não era a resposta correta.');
     }
   }
 
   void _restart() {
     setState(() {
       index = 0;
-      choices = 0;
+      score = 0;
     });
   }
 
@@ -1463,7 +1481,8 @@ class _ThisOrThatGameState extends State<_ThisOrThatGame> {
   Widget build(BuildContext context) {
     if (rounds.isEmpty) {
       return const _GameEmptyState(
-        text: 'Cadastre opções no formato "Opção A|Opção B".',
+        text:
+            'Cadastre rodadas no formato "Pergunta|Opção A|Opção B|Resposta correta".',
       );
     }
     final finished = index >= rounds.length;
@@ -1484,44 +1503,89 @@ class _ThisOrThatGameState extends State<_ThisOrThatGame> {
         const SizedBox(height: 18),
         if (finished)
           _QuizFinished(
-            score: choices,
+            score: score,
             total: rounds.length,
             onRestart: _restart,
           )
         else
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final wide = constraints.maxWidth >= 620;
-              final buttons = [
-                for (final option in current)
-                  FilledButton(
-                    onPressed: _choose,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      child: Text(option, textAlign: TextAlign.center),
-                    ),
-                  ),
-              ];
-              if (!wide) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    buttons[0],
-                    const SizedBox(height: 10),
-                    buttons[1],
-                  ],
-                );
-              }
-              return Row(
-                children: [
-                  Expanded(child: buttons[0]),
-                  const SizedBox(width: 12),
-                  Expanded(child: buttons[1]),
-                ],
-              );
-            },
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                current.prompt,
+                style:
+                    const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 14),
+              _ChoiceButtons(
+                options: current.options,
+                onChoose: _choose,
+              ),
+            ],
           ),
       ],
+    );
+  }
+}
+
+class _ChoiceRound {
+  const _ChoiceRound({
+    required this.prompt,
+    required this.options,
+    required this.correct,
+  });
+
+  final String prompt;
+  final List<String> options;
+  final String correct;
+
+  bool isCorrect(String option) {
+    final normalizedCorrect = correct.toLowerCase().trim();
+    return normalizedCorrect == option.toLowerCase().trim() ||
+        (normalizedCorrect == 'a' && option == options.first) ||
+        (normalizedCorrect == 'b' && option == options.last);
+  }
+}
+
+class _ChoiceButtons extends StatelessWidget {
+  const _ChoiceButtons({required this.options, required this.onChoose});
+
+  final List<String> options;
+  final ValueChanged<String> onChoose;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 620;
+        final buttons = [
+          for (final option in options)
+            FilledButton(
+              onPressed: () => onChoose(option),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                child: Text(option, textAlign: TextAlign.center),
+              ),
+            ),
+        ];
+        if (!wide) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              buttons[0],
+              const SizedBox(height: 10),
+              buttons[1],
+            ],
+          );
+        }
+        return Row(
+          children: [
+            Expanded(child: buttons[0]),
+            const SizedBox(width: 12),
+            Expanded(child: buttons[1]),
+          ],
+        );
+      },
     );
   }
 }
@@ -1687,7 +1751,7 @@ List<String> _randomWords(List<GameWord> gameWords) {
   return all.toSet().take(8).toList();
 }
 
-const _wordSearchSize = 12;
+const _wordSearchSize = 10;
 
 class _WordPuzzle {
   const _WordPuzzle({required this.size, required this.letters});
