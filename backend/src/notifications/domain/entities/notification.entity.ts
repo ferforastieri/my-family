@@ -4,6 +4,8 @@ export interface NotificationEntity {
   body: string;
   url: string;
   icon?: string | null;
+  type: 'manual' | 'push' | 'chat' | 'location' | 'system';
+  readBy: string[];
   createdAt: Date;
 }
 

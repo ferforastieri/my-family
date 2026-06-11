@@ -24,8 +24,12 @@ export class NotificationsGateway {
   ) {}
 
   @SubscribeMessage('notifications.list')
-  list(@MessageBody() query?: PaginationQuery) {
-    return this.notifications.list(query);
+  async list(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() query?: PaginationQuery,
+  ) {
+    const user = await this.session.requireUser(client);
+    return this.notifications.list(query, user);
   }
 
   @SubscribeMessage('notifications.create')
@@ -65,6 +69,16 @@ export class NotificationsGateway {
     await this.session.requireUser(client);
     await this.notifications.clearAll();
     return { ok: true, message: 'Notificações limpas.' };
+  }
+
+  @SubscribeMessage('notifications.read')
+  async read(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { id: string },
+  ) {
+    const user = await this.session.requireUser(client);
+    const row = await this.notifications.markRead(body.id, user);
+    return row ? { message: 'Notificação lida.', ...row } : row;
   }
 
   @SubscribeMessage('notifications.send')

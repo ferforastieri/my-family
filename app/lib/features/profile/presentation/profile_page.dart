@@ -6,7 +6,6 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/config/app_config.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_button.dart';
@@ -452,7 +451,8 @@ class _ProfileActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = destructive ? Colors.redAccent : primary;
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final color = destructive ? Colors.redAccent : palette.primary;
     return LoveActionCard(
       title: label,
       description: description,

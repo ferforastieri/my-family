@@ -18,10 +18,20 @@ export class NotificationDocument {
   @Prop()
   icon?: string;
 
+  @Prop({
+    required: true,
+    default: 'manual',
+    enum: ['manual', 'push', 'chat', 'location', 'system'],
+  })
+  type: 'manual' | 'push' | 'chat' | 'location' | 'system';
+
+  @Prop({ type: [String], default: [] })
+  readBy: string[];
+
   createdAt: Date;
 }
 
 export type NotificationMongoDocument = HydratedDocument<NotificationDocument>;
 export const NotificationSchema =
   SchemaFactory.createForClass(NotificationDocument);
-NotificationSchema.index({ title: 1, body: 1, url: 1 }, { unique: true });
+NotificationSchema.index({ title: 1, body: 1, url: 1, type: 1 }, { unique: true });

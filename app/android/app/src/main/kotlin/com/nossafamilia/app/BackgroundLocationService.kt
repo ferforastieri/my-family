@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -26,6 +27,7 @@ import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.Executors
+import kotlin.math.min
 
 class BackgroundLocationService : Service() {
     private lateinit var fusedLocation: FusedLocationProviderClient
@@ -118,35 +120,55 @@ class BackgroundLocationService : Service() {
 
     private fun sendLocation(config: ServiceConfig, location: Location) {
         executor.execute {
-            try {
-                val endpoint = locationUpdateEndpoint(config.apiBaseUrl)
-                val connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
-                    requestMethod = "POST"
-                    connectTimeout = 10_000
-                    readTimeout = 10_000
-                    doOutput = true
-                    setRequestProperty("Authorization", "Bearer ${config.token}")
-                    setRequestProperty("Content-Type", "application/json")
-                }
-                val body = JSONObject()
-                    .put("latitude", location.latitude)
-                    .put("longitude", location.longitude)
-                    .put("accuracy", location.accuracy.toDouble())
-                    .put("altitude", location.altitude)
-                    .put("speed", location.speed.toDouble())
-                    .put("heading", location.bearing.toDouble())
-                    .put("platform", "android")
-                currentBatteryLevel()?.let { body.put("batteryLevel", it) }
-                currentChargingState()?.let { body.put("isCharging", it) }
+            val endpoint = locationUpdateEndpoint(config.apiBaseUrl)
+            val body = JSONObject()
+                .put("latitude", location.latitude)
+                .put("longitude", location.longitude)
+                .put("accuracy", location.accuracy.toDouble())
+                .put("altitude", location.altitude)
+                .put("speed", location.speed.toDouble())
+                .put("heading", location.bearing.toDouble())
+                .put("platform", "android")
+            currentBatteryLevel()?.let { body.put("batteryLevel", it) }
+            currentChargingState()?.let { body.put("isCharging", it) }
 
-                OutputStreamWriter(connection.outputStream).use { writer ->
-                    writer.write(body.toString())
+            var delayMs = 1_000L
+            repeat(MAX_SEND_ATTEMPTS) { attempt ->
+                if (postLocation(endpoint, config.token, body)) return@execute
+                if (attempt < MAX_SEND_ATTEMPTS - 1) {
+                    try {
+                        Thread.sleep(delayMs)
+                    } catch (_: InterruptedException) {
+                        return@execute
+                    }
+                    delayMs = min(delayMs * 2, 8_000L)
                 }
-                connection.inputStream.use { it.readBytes() }
-                connection.disconnect()
-            } catch (_: Exception) {
-                // The next location tick retries. Avoid killing the foreground service.
             }
+        }
+    }
+
+    private fun postLocation(endpoint: String, token: String, body: JSONObject): Boolean {
+        var connection: HttpURLConnection? = null
+        return try {
+            connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                connectTimeout = 10_000
+                readTimeout = 10_000
+                doOutput = true
+                setRequestProperty("Authorization", "Bearer $token")
+                setRequestProperty("Content-Type", "application/json")
+            }
+            OutputStreamWriter(connection.outputStream).use { writer ->
+                writer.write(body.toString())
+            }
+            val ok = connection.responseCode in 200..299
+            val stream = if (ok) connection.inputStream else connection.errorStream
+            stream?.use { it.readBytes() }
+            ok
+        } catch (_: Exception) {
+            false
+        } finally {
+            connection?.disconnect()
         }
     }
 
@@ -185,7 +207,13 @@ class BackgroundLocationService : Service() {
             this,
             Manifest.permission.ACCESS_COARSE_LOCATION,
         ) == PackageManager.PERMISSION_GRANTED
-        return fine || coarse
+        val foreground = fine || coarse
+        if (!foreground) return false
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return true
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_BACKGROUND_LOCATION,
+        ) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun ensureChannel() {
@@ -203,11 +231,23 @@ class BackgroundLocationService : Service() {
     }
 
     private fun buildNotification(): Notification {
+        val openIntent = (
+            packageManager.getLaunchIntentForPackage(packageName)
+                ?: Intent(this, MainActivity::class.java)
+            ).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            openIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Localização ativa")
             .setContentText("Compartilhando sua localização com a família.")
+            .setContentIntent(pendingIntent)
             .setOngoing(true)
+            .setOnlyAlertOnce(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .build()
@@ -227,6 +267,7 @@ class BackgroundLocationService : Service() {
         private const val UPDATE_INTERVAL_MS = 60_000L
         private const val FASTEST_INTERVAL_MS = 30_000L
         private const val MIN_DISTANCE_METERS = 25f
+        private const val MAX_SEND_ATTEMPTS = 3
 
         fun saveConfig(context: Context, token: String, apiBaseUrl: String) {
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

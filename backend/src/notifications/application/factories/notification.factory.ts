@@ -2,6 +2,7 @@ import type { Factory } from '@shared/application/mapper';
 import {
   NotificationCreateDto,
   NotificationSendDto,
+  type NotificationType,
 } from '../../interfaces/dto/notification.dto';
 
 export type NotificationWrite = {
@@ -9,6 +10,7 @@ export type NotificationWrite = {
   body: string;
   url: string;
   icon?: string;
+  type?: NotificationType;
 };
 
 export class NotificationFactory implements Factory<
@@ -23,6 +25,7 @@ export class NotificationFactory implements Factory<
       body: input.body ?? '',
       url: input.url ?? '/',
       icon: 'icon' in input ? input.icon : undefined,
+      type: 'type' in input ? input.type ?? 'manual' : 'push',
     };
   }
 
@@ -30,6 +33,7 @@ export class NotificationFactory implements Factory<
     return {
       ...this.create(input),
       icon: '/favicon-192.png',
+      type: 'push',
     };
   }
 }

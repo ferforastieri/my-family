@@ -76,15 +76,27 @@ class NotificationsSheet extends StatelessWidget {
                               itemBuilder: (context, index) {
                                 final item = notifications.notifications[index];
                                 return ListTile(
-                                  leading: Icon(Icons.notifications_outlined,
-                                      color: palette.primary),
+                                  leading: Icon(
+                                    item.read
+                                        ? Icons.notifications_none_outlined
+                                        : Icons.notifications_active_outlined,
+                                    color: item.read
+                                        ? palette.muted
+                                        : palette.primary,
+                                  ),
                                   title: Text(item.title,
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.w900)),
+                                      style: TextStyle(
+                                        color: palette.foreground,
+                                        fontWeight: item.read
+                                            ? FontWeight.w700
+                                            : FontWeight.w900,
+                                      )),
                                   subtitle: item.body.isEmpty
                                       ? null
                                       : Text(item.body),
-                                  onTap: () {
+                                  onTap: () async {
+                                    await notifications.markRead(item);
+                                    if (!context.mounted) return;
                                     Navigator.pop(context);
                                     context.openAppRoute(item.url);
                                   },

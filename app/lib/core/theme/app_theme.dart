@@ -38,7 +38,7 @@ ThemeData buildAppTheme(
     cardTheme: CardThemeData(
       color: palette.card.withValues(alpha: .90),
       elevation: 3,
-      shadowColor: const Color(0x1aff69b4),
+      shadowColor: palette.primary.withValues(alpha: .10),
       margin: const EdgeInsets.symmetric(vertical: 6),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -52,6 +52,31 @@ ThemeData buildAppTheme(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     ),
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(foregroundColor: palette.foreground),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(foregroundColor: palette.primary),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: palette.card.withValues(alpha: .78),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: palette.border),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: palette.border),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: palette.primary, width: 1.4),
+      ),
+      labelStyle: TextStyle(color: palette.muted),
+      hintStyle: TextStyle(color: palette.muted),
+    ),
+    dividerTheme: DividerThemeData(color: palette.border),
   );
 }
 

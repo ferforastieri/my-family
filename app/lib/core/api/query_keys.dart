@@ -16,11 +16,14 @@ class QueryKeys {
 
   static List<Object?> wordSearchWords() => ['games', 'words', 'public'];
 
+  static List<Object?> miniGames() => ['games', 'mini', 'public'];
+
   static List<Object?> adminPage({
     required int usersPage,
     required int notificationsPage,
     required int questionsPage,
     required int wordsPage,
+    required int miniGamesPage,
     required int statsPage,
   }) =>
       [
@@ -29,6 +32,7 @@ class QueryKeys {
         notificationsPage,
         questionsPage,
         wordsPage,
+        miniGamesPage,
         statsPage,
       ];
 

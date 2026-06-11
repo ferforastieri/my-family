@@ -6,8 +6,8 @@ import { HydratedDocument } from 'mongoose';
   collection: 'game_completions',
 })
 export class GameCompletionDocument {
-  @Prop({ required: true, enum: ['quiz', 'word_search'] })
-  game: 'quiz' | 'word_search';
+  @Prop({ required: true })
+  game: string;
 
   @Prop({ required: true })
   playerName: string;

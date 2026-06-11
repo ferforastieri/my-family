@@ -15,18 +15,33 @@ import '../socket/socket_client.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  if (Firebase.apps.isEmpty) {
-    await _initializeFirebase();
-  }
+  await _initializeFirebase();
 }
 
-Future<void> _initializeFirebase() {
+Future<FirebaseApp>? _firebaseInitialization;
+
+Future<FirebaseApp> _initializeFirebase() {
+  if (Firebase.apps.isNotEmpty) return Future.value(Firebase.app());
+  final current = _firebaseInitialization;
+  if (current != null) return current;
   if (kIsWeb || AppConfig.hasFirebaseConfig) {
-    return Firebase.initializeApp(
+    _firebaseInitialization = Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
-    );
+    ).catchError((error) {
+      if (error is FirebaseException && error.code == 'duplicate-app') {
+        return Firebase.app();
+      }
+      throw error;
+    });
+    return _firebaseInitialization!;
   }
-  return Firebase.initializeApp();
+  _firebaseInitialization = Firebase.initializeApp().catchError((error) {
+    if (error is FirebaseException && error.code == 'duplicate-app') {
+      return Firebase.app();
+    }
+    throw error;
+  });
+  return _firebaseInitialization!;
 }
 
 class NotificationsController extends ChangeNotifier {
@@ -45,9 +60,11 @@ class NotificationsController extends ChangeNotifier {
   String? pushError;
   bool _bootstrapped = false;
   bool _pushListenersBound = false;
+  Future<void>? _configurePushFuture;
   String? _pendingUrl;
 
-  int get badgeCount => notifications.length;
+  int get badgeCount =>
+      notifications.where((notification) => !notification.read).length;
 
   Future<void> bootstrap() async {
     if (_bootstrapped) return;
@@ -125,7 +142,41 @@ class NotificationsController extends ChangeNotifier {
     }
   }
 
+  Future<void> markRead(AppNotification notification) async {
+    final index = notifications.indexWhere((item) => item.id == notification.id);
+    if (index >= 0 && !notifications[index].read) {
+      notifications[index] = notifications[index].copyWith(read: true);
+      notifyListeners();
+    }
+    try {
+      final row = await api.mutate<Map<String, dynamic>>(
+        'notifications.read',
+        {'id': notification.id},
+      );
+      final updated = AppNotification.fromJson(row);
+      final updatedIndex =
+          notifications.indexWhere((item) => item.id == updated.id);
+      if (updatedIndex >= 0) {
+        notifications[updatedIndex] = updated;
+        notifyListeners();
+      }
+    } catch (_) {
+      //
+    }
+  }
+
   Future<void> configurePush() async {
+    final current = _configurePushFuture;
+    if (current != null) return current;
+    _configurePushFuture = _configurePush();
+    try {
+      await _configurePushFuture;
+    } finally {
+      _configurePushFuture = null;
+    }
+  }
+
+  Future<void> _configurePush() async {
     try {
       pushError = null;
       if (!kIsWeb) {
@@ -151,6 +202,16 @@ class NotificationsController extends ChangeNotifier {
             enableVibration: true,
           ),
         );
+        await android?.createNotificationChannel(
+          const AndroidNotificationChannel(
+            'my_family_notifications',
+            'Nossa Família',
+            description: 'Notificações criadas no painel e avisos da família.',
+            importance: Importance.max,
+            playSound: true,
+            enableVibration: true,
+          ),
+        );
         await android?.requestNotificationsPermission();
 
         final launchDetails =
@@ -162,9 +223,7 @@ class NotificationsController extends ChangeNotifier {
 
       if (kIsWeb && !AppConfig.hasFirebaseConfig) return;
 
-      if (Firebase.apps.isEmpty) {
-        await _initializeFirebase();
-      }
+      await _initializeFirebase();
       FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
       await FirebaseMessaging.instance.setAutoInitEnabled(true);
@@ -187,7 +246,7 @@ class NotificationsController extends ChangeNotifier {
               id: message.messageId?.hashCode ?? notification.hashCode,
               title: notification.title,
               body: notification.body,
-              payload: message.data['url'],
+              payload: message.data['url'] ?? '/',
               notificationDetails: NotificationDetails(
                 android: AndroidNotificationDetails(
                   isChat ? 'chat_messages' : 'my_family_notifications',
@@ -272,7 +331,8 @@ class NotificationsController extends ChangeNotifier {
 
   void _openUrl(Object? rawUrl) {
     final url = rawUrl?.toString();
-    if (url == null || !url.startsWith('/')) return;
+    if (url == null || url.isEmpty) return;
+    if (!url.startsWith('/')) return;
     final context = navigatorKey.currentContext;
     if (context == null) {
       _pendingUrl = url;

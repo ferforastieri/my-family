@@ -7,6 +7,8 @@ export type NotificationMapperSource = {
   body: string;
   url: string;
   icon?: string | null;
+  type: 'manual' | 'push' | 'chat' | 'location' | 'system';
+  readBy: string[];
   createdAt: Date;
 };
 
@@ -21,6 +23,8 @@ export class NotificationMapper implements Mapper<
       body: source.body,
       url: source.url,
       icon: source.icon,
+      type: source.type,
+      read: false,
       at: new Date(source.createdAt).getTime(),
     };
   }

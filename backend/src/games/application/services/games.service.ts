@@ -3,24 +3,28 @@ import type { UserEntity } from '@auth/domain/entities/user.entity';
 import {
   GamesRepository,
   GameWordWrite,
+  MiniGameConfigWrite,
   QuizQuestionWrite,
 } from '../../infrastructure/repositories/games.repository';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 import {
   gameCompletionFactory,
   gameWordFactory,
+  miniGameConfigFactory,
   quizQuestionFactory,
 } from '../factories/game.factory';
 import {
   gameCompletionMapper,
   gameStatMapper,
   gameWordMapper,
+  miniGameConfigMapper,
   quizQuestionMapper,
 } from '../mappers/game.mapper';
 import type {
   GameCompletionWriteDto,
   GameStatResponseDto,
   GameWordWriteDto,
+  MiniGameConfigWriteDto,
   QuizQuestionWriteDto,
 } from '../../interfaces/dto/game.dto';
 
@@ -95,6 +99,42 @@ export class GamesService {
     return this.games.deleteWord(id);
   }
 
+  async miniGamesPublic(query?: PaginationQuery) {
+    const result = await this.games.listMiniGames(false, query);
+    return {
+      ...result,
+      items: result.items.map((item) => miniGameConfigMapper.toDto(item)),
+    };
+  }
+
+  async miniGamesAdmin(query?: PaginationQuery) {
+    const result = await this.games.listMiniGames(true, query);
+    return {
+      ...result,
+      items: result.items.map((item) => miniGameConfigMapper.toDto(item)),
+    };
+  }
+
+  async createMiniGame(data: MiniGameConfigWriteDto) {
+    return miniGameConfigMapper.toDto(
+      await this.games.createMiniGame(
+        this.normalizeMiniGame(data) as MiniGameConfigWrite,
+      ),
+    );
+  }
+
+  async updateMiniGame(id: string, data: Partial<MiniGameConfigWriteDto>) {
+    const row = await this.games.updateMiniGame(
+      id,
+      miniGameConfigFactory.create(data),
+    );
+    return row ? miniGameConfigMapper.toDto(row) : null;
+  }
+
+  deleteMiniGame(id: string) {
+    return this.games.deleteMiniGame(id);
+  }
+
   complete(body: GameCompletionWriteDto, user?: UserEntity | null) {
     const playerName =
       user?.name || user?.email || body.playerName?.trim() || 'Visitante';
@@ -129,6 +169,14 @@ export class GamesService {
 
   private normalizeWord(data: Partial<GameWordWriteDto>) {
     const normalized = gameWordFactory.create(data);
+    return {
+      ...normalized,
+      active: normalized.active ?? true,
+    };
+  }
+
+  private normalizeMiniGame(data: Partial<MiniGameConfigWriteDto>) {
+    const normalized = miniGameConfigFactory.create(data);
     return {
       ...normalized,
       active: normalized.active ?? true,

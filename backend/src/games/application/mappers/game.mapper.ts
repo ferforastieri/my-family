@@ -2,12 +2,14 @@ import type { Mapper } from '@shared/application/mapper';
 import type {
   GameCompletionEntity,
   GameWordEntity,
+  MiniGameConfigEntity,
   QuizQuestionEntity,
 } from '@games/domain/entities/game.entity';
 import {
   GameCompletionResponseDto,
   GameStatResponseDto,
   GameWordResponseDto,
+  MiniGameConfigResponseDto,
   QuizQuestionResponseDto,
 } from '../../interfaces/dto/game.dto';
 
@@ -60,6 +62,24 @@ export class GameCompletionMapper implements Mapper<
   }
 }
 
+export class MiniGameConfigMapper implements Mapper<
+  MiniGameConfigEntity,
+  MiniGameConfigResponseDto
+> {
+  toDto(source: MiniGameConfigEntity): MiniGameConfigResponseDto {
+    return {
+      id: source.id,
+      type: source.type,
+      title: source.title,
+      instructions: source.instructions,
+      items: source.items,
+      active: source.active,
+      createdAt: source.createdAt,
+      updatedAt: source.updatedAt,
+    };
+  }
+}
+
 export class GameStatMapper implements Mapper<
   GameStatResponseDto,
   GameStatResponseDto
@@ -73,3 +93,4 @@ export const quizQuestionMapper = new QuizQuestionMapper();
 export const gameWordMapper = new GameWordMapper();
 export const gameCompletionMapper = new GameCompletionMapper();
 export const gameStatMapper = new GameStatMapper();
+export const miniGameConfigMapper = new MiniGameConfigMapper();

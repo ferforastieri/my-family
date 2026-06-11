@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import 'app_button.dart';
 
@@ -35,10 +34,10 @@ class AppSheet extends StatelessWidget {
           decoration: BoxDecoration(
             color: palette.card.withValues(alpha: .98),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
-            border: Border.all(color: primary.withValues(alpha: .18)),
+            border: Border.all(color: palette.primary.withValues(alpha: .18)),
             boxShadow: [
               BoxShadow(
-                color: primary.withValues(alpha: .18),
+                color: palette.primary.withValues(alpha: .18),
                 blurRadius: 28,
                 offset: const Offset(0, -10),
               ),
@@ -52,8 +51,8 @@ class AppSheet extends StatelessWidget {
                 width: 42,
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: primary.withValues(alpha: .28),
+              decoration: BoxDecoration(
+                  color: palette.primary.withValues(alpha: .28),
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
@@ -94,10 +93,10 @@ class AppSheetHeader extends StatelessWidget {
             width: 46,
             height: 46,
             decoration: BoxDecoration(
-              color: primary.withValues(alpha: .12),
+              color: palette.primary.withValues(alpha: .12),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, color: primary),
+            child: Icon(icon, color: palette.primary),
           ),
           const SizedBox(width: 12),
         ],
@@ -197,7 +196,7 @@ class AppDateField extends StatelessWidget {
         return Theme(
           data: theme.copyWith(
             colorScheme: theme.colorScheme.copyWith(
-              primary: primary,
+              primary: theme.extension<AppPalette>()!.primary,
               surface: theme.extension<AppPalette>()?.card,
             ),
           ),

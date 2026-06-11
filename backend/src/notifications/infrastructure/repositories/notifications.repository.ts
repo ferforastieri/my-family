@@ -24,6 +24,7 @@ export type NotificationWrite = {
   body?: string;
   url?: string;
   icon?: string | null;
+  type?: 'manual' | 'push' | 'chat' | 'location' | 'system';
 };
 
 @Injectable()
@@ -45,6 +46,8 @@ export class NotificationsRepository {
       body: doc.body ?? '',
       url: doc.url ?? '/',
       icon: doc.icon ?? null,
+      type: doc.type ?? 'manual',
+      readBy: doc.readBy ?? [],
       createdAt: doc.createdAt,
     };
   }
@@ -63,17 +66,25 @@ export class NotificationsRepository {
     };
   }
 
-  async list(query?: PaginationQuery) {
+  async list(query?: PaginationQuery & { type?: string }) {
     const { page, limit, skip } = normalizePagination(query, {
       page: 1,
       limit: 30,
       maxLimit: 100,
     });
+    const match =
+      query?.type &&
+      ['manual', 'push', 'chat', 'location', 'system'].includes(query.type)
+        ? query.type === 'manual'
+          ? { $or: [{ type: 'manual' }, { type: { $exists: false } }] }
+          : { type: query.type }
+        : {};
     const [result] = await this.notifications
       .aggregate<{
         items: NotificationMongoDocument[];
         total: Array<{ count: number }>;
       }>([
+        { $match: match },
         { $sort: { createdAt: -1 } },
         {
           $group: {
@@ -81,6 +92,7 @@ export class NotificationsRepository {
               title: '$title',
               body: '$body',
               url: '$url',
+              type: '$type',
             },
             row: { $first: '$$ROOT' },
           },
@@ -116,6 +128,7 @@ export class NotificationsRepository {
         body: data.body ?? '',
         url: data.url ?? '/',
         icon: data.icon ?? null,
+        type: data.type ?? 'manual',
       }),
     )!;
   }
@@ -126,6 +139,7 @@ export class NotificationsRepository {
       body: data.body ?? '',
       url: data.url ?? '/',
       icon: data.icon ?? null,
+      type: data.type ?? 'push',
     };
     return this.toNotification(
       await this.notifications
@@ -134,6 +148,7 @@ export class NotificationsRepository {
             title: normalized.title,
             body: normalized.body,
             url: normalized.url,
+            type: normalized.type,
           },
           { $set: normalized, $setOnInsert: { createdAt: new Date() } },
           { upsert: true, new: true },
@@ -152,6 +167,18 @@ export class NotificationsRepository {
 
   async delete(id: string) {
     return !!(await this.notifications.findByIdAndDelete(id).exec());
+  }
+
+  async markRead(id: string, userId: string) {
+    return this.toNotification(
+      await this.notifications
+        .findByIdAndUpdate(
+          id,
+          { $addToSet: { readBy: userId } },
+          { new: true },
+        )
+        .exec(),
+    );
   }
 
   async clear() {

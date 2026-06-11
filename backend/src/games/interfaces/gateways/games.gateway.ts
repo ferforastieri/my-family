@@ -11,6 +11,7 @@ import { GamesService } from '../../application/services/games.service';
 import type {
   GameCompletionWriteDto,
   GameWordWriteDto,
+  MiniGameConfigWriteDto,
   QuizQuestionWriteDto,
 } from '../dto/game.dto';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
@@ -125,6 +126,57 @@ export class GamesGateway {
     const ok = await this.games.deleteWord(body.id);
     if (ok) this.server.emit('games.words.deleted', { id: body.id });
     return { ok, message: 'Palavra removida.' };
+  }
+
+  @SubscribeMessage('games.mini.list')
+  async miniGamesList(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() query?: PaginationQuery,
+  ) {
+    await this.session.requireAccess(client, 'jogos');
+    return this.games.miniGamesPublic(query);
+  }
+
+  @SubscribeMessage('games.mini.admin.list')
+  async miniGamesAdminList(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() query?: PaginationQuery,
+  ) {
+    await this.session.requireAdmin(client);
+    return this.games.miniGamesAdmin(query);
+  }
+
+  @SubscribeMessage('games.mini.create')
+  async createMiniGame(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: MiniGameConfigWriteDto,
+  ) {
+    await this.session.requireAdmin(client);
+    const row = await this.games.createMiniGame(body);
+    this.server.emit('games.mini.created', row);
+    return { message: 'Mini jogo salvo.', ...row };
+  }
+
+  @SubscribeMessage('games.mini.update')
+  async updateMiniGame(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { id: string; data: Partial<MiniGameConfigWriteDto> },
+  ) {
+    await this.session.requireAdmin(client);
+    const row = await this.games.updateMiniGame(body.id, body.data);
+    if (row) this.server.emit('games.mini.updated', row);
+    return row ? { message: 'Mini jogo atualizado.', ...row } : row;
+  }
+
+  @SubscribeMessage('games.mini.delete')
+  async deleteMiniGame(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { id: string },
+  ) {
+    await this.session.requireAdmin(client);
+    const ok = await this.games.deleteMiniGame(body.id);
+    if (ok) this.server.emit('games.mini.deleted', { id: body.id });
+    return { ok, message: 'Mini jogo removido.' };
   }
 
   @SubscribeMessage('games.complete')

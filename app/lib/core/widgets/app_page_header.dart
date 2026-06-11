@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import 'app_button.dart';
 
@@ -99,7 +98,7 @@ class AppPageHeader extends StatelessWidget {
                       ),
                       if (!desktop) ...[
                         const SizedBox(width: 8),
-                        Icon(icon, color: primary, size: 22),
+                        Icon(icon, color: palette.primary, size: 22),
                       ],
                     ],
                   ),
@@ -209,11 +208,12 @@ class _BadgeLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = count > 99 ? '99+' : count.toString();
+    final palette = Theme.of(context).extension<AppPalette>()!;
     return Container(
       constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
       padding: const EdgeInsets.symmetric(horizontal: 5),
       decoration: BoxDecoration(
-        color: primary,
+        color: palette.primary,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: Colors.white, width: 1.5),
       ),
@@ -249,10 +249,10 @@ class AppHeaderIconButton extends StatelessWidget {
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: primary.withValues(alpha: .10),
+        color: palette.primary.withValues(alpha: .10),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
-          side: BorderSide(color: primary.withValues(alpha: .16)),
+          side: BorderSide(color: palette.primary.withValues(alpha: .16)),
         ),
         child: InkWell(
           onTap: onPressed,

@@ -39,16 +39,19 @@ class _AdminPageState extends State<AdminPage> {
   List<AppNotification> notifications = [];
   List<QuizQuestion> questions = [];
   List<GameWord> words = [];
+  List<MiniGameConfig> miniGames = [];
   List<GameStat> stats = [];
   PaginatedResult<AppUser>? usersPagination;
   PaginatedResult<AppNotification>? notificationsPagination;
   PaginatedResult<QuizQuestion>? questionsPagination;
   PaginatedResult<GameWord>? wordsPagination;
+  PaginatedResult<MiniGameConfig>? miniGamesPagination;
   PaginatedResult<GameStat>? statsPagination;
   int usersPage = 1;
   int notificationsPage = 1;
   int questionsPage = 1;
   int wordsPage = 1;
+  int miniGamesPage = 1;
   int statsPage = 1;
   String? loadError;
   _AdminSection selected = _AdminSection.users;
@@ -84,6 +87,7 @@ class _AdminPageState extends State<AdminPage> {
     PaginatedResult<AppNotification>? nextNotifications;
     PaginatedResult<QuizQuestion>? nextQuestions;
     PaginatedResult<GameWord>? nextWords;
+    PaginatedResult<MiniGameConfig>? nextMiniGames;
     PaginatedResult<GameStat>? nextStats;
     await Future.wait([
       _fetchPart('usuários', () async {
@@ -110,6 +114,12 @@ class _AdminPageState extends State<AdminPage> {
           _adminPageLimit,
         );
       }, errors),
+      _fetchPart('mini jogos', () async {
+        nextMiniGames = await widget.repository.listMiniGamesAdminPage(
+          miniGamesPage,
+          _adminPageLimit,
+        );
+      }, errors),
       _fetchPart('estatísticas', () async {
         nextStats = await widget.repository.gameStatsPage(
           statsPage,
@@ -122,6 +132,7 @@ class _AdminPageState extends State<AdminPage> {
       notifications: nextNotifications,
       questions: nextQuestions,
       words: nextWords,
+      miniGames: nextMiniGames,
       stats: nextStats,
       loadError: errors.isEmpty ? null : errors.join(' • '),
     );
@@ -152,6 +163,7 @@ class _AdminPageState extends State<AdminPage> {
               notificationsPage: notificationsPage,
               questionsPage: questionsPage,
               wordsPage: wordsPage,
+              miniGamesPage: miniGamesPage,
               statsPage: statsPage,
             ),
             queryFn: _fetchAdminData,
@@ -188,11 +200,13 @@ class _AdminPageState extends State<AdminPage> {
     notificationsPagination = data.notifications;
     questionsPagination = data.questions;
     wordsPagination = data.words;
+    miniGamesPagination = data.miniGames;
     statsPagination = data.stats;
     users = data.users?.items ?? const [];
     notifications = data.notifications?.items ?? const [];
     questions = data.questions?.items ?? const [];
     words = data.words?.items ?? const [];
+    miniGames = data.miniGames?.items ?? const [];
     stats = data.stats?.items ?? const [];
     loadError = data.loadError;
   }
@@ -226,6 +240,7 @@ class _AdminPageState extends State<AdminPage> {
       _AdminSection.games => _GamesAdminTab(
           questions: questions,
           words: words,
+          miniGames: miniGames,
           loading: false,
           onAddQuestion: () => _openQuestionSheet(),
           onEditQuestion: _openQuestionSheet,
@@ -233,6 +248,9 @@ class _AdminPageState extends State<AdminPage> {
           onAddWord: () => _openWordSheet(),
           onEditWord: _openWordSheet,
           onDeleteWord: _deleteWord,
+          onAddMiniGame: () => _openMiniGameSheet(),
+          onEditMiniGame: _openMiniGameSheet,
+          onDeleteMiniGame: _deleteMiniGame,
           questionsPagination: _pagination(
             questionsPagination,
             (page) => questionsPage = page,
@@ -240,6 +258,10 @@ class _AdminPageState extends State<AdminPage> {
           wordsPagination: _pagination(
             wordsPagination,
             (page) => wordsPage = page,
+          ),
+          miniGamesPagination: _pagination(
+            miniGamesPagination,
+            (page) => miniGamesPage = page,
           ),
         ),
       _AdminSection.stats => _StatsAdminTab(
@@ -412,6 +434,31 @@ class _AdminPageState extends State<AdminPage> {
     widget.toast.backendSuccess(widget.repository.takeMessage());
     _invalidateAdmin();
   }
+
+  Future<void> _openMiniGameSheet([MiniGameConfig? miniGame]) async {
+    await showAppSheet<void>(
+      context: context,
+      builder: (_) => _MiniGameSheet(
+        miniGame: miniGame,
+        onSave: (data) async {
+          if (miniGame == null) {
+            await widget.repository.createMiniGame(data);
+            miniGamesPage = 1;
+          } else {
+            await widget.repository.updateMiniGame(miniGame.id, data);
+          }
+          widget.toast.backendSuccess(widget.repository.takeMessage());
+          _invalidateAdmin();
+        },
+      ),
+    );
+  }
+
+  Future<void> _deleteMiniGame(MiniGameConfig miniGame) async {
+    await widget.repository.deleteMiniGame(miniGame.id);
+    widget.toast.backendSuccess(widget.repository.takeMessage());
+    _invalidateAdmin();
+  }
 }
 
 const _adminContentPadding = EdgeInsets.fromLTRB(18, 14, 18, 14);
@@ -423,6 +470,7 @@ class _AdminData {
     required this.notifications,
     required this.questions,
     required this.words,
+    required this.miniGames,
     required this.stats,
     required this.loadError,
   });
@@ -431,6 +479,7 @@ class _AdminData {
   final PaginatedResult<AppNotification>? notifications;
   final PaginatedResult<QuizQuestion>? questions;
   final PaginatedResult<GameWord>? words;
+  final PaginatedResult<MiniGameConfig>? miniGames;
   final PaginatedResult<GameStat>? stats;
   final String? loadError;
 }
@@ -555,6 +604,40 @@ String _roleLabel(String role) {
   };
 }
 
+String _miniGameAdminLabel(String type) {
+  return switch (type) {
+    'memory_match' => 'Memória da Família',
+    'love_order' => 'Linha do Amor',
+    'this_or_that' => 'Isso ou Aquilo',
+    _ => 'Mini jogo',
+  };
+}
+
+IconData _miniGameAdminIcon(String type) {
+  return switch (type) {
+    'memory_match' => Icons.style_outlined,
+    'love_order' => Icons.timeline_outlined,
+    'this_or_that' => Icons.compare_arrows_outlined,
+    _ => Icons.extension_outlined,
+  };
+}
+
+String _gameStatLabel(String game) {
+  return switch (game) {
+    'quiz' => 'Quiz do Amor',
+    'word_search' => 'Caça Palavras',
+    _ => _miniGameAdminLabel(game),
+  };
+}
+
+IconData _gameStatIcon(String game) {
+  return switch (game) {
+    'quiz' => Icons.favorite_outline,
+    'word_search' => Icons.grid_on_outlined,
+    _ => _miniGameAdminIcon(game),
+  };
+}
+
 const _adminRealtimeEvents = [
   'users.created',
   'users.updated',
@@ -569,6 +652,9 @@ const _adminRealtimeEvents = [
   'games.words.created',
   'games.words.updated',
   'games.words.deleted',
+  'games.mini.created',
+  'games.mini.updated',
+  'games.mini.deleted',
   'games.stats.changed',
 ];
 
@@ -1053,6 +1139,7 @@ class _GamesAdminTab extends StatelessWidget {
   const _GamesAdminTab({
     required this.questions,
     required this.words,
+    required this.miniGames,
     required this.loading,
     required this.onAddQuestion,
     required this.onEditQuestion,
@@ -1060,12 +1147,17 @@ class _GamesAdminTab extends StatelessWidget {
     required this.onAddWord,
     required this.onEditWord,
     required this.onDeleteWord,
+    required this.onAddMiniGame,
+    required this.onEditMiniGame,
+    required this.onDeleteMiniGame,
     required this.questionsPagination,
     required this.wordsPagination,
+    required this.miniGamesPagination,
   });
 
   final List<QuizQuestion> questions;
   final List<GameWord> words;
+  final List<MiniGameConfig> miniGames;
   final bool loading;
   final VoidCallback onAddQuestion;
   final ValueChanged<QuizQuestion> onEditQuestion;
@@ -1073,8 +1165,12 @@ class _GamesAdminTab extends StatelessWidget {
   final VoidCallback onAddWord;
   final ValueChanged<GameWord> onEditWord;
   final ValueChanged<GameWord> onDeleteWord;
+  final VoidCallback onAddMiniGame;
+  final ValueChanged<MiniGameConfig> onEditMiniGame;
+  final ValueChanged<MiniGameConfig> onDeleteMiniGame;
   final Widget? questionsPagination;
   final Widget? wordsPagination;
+  final Widget? miniGamesPagination;
 
   @override
   Widget build(BuildContext context) {
@@ -1082,7 +1178,7 @@ class _GamesAdminTab extends StatelessWidget {
       children: [
         _AdminToolbar(
           title: 'Jogos',
-          subtitle: 'Gerencie perguntas do Quiz e palavras do Caça Palavras.',
+          subtitle: 'Gerencie perguntas, palavras e mini jogos.',
           action: _AdminActions(
             children: [
               AppButton(
@@ -1094,6 +1190,11 @@ class _GamesAdminTab extends StatelessWidget {
                 onPressed: onAddWord,
                 icon: const Icon(Icons.add),
                 label: const Text('Palavra'),
+              ),
+              OutlinedButton.icon(
+                onPressed: onAddMiniGame,
+                icon: const Icon(Icons.add),
+                label: const Text('Mini jogo'),
               ),
             ],
           ),
@@ -1157,6 +1258,33 @@ class _GamesAdminTab extends StatelessWidget {
                           ),
                       ],
                     );
+                    final miniGameList = _GameSection(
+                      title: 'Mini jogos',
+                      empty: 'Nenhum mini jogo cadastrado.',
+                      scrollable: false,
+                      pagination: miniGamesPagination,
+                      children: [
+                        for (final miniGame in miniGames)
+                          _AdminTile(
+                            icon: _miniGameAdminIcon(miniGame.type),
+                            title: miniGame.title,
+                            subtitle:
+                                '${_miniGameAdminLabel(miniGame.type)} • ${miniGame.items.length} itens • ${miniGame.active ? 'ativo' : 'inativo'}',
+                            actions: [
+                              IconButton(
+                                onPressed: () => onEditMiniGame(miniGame),
+                                icon: const Icon(Icons.edit_outlined),
+                                tooltip: 'Editar',
+                              ),
+                              IconButton(
+                                onPressed: () => onDeleteMiniGame(miniGame),
+                                icon: const Icon(Icons.delete_outline),
+                                tooltip: 'Remover',
+                              ),
+                            ],
+                          ),
+                      ],
+                    );
                     if (!wide) {
                       return ListView(
                         padding: EdgeInsets.zero,
@@ -1164,15 +1292,25 @@ class _GamesAdminTab extends StatelessWidget {
                           questionList,
                           const SizedBox(height: 18),
                           wordList,
+                          const SizedBox(height: 18),
+                          miniGameList,
                         ],
                       );
                     }
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    return Column(
                       children: [
-                        Expanded(child: questionList),
-                        const SizedBox(width: 16),
-                        Expanded(child: wordList),
+                        Expanded(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: questionList),
+                              const SizedBox(width: 16),
+                              Expanded(child: wordList),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        miniGameList,
                       ],
                     );
                   },
@@ -1291,12 +1429,9 @@ class _StatsAdminTab extends StatelessWidget {
               if (index == stats.length) return pagination!;
               final stat = stats[index];
               return _AdminTile(
-                icon: stat.game == 'quiz'
-                    ? Icons.favorite_outline
-                    : Icons.grid_on_outlined,
+                icon: _gameStatIcon(stat.game),
                 title: stat.playerName,
-                subtitle:
-                    stat.game == 'quiz' ? 'Quiz do Amor' : 'Caça Palavras',
+                subtitle: _gameStatLabel(stat.game),
                 trailing: Text(
                   '${stat.count}x${stat.bestScore == null ? '' : ' • melhor ${stat.bestScore}'}',
                   style: const TextStyle(
@@ -2082,6 +2217,132 @@ class _WordSheetState extends State<_WordSheet> {
             value: active,
             onChanged: (value) => setState(() => active = value),
             label: 'Ativa',
+          ),
+          const SizedBox(height: 14),
+          AppSheetActions(
+            onCancel: saving ? null : () => Navigator.pop(context),
+            onSave: saving ? null : _save,
+            loading: saving,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniGameSheet extends StatefulWidget {
+  const _MiniGameSheet({required this.onSave, this.miniGame});
+
+  final MiniGameConfig? miniGame;
+  final Future<void> Function(Map<String, dynamic> data) onSave;
+
+  @override
+  State<_MiniGameSheet> createState() => _MiniGameSheetState();
+}
+
+class _MiniGameSheetState extends State<_MiniGameSheet> {
+  late String type;
+  late final TextEditingController title;
+  late final TextEditingController instructions;
+  late final TextEditingController items;
+  bool active = true;
+  bool saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final current = widget.miniGame;
+    type = current?.type ?? miniGameTypes.first;
+    title = TextEditingController(text: current?.title ?? '');
+    instructions = TextEditingController(text: current?.instructions ?? '');
+    items =
+        TextEditingController(text: (current?.items ?? const []).join('\n'));
+    active = current?.active ?? true;
+  }
+
+  @override
+  void dispose() {
+    title.dispose();
+    instructions.dispose();
+    items.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() => saving = true);
+    try {
+      await widget.onSave({
+        'type': type,
+        'title': title.text,
+        'instructions': instructions.text,
+        'items': items.text
+            .split('\n')
+            .map((line) => line.trim())
+            .where((line) => line.isNotEmpty)
+            .toList(),
+        'active': active,
+      });
+      if (mounted) Navigator.pop(context);
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 560,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppSheetHeader(
+            title:
+                widget.miniGame == null ? 'Novo mini jogo' : 'Editar mini jogo',
+            subtitle:
+                'Configure título, instrução e itens. No Isso ou Aquilo use uma rodada por linha: Opção A|Opção B.',
+            icon: Icons.extension_outlined,
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final option in miniGameTypes)
+                ChoiceChip(
+                  selected: type == option,
+                  label: Text(_miniGameAdminLabel(option)),
+                  onSelected: widget.miniGame == null
+                      ? (_) => setState(() => type = option)
+                      : null,
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: title,
+            decoration: const InputDecoration(labelText: 'Título'),
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: instructions,
+            decoration: const InputDecoration(labelText: 'Instrução'),
+            maxLines: 2,
+            textInputAction: TextInputAction.newline,
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: items,
+            decoration: const InputDecoration(labelText: 'Itens'),
+            minLines: 5,
+            maxLines: 8,
+          ),
+          const SizedBox(height: 10),
+          _AdminSwitchRow(
+            value: active,
+            onChanged: (value) => setState(() => active = value),
+            label: 'Ativo',
           ),
           const SizedBox(height: 14),
           AppSheetActions(

@@ -172,6 +172,49 @@ class FamilyRepository {
     await api.mutate<Map<String, dynamic>>('games.words.delete', {'id': id});
   }
 
+  Future<List<MiniGameConfig>> listMiniGames() async {
+    return (await listMiniGamesPage(1, 30)).items;
+  }
+
+  Future<PaginatedResult<MiniGameConfig>> listMiniGamesPage(
+      int page, int limit) async {
+    final data = await api
+        .query<dynamic>('games.mini.list', {'page': page, 'limit': limit});
+    return _paginated(
+      data,
+      (row) => MiniGameConfig.fromJson(Map<String, dynamic>.from(row)),
+    );
+  }
+
+  Future<PaginatedResult<MiniGameConfig>> listMiniGamesAdminPage(
+      int page, int limit) async {
+    final data = await api.query<dynamic>(
+        'games.mini.admin.list', {'page': page, 'limit': limit});
+    return _paginated(
+      data,
+      (row) => MiniGameConfig.fromJson(Map<String, dynamic>.from(row)),
+    );
+  }
+
+  Future<MiniGameConfig> createMiniGame(Map<String, dynamic> data) async {
+    final row =
+        await api.mutate<Map<String, dynamic>>('games.mini.create', data);
+    return MiniGameConfig.fromJson(Map<String, dynamic>.from(row));
+  }
+
+  Future<MiniGameConfig?> updateMiniGame(
+      String id, Map<String, dynamic> data) async {
+    final row = await api.mutate<Map<String, dynamic>?>(
+        'games.mini.update', {'id': id, 'data': data});
+    return row == null
+        ? null
+        : MiniGameConfig.fromJson(Map<String, dynamic>.from(row));
+  }
+
+  Future<void> deleteMiniGame(String id) async {
+    await api.mutate<Map<String, dynamic>>('games.mini.delete', {'id': id});
+  }
+
   Future<void> completeGame({
     required String game,
     String? playerName,
@@ -227,8 +270,11 @@ class FamilyRepository {
 
   Future<PaginatedResult<AppNotification>> listNotificationsAdminPage(
       int page, int limit) async {
-    final data = await api
-        .query<dynamic>('notifications.list', {'page': page, 'limit': limit});
+    final data = await api.query<dynamic>('notifications.list', {
+      'page': page,
+      'limit': limit,
+      'type': 'manual',
+    });
     return _paginated(data,
         (row) => AppNotification.fromJson(Map<String, dynamic>.from(row)));
   }

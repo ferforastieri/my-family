@@ -2,11 +2,13 @@ import type { Factory } from '@shared/application/mapper';
 import type {
   GameCompletionWrite,
   GameWordWrite,
+  MiniGameConfigWrite,
   QuizQuestionWrite,
 } from '../../infrastructure/repositories/games.repository';
 import type {
   GameCompletionWriteDto,
   GameWordWriteDto,
+  MiniGameConfigWriteDto,
   QuizQuestionWriteDto,
 } from '../../interfaces/dto/game.dto';
 
@@ -64,6 +66,22 @@ export class GameCompletionFactory implements Factory<
   }
 }
 
+export class MiniGameConfigFactory implements Factory<
+  Partial<MiniGameConfigWriteDto>,
+  Partial<MiniGameConfigWrite>
+> {
+  create(input: Partial<MiniGameConfigWriteDto>): Partial<MiniGameConfigWrite> {
+    return {
+      type: input.type,
+      title: input.title?.trim(),
+      instructions: input.instructions?.trim(),
+      items: input.items?.map((item) => item.trim()).filter(Boolean),
+      active: input.active,
+    };
+  }
+}
+
 export const quizQuestionFactory = new QuizQuestionFactory();
 export const gameWordFactory = new GameWordFactory();
 export const gameCompletionFactory = new GameCompletionFactory();
+export const miniGameConfigFactory = new MiniGameConfigFactory();
