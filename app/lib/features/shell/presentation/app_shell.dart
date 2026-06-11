@@ -35,25 +35,30 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final wide = constraints.maxWidth >= 860;
-        return Scaffold(
-          appBar: wide ? _buildDesktopAppBar(context) : null,
-          body: AppHeaderActionsScope(
-            onNotifications: () => _openNotificationsSheet(context),
-            onTheme: () => _openThemeSheet(context),
-            child: child,
-          ),
-          bottomNavigationBar: wide
-              ? null
-              : _MobileBottomNavigation(
-                  auth: auth,
-                  currentLocation: currentLocation,
-                  onLogin: () => _openLogin(context),
-                ),
-        );
-      },
+    return ListenableBuilder(
+      listenable: Listenable.merge([notifications, chat]),
+      builder: (context, _) => LayoutBuilder(
+        builder: (context, constraints) {
+          final wide = constraints.maxWidth >= 860;
+          return Scaffold(
+            appBar: wide ? _buildDesktopAppBar(context) : null,
+            body: AppHeaderActionsScope(
+              onNotifications: () => _openNotificationsSheet(context),
+              onTheme: () => _openThemeSheet(context),
+              notificationCount: notifications.badgeCount,
+              child: child,
+            ),
+            bottomNavigationBar: wide
+                ? null
+                : _MobileBottomNavigation(
+                    auth: auth,
+                    chatUnreadCount: chat.unreadCount,
+                    currentLocation: currentLocation,
+                    onLogin: () => _openLogin(context),
+                  ),
+          );
+        },
+      ),
     );
   }
 
@@ -66,6 +71,7 @@ class AppShell extends StatelessWidget {
       title: Center(
         child: _DesktopMainNavigation(
           auth: auth,
+          chatUnreadCount: chat.unreadCount,
           currentLocation: currentLocation,
           onLogin: () => _openLogin(context),
         ),
@@ -73,7 +79,10 @@ class AppShell extends StatelessWidget {
       actions: [
         IconButton(
           onPressed: () => _openNotificationsSheet(context),
-          icon: const Icon(Icons.notifications_outlined),
+          icon: _BadgeIcon(
+            count: notifications.badgeCount,
+            child: const Icon(Icons.notifications_outlined),
+          ),
           tooltip: 'Notificações',
         ),
         IconButton(
@@ -115,11 +124,13 @@ class AppShell extends StatelessWidget {
 class _DesktopMainNavigation extends StatelessWidget {
   const _DesktopMainNavigation({
     required this.auth,
+    required this.chatUnreadCount,
     required this.currentLocation,
     required this.onLogin,
   });
 
   final AuthController auth;
+  final int chatUnreadCount;
   final String currentLocation;
   final VoidCallback onLogin;
 
@@ -197,9 +208,12 @@ class _DesktopMainNavigation extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Image.asset(
-                  'assets/brand/family-logo.png',
-                  fit: BoxFit.contain,
+                child: _BadgeIcon(
+                  count: chatUnreadCount,
+                  child: Image.asset(
+                    'assets/brand/family-logo.png',
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
             ),
@@ -420,11 +434,13 @@ class _ColorChoice extends StatelessWidget {
 class _MobileBottomNavigation extends StatelessWidget {
   const _MobileBottomNavigation({
     required this.auth,
+    required this.chatUnreadCount,
     required this.currentLocation,
     required this.onLogin,
   });
 
   final AuthController auth;
+  final int chatUnreadCount;
   final String currentLocation;
   final VoidCallback onLogin;
 
@@ -515,9 +531,12 @@ class _MobileBottomNavigation extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: Image.asset(
-                        'assets/brand/family-logo.png',
-                        fit: BoxFit.contain,
+                      child: _BadgeIcon(
+                        count: chatUnreadCount,
+                        child: Image.asset(
+                          'assets/brand/family-logo.png',
+                          fit: BoxFit.contain,
+                        ),
                       ),
                     ),
                   ),
@@ -668,6 +687,59 @@ class MobileOptionItem {
   final String description;
   final String path;
   final IconData icon;
+}
+
+class _BadgeIcon extends StatelessWidget {
+  const _BadgeIcon({required this.count, required this.child});
+
+  final int count;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (count <= 0) return child;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        child,
+        Positioned(
+          right: -7,
+          top: -7,
+          child: _BadgeLabel(count: count),
+        ),
+      ],
+    );
+  }
+}
+
+class _BadgeLabel extends StatelessWidget {
+  const _BadgeLabel({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = count > 99 ? '99+' : count.toString();
+    return Container(
+      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 5),
+      decoration: BoxDecoration(
+        color: Theme.of(context).extension<AppPalette>()!.primary,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white, width: 1.5),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+          height: 1,
+        ),
+      ),
+    );
+  }
 }
 
 bool _isSelected(String itemPath, String currentLocation) {

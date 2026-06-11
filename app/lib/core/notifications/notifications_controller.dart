@@ -47,6 +47,8 @@ class NotificationsController extends ChangeNotifier {
   bool _pushListenersBound = false;
   String? _pendingUrl;
 
+  int get badgeCount => notifications.length;
+
   Future<void> bootstrap() async {
     if (_bootstrapped) return;
     _bootstrapped = true;

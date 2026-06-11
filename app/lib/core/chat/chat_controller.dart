@@ -22,6 +22,11 @@ class ChatController extends ChangeNotifier {
   bool _listenersBound = false;
   String? errorMessage;
 
+  int get unreadCount => conversations.fold(
+        0,
+        (total, conversation) => total + conversation.unreadCount,
+      );
+
   Future<void> bootstrap() async {
     if (!_listenersBound) {
       _listenersBound = true;
@@ -33,6 +38,8 @@ class ChatController extends ChangeNotifier {
           messages.add(message);
           notifyListeners();
           markRead(message.conversationId);
+        } else {
+          _refreshUnreadCounters();
         }
       });
       socket.on('chat.message.updated', (data) {
@@ -62,8 +69,9 @@ class ChatController extends ChangeNotifier {
           changed = true;
         }
         if (changed) notifyListeners();
+        _markConversationRead(conversationId);
       });
-      socket.on('chat.conversation.created', (_) => refreshConversations());
+      socket.on('chat.conversation.created', (_) => _refreshUnreadCounters());
       socket.on('connect', (_) {
         if (conversations.isEmpty) {
           refreshConversations(silent: true).catchError((_) {});
@@ -140,6 +148,7 @@ class ChatController extends ChangeNotifier {
         ..addAll(rows.map((row) =>
             ChatMessage.fromJson(Map<String, dynamic>.from(row as Map))));
       await markRead(conversation.id);
+      _markConversationRead(conversation.id);
     } catch (error) {
       errorMessage = error.toString();
       rethrow;
@@ -181,6 +190,7 @@ class ChatController extends ChangeNotifier {
     final message = ChatMessage.fromJson(row);
     if (!messages.any((item) => item.id == message.id)) {
       messages.add(message);
+      _markConversationRead(message.conversationId);
       notifyListeners();
     }
   }
@@ -210,6 +220,7 @@ class ChatController extends ChangeNotifier {
     final message = ChatMessage.fromJson(row);
     if (!messages.any((item) => item.id == message.id)) {
       messages.add(message);
+      _markConversationRead(message.conversationId);
       notifyListeners();
     }
   }
@@ -227,6 +238,7 @@ class ChatController extends ChangeNotifier {
     final message = ChatMessage.fromJson(row);
     if (!messages.any((item) => item.id == message.id)) {
       messages.add(message);
+      _markConversationRead(message.conversationId);
       notifyListeners();
     }
   }
@@ -258,5 +270,17 @@ class ChatController extends ChangeNotifier {
     if (index == -1) return;
     messages[index] = message;
     notifyListeners();
+  }
+
+  void _markConversationRead(String conversationId) {
+    final index =
+        conversations.indexWhere((conversation) => conversation.id == conversationId);
+    if (index == -1 || conversations[index].unreadCount == 0) return;
+    conversations[index] = conversations[index].copyWith(unreadCount: 0);
+    notifyListeners();
+  }
+
+  void _refreshUnreadCounters() {
+    refreshConversations(silent: true).catchError((_) {});
   }
 }

@@ -141,6 +141,7 @@ class ChatConversation {
     required this.type,
     required this.title,
     required this.participantIds,
+    this.unreadCount = 0,
     this.avatarPath,
   });
 
@@ -148,13 +149,24 @@ class ChatConversation {
   final String type;
   final String title;
   final List<String> participantIds;
+  final int unreadCount;
   final String? avatarPath;
+
+  ChatConversation copyWith({int? unreadCount}) => ChatConversation(
+        id: id,
+        type: type,
+        title: title,
+        participantIds: participantIds,
+        unreadCount: unreadCount ?? this.unreadCount,
+        avatarPath: avatarPath,
+      );
 
   factory ChatConversation.fromJson(Map<String, dynamic> json) =>
       ChatConversation(
         id: json['id'].toString(),
         type: (json['type'] ?? 'global').toString(),
         title: (json['title'] ?? 'Chat').toString(),
+        unreadCount: (json['unreadCount'] as num?)?.toInt() ?? 0,
         avatarPath: json['avatarPath']?.toString(),
         participantIds: ((json['participantIds'] as List?) ?? const [])
             .map((id) => id.toString())
