@@ -166,7 +166,7 @@ class _GamesHub extends StatelessWidget {
                       accent: palette.primaryDark,
                       metric: 'Quiz',
                       details: const ['Respostas rápidas'],
-                      footer: 'Perguntas editáveis pelo admin',
+                      footer: 'Começar quiz',
                       onTap: () => onOpen(_GameView.quiz),
                     ),
                     _GameCard(
@@ -178,7 +178,7 @@ class _GamesHub extends StatelessWidget {
                       accent: palette.primary,
                       metric: '12x12',
                       details: const ['Arraste nas letras'],
-                      footer: 'Palavras editáveis pelo admin',
+                      footer: 'Encontrar palavras',
                       onTap: () => onOpen(_GameView.wordSearch),
                     ),
                     for (final config in miniGames)
@@ -190,7 +190,7 @@ class _GamesHub extends StatelessWidget {
                         accent: palette.primaryDark,
                         metric: _miniGameMetric(config),
                         details: [_miniGameTypeLabel(config.type)],
-                        footer: 'Configurável pelo admin',
+                        footer: 'Jogar agora',
                         onTap: () => onOpen(_viewForMiniGame(config.type)),
                       ),
                   ],
@@ -1079,7 +1079,7 @@ class _MiniGameRoute extends StatelessWidget {
     return AppFixedHeaderScrollView(
       header: _GamePlayHeader(
         title: _miniGameTypeLabel(type),
-        subtitle: 'Mini jogo configurável pelo painel.',
+        subtitle: 'Jogo configurável pelo painel.',
         icon: _miniGameIcon(type),
         onBack: onBack,
       ),
@@ -1420,7 +1420,7 @@ class _ThisOrThatGame extends StatefulWidget {
 class _ThisOrThatGameState extends State<_ThisOrThatGame> {
   final name = TextEditingController();
   int index = 0;
-  int score = 0;
+  final selections = <String>[];
 
   @override
   void dispose() {
@@ -1428,52 +1428,55 @@ class _ThisOrThatGameState extends State<_ThisOrThatGame> {
     super.dispose();
   }
 
-  List<_ChoiceRound> get rounds {
+  List<_PreferenceRound> get rounds {
     final raw = widget.config.items.isEmpty
         ? [
-            'Onde gostamos de passear?|Shopping|Aeroporto|Shopping',
-            'Qual programa combina com sofá?|Filme|Reunião|Filme',
-            'Quem é nosso cachorro?|Rudy|Mutual|Rudy',
-            'Onde nos conhecemos?|Mutual|Mercado|Mutual',
+            'Programa perfeito|Shopping|Filme no sofá',
+            'Pipoca|Doce|Salgada',
+            'Fim de semana|Sair para passear|Ficar em casa juntinhos',
+            'Noite ideal|Conversar até tarde|Ver uma série',
           ]
         : widget.config.items;
     return raw
         .map((item) => item.split('|').map((part) => part.trim()).toList())
-        .where((parts) => parts.length >= 4 && parts[0].isNotEmpty)
-        .map((parts) => _ChoiceRound(
-              prompt: parts[0],
+        .where((parts) => parts.length >= 2)
+        .map((parts) {
+          if (parts.length >= 3 && parts[1].isNotEmpty && parts[2].isNotEmpty) {
+            return _PreferenceRound(
+              prompt: parts[0].isEmpty ? 'Você prefere...' : parts[0],
               options: [parts[1], parts[2]],
-              correct: parts[3],
-            ))
+            );
+          }
+          return _PreferenceRound(
+            prompt: 'Você prefere...',
+            options: [parts[0], parts[1]],
+          );
+        })
+        .where((round) => round.options.every((option) => option.isNotEmpty))
         .toList();
   }
 
   Future<void> _choose(String option) async {
-    final current = rounds[index];
-    final correct = current.isCorrect(option);
     final next = index + 1;
-    final nextScore = score + (correct ? 1 : 0);
     setState(() {
-      score = nextScore;
       index = next;
+      selections.add(option);
     });
     if (next >= rounds.length) {
       await _completeMiniGame(
         common: widget.common,
         game: widget.config.type,
         name: name.text,
-        score: nextScore,
+        score: selections.length,
         total: rounds.length,
       );
-    } else if (!correct) {
-      widget.common.toast.error('Essa não era a resposta correta.');
     }
   }
 
   void _restart() {
     setState(() {
       index = 0;
-      score = 0;
+      selections.clear();
     });
   }
 
@@ -1481,8 +1484,7 @@ class _ThisOrThatGameState extends State<_ThisOrThatGame> {
   Widget build(BuildContext context) {
     if (rounds.isEmpty) {
       return const _GameEmptyState(
-        text:
-            'Cadastre rodadas no formato "Pergunta|Opção A|Opção B|Resposta correta".',
+        text: 'Cadastre rodadas no formato "Pergunta|Opção A|Opção B".',
       );
     }
     final finished = index >= rounds.length;
@@ -1502,8 +1504,8 @@ class _ThisOrThatGameState extends State<_ThisOrThatGame> {
         ),
         const SizedBox(height: 18),
         if (finished)
-          _QuizFinished(
-            score: score,
+          _PreferenceFinished(
+            answered: selections.length,
             total: rounds.length,
             onRestart: _restart,
           )
@@ -1528,23 +1530,14 @@ class _ThisOrThatGameState extends State<_ThisOrThatGame> {
   }
 }
 
-class _ChoiceRound {
-  const _ChoiceRound({
+class _PreferenceRound {
+  const _PreferenceRound({
     required this.prompt,
     required this.options,
-    required this.correct,
   });
 
   final String prompt;
   final List<String> options;
-  final String correct;
-
-  bool isCorrect(String option) {
-    final normalizedCorrect = correct.toLowerCase().trim();
-    return normalizedCorrect == option.toLowerCase().trim() ||
-        (normalizedCorrect == 'a' && option == options.first) ||
-        (normalizedCorrect == 'b' && option == options.last);
-  }
 }
 
 class _ChoiceButtons extends StatelessWidget {
@@ -1714,6 +1707,46 @@ class _QuizFinished extends StatelessWidget {
         const SizedBox(height: 12),
         Text('Você acertou $score de $total.',
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 14),
+        FilledButton.icon(
+          onPressed: onRestart,
+          icon: const Icon(Icons.replay),
+          label: const Text('Jogar novamente'),
+        ),
+      ],
+    );
+  }
+}
+
+class _PreferenceFinished extends StatelessWidget {
+  const _PreferenceFinished({
+    required this.answered,
+    required this.total,
+    required this.onRestart,
+  });
+
+  final int answered;
+  final int total;
+  final VoidCallback onRestart;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Column(
+      children: [
+        Icon(Icons.favorite, size: 54, color: palette.primary),
+        const SizedBox(height: 12),
+        Text(
+          'Você escolheu $answered de $total.',
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Aqui não tem resposta certa, só preferência.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: palette.muted),
+        ),
         const SizedBox(height: 14),
         FilledButton.icon(
           onPressed: onRestart,

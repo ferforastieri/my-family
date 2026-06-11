@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { Access } from '@auth/decorators/access.decorator';
@@ -13,6 +14,7 @@ import { AccessGuard } from '@auth/guards/access.guard';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { CartasService } from '../../application/services/cartas.service';
 import type { CartaWriteDto } from '../dto/carta.dto';
+import type { UserEntity } from '@auth/domain/entities/user.entity';
 
 @Controller('cartas')
 @UseGuards(JwtAuthGuard, AccessGuard)
@@ -31,8 +33,11 @@ export class CartasController {
   }
 
   @Post()
-  async create(@Body() data: CartaWriteDto) {
-    const row = await this.cartasService.create('letter', data);
+  async create(
+    @Req() request: { user: UserEntity },
+    @Body() data: CartaWriteDto,
+  ) {
+    const row = await this.cartasService.create('letter', data, request.user);
     return { message: 'Texto salvo.', ...row };
   }
 

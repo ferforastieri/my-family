@@ -86,6 +86,7 @@ export class LocationService {
     this.lowBatteryAlerts.set(key, now);
     const name = row.userName || 'Alguém';
     await this.jobs.enqueueLowBatteryAlert({
+      userId: row.userId,
       name,
       batteryLevel: row.batteryLevel,
     });
@@ -124,6 +125,7 @@ export class LocationService {
           ? `${name} chegou em ${place.name}.`
           : `${name} saiu de ${place.name}.`,
         '/localizacao',
+        { type: 'location', excludeUserIds: [row.userId] },
       );
     }
   }

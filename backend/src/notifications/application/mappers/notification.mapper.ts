@@ -7,7 +7,7 @@ export type NotificationMapperSource = {
   body: string;
   url: string;
   icon?: string | null;
-  type: 'manual' | 'push' | 'chat' | 'location' | 'system';
+  type: 'manual' | 'push' | 'chat' | 'location' | 'letter' | 'system';
   readBy: string[];
   createdAt: Date;
 };

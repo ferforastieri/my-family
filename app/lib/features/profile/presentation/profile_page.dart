@@ -110,71 +110,68 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
     final user = widget.auth.user!;
     final displayName =
         user.name?.trim().isNotEmpty == true ? user.name!.trim() : 'Sem nome';
-    return LovePanel(
-      padding: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _ProfileHero(
-            displayName: displayName,
-            email: user.email,
-            role: _roleLabel(user.role),
-            initial: _initialFor(user.name ?? user.email),
-            avatarPath: user.avatarPath,
-            uploadingAvatar: uploadingAvatar,
-            onChangeAvatar: _changeAvatar,
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 18, 18, 22),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Conta',
-                  style: TextStyle(
-                    color: palette.foreground,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                  ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _ProfileHero(
+          displayName: displayName,
+          email: user.email,
+          role: _roleLabel(user.role),
+          initial: _initialFor(user.name ?? user.email),
+          avatarPath: user.avatarPath,
+          uploadingAvatar: uploadingAvatar,
+          onChangeAvatar: _changeAvatar,
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(0, 18, 0, 22),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Conta',
+                style: TextStyle(
+                  color: palette.foreground,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
                 ),
-                const SizedBox(height: 12),
+              ),
+              const SizedBox(height: 12),
+              _ProfileActionTile(
+                icon: Icons.person_outline,
+                label: 'Editar perfil',
+                description: 'Atualize seu nome e suas informações.',
+                onTap: widget.onEditProfile,
+              ),
+              if (user.isAdmin) ...[
+                const SizedBox(height: 10),
                 _ProfileActionTile(
-                  icon: Icons.person_outline,
-                  label: 'Editar perfil',
-                  description: 'Atualize seu nome e suas informações.',
-                  onTap: widget.onEditProfile,
-                ),
-                if (user.isAdmin) ...[
-                  const SizedBox(height: 10),
-                  _ProfileActionTile(
-                    icon: Icons.admin_panel_settings_outlined,
-                    label: 'Administração',
-                    description: 'Gerencie usuários, notificações e jogos.',
-                    onTap: widget.onAdmin,
-                  ),
-                ],
-                const SizedBox(height: 18),
-                Text(
-                  'Sessão',
-                  style: TextStyle(
-                    color: palette.foreground,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _ProfileActionTile(
-                  icon: Icons.logout,
-                  label: 'Sair',
-                  description: 'Encerrar sua sessão neste dispositivo.',
-                  destructive: true,
-                  onTap: widget.onSignOut,
+                  icon: Icons.admin_panel_settings_outlined,
+                  label: 'Administração',
+                  description: 'Gerencie usuários, notificações e jogos.',
+                  onTap: widget.onAdmin,
                 ),
               ],
-            ),
+              const SizedBox(height: 18),
+              Text(
+                'Sessão',
+                style: TextStyle(
+                  color: palette.foreground,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _ProfileActionTile(
+                icon: Icons.logout,
+                label: 'Sair',
+                description: 'Encerrar sua sessão neste dispositivo.',
+                destructive: true,
+                onTap: widget.onSignOut,
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -197,56 +194,53 @@ class _GuestProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    return LovePanel(
-      padding: const EdgeInsets.all(24),
-      child: Padding(
-        padding: EdgeInsets.zero,
-        child: Column(
-          children: [
-            Container(
-              width: 96,
-              height: 96,
-              decoration: BoxDecoration(
-                color: palette.primary.withValues(alpha: .12),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: palette.primary.withValues(alpha: .22),
-                  width: 2,
-                ),
-              ),
-              child: Icon(
-                Icons.account_circle_outlined,
-                color: palette.primary,
-                size: 56,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: Column(
+        children: [
+          Container(
+            width: 96,
+            height: 96,
+            decoration: BoxDecoration(
+              color: palette.primary.withValues(alpha: .12),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: palette.primary.withValues(alpha: .22),
+                width: 2,
               ),
             ),
-            const SizedBox(height: 18),
-            Text(
-              'Seu espaço da família',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: palette.primary,
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-              ),
+            child: Icon(
+              Icons.account_circle_outlined,
+              color: palette.primary,
+              size: 56,
             ),
-            const SizedBox(height: 10),
-            Text(
-              'Entre para acessar memórias, perfil, administração e conversas privadas.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: palette.muted, height: 1.45),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'Seu espaço da família',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: palette.primary,
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
             ),
-            const SizedBox(height: 22),
-            SizedBox(
-              width: double.infinity,
-              child: AppButton(
-                onPressed: onLogin,
-                label: 'Entrar',
-                icon: Icons.login,
-              ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Entre para acessar memórias, perfil, administração e conversas privadas.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: palette.muted, height: 1.45),
+          ),
+          const SizedBox(height: 22),
+          SizedBox(
+            width: double.infinity,
+            child: AppButton(
+              onPressed: onLogin,
+              label: 'Entrar',
+              icon: Icons.login,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -285,7 +279,7 @@ class _ProfileHero extends StatelessWidget {
             palette.primaryDark.withValues(alpha: .08),
           ],
         ),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
         children: [

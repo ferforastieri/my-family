@@ -6,9 +6,10 @@ import { MongoModelsModule } from '@shared/infrastructure/database/database.prov
 import { CartasRepository } from './infrastructure/repositories/cartas.repository';
 import { AuthModule } from '@auth/auth.module';
 import { CartasGateway } from './interfaces/gateways/cartas.gateway';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [DatabaseModule, MongoModelsModule, AuthModule],
+  imports: [DatabaseModule, MongoModelsModule, AuthModule, NotificationsModule],
   controllers: [CartasController],
   providers: [CartasService, CartasRepository, CartasGateway],
   exports: [CartasService],

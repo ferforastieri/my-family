@@ -18,13 +18,14 @@ import type {
   NotificationEntity,
   PushSubscriptionEntity,
 } from '@notifications/domain/entities/notification.entity';
+import type { NotificationType } from '../../interfaces/dto/notification.dto';
 
 export type NotificationWrite = {
   title: string;
   body?: string;
   url?: string;
   icon?: string | null;
-  type?: 'manual' | 'push' | 'chat' | 'location' | 'system';
+  type?: NotificationType;
 };
 
 @Injectable()
@@ -74,7 +75,9 @@ export class NotificationsRepository {
     });
     const match =
       query?.type &&
-      ['manual', 'push', 'chat', 'location', 'system'].includes(query.type)
+      ['manual', 'push', 'chat', 'location', 'letter', 'system'].includes(
+        query.type,
+      )
         ? query.type === 'manual'
           ? { $or: [{ type: 'manual' }, { type: { $exists: false } }] }
           : { type: query.type }

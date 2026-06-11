@@ -15,6 +15,10 @@ export class LocationQueueProcessor extends WorkerHost {
       'Bateria baixa',
       `${job.data.name} está com ${job.data.batteryLevel}% de bateria.`,
       '/localizacao',
+      {
+        type: 'location',
+        excludeUserIds: job.data.userId ? [job.data.userId] : [],
+      },
     );
   }
 }
