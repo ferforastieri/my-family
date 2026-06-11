@@ -99,6 +99,10 @@ export class NotificationsService {
     return row ? this.toDto(row, user) : null;
   }
 
+  markAllRead(user: UserEntity) {
+    return this.repository.markAllRead(user.id);
+  }
+
   private toDto(
     row: Parameters<typeof notificationMapper.toDto>[0],
     user?: UserEntity | null,

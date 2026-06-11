@@ -91,9 +91,7 @@ class NotificationsSheet extends StatelessWidget {
                                     )),
                                 subtitle:
                                     item.body.isEmpty ? null : Text(item.body),
-                                onTap: () async {
-                                  await notifications.markRead(item);
-                                  if (!context.mounted) return;
+                                onTap: () {
                                   Navigator.pop(context);
                                   context.openAppRoute(item.url);
                                 },

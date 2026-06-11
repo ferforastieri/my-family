@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/chat/chat_controller.dart';
@@ -114,6 +116,7 @@ class AppShell extends StatelessWidget {
   }
 
   void _openNotificationsSheet(BuildContext context) {
+    unawaited(notifications.markAllRead());
     showAppSheet<void>(
       context: context,
       builder: (_) => NotificationsSheet(notifications: notifications),
