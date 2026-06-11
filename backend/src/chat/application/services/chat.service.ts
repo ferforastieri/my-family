@@ -55,6 +55,12 @@ export class ChatService {
     const users = user
       ? (await this.users.list({ page: 1, limit: 100 })).items
       : [];
+    const unreadCounts = user
+      ? await this.chat.unreadCountsForUser(
+          user.id,
+          result.items.map((item) => item.id),
+        )
+      : new Map<string, number>();
     return {
       ...result,
       items: result.items.map((item) => {
@@ -68,6 +74,7 @@ export class ChatService {
             : null;
         return {
           ...chatConversationMapper.toDto(item),
+          unreadCount: unreadCounts.get(item.id) ?? 0,
           title:
             item.type === 'direct'
               ? this.chatUserLabel(participant) || item.title
@@ -100,6 +107,7 @@ export class ChatService {
       : null;
     return {
       ...chatConversationMapper.toDto(conversation),
+      unreadCount: 0,
       title: this.chatUserLabel(participant) || conversation.title,
       avatarPath: participant?.avatarPath ?? null,
     };

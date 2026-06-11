@@ -110,6 +110,24 @@ export class ChatRepository {
     );
   }
 
+  async unreadCountsForUser(userId: string, conversationIds: string[]) {
+    if (conversationIds.length === 0) return new Map<string, number>();
+    const rows = await this.messages
+      .aggregate<{ _id: string; count: number }>([
+        {
+          $match: {
+            conversationId: { $in: conversationIds },
+            senderId: { $ne: userId },
+            readBy: { $ne: userId },
+            deletedAt: { $exists: false },
+          },
+        },
+        { $group: { _id: '$conversationId', count: { $sum: 1 } } },
+      ])
+      .exec();
+    return new Map(rows.map((row) => [row._id, row.count]));
+  }
+
   async findConversation(id: string) {
     return this.toConversation(await this.conversations.findById(id).exec());
   }

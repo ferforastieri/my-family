@@ -10,11 +10,13 @@ class AppHeaderActionsScope extends InheritedWidget {
     super.key,
     required this.onNotifications,
     required this.onTheme,
+    required this.notificationCount,
     required super.child,
   });
 
   final VoidCallback onNotifications;
   final VoidCallback onTheme;
+  final int notificationCount;
 
   static AppHeaderActionsScope? maybeOf(BuildContext context) {
     return context.dependOnInheritedWidgetOfExactType<AppHeaderActionsScope>();
@@ -23,7 +25,8 @@ class AppHeaderActionsScope extends InheritedWidget {
   @override
   bool updateShouldNotify(AppHeaderActionsScope oldWidget) {
     return onNotifications != oldWidget.onNotifications ||
-        onTheme != oldWidget.onTheme;
+        onTheme != oldWidget.onTheme ||
+        notificationCount != oldWidget.notificationCount;
   }
 }
 
@@ -117,7 +120,10 @@ class AppPageHeader extends StatelessWidget {
               if (mobileActions != null) ...[
                 AppHeaderIconButton(
                   onPressed: mobileActions.onNotifications,
-                  icon: const Icon(Icons.notifications_outlined),
+                  icon: _HeaderBadge(
+                    count: mobileActions.notificationCount,
+                    child: const Icon(Icons.notifications_outlined),
+                  ),
                   tooltip: 'Notificações',
                 ),
                 const SizedBox(width: 6),
@@ -169,6 +175,59 @@ class AppPageHeader extends StatelessWidget {
       return;
     }
     context.go('/');
+  }
+}
+
+class _HeaderBadge extends StatelessWidget {
+  const _HeaderBadge({required this.count, required this.child});
+
+  final int count;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (count <= 0) return child;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        child,
+        Positioned(
+          right: -8,
+          top: -8,
+          child: _BadgeLabel(count: count),
+        ),
+      ],
+    );
+  }
+}
+
+class _BadgeLabel extends StatelessWidget {
+  const _BadgeLabel({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = count > 99 ? '99+' : count.toString();
+    return Container(
+      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 5),
+      decoration: BoxDecoration(
+        color: primary,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white, width: 1.5),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+          height: 1,
+        ),
+      ),
+    );
   }
 }
 

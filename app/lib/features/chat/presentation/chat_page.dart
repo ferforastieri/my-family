@@ -167,9 +167,9 @@ class _ChatPageState extends State<ChatPage> {
     try {
       await widget.chat.refreshUsers();
       if (!mounted) return;
-      showAppSheet<void>(
+      final user = await showAppSheet<ChatUser>(
         context: context,
-        builder: (context) => SizedBox(
+        builder: (sheetContext) => SizedBox(
           width: 460,
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -186,19 +186,18 @@ class _ChatPageState extends State<ChatPage> {
                 ListTile(
                   leading: const Icon(Icons.person_outline),
                   title: Text(user.label),
-                  onTap: () async {
-                    Navigator.of(context).pop();
-                    try {
-                      await widget.chat.createConversation(user);
-                    } catch (error) {
-                      widget.toast.error(error.toString());
-                    }
-                  },
+                  onTap: () => Navigator.of(sheetContext).pop(user),
                 ),
             ],
           ),
         ),
       );
+      if (user == null || !mounted) return;
+      try {
+        await widget.chat.createConversation(user);
+      } catch (error) {
+        widget.toast.error(error.toString());
+      }
     } catch (error) {
       widget.toast.error(error.toString());
     }
@@ -302,7 +301,7 @@ class _ChatPageState extends State<ChatPage> {
               onRefresh: _refreshMessages,
               compact: !wide,
               onBack: () => _goBack(context),
-              onOpenConversations: () => _openConversationsSheet(sidebar),
+              onOpenConversations: _openConversationsSheet,
             );
 
             if (!wide) {
@@ -351,13 +350,27 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  void _openConversationsSheet(Widget sidebar) {
+  Future<void> _openConversationsSheet() async {
     showAppSheet<void>(
       context: context,
-      builder: (_) => SizedBox(
+      builder: (sheetContext) => SizedBox(
         width: 520,
         height: MediaQuery.of(context).size.height * .72,
-        child: sidebar,
+        child: _ConversationList(
+          chat: widget.chat,
+          auth: widget.auth,
+          onNewConversation: () {
+            Navigator.of(sheetContext).pop();
+            _openPeoplePicker();
+          },
+          onRefresh: _refreshChat,
+          onConversationSelected: (conversation) {
+            Navigator.of(sheetContext).pop();
+            widget.chat
+                .loadMessages(conversation)
+                .catchError((error) => widget.toast.error(error.toString()));
+          },
+        ),
       ),
     );
   }
@@ -432,12 +445,14 @@ class _ConversationList extends StatelessWidget {
     required this.auth,
     required this.onNewConversation,
     required this.onRefresh,
+    this.onConversationSelected,
   });
 
   final ChatController chat;
   final AuthController auth;
   final VoidCallback onNewConversation;
   final Future<void> Function() onRefresh;
+  final ValueChanged<ChatConversation>? onConversationSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -503,9 +518,19 @@ class _ConversationList extends StatelessWidget {
                         subtitle: Text(conversation.type == 'global'
                             ? 'Todos podem conversar'
                             : 'Conversa privada'),
-                        onTap: () => chat
-                            .loadMessages(conversation)
-                            .catchError((error) => null),
+                        trailing: conversation.unreadCount > 0
+                            ? _UnreadBadge(count: conversation.unreadCount)
+                            : null,
+                        onTap: () {
+                          final handler = onConversationSelected;
+                          if (handler != null) {
+                            handler(conversation);
+                            return;
+                          }
+                          chat
+                              .loadMessages(conversation)
+                              .catchError((error) => null);
+                        },
                       );
                     },
                   ),
@@ -723,6 +748,35 @@ class _MessagePane extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _UnreadBadge extends StatelessWidget {
+  const _UnreadBadge({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final text = count > 99 ? '99+' : count.toString();
+    return Container(
+      constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        color: palette.primary,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
     );
   }
 }

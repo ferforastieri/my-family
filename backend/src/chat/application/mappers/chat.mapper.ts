@@ -18,6 +18,7 @@ export class ChatConversationMapper implements Mapper<
       type: source.type,
       title: source.title,
       participantIds: source.participantIds,
+      unreadCount: 0,
       avatarPath: null,
       createdBy: source.createdBy ?? null,
       createdAt: source.createdAt,
