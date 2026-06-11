@@ -55,17 +55,17 @@ export class NotificationsService {
     return JSON.parse(readFileSync(path, 'utf8')) as admin.ServiceAccount;
   }
 
-  async list(query?: PaginationQuery) {
+  async list(query?: PaginationQuery, user?: UserEntity | null) {
     const page = await this.repository.list(query);
     return {
       ...page,
-      items: page.items.map((r) => notificationMapper.toDto(r)),
+      items: page.items.map((r) => this.toDto(r, user)),
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, user?: UserEntity | null) {
     const row = await this.repository.findById(id);
-    return row ? notificationMapper.toDto(row) : null;
+    return row ? this.toDto(row, user) : null;
   }
 
   async create(data: NotificationCreateDto) {
@@ -92,6 +92,21 @@ export class NotificationsService {
   async clearAll() {
     await this.repository.clear();
     this.realtime.emitNotificationsCleared();
+  }
+
+  async markRead(id: string, user: UserEntity) {
+    const row = await this.repository.markRead(id, user.id);
+    return row ? this.toDto(row, user) : null;
+  }
+
+  private toDto(
+    row: Parameters<typeof notificationMapper.toDto>[0],
+    user?: UserEntity | null,
+  ) {
+    return {
+      ...notificationMapper.toDto(row),
+      read: user ? row.readBy.includes(user.id) : false,
+    };
   }
 
   async pushSubscribe(

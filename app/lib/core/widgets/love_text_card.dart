@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import 'love_action_card.dart';
 
@@ -31,8 +30,8 @@ class LoveTextCard extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).extension<AppTextThemes>()!.display.merge(
-                  const TextStyle(
-                    color: foreground,
+                  TextStyle(
+                    color: palette.foreground,
                     fontWeight: FontWeight.w900,
                     fontSize: 22,
                   ),

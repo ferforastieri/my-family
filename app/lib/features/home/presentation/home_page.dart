@@ -4,7 +4,6 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/flower_garden.dart';
 import '../../../core/widgets/love_action_card.dart';
@@ -284,7 +283,6 @@ class CounterInfo {
     required this.date,
     required this.message,
     required this.elapsed,
-    required this.colors,
   });
 
   final String title;
@@ -292,7 +290,6 @@ class CounterInfo {
   final DateTime date;
   final String message;
   final ElapsedTime elapsed;
-  final List<Color> colors;
 }
 
 class ElapsedTime {
@@ -319,7 +316,6 @@ List<CounterInfo> _buildCounters() {
       date: DateTime(2024, 10, 12),
       message: 'Desde o primeiro olhar, sabia que você era especial',
       elapsed: _elapsed(DateTime(2024, 10, 12)),
-      colors: const [primary, primaryDark],
     ),
     CounterInfo(
       title: 'Nosso Casamento',
@@ -327,7 +323,6 @@ List<CounterInfo> _buildCounters() {
       date: DateTime(2025, 4, 15),
       message: 'O dia mais feliz da minha vida ao seu lado',
       elapsed: _elapsed(DateTime(2025, 4, 15)),
-      colors: const [Color(0xffff73b9), Color(0xffdf5198)],
     ),
     CounterInfo(
       title: 'Nascimento do Fernando',
@@ -335,7 +330,6 @@ List<CounterInfo> _buildCounters() {
       date: DateTime(2026, 6, 15),
       message: 'Nosso maior presente de amor chegando',
       elapsed: _elapsed(DateTime(2026, 6, 15)),
-      colors: const [Color(0xffc084fc), Color(0xff9333ea)],
     ),
   ];
 }
@@ -362,6 +356,7 @@ class CounterCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
+    final colors = [palette.primary, palette.primaryDark];
     final compact = MediaQuery.sizeOf(context).width < 760;
     final values = [
       ('${info.elapsed.years}', 'Anos'),
@@ -378,7 +373,7 @@ class CounterCard extends StatelessWidget {
             Container(
               height: 7,
               decoration: BoxDecoration(
-                gradient: LinearGradient(colors: info.colors),
+                gradient: LinearGradient(colors: colors),
               ),
             ),
             Expanded(
@@ -496,9 +491,9 @@ class CounterCard extends StatelessWidget {
                         vertical: compact ? 6 : 8,
                       ),
                       decoration: BoxDecoration(
-                        color: info.colors.last.withValues(alpha: .08),
+                        color: palette.primary.withValues(alpha: .08),
                         border: Border.all(
-                            color: info.colors.last.withValues(alpha: .12)),
+                            color: palette.primary.withValues(alpha: .12)),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(

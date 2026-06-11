@@ -352,8 +352,7 @@ class _SimpleListsPanel extends StatelessWidget {
                 gradient: LinearGradient(
                   colors: [
                     palette.primary.withValues(alpha: .92),
-                    const Color(0xffdf5198),
-                    const Color(0xff9333ea),
+                    palette.primaryDark.withValues(alpha: .92),
                   ],
                 ),
               ),

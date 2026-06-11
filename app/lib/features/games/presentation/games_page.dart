@@ -15,7 +15,7 @@ import '../../../core/widgets/skeleton.dart';
 import '../../../data/family_repository.dart';
 import '../../../data/models.dart';
 
-enum _GameView { hub, quiz, wordSearch }
+enum _GameView { hub, quiz, wordSearch, memoryMatch, loveOrder, thisOrThat }
 
 class GamesPage extends StatefulWidget {
   const GamesPage({
@@ -64,6 +64,7 @@ class _GamesPageState extends State<GamesPage> {
       child: switch (view) {
         _GameView.hub => _GamesHub(
             key: ValueKey('hub-$version'),
+            repository: widget.repository,
             onOpen: (next) => setState(() => view = next),
           ),
         _GameView.quiz => _QuizGame(
@@ -80,6 +81,36 @@ class _GamesPageState extends State<GamesPage> {
             auth: widget.auth,
             onBack: () => setState(() => view = _GameView.hub),
           ),
+        _GameView.memoryMatch => _MiniGameRoute(
+            key: ValueKey('memory-$version'),
+            type: 'memory_match',
+            repository: widget.repository,
+            toast: widget.toast,
+            auth: widget.auth,
+            onBack: () => setState(() => view = _GameView.hub),
+            builder: (config, common) =>
+                _MemoryMatchGame(config: config, common: common),
+          ),
+        _GameView.loveOrder => _MiniGameRoute(
+            key: ValueKey('order-$version'),
+            type: 'love_order',
+            repository: widget.repository,
+            toast: widget.toast,
+            auth: widget.auth,
+            onBack: () => setState(() => view = _GameView.hub),
+            builder: (config, common) =>
+                _LoveOrderGame(config: config, common: common),
+          ),
+        _GameView.thisOrThat => _MiniGameRoute(
+            key: ValueKey('choice-$version'),
+            type: 'this_or_that',
+            repository: widget.repository,
+            toast: widget.toast,
+            auth: widget.auth,
+            onBack: () => setState(() => view = _GameView.hub),
+            builder: (config, common) =>
+                _ThisOrThatGame(config: config, common: common),
+          ),
       },
     );
   }
@@ -92,11 +123,15 @@ const _gameRealtimeEvents = [
   'games.words.created',
   'games.words.updated',
   'games.words.deleted',
+  'games.mini.created',
+  'games.mini.updated',
+  'games.mini.deleted',
 ];
 
 class _GamesHub extends StatelessWidget {
-  const _GamesHub({super.key, required this.onOpen});
+  const _GamesHub({super.key, required this.repository, required this.onOpen});
 
+  final FamilyRepository repository;
   final ValueChanged<_GameView> onOpen;
 
   @override
@@ -107,50 +142,61 @@ class _GamesHub extends StatelessWidget {
       header: const _GamesHero(),
       headerGap: 14,
       children: [
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final wide = constraints.maxWidth >= 820;
-            return GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: wide ? 2 : 1,
-              childAspectRatio: wide ? 2.45 : 1.72,
-              crossAxisSpacing: 14,
-              mainAxisSpacing: 14,
-              children: [
-                _GameCard(
-                  icon: Icons.favorite,
-                  title: 'Quiz do Amor',
-                  body:
-                      'Perguntas dinâmicas para testar carinho, memória e pequenos detalhes da família.',
-                  color: palette.primary,
-                  accent: const Color(0xffdf5198),
-                  metric: 'Quiz',
-                  details: const [
-                    'Respostas rápidas',
-                    'Pontuação no final',
-                    'Perguntas editáveis',
+        AppQuery<List<MiniGameConfig>>(
+          queryKey: QueryKeys.miniGames(),
+          queryFn: repository.listMiniGames,
+          loading: const SkeletonBox(height: 260, borderRadius: 8),
+          builder: (context, miniGames, _) {
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final wide = constraints.maxWidth >= 820;
+                return GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: wide ? 2 : 1,
+                  childAspectRatio: wide ? 2.45 : 1.86,
+                  crossAxisSpacing: 14,
+                  mainAxisSpacing: 14,
+                  children: [
+                    _GameCard(
+                      icon: Icons.favorite,
+                      title: 'Quiz do Amor',
+                      body:
+                          'Perguntas dinâmicas para testar carinho, memória e pequenos detalhes da família.',
+                      color: palette.primary,
+                      accent: palette.primaryDark,
+                      metric: 'Quiz',
+                      details: const ['Respostas rápidas'],
+                      footer: 'Perguntas editáveis pelo admin',
+                      onTap: () => onOpen(_GameView.quiz),
+                    ),
+                    _GameCard(
+                      icon: Icons.grid_on,
+                      title: 'Caça Palavras',
+                      body:
+                          'Palavras familiares e românticas sorteadas a cada partida.',
+                      color: palette.primaryDark,
+                      accent: palette.primary,
+                      metric: '12x12',
+                      details: const ['Arraste nas letras'],
+                      footer: 'Palavras editáveis pelo admin',
+                      onTap: () => onOpen(_GameView.wordSearch),
+                    ),
+                    for (final config in miniGames)
+                      _GameCard(
+                        icon: _miniGameIcon(config.type),
+                        title: config.title,
+                        body: config.instructions,
+                        color: palette.primary,
+                        accent: palette.primaryDark,
+                        metric: _miniGameMetric(config),
+                        details: [_miniGameTypeLabel(config.type)],
+                        footer: 'Configurável pelo admin',
+                        onTap: () => onOpen(_viewForMiniGame(config.type)),
+                      ),
                   ],
-                  footer: 'Perguntas editáveis pelo admin',
-                  onTap: () => onOpen(_GameView.quiz),
-                ),
-                _GameCard(
-                  icon: Icons.grid_on,
-                  title: 'Caça Palavras',
-                  body:
-                      'Palavras familiares e românticas sorteadas a cada partida.',
-                  color: palette.primaryDark,
-                  accent: const Color(0xff9333ea),
-                  metric: '12x12',
-                  details: const [
-                    'Arraste nas letras',
-                    'Horizontal, vertical e diagonal',
-                    'Novo sorteio a cada rodada',
-                  ],
-                  footer: 'Sorteio novo a cada rodada',
-                  onTap: () => onOpen(_GameView.wordSearch),
-                ),
-              ],
+                );
+              },
             );
           },
         ),
@@ -879,10 +925,16 @@ class _WordSearchBoard extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final boardSize = min(constraints.maxWidth, 560.0);
-        final cellSize = boardSize / puzzle.size;
+        final boardPadding = boardSize < 380 ? 4.0 : 6.0;
+        final gap = boardSize < 380 ? 1.5 : 3.0;
+        final gridSize = boardSize - boardPadding * 2;
+        final cellSize = (gridSize - gap * (puzzle.size - 1)) / puzzle.size;
         int? indexFromOffset(Offset localPosition) {
-          final col = (localPosition.dx / cellSize).floor();
-          final row = (localPosition.dy / cellSize).floor();
+          final x = localPosition.dx - boardPadding;
+          final y = localPosition.dy - boardPadding;
+          if (x < 0 || y < 0 || x > gridSize || y > gridSize) return null;
+          final col = (x / (cellSize + gap)).floor();
+          final row = (y / (cellSize + gap)).floor();
           if (row < 0 || row >= puzzle.size || col < 0 || col >= puzzle.size) {
             return null;
           }
@@ -905,10 +957,11 @@ class _WordSearchBoard extends StatelessWidget {
               if (index != null) onSelectionStart(index);
             },
             onTapUp: (_) => onSelectionEnd(),
+            behavior: HitTestBehavior.opaque,
             child: Container(
               width: boardSize,
               height: boardSize,
-              padding: const EdgeInsets.all(6),
+              padding: EdgeInsets.all(boardPadding),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: .72),
                 borderRadius: BorderRadius.circular(18),
@@ -926,8 +979,8 @@ class _WordSearchBoard extends StatelessWidget {
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: puzzle.size,
-                  mainAxisSpacing: 3,
-                  crossAxisSpacing: 3,
+                  mainAxisSpacing: gap,
+                  crossAxisSpacing: gap,
                 ),
                 itemCount: puzzle.size * puzzle.size,
                 itemBuilder: (context, index) {
@@ -959,8 +1012,9 @@ class _WordSearchBoard extends StatelessWidget {
                         color: isFound
                             ? Colors.green.shade800
                             : palette.foreground,
-                        fontSize: cellSize.clamp(18, 28).toDouble(),
+                        fontSize: (cellSize * .54).clamp(12, 22).toDouble(),
                         fontWeight: FontWeight.w900,
+                        height: 1,
                       ),
                     ),
                   );
@@ -972,6 +1026,552 @@ class _WordSearchBoard extends StatelessWidget {
       },
     );
   }
+}
+
+typedef _MiniGameBuilder = Widget Function(
+  MiniGameConfig config,
+  _MiniGameCommon common,
+);
+
+class _MiniGameCommon {
+  const _MiniGameCommon({
+    required this.repository,
+    required this.toast,
+    required this.auth,
+    required this.onBack,
+  });
+
+  final FamilyRepository repository;
+  final ToastController toast;
+  final AuthController auth;
+  final VoidCallback onBack;
+}
+
+class _MiniGameRoute extends StatelessWidget {
+  const _MiniGameRoute({
+    super.key,
+    required this.type,
+    required this.repository,
+    required this.toast,
+    required this.auth,
+    required this.onBack,
+    required this.builder,
+  });
+
+  final String type;
+  final FamilyRepository repository;
+  final ToastController toast;
+  final AuthController auth;
+  final VoidCallback onBack;
+  final _MiniGameBuilder builder;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppFixedHeaderScrollView(
+      onRefresh: () async => invalidateQueries(context, QueryKeys.miniGames()),
+      header: _GamePlayHeader(
+        title: _miniGameTypeLabel(type),
+        subtitle: 'Mini jogo configurável pelo painel.',
+        icon: _miniGameIcon(type),
+        onBack: onBack,
+      ),
+      headerGap: 14,
+      children: [
+        _GamePanel(
+          child: AppQuery<List<MiniGameConfig>>(
+            queryKey: QueryKeys.miniGames(),
+            queryFn: repository.listMiniGames,
+            loading: const SkeletonBox(height: 280, borderRadius: 8),
+            builder: (context, configs, _) {
+              MiniGameConfig? config;
+              for (final row in configs) {
+                if (row.type == type) {
+                  config = row;
+                  break;
+                }
+              }
+              if (config == null) {
+                return const _GameEmptyState(
+                  text: 'Mini jogo inativo ou sem configuração.',
+                );
+              }
+              return builder(
+                config,
+                _MiniGameCommon(
+                  repository: repository,
+                  toast: toast,
+                  auth: auth,
+                  onBack: onBack,
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PlayerNameField extends StatelessWidget {
+  const _PlayerNameField({required this.controller, required this.show});
+
+  final TextEditingController controller;
+  final bool show;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!show) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: TextField(
+        controller: controller,
+        decoration: const InputDecoration(labelText: 'Seu nome'),
+        textInputAction: TextInputAction.done,
+        onSubmitted: (_) => FocusScope.of(context).unfocus(),
+      ),
+    );
+  }
+}
+
+class _MemoryMatchGame extends StatefulWidget {
+  const _MemoryMatchGame({required this.config, required this.common});
+
+  final MiniGameConfig config;
+  final _MiniGameCommon common;
+
+  @override
+  State<_MemoryMatchGame> createState() => _MemoryMatchGameState();
+}
+
+class _MemoryMatchGameState extends State<_MemoryMatchGame> {
+  final name = TextEditingController();
+  late List<_MemoryCardData> cards;
+  final selected = <int>[];
+  final matched = <int>{};
+  bool checking = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _reset();
+  }
+
+  @override
+  void dispose() {
+    name.dispose();
+    super.dispose();
+  }
+
+  void _reset() {
+    final labels = (widget.config.items.isEmpty
+            ? ['Amor', 'Templo', 'Rudy', 'Shopping', 'Filme', 'Fernando']
+            : widget.config.items)
+        .take(8)
+        .toList();
+    cards = [
+      for (final label in labels) ...[
+        _MemoryCardData(label),
+        _MemoryCardData(label),
+      ],
+    ]..shuffle(Random());
+    selected.clear();
+    matched.clear();
+    checking = false;
+  }
+
+  Future<void> _tap(int index) async {
+    if (checking || selected.contains(index) || matched.contains(index)) return;
+    setState(() => selected.add(index));
+    if (selected.length < 2) return;
+    checking = true;
+    final first = selected[0];
+    final second = selected[1];
+    if (cards[first].label == cards[second].label) {
+      setState(() {
+        matched.addAll([first, second]);
+        selected.clear();
+        checking = false;
+      });
+      if (matched.length == cards.length) {
+        await _completeMiniGame(
+          common: widget.common,
+          game: widget.config.type,
+          name: name.text,
+          score: matched.length ~/ 2,
+          total: cards.length ~/ 2,
+        );
+      }
+      return;
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 650));
+    if (!mounted) return;
+    setState(() {
+      selected.clear();
+      checking = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _MiniGameIntro(config: widget.config),
+        _PlayerNameField(
+          controller: name,
+          show: widget.common.auth.user == null,
+        ),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final columns = constraints.maxWidth >= 700 ? 4 : 3;
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: cards.length,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: columns,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                childAspectRatio: columns == 4 ? 1.35 : 1.08,
+              ),
+              itemBuilder: (context, index) {
+                final visible =
+                    selected.contains(index) || matched.contains(index);
+                return InkWell(
+                  onTap: () => _tap(index),
+                  borderRadius: BorderRadius.circular(12),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 160),
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: visible
+                          ? palette.primary.withValues(alpha: .16)
+                          : palette.card,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: visible ? palette.primary : palette.border,
+                      ),
+                    ),
+                    child: Text(
+                      visible ? cards[index].label : '?',
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: palette.foreground,
+                        fontSize: visible ? 15 : 24,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        ),
+        const SizedBox(height: 14),
+        FilledButton.icon(
+          onPressed: () => setState(_reset),
+          icon: const Icon(Icons.shuffle),
+          label: const Text('Recomeçar'),
+        ),
+      ],
+    );
+  }
+}
+
+class _MemoryCardData {
+  const _MemoryCardData(this.label);
+  final String label;
+}
+
+class _LoveOrderGame extends StatefulWidget {
+  const _LoveOrderGame({required this.config, required this.common});
+
+  final MiniGameConfig config;
+  final _MiniGameCommon common;
+
+  @override
+  State<_LoveOrderGame> createState() => _LoveOrderGameState();
+}
+
+class _LoveOrderGameState extends State<_LoveOrderGame> {
+  final name = TextEditingController();
+  late List<String> shuffled;
+  final picked = <String>[];
+
+  @override
+  void initState() {
+    super.initState();
+    _reset();
+  }
+
+  @override
+  void dispose() {
+    name.dispose();
+    super.dispose();
+  }
+
+  void _reset() {
+    shuffled = [..._orderItems]..shuffle(Random());
+    picked.clear();
+  }
+
+  List<String> get _orderItems {
+    final items = widget.config.items.isEmpty
+        ? ['Mutual', 'Primeiro encontro', 'Namoro', 'Casamento', 'Fernando']
+        : widget.config.items;
+    return items.take(8).toList();
+  }
+
+  Future<void> _pick(String item) async {
+    if (picked.contains(item)) return;
+    final expected = _orderItems[picked.length];
+    if (item != expected) {
+      widget.common.toast.error('Quase! Esse momento vem depois.');
+      return;
+    }
+    setState(() => picked.add(item));
+    if (picked.length == _orderItems.length) {
+      await _completeMiniGame(
+        common: widget.common,
+        game: widget.config.type,
+        name: name.text,
+        score: picked.length,
+        total: _orderItems.length,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _MiniGameIntro(config: widget.config),
+        _PlayerNameField(
+          controller: name,
+          show: widget.common.auth.user == null,
+        ),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            for (final item in shuffled)
+              ChoiceChip(
+                selected: picked.contains(item),
+                label: Text(item),
+                onSelected: (_) => _pick(item),
+              ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: palette.card.withValues(alpha: .72),
+            border: Border.all(color: palette.border),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Text(
+              picked.isEmpty
+                  ? 'Comece pelo primeiro momento.'
+                  : picked.join('  >  '),
+              style: TextStyle(
+                color: palette.foreground,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        FilledButton.icon(
+          onPressed: () => setState(_reset),
+          icon: const Icon(Icons.replay),
+          label: const Text('Recomeçar'),
+        ),
+      ],
+    );
+  }
+}
+
+class _ThisOrThatGame extends StatefulWidget {
+  const _ThisOrThatGame({required this.config, required this.common});
+
+  final MiniGameConfig config;
+  final _MiniGameCommon common;
+
+  @override
+  State<_ThisOrThatGame> createState() => _ThisOrThatGameState();
+}
+
+class _ThisOrThatGameState extends State<_ThisOrThatGame> {
+  final name = TextEditingController();
+  int index = 0;
+  int choices = 0;
+
+  @override
+  void dispose() {
+    name.dispose();
+    super.dispose();
+  }
+
+  List<List<String>> get rounds {
+    final raw = widget.config.items.isEmpty
+        ? [
+            'Shopping|Filme no sofá',
+            'Pizza|Hambúrguer',
+            'Passeio|Casa juntinhos',
+            'Doce|Salgado',
+          ]
+        : widget.config.items;
+    return raw
+        .map((item) => item.split('|').map((part) => part.trim()).toList())
+        .where((parts) => parts.length >= 2 && parts[0].isNotEmpty)
+        .map((parts) => [parts[0], parts[1]])
+        .toList();
+  }
+
+  Future<void> _choose() async {
+    final next = index + 1;
+    setState(() {
+      choices++;
+      index = next;
+    });
+    if (next >= rounds.length) {
+      await _completeMiniGame(
+        common: widget.common,
+        game: widget.config.type,
+        name: name.text,
+        score: next,
+        total: rounds.length,
+      );
+    }
+  }
+
+  void _restart() {
+    setState(() {
+      index = 0;
+      choices = 0;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (rounds.isEmpty) {
+      return const _GameEmptyState(
+        text: 'Cadastre opções no formato "Opção A|Opção B".',
+      );
+    }
+    final finished = index >= rounds.length;
+    final current = finished ? rounds.last : rounds[index];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _MiniGameIntro(config: widget.config),
+        _PlayerNameField(
+          controller: name,
+          show: widget.common.auth.user == null,
+        ),
+        LinearProgressIndicator(
+          value: finished ? 1 : (index + 1) / rounds.length,
+          minHeight: 8,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        const SizedBox(height: 18),
+        if (finished)
+          _QuizFinished(
+            score: choices,
+            total: rounds.length,
+            onRestart: _restart,
+          )
+        else
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final wide = constraints.maxWidth >= 620;
+              final buttons = [
+                for (final option in current)
+                  FilledButton(
+                    onPressed: _choose,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      child: Text(option, textAlign: TextAlign.center),
+                    ),
+                  ),
+              ];
+              if (!wide) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    buttons[0],
+                    const SizedBox(height: 10),
+                    buttons[1],
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: buttons[0]),
+                  const SizedBox(width: 12),
+                  Expanded(child: buttons[1]),
+                ],
+              );
+            },
+          ),
+      ],
+    );
+  }
+}
+
+class _MiniGameIntro extends StatelessWidget {
+  const _MiniGameIntro({required this.config});
+
+  final MiniGameConfig config;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            config.title,
+            style: TextStyle(
+              color: palette.foreground,
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          if (config.instructions.trim().isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(config.instructions, style: TextStyle(color: palette.muted)),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+Future<void> _completeMiniGame({
+  required _MiniGameCommon common,
+  required String game,
+  required String name,
+  required int score,
+  required int total,
+}) async {
+  await common.repository.completeGame(
+    game: game,
+    playerName: name,
+    score: score,
+    total: total,
+  );
+  common.toast.backendSuccess(common.repository.takeMessage());
 }
 
 class _GamePlayHeader extends StatelessWidget {
@@ -1005,8 +1605,9 @@ class _GamePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width < 520;
     return LovePanel(
-      padding: const EdgeInsets.all(22),
+      padding: EdgeInsets.all(compact ? 12 : 22),
       child: child,
     );
   }
@@ -1210,4 +1811,40 @@ String _normalizeWord(String value) {
       .replaceAll(RegExp(r'[ÚÙÛÜ]'), 'U')
       .replaceAll('Ç', 'C')
       .replaceAll(RegExp(r'[^A-Z]'), '');
+}
+
+_GameView _viewForMiniGame(String type) {
+  return switch (type) {
+    'memory_match' => _GameView.memoryMatch,
+    'love_order' => _GameView.loveOrder,
+    'this_or_that' => _GameView.thisOrThat,
+    _ => _GameView.memoryMatch,
+  };
+}
+
+IconData _miniGameIcon(String type) {
+  return switch (type) {
+    'memory_match' => Icons.style_outlined,
+    'love_order' => Icons.timeline_outlined,
+    'this_or_that' => Icons.compare_arrows_outlined,
+    _ => Icons.extension_outlined,
+  };
+}
+
+String _miniGameTypeLabel(String type) {
+  return switch (type) {
+    'memory_match' => 'Memória da Família',
+    'love_order' => 'Linha do Amor',
+    'this_or_that' => 'Isso ou Aquilo',
+    _ => 'Mini jogo',
+  };
+}
+
+String _miniGameMetric(MiniGameConfig config) {
+  return switch (config.type) {
+    'memory_match' => '${min(config.items.length, 8)} pares',
+    'love_order' => '${min(config.items.length, 8)} passos',
+    'this_or_that' => '${config.items.length} rodadas',
+    _ => '${config.items.length} itens',
+  };
 }

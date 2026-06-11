@@ -1,5 +1,7 @@
 import { IsIn, IsOptional, IsString } from 'class-validator';
 
+export type NotificationType = 'manual' | 'push' | 'chat' | 'location' | 'system';
+
 export class NotificationCreateDto {
   @IsString()
   title: string;
@@ -15,6 +17,10 @@ export class NotificationCreateDto {
   @IsOptional()
   @IsString()
   icon?: string;
+
+  @IsOptional()
+  @IsIn(['manual', 'push', 'chat', 'location', 'system'])
+  type?: NotificationType;
 }
 
 export class NotificationSendDto {
@@ -46,5 +52,7 @@ export class NotificationResponseDto {
   body: string;
   url: string;
   icon?: string | null;
+  type: NotificationType;
+  read: boolean;
   at: number;
 }

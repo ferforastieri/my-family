@@ -7,6 +7,14 @@ import {
   IsString,
 } from 'class-validator';
 
+export const miniGameTypes = [
+  'memory_match',
+  'love_order',
+  'this_or_that',
+] as const;
+
+export type MiniGameType = (typeof miniGameTypes)[number];
+
 export class QuizQuestionWriteDto {
   @IsString()
   question: string;
@@ -33,8 +41,8 @@ export class GameWordWriteDto {
 }
 
 export class GameCompletionWriteDto {
-  @IsIn(['quiz', 'word_search'])
-  game: 'quiz' | 'word_search';
+  @IsString()
+  game: string;
 
   @IsOptional()
   @IsString()
@@ -47,6 +55,26 @@ export class GameCompletionWriteDto {
   @IsOptional()
   @IsNumber()
   total?: number;
+}
+
+export class MiniGameConfigWriteDto {
+  @IsIn(miniGameTypes)
+  type: MiniGameType;
+
+  @IsString()
+  title: string;
+
+  @IsOptional()
+  @IsString()
+  instructions?: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  items: string[];
+
+  @IsOptional()
+  @IsBoolean()
+  active?: boolean;
 }
 
 export class QuizQuestionResponseDto {
@@ -69,7 +97,7 @@ export class GameWordResponseDto {
 
 export class GameCompletionResponseDto {
   id: string;
-  game: 'quiz' | 'word_search';
+  game: string;
   playerName: string;
   userId: string | null;
   score: number | null;
@@ -78,9 +106,20 @@ export class GameCompletionResponseDto {
 }
 
 export class GameStatResponseDto {
-  game: 'quiz' | 'word_search';
+  game: string;
   playerName: string;
   count: number;
   bestScore: number | null;
   lastAt: number;
+}
+
+export class MiniGameConfigResponseDto {
+  id: string;
+  type: MiniGameType;
+  title: string;
+  instructions: string;
+  items: string[];
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }

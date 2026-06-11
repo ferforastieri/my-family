@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
+import '../theme/app_theme.dart';
 
 class LovePanel extends StatelessWidget {
   const LovePanel({
@@ -16,17 +16,18 @@ class LovePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
     final panel = Material(
-      color: Colors.white.withValues(alpha: .92),
+      color: palette.card.withValues(alpha: .92),
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: padding,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: primary.withValues(alpha: .18)),
+          border: Border.all(color: palette.border),
           boxShadow: [
             BoxShadow(
-              color: primary.withValues(alpha: .10),
+              color: palette.primary.withValues(alpha: .10),
               blurRadius: 18,
               offset: const Offset(0, 8),
             ),
@@ -65,6 +66,7 @@ class LoveActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
     final card = Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(16),
@@ -79,10 +81,10 @@ class LoveActionCard extends StatelessWidget {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: primary.withValues(alpha: .12),
+                  color: palette.primary.withValues(alpha: .12),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(icon, color: primary, size: 30),
+                child: Icon(icon, color: palette.primary, size: 30),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -93,8 +95,8 @@ class LoveActionCard extends StatelessWidget {
                       title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: foreground,
+                      style: TextStyle(
+                        color: palette.foreground,
                         fontSize: 20,
                         fontWeight: FontWeight.w900,
                       ),
@@ -104,13 +106,13 @@ class LoveActionCard extends StatelessWidget {
                       description,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: muted, height: 1.35),
+                      style: TextStyle(color: palette.muted, height: 1.35),
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 12),
-              trailing ?? const Icon(Icons.chevron_right, color: primary),
+              trailing ?? Icon(Icons.chevron_right, color: palette.primary),
             ],
           ),
         ),

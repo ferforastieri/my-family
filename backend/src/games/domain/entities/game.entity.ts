@@ -10,7 +10,7 @@ export interface QuizQuestionEntity {
 
 export interface GameCompletionEntity {
   id: string;
-  game: 'quiz' | 'word_search';
+  game: string;
   playerName: string;
   userId?: string | null;
   score?: number | null;
@@ -21,6 +21,19 @@ export interface GameCompletionEntity {
 export interface GameWordEntity {
   id: string;
   word: string;
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type MiniGameType = 'memory_match' | 'love_order' | 'this_or_that';
+
+export interface MiniGameConfigEntity {
+  id: string;
+  type: MiniGameType;
+  title: string;
+  instructions: string;
+  items: string[];
   active: boolean;
   createdAt: Date;
   updatedAt: Date;

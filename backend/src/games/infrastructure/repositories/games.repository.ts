@@ -4,6 +4,8 @@ import { Model } from 'mongoose';
 import {
   GameCompletionDocument,
   GameCompletionMongoDocument,
+  MiniGameConfigDocument,
+  MiniGameConfigMongoDocument,
   GameWordDocument,
   GameWordMongoDocument,
   QuizQuestionDocument,
@@ -24,11 +26,19 @@ export type QuizQuestionWrite = {
 };
 
 export type GameCompletionWrite = {
-  game: 'quiz' | 'word_search';
+  game: string;
   playerName: string;
   userId?: string | null;
   score?: number | null;
   total?: number | null;
+};
+
+export type MiniGameConfigWrite = {
+  type: 'memory_match' | 'love_order' | 'this_or_that';
+  title: string;
+  instructions?: string;
+  items: string[];
+  active?: boolean;
 };
 
 export type GameWordWrite = {
@@ -45,6 +55,8 @@ export class GamesRepository {
     private completions: Model<GameCompletionMongoDocument>,
     @InjectModel(GameWordDocument.name)
     private words: Model<GameWordMongoDocument>,
+    @InjectModel(MiniGameConfigDocument.name)
+    private miniGames: Model<MiniGameConfigMongoDocument>,
   ) {}
 
   private questionDto(doc: QuizQuestionMongoDocument) {
@@ -75,6 +87,19 @@ export class GamesRepository {
     return {
       id: toId(doc),
       word: doc.word,
+      active: doc.active,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+    };
+  }
+
+  private miniGameDto(doc: MiniGameConfigMongoDocument) {
+    return {
+      id: toId(doc),
+      type: doc.type,
+      title: doc.title,
+      instructions: doc.instructions ?? '',
+      items: doc.items ?? [],
       active: doc.active,
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
@@ -124,6 +149,55 @@ export class GamesRepository {
         'JESUS',
         'ALIANCA',
       ].map((word) => ({ word, active: true })),
+    );
+  }
+
+  async seedMiniGames() {
+    const defaults: MiniGameConfigWrite[] = [
+      {
+        type: 'memory_match',
+        title: 'Memória da Família',
+        instructions: 'Encontre os pares de lembranças iguais.',
+        items: ['Amor', 'Templo', 'Rudy', 'Shopping', 'Filme', 'Fernando'],
+        active: true,
+      },
+      {
+        type: 'love_order',
+        title: 'Linha do Amor',
+        instructions: 'Toque nos momentos na ordem certa da história.',
+        items: [
+          'Mutual',
+          'Primeiro encontro',
+          'Namoro',
+          'Casamento',
+          'Fernando',
+        ],
+        active: true,
+      },
+      {
+        type: 'this_or_that',
+        title: 'Isso ou Aquilo',
+        instructions: 'Escolha uma opção em cada rodada e descubra seu placar.',
+        items: [
+          'Shopping|Filme no sofá',
+          'Pizza|Hambúrguer',
+          'Passeio|Casa juntinhos',
+          'Doce|Salgado',
+          'Manhã|Noite',
+        ],
+        active: true,
+      },
+    ];
+    await Promise.all(
+      defaults.map((game) =>
+        this.miniGames
+          .updateOne(
+            { type: game.type },
+            { $setOnInsert: game },
+            { upsert: true },
+          )
+          .exec(),
+      ),
     );
   }
 
@@ -188,6 +262,49 @@ export class GamesRepository {
       page,
       limit,
     );
+  }
+
+  async listMiniGames(includeInactive = false, query?: PaginationQuery) {
+    await this.seedMiniGames();
+    const filter = includeInactive ? {} : { active: true };
+    const { page, limit, skip } = normalizePagination(query, {
+      page: 1,
+      limit: 30,
+      maxLimit: 100,
+    });
+    const [docs, total] = await Promise.all([
+      this.miniGames
+        .find(filter)
+        .sort({ createdAt: 1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.miniGames.countDocuments(filter).exec(),
+    ]);
+    return paginated(
+      docs.map((doc) => this.miniGameDto(doc)),
+      total,
+      page,
+      limit,
+    );
+  }
+
+  async createMiniGame(data: MiniGameConfigWrite) {
+    return this.miniGameDto(
+      await this.miniGames.create({ ...data, active: data.active ?? true }),
+    );
+  }
+
+  async updateMiniGame(id: string, data: Partial<MiniGameConfigWrite>) {
+    const doc = await this.miniGames
+      .findByIdAndUpdate(id, { $set: data }, { new: true })
+      .exec();
+    return doc ? this.miniGameDto(doc) : null;
+  }
+
+  async deleteMiniGame(id: string) {
+    const result = await this.miniGames.findByIdAndDelete(id).exec();
+    return !!result;
   }
 
   async createWord(data: GameWordWrite) {

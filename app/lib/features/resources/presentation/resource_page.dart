@@ -4,7 +4,6 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/api/query_keys.dart';
 import '../../../core/query/app_query.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_button.dart';
@@ -674,6 +673,7 @@ class _TextResourceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
     return Material(
       color: Colors.transparent,
       child: Stack(
@@ -685,7 +685,7 @@ class _TextResourceCard extends StatelessWidget {
                   item.subtitle.isEmpty ? 'Sem descrição.' : item.subtitle,
               icon: _resourceIcon(resource),
               onTap: () => onEdit(item),
-              trailing: const Icon(Icons.chevron_right, color: primary),
+              trailing: Icon(Icons.chevron_right, color: palette.primary),
               padding: const EdgeInsets.fromLTRB(18, 18, 18, 54),
             ),
           ),
@@ -700,8 +700,8 @@ class _TextResourceCard extends StatelessWidget {
                     _footerFor(resource, item) ?? _resourceCountLabel(resource),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        color: primary,
+                    style: TextStyle(
+                        color: palette.primary,
                         fontWeight: FontWeight.w800,
                         fontSize: 12),
                   ),
@@ -760,8 +760,7 @@ class _MusicCard extends StatelessWidget {
                           end: Alignment.bottomRight,
                           colors: [
                             palette.primary.withValues(alpha: .88),
-                            const Color(0xffdf5198),
-                            const Color(0xff9333ea),
+                            palette.primaryDark.withValues(alpha: .88),
                           ],
                         ),
                       ),
@@ -913,7 +912,7 @@ class _LetterCard extends StatelessWidget {
               top: 18,
               bottom: 58,
               child: Material(
-                color: const Color(0xfffffbf6),
+                color: palette.card,
                 elevation: 3,
                 shadowColor: Colors.black.withValues(alpha: .12),
                 borderRadius: BorderRadius.circular(4),
@@ -942,7 +941,7 @@ class _LetterCard extends StatelessWidget {
                               .extension<AppTextThemes>()!
                               .display
                               .copyWith(
-                                color: const Color(0xff382b32),
+                                color: palette.foreground,
                                 fontSize: 21,
                                 fontWeight: FontWeight.w800,
                                 height: 1.08,
@@ -956,8 +955,8 @@ class _LetterCard extends StatelessWidget {
                                 : preview,
                             maxLines: 4,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Color(0xff705e67),
+                            style: TextStyle(
+                              color: palette.muted,
                               height: 1.42,
                             ),
                           ),
@@ -1353,6 +1352,7 @@ class _PhotoMemorySheetState extends State<PhotoMemorySheet> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 560),
       child: SingleChildScrollView(
@@ -1361,13 +1361,15 @@ class _PhotoMemorySheetState extends State<PhotoMemorySheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(widget.item == null ? 'Adicionar memória' : 'Editar memória',
-                style: const TextStyle(
-                    color: primary, fontWeight: FontWeight.w900, fontSize: 22)),
+                style: TextStyle(
+                    color: palette.primary,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 22)),
             const SizedBox(height: 6),
             Text(
               'Escolha a mídia, organize por álbum e marque a data pelo calendário.',
               style: TextStyle(
-                color: Theme.of(context).extension<AppPalette>()!.muted,
+                color: palette.muted,
                 height: 1.35,
               ),
             ),
@@ -1436,7 +1438,7 @@ class _LetterReader extends StatelessWidget {
         ),
         child: SingleChildScrollView(
           child: Material(
-            color: const Color(0xfffffbf6),
+            color: palette.card,
             elevation: 8,
             shadowColor: Colors.black.withValues(alpha: .18),
             borderRadius: BorderRadius.circular(4),
@@ -1448,11 +1450,11 @@ class _LetterReader extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'PARA MEU AMOR',
                           style: TextStyle(
-                            color: Color(0xffb42d6c),
+                            color: palette.primary,
                             fontSize: 11,
                             fontWeight: FontWeight.w900,
                           ),
@@ -1461,8 +1463,8 @@ class _LetterReader extends StatelessWidget {
                       if (date.isNotEmpty)
                         Text(
                           date,
-                          style: const TextStyle(
-                            color: Color(0xff8b747e),
+                          style: TextStyle(
+                            color: palette.muted,
                             fontStyle: FontStyle.italic,
                           ),
                         ),
@@ -1475,7 +1477,7 @@ class _LetterReader extends StatelessWidget {
                         .extension<AppTextThemes>()!
                         .display
                         .copyWith(
-                          color: const Color(0xff382b32),
+                          color: palette.foreground,
                           fontSize: 30,
                           fontWeight: FontWeight.w800,
                           height: 1.12,
@@ -1490,8 +1492,8 @@ class _LetterReader extends StatelessWidget {
                   const SizedBox(height: 22),
                   Text(
                     item.subtitle,
-                    style: const TextStyle(
-                      color: Color(0xff4b3b43),
+                    style: TextStyle(
+                      color: palette.foreground,
                       fontSize: 17,
                       height: 1.72,
                     ),
@@ -1502,10 +1504,10 @@ class _LetterReader extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        const Text(
+                        Text(
                           'Com todo o meu amor,',
                           style: TextStyle(
-                            color: Color(0xff705e67),
+                            color: palette.muted,
                             fontStyle: FontStyle.italic,
                           ),
                         ),
@@ -1625,6 +1627,7 @@ class _PhotoViewer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 760),
       child: Column(
@@ -1632,25 +1635,27 @@ class _PhotoViewer extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(item.album,
-              style: const TextStyle(
-                  color: primary, fontWeight: FontWeight.w900, fontSize: 22)),
+              style: TextStyle(
+                  color: palette.primary,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 22)),
           const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(18),
             child: item.tipo == 'video'
                 ? Container(
                     height: 260,
-                    color: primary.withValues(alpha: .08),
+                    color: palette.primary.withValues(alpha: .08),
                     alignment: Alignment.center,
-                    child: const Icon(Icons.play_circle_fill,
-                        color: primary, size: 72),
+                    child: Icon(Icons.play_circle_fill,
+                        color: palette.primary, size: 72),
                   )
                 : Image.network(_photoUrl(item), fit: BoxFit.contain),
           ),
           if (item.subtitle.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(item.subtitle,
-                style: const TextStyle(color: muted, height: 1.4)),
+                style: TextStyle(color: palette.muted, height: 1.4)),
           ],
         ],
       ),

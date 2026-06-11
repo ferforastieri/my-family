@@ -116,6 +116,8 @@ class AppNotification {
     required this.body,
     required this.url,
     required this.at,
+    this.read = false,
+    this.type = 'manual',
   });
 
   final String id;
@@ -123,6 +125,18 @@ class AppNotification {
   final String body;
   final String url;
   final DateTime at;
+  final bool read;
+  final String type;
+
+  AppNotification copyWith({bool? read}) => AppNotification(
+        id: id,
+        title: title,
+        body: body,
+        url: url,
+        at: at,
+        read: read ?? this.read,
+        type: type,
+      );
 
   factory AppNotification.fromJson(Map<String, dynamic> json) =>
       AppNotification(
@@ -130,6 +144,8 @@ class AppNotification {
         title: (json['title'] ?? 'Nossa Família').toString(),
         body: (json['body'] ?? '').toString(),
         url: (json['url'] ?? '/').toString(),
+        read: json['read'] == true,
+        type: (json['type'] ?? 'manual').toString(),
         at: DateTime.fromMillisecondsSinceEpoch((json['at'] as num?)?.toInt() ??
             DateTime.now().millisecondsSinceEpoch),
       );
@@ -329,6 +345,38 @@ class GameWord {
   factory GameWord.fromJson(Map<String, dynamic> json) => GameWord(
         id: json['id'].toString(),
         word: (json['word'] ?? '').toString(),
+        active: json['active'] != false,
+      );
+}
+
+const miniGameTypes = ['memory_match', 'love_order', 'this_or_that'];
+
+class MiniGameConfig {
+  const MiniGameConfig({
+    required this.id,
+    required this.type,
+    required this.title,
+    required this.instructions,
+    required this.items,
+    this.active = true,
+  });
+
+  final String id;
+  final String type;
+  final String title;
+  final String instructions;
+  final List<String> items;
+  final bool active;
+
+  factory MiniGameConfig.fromJson(Map<String, dynamic> json) => MiniGameConfig(
+        id: json['id'].toString(),
+        type: (json['type'] ?? '').toString(),
+        title: (json['title'] ?? 'Mini jogo').toString(),
+        instructions: (json['instructions'] ?? '').toString(),
+        items: ((json['items'] as List?) ?? const [])
+            .map((item) => item.toString())
+            .where((item) => item.trim().isNotEmpty)
+            .toList(),
         active: json['active'] != false,
       );
 }

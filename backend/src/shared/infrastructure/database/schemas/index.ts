@@ -5,6 +5,7 @@ export * from './foto.schema';
 export * from './family-list.schema';
 export * from './family-list-item.schema';
 export * from './game-completion.schema';
+export * from './mini-game-config.schema';
 export * from './game-word.schema';
 export * from './location-update.schema';
 export * from './location-place.schema';
@@ -33,6 +34,10 @@ import {
   GameCompletionDocument,
   GameCompletionSchema,
 } from './game-completion.schema';
+import {
+  MiniGameConfigDocument,
+  MiniGameConfigSchema,
+} from './mini-game-config.schema';
 import { GameWordDocument, GameWordSchema } from './game-word.schema';
 import {
   LocationUpdateDocument,
@@ -78,6 +83,7 @@ export const mongoModels = [
   { name: FamilyListDocument.name, schema: FamilyListSchema },
   { name: FamilyListItemDocument.name, schema: FamilyListItemSchema },
   { name: GameCompletionDocument.name, schema: GameCompletionSchema },
+  { name: MiniGameConfigDocument.name, schema: MiniGameConfigSchema },
   { name: GameWordDocument.name, schema: GameWordSchema },
   { name: LocationUpdateDocument.name, schema: LocationUpdateSchema },
   { name: LocationPlaceDocument.name, schema: LocationPlaceSchema },
