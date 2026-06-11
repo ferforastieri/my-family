@@ -143,7 +143,8 @@ class NotificationsController extends ChangeNotifier {
   }
 
   Future<void> markRead(AppNotification notification) async {
-    final index = notifications.indexWhere((item) => item.id == notification.id);
+    final index =
+        notifications.indexWhere((item) => item.id == notification.id);
     if (index >= 0 && !notifications[index].read) {
       notifications[index] = notifications[index].copyWith(read: true);
       notifyListeners();
@@ -162,6 +163,21 @@ class NotificationsController extends ChangeNotifier {
       }
     } catch (_) {
       //
+    }
+  }
+
+  Future<void> markAllRead() async {
+    if (notifications.every((notification) => notification.read)) return;
+    for (var i = 0; i < notifications.length; i++) {
+      if (!notifications[i].read) {
+        notifications[i] = notifications[i].copyWith(read: true);
+      }
+    }
+    notifyListeners();
+    try {
+      await api.mutate<Map<String, dynamic>>('notifications.readAll');
+    } catch (_) {
+      await refresh();
     }
   }
 

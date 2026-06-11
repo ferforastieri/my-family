@@ -172,13 +172,19 @@ export class NotificationsRepository {
   async markRead(id: string, userId: string) {
     return this.toNotification(
       await this.notifications
-        .findByIdAndUpdate(
-          id,
-          { $addToSet: { readBy: userId } },
-          { new: true },
-        )
+        .findByIdAndUpdate(id, { $addToSet: { readBy: userId } }, { new: true })
         .exec(),
     );
+  }
+
+  async markAllRead(userId: string) {
+    const result = await this.notifications
+      .updateMany(
+        { readBy: { $ne: userId } },
+        { $addToSet: { readBy: userId } },
+      )
+      .exec();
+    return result.modifiedCount;
   }
 
   async clear() {

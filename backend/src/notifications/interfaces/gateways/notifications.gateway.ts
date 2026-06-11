@@ -81,6 +81,13 @@ export class NotificationsGateway {
     return row ? { message: 'Notificação lida.', ...row } : row;
   }
 
+  @SubscribeMessage('notifications.readAll')
+  async readAll(@ConnectedSocket() client: Socket) {
+    const user = await this.session.requireUser(client);
+    const count = await this.notifications.markAllRead(user);
+    return { ok: true, count, message: 'Notificações lidas.' };
+  }
+
   @SubscribeMessage('notifications.send')
   async send(
     @ConnectedSocket() client: Socket,

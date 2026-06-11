@@ -71,17 +71,31 @@ class _HomePageState extends State<HomePage> {
                               children: [
                                 const _HomeTitle(),
                                 const SizedBox(height: 14),
-                                GridView.count(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  crossAxisCount: wide ? 3 : 1,
-                                  childAspectRatio: wide ? 1.58 : 2.08,
-                                  crossAxisSpacing: 16,
-                                  mainAxisSpacing: 14,
-                                  children: counters
-                                      .map((counter) => CounterCard(counter))
-                                      .toList(),
-                                ),
+                                if (wide)
+                                  GridView.count(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    crossAxisCount: 3,
+                                    childAspectRatio: 1.58,
+                                    crossAxisSpacing: 16,
+                                    mainAxisSpacing: 14,
+                                    children: counters
+                                        .map((counter) => CounterCard(counter))
+                                        .toList(),
+                                  )
+                                else
+                                  Column(
+                                    children: [
+                                      for (var i = 0;
+                                          i < counters.length;
+                                          i++) ...[
+                                        CounterCard(counters[i]),
+                                        if (i < counters.length - 1)
+                                          const SizedBox(height: 14),
+                                      ],
+                                    ],
+                                  ),
                                 if (mobile) ...[
                                   const SizedBox(height: 4),
                                   const _MobileGardenSection(),
@@ -358,6 +372,137 @@ class CounterCard extends StatelessWidget {
       ('${info.elapsed.months}', 'Meses'),
       ('${info.elapsed.days}', 'Dias'),
     ];
+    final content = Padding(
+      padding: EdgeInsets.fromLTRB(
+        compact ? 14 : 16,
+        compact ? 10 : 14,
+        compact ? 14 : 16,
+        compact ? 10 : 14,
+      ),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: compact ? 38 : 44,
+                height: compact ? 38 : 44,
+                child: Center(
+                  child: Text(info.icon,
+                      style: TextStyle(fontSize: compact ? 26 : 30)),
+                ),
+              ),
+              SizedBox(width: compact ? 10 : 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      info.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: palette.foreground,
+                        fontWeight: FontWeight.w900,
+                        fontSize: compact ? 16 : 17,
+                        height: 1.1,
+                      ),
+                    ),
+                    SizedBox(height: compact ? 2 : 4),
+                    Text(
+                      _formatDate(info.date),
+                      style: TextStyle(
+                        color: palette.primary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: compact ? 6 : 10),
+          Text(
+            info.message,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: palette.muted,
+              fontSize: 13,
+              height: 1.35,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: compact ? 7 : 12),
+          Row(
+            children: values
+                .map(
+                  (value) => Expanded(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      padding: EdgeInsets.symmetric(vertical: compact ? 5 : 8),
+                      decoration: BoxDecoration(
+                        color: palette.primary.withValues(alpha: .06),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: palette.primary.withValues(alpha: .10),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            value.$1,
+                            style: TextStyle(
+                              color: palette.foreground,
+                              fontWeight: FontWeight.w900,
+                              fontSize: compact ? 19 : 22,
+                            ),
+                          ),
+                          Text(
+                            value.$2,
+                            style: TextStyle(
+                              color: palette.muted,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+          SizedBox(height: compact ? 6 : 8),
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: compact ? 6 : 8,
+            ),
+            decoration: BoxDecoration(
+              color: palette.primary.withValues(alpha: .08),
+              border: Border.all(color: palette.primary.withValues(alpha: .12)),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '${info.elapsed.isFuture ? 'Faltam' : 'Já se passaram'} ${info.elapsed.totalDays} dias',
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: palette.foreground,
+                fontSize: 13,
+                fontWeight: FontWeight.w900,
+                height: 1.2,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
     return LovePanel(
       padding: EdgeInsets.zero,
       child: ClipRRect(
@@ -371,143 +516,7 @@ class CounterCard extends StatelessWidget {
                 gradient: LinearGradient(colors: colors),
               ),
             ),
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  compact ? 14 : 16,
-                  compact ? 10 : 14,
-                  compact ? 14 : 16,
-                  compact ? 10 : 14,
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          width: compact ? 38 : 44,
-                          height: compact ? 38 : 44,
-                          child: Center(
-                            child: Text(info.icon,
-                                style: TextStyle(fontSize: compact ? 26 : 30)),
-                          ),
-                        ),
-                        SizedBox(width: compact ? 10 : 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                info.title,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: palette.foreground,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: compact ? 16 : 17,
-                                  height: 1.1,
-                                ),
-                              ),
-                              SizedBox(height: compact ? 2 : 4),
-                              Text(
-                                _formatDate(info.date),
-                                style: TextStyle(
-                                  color: palette.primary,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: compact ? 6 : 10),
-                    Text(
-                      info.message,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: palette.muted,
-                        fontSize: 13,
-                        height: 1.35,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    SizedBox(height: compact ? 7 : 12),
-                    Row(
-                      children: values
-                          .map(
-                            (value) => Expanded(
-                              child: Container(
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 3),
-                                padding: EdgeInsets.symmetric(
-                                    vertical: compact ? 5 : 8),
-                                decoration: BoxDecoration(
-                                  color: palette.primary.withValues(alpha: .06),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color:
-                                        palette.primary.withValues(alpha: .10),
-                                  ),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      value.$1,
-                                      style: TextStyle(
-                                        color: palette.foreground,
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: compact ? 19 : 22,
-                                      ),
-                                    ),
-                                    Text(
-                                      value.$2,
-                                      style: TextStyle(
-                                        color: palette.muted,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 10,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                    SizedBox(height: compact ? 6 : 8),
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: compact ? 6 : 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: palette.primary.withValues(alpha: .08),
-                        border: Border.all(
-                            color: palette.primary.withValues(alpha: .12)),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${info.elapsed.isFuture ? 'Faltam' : 'Já se passaram'} ${info.elapsed.totalDays} dias',
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: palette.foreground,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w900,
-                          height: 1.2,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            if (compact) content else Expanded(child: content),
           ],
         ),
       ),
