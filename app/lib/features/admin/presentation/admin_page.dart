@@ -34,6 +34,7 @@ class AdminPage extends StatefulWidget {
 
 class _AdminPageState extends State<AdminPage> {
   static const _adminPageLimit = 20;
+  final scaffoldKey = GlobalKey<ScaffoldState>();
 
   List<AppUser> users = [];
   List<AppNotification> notifications = [];
@@ -152,46 +153,60 @@ class _AdminPageState extends State<AdminPage> {
 
   @override
   Widget build(BuildContext context) {
-    return LoveBackground(
-      child: AppFixedHeaderScrollView(
-        header: const _AdminHero(),
-        children: [
-          AppQuery<_AdminData>(
-            queryKey: QueryKeys.adminPage(
-              usersPage: usersPage,
-              notificationsPage: notificationsPage,
-              questionsPage: questionsPage,
-              wordsPage: wordsPage,
-              miniGamesPage: miniGamesPage,
-              statsPage: statsPage,
-            ),
-            queryFn: _fetchAdminData,
-            loading: _AdminScaffold(
-              selected: selected,
-              onChanged: (value) => setState(() => selected = value),
-              showHero: false,
-              child: const _AdminLoadingState(),
-            ),
-            builder: (context, data, _) {
-              _applyAdminData(data);
-              return _AdminScaffold(
-                selected: selected,
-                onChanged: (value) => setState(() => selected = value),
-                error: loadError,
-                showHero: false,
-                child: LovePanel(
-                  padding: EdgeInsets.zero,
+    return Scaffold(
+      key: scaffoldKey,
+      backgroundColor: Colors.transparent,
+      endDrawer: Drawer(
+        width: 320,
+        child: _AdminRightNavigation(
+          selected: selected,
+          onChanged: _selectSection,
+        ),
+      ),
+      body: LoveBackground(
+        child: AppFixedHeaderScrollView(
+          header: AppPageHeader(
+            title: 'Administração',
+            subtitle: selected.label,
+            icon: Icons.admin_panel_settings_outlined,
+            actionLabel: 'Menu',
+            actionIcon: Icons.menu_open_outlined,
+            inlineAction: true,
+            onAction: () => scaffoldKey.currentState?.openEndDrawer(),
+          ),
+          children: [
+            AppQuery<_AdminData>(
+              queryKey: QueryKeys.adminPage(
+                usersPage: usersPage,
+                notificationsPage: notificationsPage,
+                questionsPage: questionsPage,
+                wordsPage: wordsPage,
+                miniGamesPage: miniGamesPage,
+                statsPage: statsPage,
+              ),
+              queryFn: _fetchAdminData,
+              loading: _AdminScaffold(
+                child: const _AdminLoadingState(),
+              ),
+              builder: (context, data, _) {
+                _applyAdminData(data);
+                return _AdminScaffold(
+                  error: loadError,
                   child: SizedBox(
                     height: MediaQuery.sizeOf(context).width >= 860 ? 720 : 640,
                     child: _sectionContent(),
                   ),
-                ),
-              );
-            },
-          ),
-        ],
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  void _selectSection(_AdminSection value) {
+    setState(() => selected = value);
   }
 
   void _applyAdminData(_AdminData data) {
@@ -487,34 +502,92 @@ enum _AdminSection { users, notifications, games, stats }
 
 class _AdminScaffold extends StatelessWidget {
   const _AdminScaffold({
-    required this.selected,
-    required this.onChanged,
     required this.child,
     this.error,
-    this.showHero = true,
+  });
+
+  final Widget child;
+  final String? error;
+
+  @override
+  Widget build(BuildContext context) {
+    return LovePanel(
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (error != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: _AdminErrorBanner(message: error!),
+            ),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _AdminRightNavigation extends StatelessWidget {
+  const _AdminRightNavigation({
+    required this.selected,
+    required this.onChanged,
   });
 
   final _AdminSection selected;
   final ValueChanged<_AdminSection> onChanged;
-  final Widget child;
-  final String? error;
-  final bool showHero;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (showHero) const _AdminHero(),
-        if (error != null) ...[
-          if (showHero) const SizedBox(height: 14),
-          _AdminErrorBanner(message: error!),
-        ],
-        if (showHero || error != null) const SizedBox(height: 16),
-        _AdminTopNav(selected: selected, onChanged: onChanged),
-        const SizedBox(height: 14),
-        child,
-      ],
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Menu administrativo',
+                    style: TextStyle(
+                      color: palette.foreground,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.maybePop(context),
+                  icon: const Icon(Icons.close),
+                  tooltip: 'Fechar',
+                ),
+              ],
+            ),
+            Text(
+              'Escolha uma área para gerenciar.',
+              style: TextStyle(
+                color: palette.muted,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 18),
+            for (final section in _AdminSection.values)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _AdminNavTile(
+                  section: section,
+                  selected: selected == section,
+                  onTap: () {
+                    onChanged(section);
+                    Navigator.maybePop(context);
+                  },
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -524,10 +597,10 @@ class _AdminLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LovePanel(
-      padding: const EdgeInsets.all(18),
-      child: SizedBox(
-        height: 520,
+    return SizedBox(
+      height: 520,
+      child: Padding(
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: const [
@@ -660,19 +733,6 @@ extension _AdminSectionView on _AdminSection {
       };
 }
 
-class _AdminHero extends StatelessWidget {
-  const _AdminHero();
-
-  @override
-  Widget build(BuildContext context) {
-    return const AppPageHeader(
-      title: 'Administração',
-      subtitle: 'Usuários, notificações, jogos e estatísticas.',
-      icon: Icons.admin_panel_settings_outlined,
-    );
-  }
-}
-
 class _AdminErrorBanner extends StatelessWidget {
   const _AdminErrorBanner({required this.message});
 
@@ -698,36 +758,6 @@ class _AdminErrorBanner extends StatelessWidget {
                     color: Colors.redAccent, fontWeight: FontWeight.w700),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AdminTopNav extends StatelessWidget {
-  const _AdminTopNav({required this.selected, required this.onChanged});
-
-  final _AdminSection selected;
-  final ValueChanged<_AdminSection> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return LovePanel(
-      padding: const EdgeInsets.all(8),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            for (final section in _AdminSection.values)
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: _AdminNavTile(
-                  section: section,
-                  selected: selected == section,
-                  onTap: () => onChanged(section),
-                ),
-              ),
           ],
         ),
       ),

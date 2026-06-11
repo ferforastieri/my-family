@@ -39,6 +39,7 @@ class AppPageHeader extends StatelessWidget {
     this.actionIcon,
     this.onAction,
     this.onBack,
+    this.inlineAction = false,
   });
 
   final String title;
@@ -48,6 +49,7 @@ class AppPageHeader extends StatelessWidget {
   final IconData? actionIcon;
   final VoidCallback? onAction;
   final VoidCallback? onBack;
+  final bool inlineAction;
 
   @override
   Widget build(BuildContext context) {
@@ -55,11 +57,17 @@ class AppPageHeader extends StatelessWidget {
     final desktop = MediaQuery.sizeOf(context).width >= 860;
     final action = onAction == null || actionLabel == null
         ? null
-        : AppButton(
-            onPressed: onAction,
-            label: actionLabel!,
-            icon: actionIcon,
-          );
+        : inlineAction
+            ? AppHeaderIconButton(
+                onPressed: onAction!,
+                icon: Icon(actionIcon ?? Icons.more_horiz),
+                tooltip: actionLabel!,
+              )
+            : AppButton(
+                onPressed: onAction,
+                label: actionLabel!,
+                icon: actionIcon,
+              );
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -138,7 +146,7 @@ class AppPageHeader extends StatelessWidget {
 
         final content = action == null
             ? titleRow
-            : compact
+            : compact && !inlineAction
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
