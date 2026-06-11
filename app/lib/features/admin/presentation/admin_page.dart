@@ -154,7 +154,6 @@ class _AdminPageState extends State<AdminPage> {
   Widget build(BuildContext context) {
     return LoveBackground(
       child: AppFixedHeaderScrollView(
-        onRefresh: () async => _invalidateAdmin(),
         header: const _AdminHero(),
         children: [
           AppQuery<_AdminData>(

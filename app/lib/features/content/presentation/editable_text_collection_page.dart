@@ -91,9 +91,6 @@ class _EditableTextCollectionPageState
           builder: (context, result, refetch) {
             final items = result.items;
             return AppFixedHeaderScrollView(
-              onRefresh: () async {
-                await refetch();
-              },
               header: AppPageHeader(
                 title: widget.title,
                 subtitle: canWrite

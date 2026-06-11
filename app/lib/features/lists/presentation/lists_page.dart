@@ -156,7 +156,6 @@ class _ListsPageState extends State<ListsPage> {
   Widget build(BuildContext context) {
     return LoveBackground(
       child: AppFixedHeaderScrollView(
-        onRefresh: () async => _invalidateLists(),
         header: const AppPageHeader(
           title: 'Listas',
           subtitle: 'Compras, tarefas e qualquer combinado da família.',

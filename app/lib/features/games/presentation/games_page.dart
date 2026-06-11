@@ -138,7 +138,6 @@ class _GamesHub extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     return AppFixedHeaderScrollView(
-      onRefresh: () async {},
       header: const _GamesHero(),
       headerGap: 14,
       children: [
@@ -419,8 +418,6 @@ class _QuizGameState extends State<_QuizGame> {
   @override
   Widget build(BuildContext context) {
     return AppFixedHeaderScrollView(
-      onRefresh: () async =>
-          invalidateQueries(context, QueryKeys.quizQuestions()),
       header: _GamePlayHeader(
         title: 'Quiz do Amor',
         subtitle: 'Responda uma pergunta por vez.',
@@ -666,11 +663,9 @@ class _WordSearchGameState extends State<_WordSearchGame> {
   @override
   Widget build(BuildContext context) {
     return AppFixedHeaderScrollView(
-      onRefresh: () async =>
-          invalidateQueries(context, QueryKeys.wordSearchWords()),
       header: _GamePlayHeader(
         title: 'Caça Palavras',
-        subtitle: 'Arraste sobre as letras para formar cada palavra.',
+        subtitle: 'Toque no início e no fim, ou arraste sobre as letras.',
         icon: Icons.grid_on_outlined,
         onBack: widget.onBack,
       ),
@@ -954,9 +949,14 @@ class _WordSearchBoard extends StatelessWidget {
             onPanEnd: (_) => onSelectionEnd(),
             onTapDown: (details) {
               final index = indexFromOffset(details.localPosition);
-              if (index != null) onSelectionStart(index);
+              if (index == null) return;
+              if (selectedCells.length == 1) {
+                onSelectionUpdate(index);
+                onSelectionEnd();
+                return;
+              }
+              onSelectionStart(index);
             },
-            onTapUp: (_) => onSelectionEnd(),
             behavior: HitTestBehavior.opaque,
             child: Container(
               width: boardSize,
@@ -1068,7 +1068,6 @@ class _MiniGameRoute extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppFixedHeaderScrollView(
-      onRefresh: () async => invalidateQueries(context, QueryKeys.miniGames()),
       header: _GamePlayHeader(
         title: _miniGameTypeLabel(type),
         subtitle: 'Mini jogo configurável pelo painel.',
