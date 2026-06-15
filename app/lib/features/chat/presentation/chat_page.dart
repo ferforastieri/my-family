@@ -144,10 +144,13 @@ class _ChatPageState extends State<ChatPage> {
   void _openEmojiPanel() {
     showAppSheet<void>(
       context: context,
-      builder: (_) => _EmojiStickerSheet(
-        onEmoji: _insertEmoji,
+      builder: (sheetContext) => _EmojiStickerSheet(
+        onEmoji: (emoji) {
+          _insertEmoji(emoji);
+          Navigator.of(sheetContext).pop();
+        },
         onSticker: (sticker) {
-          Navigator.pop(context);
+          Navigator.of(sheetContext).pop();
           _sendSticker(sticker);
         },
       ),
@@ -682,7 +685,6 @@ class _MessagePane extends StatelessWidget {
               ],
             ),
           ),
-          Divider(height: 1, color: palette.border),
         ],
         Expanded(
           child: active == null
@@ -704,18 +706,30 @@ class _MessagePane extends StatelessWidget {
                       itemBuilder: (context, index) {
                         final message =
                             chat.messages[chat.messages.length - 1 - index];
-                        return _MessageBubble(
-                          message: message,
-                          isMine: _isMine(message, auth.user),
-                          currentUser: auth.user,
-                          compact: compact,
-                          onEdit: () => onEditMessage(message),
-                          onDelete: () => onDeleteMessage(message),
+                        final previousIndex =
+                            chat.messages.length - 1 - index - 1;
+                        final previous = previousIndex >= 0
+                            ? chat.messages[previousIndex]
+                            : null;
+                        final showDay = previous == null ||
+                            !_isSameDay(previous.at, message.at);
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (showDay) _DayDivider(date: message.at),
+                            _MessageBubble(
+                              message: message,
+                              isMine: _isMine(message, auth.user),
+                              currentUser: auth.user,
+                              compact: compact,
+                              onEdit: () => onEditMessage(message),
+                              onDelete: () => onDeleteMessage(message),
+                            ),
+                          ],
                         );
                       },
                     ),
         ),
-        Divider(height: 1, color: palette.border),
         if (auth.user == null)
           Padding(
             padding:
@@ -877,9 +891,7 @@ class _MessageBubble extends StatelessWidget {
         onDoubleTap: canManage
             ? () => _openMessageActions(context, canEdit: hasText)
             : null,
-        onLongPress: canManage
-            ? () => _openMessageActions(context, canEdit: hasText)
-            : null,
+        onLongPress: () => _openMessageActions(context, canEdit: hasText),
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: isSticker
@@ -1051,13 +1063,59 @@ class _MessageBubble extends StatelessWidget {
   }) async {
     final action = await showAppSheet<_MessageAction>(
       context: context,
-      builder: (sheetContext) => _MessageActionsSheet(canEdit: canEdit),
+      builder: (sheetContext) => _MessageActionsSheet(
+        canEdit: canEdit,
+        isMine: isMine,
+      ),
     );
     if (action == _MessageAction.edit) {
       onEdit();
     } else if (action == _MessageAction.delete) {
       onDelete();
+    } else if (action == _MessageAction.info && context.mounted) {
+      showAppSheet<void>(
+        context: context,
+        builder: (_) => _MessageInfoSheet(
+          message: message,
+          isMine: isMine,
+          wasRead: message.readBy.any((id) => id != message.senderId),
+        ),
+      );
     }
+  }
+}
+
+class _DayDivider extends StatelessWidget {
+  const _DayDivider({required this.date});
+
+  final DateTime date;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12, top: 4),
+      child: Center(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: palette.card.withValues(alpha: .88),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: palette.border),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            child: Text(
+              _dayLabel(date),
+              style: TextStyle(
+                color: palette.muted,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -1432,12 +1490,13 @@ class _AvatarInitial extends StatelessWidget {
   }
 }
 
-enum _MessageAction { edit, delete }
+enum _MessageAction { info, edit, delete }
 
 class _MessageActionsSheet extends StatelessWidget {
-  const _MessageActionsSheet({required this.canEdit});
+  const _MessageActionsSheet({required this.canEdit, required this.isMine});
 
   final bool canEdit;
+  final bool isMine;
 
   @override
   Widget build(BuildContext context) {
@@ -1453,18 +1512,24 @@ class _MessageActionsSheet extends StatelessWidget {
             icon: Icons.chat_bubble_outline,
           ),
           const SizedBox(height: 12),
-          if (canEdit)
+          _MessageActionTile(
+            icon: Icons.info_outline,
+            label: 'Informações',
+            onTap: () => Navigator.pop(context, _MessageAction.info),
+          ),
+          if (isMine && canEdit)
             _MessageActionTile(
               icon: Icons.edit_outlined,
               label: 'Editar',
               onTap: () => Navigator.pop(context, _MessageAction.edit),
             ),
-          _MessageActionTile(
-            icon: Icons.delete_outline,
-            label: 'Apagar',
-            destructive: true,
-            onTap: () => Navigator.pop(context, _MessageAction.delete),
-          ),
+          if (isMine)
+            _MessageActionTile(
+              icon: Icons.delete_outline,
+              label: 'Apagar',
+              destructive: true,
+              onTap: () => Navigator.pop(context, _MessageAction.delete),
+            ),
         ],
       ),
     );
@@ -1495,6 +1560,113 @@ class _MessageActionTile extends StatelessWidget {
       title: Text(
         label,
         style: TextStyle(color: color, fontWeight: FontWeight.w800),
+      ),
+    );
+  }
+}
+
+class _MessageInfoSheet extends StatelessWidget {
+  const _MessageInfoSheet({
+    required this.message,
+    required this.isMine,
+    required this.wasRead,
+  });
+
+  final ChatMessage message;
+  final bool isMine;
+  final bool wasRead;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 460,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const AppSheetHeader(
+            title: 'Informações',
+            subtitle: 'Detalhes desta mensagem.',
+            icon: Icons.info_outline,
+          ),
+          const SizedBox(height: 14),
+          _MessageInfoRow(
+            icon: Icons.person_outline,
+            label: 'Enviada por',
+            value: message.senderName,
+          ),
+          _MessageInfoRow(
+            icon: Icons.schedule_outlined,
+            label: 'Enviada em',
+            value: _dateTimeLabel(message.at),
+          ),
+          if (message.editedAt != null)
+            _MessageInfoRow(
+              icon: Icons.edit_outlined,
+              label: 'Editada em',
+              value: _dateTimeLabel(message.editedAt!),
+            ),
+          if (message.deletedAt != null)
+            _MessageInfoRow(
+              icon: Icons.delete_outline,
+              label: 'Apagada em',
+              value: _dateTimeLabel(message.deletedAt!),
+            ),
+          _MessageInfoRow(
+            icon: isMine && wasRead ? Icons.done_all : Icons.done,
+            label: 'Status',
+            value: isMine ? (wasRead ? 'Visualizada' : 'Enviada') : 'Recebida',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MessageInfoRow extends StatelessWidget {
+  const _MessageInfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: Row(
+        children: [
+          Icon(icon, color: palette.primary, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: palette.muted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    color: palette.foreground,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1635,4 +1807,25 @@ String _timeLabel(DateTime value) {
   final hour = value.hour.toString().padLeft(2, '0');
   final minute = value.minute.toString().padLeft(2, '0');
   return '$hour:$minute';
+}
+
+String _dateTimeLabel(DateTime value) {
+  final day = value.day.toString().padLeft(2, '0');
+  final month = value.month.toString().padLeft(2, '0');
+  final year = value.year.toString();
+  return '$day/$month/$year às ${_timeLabel(value)}';
+}
+
+String _dayLabel(DateTime value) {
+  final now = DateTime.now();
+  if (_isSameDay(value, now)) return 'Hoje';
+  if (_isSameDay(value, now.subtract(const Duration(days: 1)))) return 'Ontem';
+  final day = value.day.toString().padLeft(2, '0');
+  final month = value.month.toString().padLeft(2, '0');
+  final year = value.year.toString();
+  return '$day/$month/$year';
+}
+
+bool _isSameDay(DateTime a, DateTime b) {
+  return a.year == b.year && a.month == b.month && a.day == b.day;
 }
