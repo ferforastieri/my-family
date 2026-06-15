@@ -184,11 +184,6 @@ class AppPageHeader extends StatelessWidget {
 
         return Container(
           padding: const EdgeInsets.fromLTRB(0, 0, 0, 12),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: palette.border.withValues(alpha: .75)),
-            ),
-          ),
           child: content,
         );
       },
