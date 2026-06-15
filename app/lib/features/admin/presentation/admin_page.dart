@@ -252,10 +252,9 @@ class _AdminPageState extends State<AdminPage> {
           onAdd: () => _openNotificationSheet(),
           onEdit: _openNotificationSheet,
           onDelete: _deleteNotification,
-          onClear: _clearNotifications,
           onSend: _sendNotification,
           onScheduleNew: () => _scheduleNotification(),
-          onSchedule: _scheduleNotification,
+          onDeleteScheduled: _deleteScheduledNotification,
           pagination: _pagination(
             notificationsPagination,
             (page) => notificationsPage = page,
@@ -368,19 +367,20 @@ class _AdminPageState extends State<AdminPage> {
     _invalidateAdmin();
   }
 
-  Future<void> _clearNotifications() async {
-    await widget.repository.clearNotifications();
-    notificationsPage = 1;
-    widget.toast.backendSuccess(widget.repository.takeMessage());
-    _invalidateAdmin();
-  }
-
   Future<void> _sendNotification(AppNotification notification) async {
     await widget.repository.sendNotification(
       title: notification.title,
       body: notification.body,
       url: notification.url,
     );
+    widget.toast.backendSuccess(widget.repository.takeMessage());
+    _invalidateAdmin();
+  }
+
+  Future<void> _deleteScheduledNotification(
+    ScheduledNotification notification,
+  ) async {
+    await widget.repository.deleteScheduledNotification(notification.id);
     widget.toast.backendSuccess(widget.repository.takeMessage());
     _invalidateAdmin();
   }
@@ -942,10 +942,12 @@ class _AdminActions extends StatelessWidget {
   const _AdminActions({
     required this.children,
     this.fullWidthOnCompact = false,
+    this.alignment = WrapAlignment.end,
   });
 
   final List<Widget> children;
   final bool fullWidthOnCompact;
+  final WrapAlignment alignment;
 
   @override
   Widget build(BuildContext context) {
@@ -966,7 +968,7 @@ class _AdminActions extends StatelessWidget {
         return Wrap(
           spacing: 8,
           runSpacing: 8,
-          alignment: compact ? WrapAlignment.center : WrapAlignment.end,
+          alignment: compact ? WrapAlignment.start : alignment,
           children: [
             for (final child in children)
               if (compact)
@@ -1071,10 +1073,9 @@ class _NotificationsAdminTab extends StatelessWidget {
     required this.onAdd,
     required this.onEdit,
     required this.onDelete,
-    required this.onClear,
     required this.onSend,
     required this.onScheduleNew,
-    required this.onSchedule,
+    required this.onDeleteScheduled,
     required this.pagination,
   });
 
@@ -1084,10 +1085,9 @@ class _NotificationsAdminTab extends StatelessWidget {
   final VoidCallback onAdd;
   final ValueChanged<AppNotification> onEdit;
   final ValueChanged<AppNotification> onDelete;
-  final VoidCallback onClear;
   final ValueChanged<AppNotification> onSend;
   final VoidCallback onScheduleNew;
-  final ValueChanged<AppNotification> onSchedule;
+  final ValueChanged<ScheduledNotification> onDeleteScheduled;
   final Widget? pagination;
 
   @override
@@ -1104,6 +1104,7 @@ class _NotificationsAdminTab extends StatelessWidget {
             trailing: _StatusPill(
               label: _scheduledStatusLabel(scheduled.status),
               tone: scheduled.status,
+              onDelete: () => onDeleteScheduled(scheduled),
             ),
           ),
         const SizedBox(height: 8),
@@ -1116,28 +1117,26 @@ class _NotificationsAdminTab extends StatelessWidget {
             title: notification.title,
             subtitle:
                 '${notification.body.isEmpty ? 'Sem texto' : notification.body} • ${notification.url}',
-            actions: [
-              IconButton(
-                onPressed: () => onSend(notification),
-                icon: const Icon(Icons.send_outlined),
-                tooltip: 'Enviar push',
-              ),
-              IconButton(
-                onPressed: () => onSchedule(notification),
-                icon: const Icon(Icons.schedule_send_outlined),
-                tooltip: 'Agendar push',
-              ),
-              IconButton(
-                onPressed: () => onEdit(notification),
-                icon: const Icon(Icons.edit_outlined),
-                tooltip: 'Editar',
-              ),
-              IconButton(
-                onPressed: () => onDelete(notification),
-                icon: const Icon(Icons.delete_outline),
-                tooltip: 'Remover',
-              ),
-            ],
+            trailing: Wrap(
+              spacing: 2,
+              children: [
+                IconButton(
+                  onPressed: () => onSend(notification),
+                  icon: const Icon(Icons.send_outlined),
+                  tooltip: 'Enviar push',
+                ),
+                IconButton(
+                  onPressed: () => onEdit(notification),
+                  icon: const Icon(Icons.edit_outlined),
+                  tooltip: 'Editar',
+                ),
+                IconButton(
+                  onPressed: () => onDelete(notification),
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: 'Remover',
+                ),
+              ],
+            ),
           ),
         if (pagination != null) pagination!,
       ],
@@ -1146,8 +1145,9 @@ class _NotificationsAdminTab extends StatelessWidget {
       children: [
         _AdminToolbar(
           title: 'Notificações',
-          subtitle: 'Crie, edite, envie push e limpe o histórico.',
+          subtitle: 'Crie, edite, envie push e acompanhe agendamentos.',
           action: _AdminActions(
+            alignment: WrapAlignment.start,
             children: [
               AppButton(
                 onPressed: onAdd,
@@ -1158,11 +1158,6 @@ class _NotificationsAdminTab extends StatelessWidget {
                 onPressed: onScheduleNew,
                 label: 'Agendar',
                 icon: Icons.schedule_send_outlined,
-              ),
-              OutlinedButton.icon(
-                onPressed: onClear,
-                icon: const Icon(Icons.clear_all),
-                label: const Text('Limpar'),
               ),
             ],
           ),
@@ -1667,10 +1662,15 @@ class _AdminTile extends StatelessWidget {
 }
 
 class _StatusPill extends StatelessWidget {
-  const _StatusPill({required this.label, required this.tone});
+  const _StatusPill({
+    required this.label,
+    required this.tone,
+    this.onDelete,
+  });
 
   final String label;
   final String tone;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -1681,21 +1681,34 @@ class _StatusPill extends StatelessWidget {
       'cancelled' => palette.muted,
       _ => palette.primary,
     };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: .10),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: .18)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w900,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: .10),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: color.withValues(alpha: .18)),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
         ),
-      ),
+        if (onDelete != null) ...[
+          const SizedBox(width: 4),
+          IconButton(
+            onPressed: onDelete,
+            icon: const Icon(Icons.delete_outline),
+            tooltip: 'Remover agendamento',
+          ),
+        ],
+      ],
     );
   }
 }

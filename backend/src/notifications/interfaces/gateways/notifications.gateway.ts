@@ -123,6 +123,18 @@ export class NotificationsGateway {
     return this.scheduler.list(query);
   }
 
+  @SubscribeMessage('notifications.scheduled.delete')
+  async deleteScheduled(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { id: string },
+  ) {
+    await this.session.requireAdmin(client);
+    return {
+      ok: await this.scheduler.delete(body.id),
+      message: 'Agendamento removido.',
+    };
+  }
+
   @SubscribeMessage('notifications.subscribe')
   async subscribe(
     @ConnectedSocket() client: Socket,
