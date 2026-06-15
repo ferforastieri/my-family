@@ -392,11 +392,6 @@ class _ProfileHero extends StatelessWidget {
                         ),
                       ),
                     ),
-                    TextButton.icon(
-                      onPressed: uploadingAvatar ? null : onChangeAvatar,
-                      icon: const Icon(Icons.photo_camera_outlined, size: 16),
-                      label: const Text('Alterar foto'),
-                    ),
                   ],
                 ),
               ],

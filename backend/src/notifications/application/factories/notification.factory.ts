@@ -25,7 +25,7 @@ export class NotificationFactory implements Factory<
       body: input.body ?? '',
       url: input.url ?? '/',
       icon: 'icon' in input ? input.icon : undefined,
-      type: 'type' in input ? input.type ?? 'manual' : 'push',
+      type: 'type' in input ? (input.type ?? 'manual') : 'manual',
     };
   }
 

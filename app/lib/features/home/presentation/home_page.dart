@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/flower_garden.dart';
 import '../../../core/widgets/love_action_card.dart';
 import '../../../core/widgets/love_background.dart';
@@ -49,6 +50,58 @@ class _HomePageState extends State<HomePage> {
         child: LayoutBuilder(
           builder: (context, viewport) {
             final mobile = viewport.maxWidth < 760;
+            final content = ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(
+                  18, mobile ? 16 : 10, 18, mobile ? 0 : 112),
+              children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1200),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final wide = constraints.maxWidth >= 760;
+                        return Column(
+                          children: [
+                            if (!mobile) ...[
+                              const _HomeTitle(),
+                              const SizedBox(height: 14),
+                            ],
+                            if (wide)
+                              GridView.count(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                crossAxisCount: 3,
+                                childAspectRatio: 1.58,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 14,
+                                children: counters
+                                    .map((counter) => CounterCard(counter))
+                                    .toList(),
+                              )
+                            else
+                              Column(
+                                children: [
+                                  for (var i = 0; i < counters.length; i++) ...[
+                                    CounterCard(counters[i]),
+                                    if (i < counters.length - 1)
+                                      const SizedBox(height: 14),
+                                  ],
+                                ],
+                              ),
+                            if (mobile) ...[
+                              const SizedBox(height: 4),
+                              const _MobileGardenSection(),
+                            ],
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            );
+
             return Stack(
               children: [
                 if (!mobile)
@@ -57,57 +110,23 @@ class _HomePageState extends State<HomePage> {
                       child: _HomeGardenLayer(),
                     ),
                   ),
-                ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.fromLTRB(18, 10, 18, mobile ? 0 : 112),
-                  children: [
-                    Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1200),
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            final wide = constraints.maxWidth >= 760;
-                            return Column(
-                              children: [
-                                const _HomeTitle(),
-                                const SizedBox(height: 14),
-                                if (wide)
-                                  GridView.count(
-                                    shrinkWrap: true,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    crossAxisCount: 3,
-                                    childAspectRatio: 1.58,
-                                    crossAxisSpacing: 16,
-                                    mainAxisSpacing: 14,
-                                    children: counters
-                                        .map((counter) => CounterCard(counter))
-                                        .toList(),
-                                  )
-                                else
-                                  Column(
-                                    children: [
-                                      for (var i = 0;
-                                          i < counters.length;
-                                          i++) ...[
-                                        CounterCard(counters[i]),
-                                        if (i < counters.length - 1)
-                                          const SizedBox(height: 14),
-                                      ],
-                                    ],
-                                  ),
-                                if (mobile) ...[
-                                  const SizedBox(height: 4),
-                                  const _MobileGardenSection(),
-                                ],
-                              ],
-                            );
-                          },
+                if (mobile)
+                  Column(
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(18, 10, 18, 0),
+                        child: AppPageHeader(
+                          title: 'Nossa Família',
+                          subtitle:
+                              'Amor, memórias e pequenos milagres do caminho.',
+                          icon: Icons.favorite_outline,
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                      Expanded(child: content),
+                    ],
+                  )
+                else
+                  content,
                 if (kIsWeb && cursorPosition != null)
                   Positioned(
                     left: cursorPosition!.dx - 13,

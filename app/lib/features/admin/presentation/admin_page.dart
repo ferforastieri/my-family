@@ -1913,6 +1913,7 @@ class _NotificationSheetState extends State<_NotificationSheet> {
   late final TextEditingController body;
   late final TextEditingController url;
   bool saving = false;
+  String? errorText;
 
   @override
   void initState() {
@@ -1932,14 +1933,23 @@ class _NotificationSheetState extends State<_NotificationSheet> {
   }
 
   Future<void> _save() async {
+    final titleText = title.text.trim();
+    if (titleText.isEmpty) {
+      setState(() => errorText = 'Informe o título da notificação.');
+      return;
+    }
     setState(() => saving = true);
     try {
       await widget.onSave({
-        'title': title.text,
+        'title': titleText,
         'body': body.text,
         'url': url.text.trim().isEmpty ? '/' : url.text.trim(),
       });
       if (mounted) Navigator.pop(context);
+    } catch (error) {
+      if (mounted) {
+        setState(() => errorText = _friendlyError(error));
+      }
     } finally {
       if (mounted) setState(() => saving = false);
     }
@@ -1983,6 +1993,16 @@ class _NotificationSheetState extends State<_NotificationSheet> {
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _save(),
           ),
+          if (errorText != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              errorText!,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
           const SizedBox(height: 18),
           AppSheetActions(
             onCancel: saving ? null : () => Navigator.pop(context),
@@ -2015,6 +2035,7 @@ class _ScheduleNotificationSheetState
   TimeOfDay selectedTime =
       TimeOfDay.fromDateTime(DateTime.now().add(const Duration(minutes: 10)));
   bool saving = false;
+  String? errorText;
 
   DateTime get scheduledAt => DateTime(
         selectedDate.year,
@@ -2044,11 +2065,18 @@ class _ScheduleNotificationSheetState
   }
 
   Future<void> _schedule() async {
-    if (scheduledAt.isBefore(DateTime.now())) return;
+    if (scheduledAt.isBefore(DateTime.now())) {
+      setState(() => errorText = 'Escolha uma data e horário no futuro.');
+      return;
+    }
     setState(() => saving = true);
     try {
       await widget.onSchedule(scheduledAt);
       if (mounted) Navigator.pop(context);
+    } catch (error) {
+      if (mounted) {
+        setState(() => errorText = _friendlyError(error));
+      }
     } finally {
       if (mounted) setState(() => saving = false);
     }
@@ -2097,6 +2125,16 @@ class _ScheduleNotificationSheetState
               ),
             ],
           ),
+          if (errorText != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              errorText!,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
           const SizedBox(height: 18),
           AppSheetActions(
             onCancel: saving ? null : () => Navigator.pop(context),
