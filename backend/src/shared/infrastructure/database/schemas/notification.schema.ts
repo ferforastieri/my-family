@@ -9,7 +9,7 @@ export class NotificationDocument {
   @Prop({ required: true })
   title: string;
 
-  @Prop({ required: true, default: '' })
+  @Prop({ default: '' })
   body: string;
 
   @Prop({ required: true, default: '/' })

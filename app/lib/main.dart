@@ -50,7 +50,11 @@ void main() {
 
   var protectedServicesStarted = false;
   Future<void> startProtectedServices() async {
-    if (protectedServicesStarted || auth.user == null) return;
+    if (auth.user == null) return;
+    if (protectedServicesStarted) {
+      unawaited(notifications.ensureDeviceRegistered());
+      return;
+    }
     protectedServicesStarted = true;
     await notifications.bootstrap();
     unawaited(location.bootstrap());
