@@ -279,12 +279,33 @@ class _ChatPageState extends State<ChatPage> {
               compact: !wide,
               onBack: () => _goBack(context),
               onOpenConversations: _openConversationsSheet,
+              showHeader: wide,
             );
 
             if (!wide) {
               return Container(
                 color: palette.bgStart,
-                child: messages,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 10, 18, 0),
+                      child: AppPageHeader(
+                        title: widget.chat.active?.type == 'global'
+                            ? 'Chat'
+                            : widget.chat.active?.title ?? 'Chat',
+                        subtitle: widget.chat.active?.type == 'global'
+                            ? 'Conversa aberta para todos.'
+                            : 'Conversas da família.',
+                        icon: Icons.chat_bubble_outline,
+                        actionLabel: 'Conversas',
+                        actionIcon: Icons.forum_outlined,
+                        onAction: _openConversationsSheet,
+                        inlineAction: true,
+                      ),
+                    ),
+                    Expanded(child: messages),
+                  ],
+                ),
               );
             }
 
@@ -587,6 +608,7 @@ class _MessagePane extends StatelessWidget {
     required this.compact,
     required this.onBack,
     required this.onOpenConversations,
+    this.showHeader = true,
   });
 
   final ChatController chat;
@@ -603,6 +625,7 @@ class _MessagePane extends StatelessWidget {
   final bool compact;
   final VoidCallback onBack;
   final VoidCallback onOpenConversations;
+  final bool showHeader;
 
   @override
   Widget build(BuildContext context) {
@@ -610,55 +633,57 @@ class _MessagePane extends StatelessWidget {
     final active = chat.active;
     return Column(
       children: [
-        Container(
-          height: compact ? 64 : 72,
-          padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 18),
-          color:
-              compact ? palette.primary.withValues(alpha: .08) : palette.card,
-          child: Row(
-            children: [
-              AppHeaderIconButton(
-                onPressed: onBack,
-                icon: const Icon(Icons.arrow_back),
-                tooltip: 'Voltar',
-              ),
-              const SizedBox(width: 10),
-              _ConversationAvatar(
-                conversation: active,
-                size: 42,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                        active?.type == 'global'
-                            ? 'Chat'
-                            : active?.title ?? 'Chat',
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w900)),
-                    if (!compact)
+        if (showHeader) ...[
+          Container(
+            height: compact ? 64 : 72,
+            padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 18),
+            color:
+                compact ? palette.primary.withValues(alpha: .08) : palette.card,
+            child: Row(
+              children: [
+                AppHeaderIconButton(
+                  onPressed: onBack,
+                  icon: const Icon(Icons.arrow_back),
+                  tooltip: 'Voltar',
+                ),
+                const SizedBox(width: 10),
+                _ConversationAvatar(
+                  conversation: active,
+                  size: 42,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        active?.type == 'global'
-                            ? 'Conversa aberta para todos'
-                            : 'Conversa entre pessoas logadas',
-                        style: TextStyle(color: palette.muted),
-                      ),
-                  ],
+                          active?.type == 'global'
+                              ? 'Chat'
+                              : active?.title ?? 'Chat',
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.w900)),
+                      if (!compact)
+                        Text(
+                          active?.type == 'global'
+                              ? 'Conversa aberta para todos'
+                              : 'Conversa entre pessoas logadas',
+                          style: TextStyle(color: palette.muted),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-              if (compact)
-                IconButton(
-                  onPressed: onOpenConversations,
-                  icon: const Icon(Icons.forum_outlined),
-                  tooltip: 'Conversas',
-                ),
-            ],
+                if (compact)
+                  IconButton(
+                    onPressed: onOpenConversations,
+                    icon: const Icon(Icons.forum_outlined),
+                    tooltip: 'Conversas',
+                  ),
+              ],
+            ),
           ),
-        ),
-        Divider(height: 1, color: palette.border),
+          Divider(height: 1, color: palette.border),
+        ],
         Expanded(
           child: active == null
               ? ListView(
