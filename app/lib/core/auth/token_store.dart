@@ -11,19 +11,29 @@ class TokenStore {
   Future<String?> read() => readAccessToken();
 
   Future<String?> readAccessToken() async {
-    if (kIsWeb) {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getString(_accessKey) ?? prefs.getString(_legacyKey);
+    try {
+      if (kIsWeb) {
+        final prefs = await SharedPreferences.getInstance();
+        return prefs.getString(_accessKey) ?? prefs.getString(_legacyKey);
+      }
+      return await _secureStorage.read(key: _accessKey) ??
+          await _secureStorage.read(key: _legacyKey);
+    } catch (_) {
+      await clear();
+      return null;
     }
-    return await _secureStorage.read(key: _accessKey) ??
-        await _secureStorage.read(key: _legacyKey);
   }
 
   Future<String?> readRefreshToken() async {
-    if (kIsWeb) {
-      return (await SharedPreferences.getInstance()).getString(_refreshKey);
+    try {
+      if (kIsWeb) {
+        return (await SharedPreferences.getInstance()).getString(_refreshKey);
+      }
+      return _secureStorage.read(key: _refreshKey);
+    } catch (_) {
+      await clear();
+      return null;
     }
-    return _secureStorage.read(key: _refreshKey);
   }
 
   Future<void> write(String token) => writeTokens(accessToken: token);

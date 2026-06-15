@@ -27,20 +27,25 @@ class AuthController extends ChangeNotifier {
   String? takeMessage() => socket.takeLastMessage();
 
   Future<void> bootstrap() async {
-    token = await tokenStore.readAccessToken();
-    refreshToken = await tokenStore.readRefreshToken();
-    socket.onAuthError = _refreshSession;
-    _bindConnectListener();
-    socket.connect(token: token);
-    if (token != null || refreshToken != null) {
-      try {
-        await _restoreSession().timeout(const Duration(seconds: 18));
-      } catch (_) {
-        await _clearAuth(notify: false);
+    try {
+      token = await tokenStore.readAccessToken();
+      refreshToken = await tokenStore.readRefreshToken();
+      socket.onAuthError = _refreshSession;
+      _bindConnectListener();
+      socket.connect(token: token);
+      if (token != null || refreshToken != null) {
+        try {
+          await _restoreSession().timeout(const Duration(seconds: 18));
+        } catch (_) {
+          await _clearAuth(notify: false);
+        }
       }
+    } catch (_) {
+      await _clearAuth(notify: false);
+    } finally {
+      loading = false;
+      notifyListeners();
     }
-    loading = false;
-    notifyListeners();
   }
 
   Future<void> _restoreSession() async {

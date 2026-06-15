@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/flower_garden.dart';
 import '../../../core/widgets/love_action_card.dart';
@@ -30,6 +31,7 @@ class _HomePageState extends State<HomePage> {
   late Timer timer;
   late List<CounterInfo> counters;
   List<HomeEventConfig> events = [];
+  String? loadError;
   Offset? cursorPosition;
 
   @override
@@ -56,10 +58,18 @@ class _HomePageState extends State<HomePage> {
       final loaded = await widget.repository.getHomeSettings();
       if (!mounted || loaded.length != 3) return;
       setState(() {
+        loadError = null;
         events = loaded;
         counters = _buildCounters(events);
       });
-    } catch (_) {}
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        loadError = error.toString();
+        events = [];
+        counters = const [];
+      });
+    }
   }
 
   void _onSettingsChanged(dynamic data) {
@@ -106,7 +116,12 @@ class _HomePageState extends State<HomePage> {
                               const _HomeTitle(),
                               const SizedBox(height: 14),
                             ],
-                            if (counters.isEmpty)
+                            if (loadError != null)
+                              _HomeLoadError(
+                                message: loadError!,
+                                onRetry: _loadSettings,
+                              )
+                            else if (counters.isEmpty)
                               const _HomeCountersLoading()
                             else if (wide)
                               GridView.count(
@@ -475,6 +490,52 @@ class _HomeCountersLoading extends StatelessWidget {
           if (i < placeholders.length - 1) const SizedBox(height: 14),
         ],
       ],
+    );
+  }
+}
+
+class _HomeLoadError extends StatelessWidget {
+  const _HomeLoadError({
+    required this.message,
+    required this.onRetry,
+  });
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return LovePanel(
+      maxWidth: 720,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.error_outline, color: Colors.redAccent, size: 42),
+          const SizedBox(height: 12),
+          Text(
+            'Não foi possível carregar a Home.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: palette.foreground,
+              fontWeight: FontWeight.w900,
+              fontSize: 18,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: palette.muted, height: 1.35),
+          ),
+          const SizedBox(height: 16),
+          AppButton(
+            onPressed: onRetry,
+            label: 'Tentar novamente',
+            icon: Icons.refresh,
+          ),
+        ],
+      ),
     );
   }
 }
