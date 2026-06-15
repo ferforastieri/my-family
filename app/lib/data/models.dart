@@ -530,3 +530,33 @@ class LocationPlace {
         active: json['active'] != false,
       );
 }
+
+class HomeEventConfig {
+  const HomeEventConfig({
+    required this.title,
+    required this.icon,
+    required this.date,
+    required this.message,
+  });
+
+  final String title;
+  final String icon;
+  final DateTime date;
+  final String message;
+
+  factory HomeEventConfig.fromJson(Map<String, dynamic> json) =>
+      HomeEventConfig(
+        title: (json['title'] ?? '').toString(),
+        icon: (json['icon'] ?? '').toString(),
+        date: DateTime.tryParse(json['date']?.toString() ?? '')?.toLocal() ??
+            DateTime.now(),
+        message: (json['message'] ?? '').toString(),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'title': title,
+        'icon': icon,
+        'date': date.toUtc().toIso8601String(),
+        'message': message,
+      };
+}

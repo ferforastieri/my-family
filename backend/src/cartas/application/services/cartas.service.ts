@@ -51,7 +51,6 @@ export class CartasService {
         '/carta-de-amor',
         {
           type: 'letter',
-          excludeUserIds: author?.id ? [author.id] : [],
         },
       );
     }

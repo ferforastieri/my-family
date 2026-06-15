@@ -9,10 +9,17 @@ import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/flower_garden.dart';
 import '../../../core/widgets/love_action_card.dart';
 import '../../../core/widgets/love_background.dart';
+import '../../../data/family_repository.dart';
+import '../../../data/models.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key, required this.onNavigate});
+  const HomePage({
+    super.key,
+    required this.repository,
+    required this.onNavigate,
+  });
 
+  final FamilyRepository repository;
   final ValueChanged<String> onNavigate;
 
   @override
@@ -22,20 +29,52 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late Timer timer;
   late List<CounterInfo> counters;
+  List<HomeEventConfig> events = List.of(_defaultHomeEvents);
   Offset? cursorPosition;
 
   @override
   void initState() {
     super.initState();
-    counters = _buildCounters();
+    counters = _buildCounters(events);
     timer = Timer.periodic(const Duration(seconds: 1),
-        (_) => setState(() => counters = _buildCounters()));
+        (_) => setState(() => counters = _buildCounters(events)));
+    widget.repository.socket.on('home.settings.changed', _onSettingsChanged);
+    _loadSettings();
   }
 
   @override
   void dispose() {
     timer.cancel();
+    widget.repository.socket.off('home.settings.changed', _onSettingsChanged);
     super.dispose();
+  }
+
+  Future<void> _loadSettings() async {
+    try {
+      final loaded = await widget.repository.getHomeSettings();
+      if (!mounted || loaded.length != 3) return;
+      setState(() {
+        events = loaded;
+        counters = _buildCounters(events);
+      });
+    } catch (_) {
+      // The defaults keep the Home usable while the socket reconnects.
+    }
+  }
+
+  void _onSettingsChanged(dynamic data) {
+    if (!mounted || data is! Map) return;
+    final rows = data['events'];
+    if (rows is! List || rows.length != 3) return;
+    final loaded = rows
+        .map((row) => HomeEventConfig.fromJson(
+              Map<String, dynamic>.from(row as Map),
+            ))
+        .toList();
+    setState(() {
+      events = loaded;
+      counters = _buildCounters(events);
+    });
   }
 
   @override
@@ -370,30 +409,39 @@ class ElapsedTime {
   final bool isFuture;
 }
 
-List<CounterInfo> _buildCounters() {
-  return [
-    CounterInfo(
-      title: 'Começamos a Namorar',
-      icon: '💕',
-      date: DateTime(2024, 10, 12),
-      message: 'Desde o primeiro olhar, sabia que você era especial',
-      elapsed: _elapsed(DateTime(2024, 10, 12)),
-    ),
-    CounterInfo(
-      title: 'Nosso Casamento',
-      icon: '💍',
-      date: DateTime(2025, 4, 15),
-      message: 'O dia mais feliz da minha vida ao seu lado',
-      elapsed: _elapsed(DateTime(2025, 4, 15)),
-    ),
-    CounterInfo(
-      title: 'Nascimento do Fernando',
-      icon: '👶',
-      date: DateTime(2026, 6, 15),
-      message: 'Nosso maior presente de amor chegando',
-      elapsed: _elapsed(DateTime(2026, 6, 15)),
-    ),
-  ];
+final _defaultHomeEvents = [
+  HomeEventConfig(
+    title: 'Começamos a Namorar',
+    icon: '💕',
+    date: DateTime(2024, 10, 12),
+    message: 'Desde o primeiro olhar, sabia que você era especial',
+  ),
+  HomeEventConfig(
+    title: 'Nosso Casamento',
+    icon: '💍',
+    date: DateTime(2025, 4, 15),
+    message: 'O dia mais feliz da minha vida ao seu lado',
+  ),
+  HomeEventConfig(
+    title: 'Nascimento do Fernando',
+    icon: '👶',
+    date: DateTime(2026, 6, 15),
+    message: 'Nosso maior presente de amor chegando',
+  ),
+];
+
+List<CounterInfo> _buildCounters(List<HomeEventConfig> events) {
+  return events
+      .map(
+        (event) => CounterInfo(
+          title: event.title,
+          icon: event.icon,
+          date: event.date,
+          message: event.message,
+          elapsed: _elapsed(event.date),
+        ),
+      )
+      .toList();
 }
 
 ElapsedTime _elapsed(DateTime date) {
