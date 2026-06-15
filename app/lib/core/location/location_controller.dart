@@ -27,6 +27,7 @@ class LocationController with WidgetsBindingObserver {
   bool _authListenerBound = false;
   bool _lifecycleListenerBound = false;
   bool _openedBackgroundSettings = false;
+  bool _openedLocationSettings = false;
 
   Future<void> bootstrap() async {
     _bindAuthListener();
@@ -109,7 +110,10 @@ class LocationController with WidgetsBindingObserver {
     if (kIsWeb) return LocationPermission.denied;
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      await Geolocator.openLocationSettings();
+      if (!_openedLocationSettings) {
+        _openedLocationSettings = true;
+        await Geolocator.openLocationSettings();
+      }
       return LocationPermission.denied;
     }
     var permission = await Geolocator.checkPermission();

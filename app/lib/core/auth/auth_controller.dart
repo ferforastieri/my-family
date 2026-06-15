@@ -32,11 +32,15 @@ class AuthController extends ChangeNotifier {
     socket.onAuthError = _refreshSession;
     _bindConnectListener();
     socket.connect(token: token);
+    if (token != null || refreshToken != null) {
+      try {
+        await _restoreSession().timeout(const Duration(seconds: 18));
+      } catch (_) {
+        await _clearAuth(notify: false);
+      }
+    }
     loading = false;
     notifyListeners();
-    if (token != null || refreshToken != null) {
-      unawaited(_restoreSession());
-    }
   }
 
   Future<void> _restoreSession() async {
@@ -74,7 +78,9 @@ class AuthController extends ChangeNotifier {
           return;
         }
         await _clearAuth();
+        return;
       }
+      if (clearInvalidToken) await _clearAuth();
     }
   }
 
@@ -200,13 +206,13 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  Future<void> _clearAuth() async {
+  Future<void> _clearAuth({bool notify = true}) async {
     user = null;
     token = null;
     refreshToken = null;
     await tokenStore.clear();
     socket.connect();
-    notifyListeners();
+    if (notify) notifyListeners();
   }
 
   Future<void> signOut() async {

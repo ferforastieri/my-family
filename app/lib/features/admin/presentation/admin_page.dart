@@ -1610,12 +1610,12 @@ class _HomeSettingsAdminTab extends StatelessWidget {
     return Column(
       children: [
         _AdminToolbar(
-          title: 'Datas da Home',
-          subtitle: 'Configure os três marcos exibidos nos cards principais.',
+          title: 'Cards da Home',
+          subtitle: 'Configure os três cards principais exibidos na Home.',
           action: AppButton(
             onPressed: events.length == 3 ? onEdit : null,
-            label: 'Editar datas',
-            icon: Icons.edit_calendar_outlined,
+            label: 'Editar cards',
+            icon: Icons.dashboard_customize_outlined,
           ),
         ),
         Expanded(
@@ -1950,6 +1950,9 @@ class _HomeSettingsSheet extends StatefulWidget {
 }
 
 class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
+  late final List<TextEditingController> titles;
+  late final List<TextEditingController> icons;
+  late final List<TextEditingController> messages;
   late final List<DateTime?> dates;
   bool saving = false;
   String? errorText;
@@ -1957,12 +1960,33 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
   @override
   void initState() {
     super.initState();
+    titles = widget.events
+        .map((event) => TextEditingController(text: event.title))
+        .toList();
+    icons = widget.events
+        .map((event) => TextEditingController(text: event.icon))
+        .toList();
+    messages = widget.events
+        .map((event) => TextEditingController(text: event.message))
+        .toList();
     dates = widget.events.map<DateTime?>((event) => event.date).toList();
   }
 
+  @override
+  void dispose() {
+    for (final controller in [...titles, ...icons, ...messages]) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
   Future<void> _save() async {
-    if (dates.length != 3 || dates.any((date) => date == null)) {
-      setState(() => errorText = 'Escolha as três datas da Home.');
+    if (dates.length != 3 ||
+        titles.any((controller) => controller.text.trim().isEmpty) ||
+        icons.any((controller) => controller.text.trim().isEmpty) ||
+        messages.any((controller) => controller.text.trim().isEmpty) ||
+        dates.any((date) => date == null)) {
+      setState(() => errorText = 'Preencha todos os campos dos três cards.');
       return;
     }
     setState(() {
@@ -1973,10 +1997,10 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
       final events = List.generate(
         widget.events.length,
         (index) => HomeEventConfig(
-          title: widget.events[index].title,
-          icon: widget.events[index].icon,
+          title: titles[index].text.trim(),
+          icon: icons[index].text.trim(),
           date: dates[index]!,
-          message: widget.events[index].message,
+          message: messages[index].text.trim(),
         ),
       );
       await widget.onSave(events);
@@ -1998,31 +2022,73 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const AppSheetHeader(
-            title: 'Datas da Home',
-            subtitle: 'Escolha as datas usadas nos três contadores principais.',
-            icon: Icons.edit_calendar_outlined,
+            title: 'Cards da Home',
+            subtitle: 'Ajuste título, ícone, mensagem e data de cada card.',
+            icon: Icons.dashboard_customize_outlined,
           ),
           const SizedBox(height: 18),
           for (var index = 0; index < widget.events.length; index++) ...[
             Row(
               children: [
-                Text(
-                  widget.events[index].icon,
-                  style: const TextStyle(fontSize: 24),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
+                Container(
+                  width: 34,
+                  height: 34,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: palette.primary.withValues(alpha: .10),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   child: Text(
-                    widget.events[index].title,
+                    '${index + 1}',
                     style: TextStyle(
-                      color: palette.foreground,
+                      color: palette.primary,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
                 ),
+                const SizedBox(width: 10),
+                Text(
+                  'Card ${index + 1}',
+                  style: TextStyle(
+                    color: palette.foreground,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                SizedBox(
+                  width: 86,
+                  child: TextField(
+                    controller: icons[index],
+                    enabled: !saving,
+                    decoration: const InputDecoration(labelText: 'Ícone'),
+                    textInputAction: TextInputAction.next,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: titles[index],
+                    enabled: !saving,
+                    decoration: const InputDecoration(labelText: 'Título'),
+                    textInputAction: TextInputAction.next,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: messages[index],
+              enabled: !saving,
+              minLines: 2,
+              maxLines: 3,
+              decoration: const InputDecoration(labelText: 'Mensagem'),
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 10),
             AppDateField(
               label: 'Data',
               value: dates[index],

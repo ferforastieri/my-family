@@ -29,15 +29,17 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late Timer timer;
   late List<CounterInfo> counters;
-  List<HomeEventConfig> events = List.of(_defaultHomeEvents);
+  List<HomeEventConfig> events = [];
   Offset? cursorPosition;
 
   @override
   void initState() {
     super.initState();
     counters = _buildCounters(events);
-    timer = Timer.periodic(const Duration(seconds: 1),
-        (_) => setState(() => counters = _buildCounters(events)));
+    timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (events.isEmpty) return;
+      setState(() => counters = _buildCounters(events));
+    });
     widget.repository.socket.on('home.settings.changed', _onSettingsChanged);
     _loadSettings();
   }
@@ -57,9 +59,7 @@ class _HomePageState extends State<HomePage> {
         events = loaded;
         counters = _buildCounters(events);
       });
-    } catch (_) {
-      // The defaults keep the Home usable while the socket reconnects.
-    }
+    } catch (_) {}
   }
 
   void _onSettingsChanged(dynamic data) {
@@ -106,7 +106,9 @@ class _HomePageState extends State<HomePage> {
                               const _HomeTitle(),
                               const SizedBox(height: 14),
                             ],
-                            if (wide)
+                            if (counters.isEmpty)
+                              const _HomeCountersLoading()
+                            else if (wide)
                               GridView.count(
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
@@ -409,27 +411,6 @@ class ElapsedTime {
   final bool isFuture;
 }
 
-final _defaultHomeEvents = [
-  HomeEventConfig(
-    title: 'Começamos a Namorar',
-    icon: '💕',
-    date: DateTime(2024, 10, 12),
-    message: 'Desde o primeiro olhar, sabia que você era especial',
-  ),
-  HomeEventConfig(
-    title: 'Nosso Casamento',
-    icon: '💍',
-    date: DateTime(2025, 4, 15),
-    message: 'O dia mais feliz da minha vida ao seu lado',
-  ),
-  HomeEventConfig(
-    title: 'Nascimento do Fernando',
-    icon: '👶',
-    date: DateTime(2026, 6, 15),
-    message: 'Nosso maior presente de amor chegando',
-  ),
-];
-
 List<CounterInfo> _buildCounters(List<HomeEventConfig> events) {
   return events
       .map(
@@ -456,6 +437,46 @@ ElapsedTime _elapsed(DateTime date) {
     totalDays: days,
     isFuture: isFuture,
   );
+}
+
+class _HomeCountersLoading extends StatelessWidget {
+  const _HomeCountersLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final wide = MediaQuery.sizeOf(context).width >= 760;
+    final placeholders = List.generate(
+      3,
+      (_) => Container(
+        height: wide ? 190 : 150,
+        decoration: BoxDecoration(
+          color: palette.card.withValues(alpha: .54),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: palette.primary.withValues(alpha: .10)),
+        ),
+      ),
+    );
+    if (wide) {
+      return GridView.count(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisCount: 3,
+        childAspectRatio: 1.58,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 14,
+        children: placeholders,
+      );
+    }
+    return Column(
+      children: [
+        for (var i = 0; i < placeholders.length; i++) ...[
+          placeholders[i],
+          if (i < placeholders.length - 1) const SizedBox(height: 14),
+        ],
+      ],
+    );
+  }
 }
 
 class CounterCard extends StatelessWidget {
