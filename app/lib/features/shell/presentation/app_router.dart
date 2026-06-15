@@ -100,7 +100,7 @@ GoRouter buildRouter(
                 if (auth.user?.canAccess('jogos') == true)
                   const MobileOptionItem(
                     label: 'Jogos do Amor',
-                    description: 'Quiz e Caça Palavras em um só lugar.',
+                    description: 'Jogos simples para se divertir juntos.',
                     path: '/jogos',
                     icon: Icons.sports_esports_outlined,
                   ),

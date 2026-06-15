@@ -136,7 +136,6 @@ class _GamesHub extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
     return AppFixedHeaderScrollView(
       header: const _GamesHero(),
       headerGap: 14,
@@ -146,56 +145,28 @@ class _GamesHub extends StatelessWidget {
           queryFn: repository.listMiniGames,
           loading: const SkeletonBox(height: 260, borderRadius: 8),
           builder: (context, miniGames, _) {
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                final wide = constraints.maxWidth >= 820;
-                return GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: wide ? 2 : 1,
-                  childAspectRatio: wide ? 2.45 : 1.86,
-                  crossAxisSpacing: 14,
-                  mainAxisSpacing: 14,
-                  children: [
-                    _GameCard(
-                      icon: Icons.favorite,
-                      title: 'Quiz do Amor',
-                      body:
-                          'Perguntas dinâmicas para testar carinho, memória e pequenos detalhes da família.',
-                      color: palette.primary,
-                      accent: palette.primaryDark,
-                      metric: 'Quiz',
-                      details: const ['Respostas rápidas'],
-                      footer: 'Começar quiz',
-                      onTap: () => onOpen(_GameView.quiz),
-                    ),
-                    _GameCard(
-                      icon: Icons.grid_on,
-                      title: 'Caça Palavras',
-                      body:
-                          'Palavras familiares e românticas sorteadas a cada partida.',
-                      color: palette.primaryDark,
-                      accent: palette.primary,
-                      metric: '12x12',
-                      details: const ['Arraste nas letras'],
-                      footer: 'Encontrar palavras',
-                      onTap: () => onOpen(_GameView.wordSearch),
-                    ),
-                    for (final config in miniGames)
-                      _GameCard(
-                        icon: _miniGameIcon(config.type),
-                        title: config.title,
-                        body: config.instructions,
-                        color: palette.primary,
-                        accent: palette.primaryDark,
-                        metric: _miniGameMetric(config),
-                        details: [_miniGameTypeLabel(config.type)],
-                        footer: 'Jogar agora',
-                        onTap: () => onOpen(_viewForMiniGame(config.type)),
-                      ),
-                  ],
-                );
-              },
+            return Column(
+              children: [
+                _GameOptionCard(
+                  icon: Icons.favorite,
+                  title: 'Quiz do Amor',
+                  description: 'Jogo de perguntas para brincar juntos.',
+                  onTap: () => onOpen(_GameView.quiz),
+                ),
+                _GameOptionCard(
+                  icon: Icons.grid_on,
+                  title: 'Caça Palavras',
+                  description: 'Encontre palavras especiais no tabuleiro.',
+                  onTap: () => onOpen(_GameView.wordSearch),
+                ),
+                for (final config in miniGames)
+                  _GameOptionCard(
+                    icon: _miniGameIcon(config.type),
+                    title: config.title,
+                    description: config.instructions,
+                    onTap: () => onOpen(_viewForMiniGame(config.type)),
+                  ),
+              ],
             );
           },
         ),
@@ -211,150 +182,35 @@ class _GamesHero extends StatelessWidget {
   Widget build(BuildContext context) {
     return const AppPageHeader(
       title: 'Jogos do Amor',
-      subtitle: 'Quiz e caça-palavras em um só lugar.',
-      icon: Icons.sports_esports_outlined,
+      subtitle: 'Escolha para onde seguir.',
+      icon: Icons.favorite_outline,
     );
   }
 }
 
-class _GameCard extends StatelessWidget {
-  const _GameCard({
+class _GameOptionCard extends StatelessWidget {
+  const _GameOptionCard({
     required this.icon,
     required this.title,
-    required this.body,
-    required this.color,
-    required this.accent,
-    required this.metric,
-    required this.details,
-    required this.footer,
+    required this.description,
     required this.onTap,
   });
 
   final IconData icon;
   final String title;
-  final String body;
-  final Color color;
-  final Color accent;
-  final String metric;
-  final List<String> details;
-  final String footer;
+  final String description;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: LoveActionCard(
+        title: title,
+        description: description,
+        icon: icon,
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: LovePanel(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Container(
-                width: 74,
-                height: double.infinity,
-                constraints: const BoxConstraints(minHeight: 104),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      color.withValues(alpha: .92),
-                      accent.withValues(alpha: .92),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(icon, color: Colors.white, size: 30),
-                    const SizedBox(height: 8),
-                    Text(
-                      metric,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: palette.foreground,
-                        fontSize: 21,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      body,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: palette.muted,
-                        height: 1.32,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Icon(Icons.check_circle_outline,
-                            color: color, size: 16),
-                        const SizedBox(width: 7),
-                        Expanded(
-                          child: Text(
-                            details.first,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: palette.foreground,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            footer,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: color,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ),
-                        Icon(Icons.chevron_right, color: color),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+        maxWidth: 1200,
       ),
     );
   }
@@ -1933,14 +1789,5 @@ String _miniGameTypeLabel(String type) {
     'love_order' => 'Linha do Amor',
     'this_or_that' => 'Isso ou Aquilo',
     _ => 'Mini jogo',
-  };
-}
-
-String _miniGameMetric(MiniGameConfig config) {
-  return switch (config.type) {
-    'memory_match' => '${min(config.items.length, 8)} pares',
-    'love_order' => '${min(config.items.length, 8)} passos',
-    'this_or_that' => '${config.items.length} rodadas',
-    _ => '${config.items.length} itens',
   };
 }
