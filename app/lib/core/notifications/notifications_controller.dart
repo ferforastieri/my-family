@@ -122,6 +122,19 @@ class NotificationsController extends ChangeNotifier {
     }
   }
 
+  Future<void> ensureDeviceRegistered() async {
+    if (!_bootstrapped) {
+      await bootstrap();
+      return;
+    }
+    final token = fcmToken;
+    if (token?.isNotEmpty == true) {
+      await _subscribeTokenSafely(token!);
+      return;
+    }
+    await configurePush();
+  }
+
   Future<void> refresh() async {
     loading = true;
     notifyListeners();
