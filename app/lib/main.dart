@@ -59,9 +59,9 @@ void main() {
       return;
     }
     protectedServicesStarted = true;
-    await notifications.bootstrap();
-    unawaited(location.bootstrap());
-    unawaited(chat.bootstrap());
+    unawaited(notifications.bootstrap().catchError((_) {}));
+    unawaited(location.bootstrap().catchError((_) {}));
+    unawaited(chat.bootstrap().catchError((_) {}));
   }
 
   auth.addListener(() {
@@ -76,7 +76,7 @@ void main() {
 
   Future<void>(() async {
     await auth.bootstrap();
-    await startProtectedServices();
+    unawaited(startProtectedServices());
   }).catchError((_) {});
   theme.bootstrap();
 }

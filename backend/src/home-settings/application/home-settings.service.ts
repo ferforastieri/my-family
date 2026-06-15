@@ -45,7 +45,7 @@ export class HomeSettingsService {
     }>;
   }) {
     if (!Array.isArray(input?.events) || input.events.length !== 3) {
-      throw new BadRequestException('Informe exatamente três datas da Home.');
+      throw new BadRequestException('Informe exatamente três cards da Home.');
     }
     const events = input.events.map((event, index) => {
       const title = event.title?.trim();
