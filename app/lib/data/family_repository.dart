@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -16,61 +15,6 @@ class FamilyRepository {
   late final SocketApiClient api = SocketApiClient(socket);
 
   String? takeMessage() => socket.takeLastMessage();
-
-  Future<Map<String, dynamic>> _httpJson(
-    String method,
-    String path, {
-    Map<String, dynamic>? body,
-    String fallbackError = 'Não foi possível concluir a ação.',
-  }) async {
-    final token = socket.token;
-    final request = http.Request(method, AppConfig.apiUri(path));
-    request.headers['Content-Type'] = 'application/json';
-    if (token != null) request.headers['Authorization'] = 'Bearer $token';
-    if (body != null) request.body = jsonEncode(body);
-
-    late final http.Response response;
-    try {
-      final streamed =
-          await request.send().timeout(const Duration(seconds: 15));
-      response = await http.Response.fromStream(streamed)
-          .timeout(const Duration(seconds: 15));
-    } on TimeoutException {
-      throw Exception('Tempo esgotado. Verifique sua conexão e tente de novo.');
-    }
-
-    final raw = _decodeJsonObject(response.body);
-    final data = raw['data'] is Map
-        ? Map<String, dynamic>.from(raw['data'] as Map)
-        : raw;
-    final message = raw['message'] ?? data['message'];
-    if (message is String && message.trim().isNotEmpty) {
-      socket.rememberMessage(message);
-    }
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      final error = message ?? raw['error'] ?? data['error'];
-      throw Exception(
-        error?.toString().trim().isNotEmpty == true
-            ? error.toString()
-            : fallbackError,
-      );
-    }
-
-    return data;
-  }
-
-  Map<String, dynamic> _decodeJsonObject(String body) {
-    if (body.trim().isEmpty) return <String, dynamic>{};
-    late final dynamic decoded;
-    try {
-      decoded = jsonDecode(body);
-    } on FormatException {
-      return <String, dynamic>{'message': body};
-    }
-    if (decoded is Map) return Map<String, dynamic>.from(decoded);
-    return <String, dynamic>{'data': decoded};
-  }
 
   Future<PaginatedResult<FamilyItem>> listPage(
     String resource,
@@ -336,32 +280,22 @@ class FamilyRepository {
   }
 
   Future<AppNotification> createNotification(Map<String, dynamic> data) async {
-    final row = await _httpJson(
-      'POST',
-      '/notifications',
-      body: data,
-      fallbackError: 'Erro ao criar notificação.',
-    );
-    return AppNotification.fromJson(row);
+    final row =
+        await api.mutate<Map<String, dynamic>>('notifications.create', data);
+    return AppNotification.fromJson(Map<String, dynamic>.from(row));
   }
 
   Future<AppNotification?> updateNotification(
       String id, Map<String, dynamic> data) async {
-    final row = await _httpJson(
-      'PATCH',
-      '/notifications/$id',
-      body: data,
-      fallbackError: 'Erro ao editar notificação.',
-    );
-    return row.isEmpty ? null : AppNotification.fromJson(row);
+    final row = await api.mutate<Map<String, dynamic>?>(
+        'notifications.update', {'id': id, 'data': data});
+    return row == null
+        ? null
+        : AppNotification.fromJson(Map<String, dynamic>.from(row));
   }
 
   Future<void> deleteNotification(String id) async {
-    await _httpJson(
-      'DELETE',
-      '/notifications/$id',
-      fallbackError: 'Erro ao remover notificação.',
-    );
+    await api.mutate<Map<String, dynamic>>('notifications.delete', {'id': id});
   }
 
   Future<void> clearNotifications() async {
@@ -373,16 +307,11 @@ class FamilyRepository {
     String? body,
     String? url,
   }) async {
-    final row = await _httpJson(
-      'POST',
-      '/notifications/send',
-      body: {
-        'title': title,
-        if (body != null) 'body': body,
-        if (url != null) 'url': url,
-      },
-      fallbackError: 'Erro ao enviar notificação.',
-    );
+    final row = await api.mutate<Map<String, dynamic>>('notifications.send', {
+      'title': title,
+      if (body != null) 'body': body,
+      if (url != null) 'url': url,
+    });
     return (row['sent'] as num?)?.toInt() ?? 0;
   }
 
@@ -392,17 +321,12 @@ class FamilyRepository {
     String? url,
     required DateTime scheduledAt,
   }) async {
-    await _httpJson(
-      'POST',
-      '/notifications/schedule',
-      body: {
-        'title': title,
-        if (body != null) 'body': body,
-        if (url != null) 'url': url,
-        'scheduledAt': scheduledAt.toIso8601String(),
-      },
-      fallbackError: 'Erro ao agendar notificação.',
-    );
+    await api.mutate<Map<String, dynamic>>('notifications.schedule', {
+      'title': title,
+      if (body != null) 'body': body,
+      if (url != null) 'url': url,
+      'scheduledAt': scheduledAt.toIso8601String(),
+    });
   }
 
   Future<List<ScheduledNotification>> listScheduledNotifications() async {
@@ -420,10 +344,9 @@ class FamilyRepository {
   }
 
   Future<void> deleteScheduledNotification(String id) async {
-    await _httpJson(
-      'DELETE',
-      '/notifications/scheduled/$id',
-      fallbackError: 'Erro ao remover notificação agendada.',
+    await api.mutate<Map<String, dynamic>>(
+      'notifications.scheduled.delete',
+      {'id': id},
     );
   }
 

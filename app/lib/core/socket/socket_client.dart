@@ -111,19 +111,27 @@ class SocketClient {
       event,
       payload,
       ack: (dynamic data) {
-        if (data is Map && (data['status'] == 'error' || data['ok'] == false)) {
-          completer.completeError(data['message'] ?? 'Erro no servidor');
-          return;
+        if (completer.isCompleted) return;
+        try {
+          if (data is Map &&
+              (data['status'] == 'error' || data['ok'] == false)) {
+            completer.completeError(data['message'] ?? 'Erro no servidor');
+            return;
+          }
+          if (data is Map) {
+            final message = data['message'];
+            if (message is String) _lastMessage = message;
+          }
+          if (data is Map &&
+              data.containsKey('ok') &&
+              data.containsKey('data')) {
+            completer.complete(data['data'] as T);
+            return;
+          }
+          completer.complete(data as T);
+        } catch (error, stackTrace) {
+          completer.completeError(error, stackTrace);
         }
-        if (data is Map) {
-          final message = data['message'];
-          if (message is String) _lastMessage = message;
-        }
-        if (data is Map && data.containsKey('ok') && data.containsKey('data')) {
-          completer.complete(data['data'] as T);
-          return;
-        }
-        completer.complete(data as T);
       },
     );
     return completer.future.timeout(

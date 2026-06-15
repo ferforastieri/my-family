@@ -26,7 +26,7 @@ export class NotificationsGateway {
   @SubscribeMessage('notifications.list')
   async list(
     @ConnectedSocket() client: Socket,
-    @MessageBody() query?: PaginationQuery,
+    @MessageBody() query?: PaginationQuery & { type?: string },
   ) {
     const user = await this.session.requireUser(client);
     return this.notifications.list(query, user);
