@@ -325,7 +325,7 @@ class FamilyRepository {
       'title': title,
       if (body != null) 'body': body,
       if (url != null) 'url': url,
-      'scheduledAt': scheduledAt.toIso8601String(),
+      'scheduledAt': scheduledAt.toUtc().toIso8601String(),
     });
   }
 
