@@ -28,6 +28,17 @@ class LocationController with WidgetsBindingObserver {
   bool _lifecycleListenerBound = false;
   bool _openedBackgroundSettings = false;
   bool _openedLocationSettings = false;
+  String? _activeAndroidToken;
+
+  Future<void> requestStartupPermissions() async {
+    _bindLifecycleListener();
+    if (kIsWeb) return;
+    try {
+      await _ensurePermission(request: true);
+    } catch (_) {
+      //
+    }
+  }
 
   Future<void> bootstrap() async {
     _bindAuthListener();
@@ -36,21 +47,28 @@ class LocationController with WidgetsBindingObserver {
       stop();
       return;
     }
-    if (auth.user == null || socket.token == null) return;
-    if (_started || _starting) return;
+    final currentToken = socket.token;
+    if (auth.user == null || currentToken == null) return;
+    if (_started) {
+      if (defaultTargetPlatform == TargetPlatform.android &&
+          _activeAndroidToken != currentToken) {
+        await _startAndroidBackgroundService();
+      }
+      return;
+    }
+    if (_starting) return;
     _starting = true;
     try {
-      final permission = await _ensurePermission();
+      final permission = await _ensurePermission(request: false);
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
-        _starting = false;
         return;
       }
 
       if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-        await _startAndroidBackgroundService();
-        _started = true;
-        _starting = false;
+        if (permission != LocationPermission.always) return;
+        final started = await _startAndroidBackgroundService();
+        _started = started;
         return;
       }
 
@@ -66,8 +84,9 @@ class LocationController with WidgetsBindingObserver {
         ),
       ).listen((position) => unawaited(_sendPosition(position)));
       _started = true;
-      _starting = false;
     } catch (_) {
+      //
+    } finally {
       _starting = false;
     }
   }
@@ -106,44 +125,52 @@ class LocationController with WidgetsBindingObserver {
     }
   }
 
-  Future<LocationPermission> _ensurePermission() async {
+  Future<LocationPermission> _ensurePermission({required bool request}) async {
     if (kIsWeb) return LocationPermission.denied;
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      if (!_openedLocationSettings) {
+      if (request && !_openedLocationSettings) {
         _openedLocationSettings = true;
         await Geolocator.openLocationSettings();
       }
       return LocationPermission.denied;
     }
     var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
+    if (request && permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
     if (!kIsWeb &&
         defaultTargetPlatform == TargetPlatform.android &&
         permission == LocationPermission.whileInUse) {
-      permission = await Geolocator.requestPermission();
+      if (request) {
+        permission = await Geolocator.requestPermission();
+      }
       if (permission == LocationPermission.whileInUse &&
+          request &&
           !_openedBackgroundSettings) {
         _openedBackgroundSettings = true;
         await Geolocator.openAppSettings();
+      }
+      if (permission != LocationPermission.always) {
         return LocationPermission.denied;
       }
     }
     return permission;
   }
 
-  Future<void> _startAndroidBackgroundService() async {
+  Future<bool> _startAndroidBackgroundService() async {
     final token = socket.token;
-    if (token == null) return;
+    if (token == null) return false;
     try {
       await _backgroundChannel.invokeMethod<bool>('start', {
         'token': token,
         'apiBaseUrl': AppConfig.apiBaseUrl,
       });
+      _activeAndroidToken = token;
+      return true;
     } catch (_) {
       unawaited(_sendCurrentPosition());
+      return false;
     }
   }
 
@@ -226,6 +253,7 @@ class LocationController with WidgetsBindingObserver {
     unawaited(_stopAndroidBackgroundService());
     _started = false;
     _starting = false;
+    _activeAndroidToken = null;
   }
 
   void dispose() {
