@@ -4,6 +4,7 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { BaseWsExceptionFilter, WsException } from '@nestjs/websockets';
 import { Response } from 'express';
@@ -13,6 +14,8 @@ export class ApiExceptionFilter
   extends BaseWsExceptionFilter
   implements ExceptionFilter
 {
+  private readonly logger = new Logger(ApiExceptionFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost) {
     if (host.getType() === 'ws') {
       const ack = host.getArgByIndex<unknown>(2);
@@ -22,6 +25,7 @@ export class ApiExceptionFilter
         error: exceptionName(exception),
         timestamp: new Date().toISOString(),
       };
+      this.logException('ws', exception);
       if (typeof ack === 'function') {
         ack(payload);
         return;
@@ -36,6 +40,7 @@ export class ApiExceptionFilter
       exception instanceof HttpException
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
+    this.logException('http', exception, status);
 
     response.status(status).json({
       ok: false,
@@ -44,6 +49,18 @@ export class ApiExceptionFilter
       statusCode: status,
       timestamp: new Date().toISOString(),
     });
+  }
+
+  private logException(type: 'http' | 'ws', exception: unknown, status?: number) {
+    const message = exceptionMessage(exception);
+    const errorName = exceptionName(exception);
+    const prefix =
+      type === 'http' ? `HTTP ${status ?? 500}` : 'WebSocket exception';
+    if (exception instanceof Error && exception.stack) {
+      this.logger.error(`${prefix}: ${errorName}: ${message}`, exception.stack);
+      return;
+    }
+    this.logger.error(`${prefix}: ${errorName}: ${message}`);
   }
 }
 

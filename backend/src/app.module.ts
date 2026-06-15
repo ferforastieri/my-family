@@ -34,16 +34,50 @@ import { LocationModule } from './location/location.module';
       useFactory: (environment: Environment) => ({
         pinoHttp: {
           level: environment.log.level,
-          transport: environment.isProduction()
-            ? undefined
-            : {
-                target: 'pino-pretty',
-                options: {
-                  colorize: true,
-                  singleLine: true,
-                  translateTime: 'SYS:standard',
-                },
-              },
+          transport: {
+            target: 'pino-pretty',
+            options: {
+              colorize: true,
+              levelFirst: true,
+              singleLine: true,
+              translateTime: 'SYS:yyyy-mm-dd HH:MM:ss.l o',
+              ignore: 'pid,hostname,context,env',
+              messageFormat: '[{context}] {msg}',
+              errorLikeObjectKeys: ['err', 'error'],
+            },
+          },
+          customProps: () => ({
+            env: environment.type,
+          }),
+          customSuccessMessage: (request, response) =>
+            `${request.method} ${request.url} -> ${response.statusCode}`,
+          customErrorMessage: (request, response, error) =>
+            `${request.method} ${request.url} -> ${response.statusCode}: ${error.message}`,
+          serializers: {
+            req(request) {
+              return {
+                id: request.id,
+                method: request.method,
+                url: request.url,
+                query: request.query,
+                params: request.params,
+                remoteAddress: request.remoteAddress,
+                remotePort: request.remotePort,
+              };
+            },
+            res(response) {
+              return {
+                statusCode: response.statusCode,
+              };
+            },
+            err(error) {
+              return {
+                type: error.type,
+                message: error.message,
+                stack: error.stack,
+              };
+            },
+          },
           redact: {
             paths: [
               'req.headers.authorization',
@@ -51,6 +85,10 @@ import { LocationModule } from './location/location.module';
               'req.body.password',
               'req.body.newPassword',
               'req.body.token',
+              'req.body.refreshToken',
+              'req.body.subscription.token',
+              'req.body.firebaseServiceAccountJson',
+              'req.body.FIREBASE_SERVICE_ACCOUNT_JSON',
             ],
             censor: '[REDACTED]',
           },

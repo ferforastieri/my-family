@@ -2,6 +2,7 @@ import {
   CallHandler,
   ExecutionContext,
   Injectable,
+  Logger,
   NestInterceptor,
 } from '@nestjs/common';
 import { map, Observable } from 'rxjs';
@@ -12,6 +13,8 @@ export class ApiResponseInterceptor<T> implements NestInterceptor<
   T,
   ApiResponse<T>
 > {
+  private readonly logger = new Logger(ApiResponseInterceptor.name);
+
   intercept(
     context: ExecutionContext,
     next: CallHandler<T>,
@@ -22,6 +25,7 @@ export class ApiResponseInterceptor<T> implements NestInterceptor<
         if (isApiResponse(body)) return body as ApiResponse<T>;
         if (isStreamableResponse(body)) return body as ApiResponse<T>;
         const message = this.responseMessage(context, type, body);
+        this.logWsSuccess(context, type, message);
         return {
           ok: true,
           message,
@@ -29,6 +33,17 @@ export class ApiResponseInterceptor<T> implements NestInterceptor<
           timestamp: new Date().toISOString(),
         };
       }),
+    );
+  }
+
+  private logWsSuccess(
+    context: ExecutionContext,
+    type: string,
+    message: string,
+  ) {
+    if (type !== 'ws') return;
+    this.logger.log(
+      `${context.getClass().name}.${context.getHandler().name} -> ${message}`,
     );
   }
 
