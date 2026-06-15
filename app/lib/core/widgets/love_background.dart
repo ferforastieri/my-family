@@ -10,12 +10,19 @@ class LoveBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [palette.bgStart, palette.bgEnd],
+          colors: isDark
+              ? [
+                  Color.lerp(palette.bgStart, Colors.black, .10)!,
+                  palette.bgStart,
+                  Color.lerp(palette.bgEnd, palette.primaryDark, .18)!,
+                ]
+              : [palette.bgStart, palette.bgEnd],
         ),
       ),
       child: child,

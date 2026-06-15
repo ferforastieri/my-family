@@ -185,16 +185,24 @@ class _FlowerPainter extends CustomPainter {
   }
 
   void _drawAtmosphere(Canvas canvas, Size size) {
+    final isDark = palette.bgStart.computeLuminance() < .18;
     final paint = Paint()
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [
-          palette.bgStart.withValues(alpha: .06),
-          const Color(0xffffedf5).withValues(alpha: .52),
-          const Color(0xffeaf7ef).withValues(alpha: .62),
-          palette.bgEnd.withValues(alpha: .72),
-        ],
+        colors: isDark
+            ? [
+                const Color(0xff120914).withValues(alpha: .12),
+                palette.primaryDark.withValues(alpha: .18),
+                const Color(0xff173322).withValues(alpha: .26),
+                palette.bgEnd.withValues(alpha: .54),
+              ]
+            : [
+                palette.bgStart.withValues(alpha: .06),
+                const Color(0xffffedf5).withValues(alpha: .52),
+                const Color(0xffeaf7ef).withValues(alpha: .62),
+                palette.bgEnd.withValues(alpha: .72),
+              ],
       ).createShader(Offset.zero & size);
     canvas.drawRect(Offset.zero & size, paint);
 
@@ -204,11 +212,17 @@ class _FlowerPainter extends CustomPainter {
       size.shortestSide * .26,
       Paint()
         ..shader = RadialGradient(
-          colors: [
-            Colors.white.withValues(alpha: .32),
-            const Color(0xffffb6d4).withValues(alpha: .12),
-            Colors.transparent,
-          ],
+          colors: isDark
+              ? [
+                  palette.primary.withValues(alpha: .20),
+                  const Color(0xff7f2f68).withValues(alpha: .10),
+                  Colors.transparent,
+                ]
+              : [
+                  Colors.white.withValues(alpha: .32),
+                  const Color(0xffffb6d4).withValues(alpha: .12),
+                  Colors.transparent,
+                ],
         ).createShader(
           Rect.fromCircle(center: glowCenter, radius: size.shortestSide * .28),
         ),
@@ -216,6 +230,7 @@ class _FlowerPainter extends CustomPainter {
   }
 
   void _drawDistantHills(Canvas canvas, Size size, double scale) {
+    final isDark = palette.bgStart.computeLuminance() < .18;
     final back = Path()
       ..moveTo(0, size.height * .62)
       ..cubicTo(size.width * .16, size.height * .50, size.width * .28,
@@ -231,10 +246,15 @@ class _FlowerPainter extends CustomPainter {
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            const Color(0xff8bcf9a).withValues(alpha: .18),
-            const Color(0xff2f7d56).withValues(alpha: .08),
-          ],
+          colors: isDark
+              ? [
+                  const Color(0xff4da46d).withValues(alpha: .22),
+                  const Color(0xff123923).withValues(alpha: .18),
+                ]
+              : [
+                  const Color(0xff8bcf9a).withValues(alpha: .18),
+                  const Color(0xff2f7d56).withValues(alpha: .08),
+                ],
         ).createShader(Offset.zero & size),
     );
 
@@ -253,10 +273,15 @@ class _FlowerPainter extends CustomPainter {
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            palette.primary.withValues(alpha: .12),
-            palette.primaryDark.withValues(alpha: .10),
-          ],
+          colors: isDark
+              ? [
+                  palette.primary.withValues(alpha: .22),
+                  palette.primaryDark.withValues(alpha: .18),
+                ]
+              : [
+                  palette.primary.withValues(alpha: .12),
+                  palette.primaryDark.withValues(alpha: .10),
+                ],
         ).createShader(Offset.zero & size),
     );
 

@@ -35,9 +35,10 @@ export class WsSessionService {
     const token = this.tokenFromClient(client);
     if (!token) return null;
     try {
-      const payload = this.jwt.verify<{ sub: string }>(token, {
+      const payload = this.jwt.verify<{ sub: string; type?: string }>(token, {
         secret: this.env.jwt.secret,
       });
+      if (payload.type === 'refresh') return null;
       const user = await this.auth.findById(payload.sub);
       if (user) client.data.user = user;
       return user;

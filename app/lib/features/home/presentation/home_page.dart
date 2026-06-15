@@ -120,6 +120,8 @@ class _HomePageState extends State<HomePage> {
                           subtitle:
                               'Amor, memórias e pequenos milagres do caminho.',
                           icon: Icons.favorite_outline,
+                          leading: _HomeLogoMark(),
+                          showBackButton: false,
                         ),
                       ),
                       Expanded(child: content),
@@ -144,6 +146,38 @@ class _HomePageState extends State<HomePage> {
               ],
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeLogoMark extends StatelessWidget {
+  const _HomeLogoMark();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Container(
+      width: 42,
+      height: 42,
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: palette.card.withValues(alpha: .92),
+        shape: BoxShape.circle,
+        border: Border.all(color: palette.primary.withValues(alpha: .22)),
+        boxShadow: [
+          BoxShadow(
+            color: palette.primary.withValues(alpha: .14),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: ClipOval(
+        child: Image.asset(
+          'assets/brand/family-logo.png',
+          fit: BoxFit.cover,
         ),
       ),
     );

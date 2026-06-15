@@ -12,6 +12,7 @@ class SocketClient {
   String? _lastConnectError;
   final Map<String, List<void Function(dynamic data)>> _handlers = {};
   String? _lastMessage;
+  Future<bool> Function()? onAuthError;
 
   bool get isConnected => _socket?.connected ?? false;
   String? get token => _token;
@@ -90,6 +91,20 @@ class SocketClient {
   }
 
   Future<T> emitAck<T>(String event, [Object? payload]) async {
+    try {
+      return await _emitAckOnce<T>(event, payload);
+    } catch (error) {
+      if (event != 'auth.refresh' &&
+          _looksLikeAuthError(error) &&
+          onAuthError != null &&
+          await onAuthError!()) {
+        return _emitAckOnce<T>(event, payload);
+      }
+      rethrow;
+    }
+  }
+
+  Future<T> _emitAckOnce<T>(String event, [Object? payload]) async {
     await ensureConnected();
     final completer = Completer<T>();
     _socket!.emitWithAck(
@@ -100,9 +115,11 @@ class SocketClient {
           completer.completeError(data['message'] ?? 'Erro no servidor');
           return;
         }
-        if (data is Map && data.containsKey('ok') && data.containsKey('data')) {
+        if (data is Map) {
           final message = data['message'];
           if (message is String) _lastMessage = message;
+        }
+        if (data is Map && data.containsKey('ok') && data.containsKey('data')) {
           completer.complete(data['data'] as T);
           return;
         }
@@ -114,6 +131,19 @@ class SocketClient {
       onTimeout: () => throw TimeoutException(
           'Tempo esgotado aguardando resposta de "$event". Verifique a conexão com ${AppConfig.socketUrl}.'),
     );
+  }
+
+  bool _looksLikeAuthError(Object error) {
+    final message = error.toString().toLowerCase();
+    return message.contains('unauthorized') ||
+        message.contains('autenticação') ||
+        message.contains('autenticacao') ||
+        message.contains('não autorizado') ||
+        message.contains('nao autorizado') ||
+        message.contains('invalid token') ||
+        message.contains('token inválido') ||
+        message.contains('token invalido') ||
+        message.contains('jwt');
   }
 
   String _socketErrorMessage(dynamic error) {

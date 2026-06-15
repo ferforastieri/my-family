@@ -7,6 +7,9 @@ import {
 } from '@shared/infrastructure/database/schemas';
 import {
   cleanUndefined,
+  normalizePagination,
+  paginated,
+  type PaginationQuery,
   toId,
 } from '@shared/infrastructure/database/mongo.utils';
 
@@ -42,6 +45,34 @@ export class ScheduledNotificationsRepository {
 
   async create(data: ScheduledNotificationWrite) {
     return this.toDto(await this.model.create({ ...data, status: 'pending' }))!;
+  }
+
+  async list(query?: PaginationQuery & { status?: string }) {
+    const { page, limit, skip } = normalizePagination(query, {
+      page: 1,
+      limit: 30,
+      maxLimit: 100,
+    });
+    const allowed = ['pending', 'sent', 'failed', 'cancelled'];
+    const match =
+      query?.status && allowed.includes(query.status)
+        ? { status: query.status }
+        : {};
+    const [items, total] = await Promise.all([
+      this.model
+        .find(match)
+        .sort({ scheduledAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.model.countDocuments(match).exec(),
+    ]);
+    return paginated(
+      items.map((doc) => this.toDto(doc)!),
+      total,
+      page,
+      limit,
+    );
   }
 
   async pending() {

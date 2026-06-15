@@ -2,6 +2,7 @@ import {
   Injectable,
   ConflictException,
   BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { randomBytes } from 'crypto';
@@ -11,6 +12,12 @@ import { EmailService } from '@shared/infrastructure/email/email.service';
 import { UserRepository } from '../../infrastructure/repositories/user.repository';
 import { PasswordResetRepository } from '../../infrastructure/repositories/password-reset.repository';
 import type { UserEntity, UserRole } from '@auth/domain/entities/user.entity';
+
+type AuthJwtPayload = {
+  sub: string;
+  email?: string;
+  type?: 'refresh';
+};
 
 @Injectable()
 export class AuthService {
@@ -59,9 +66,15 @@ export class AuthService {
       secret: this.env.jwt.secret,
       expiresIn: this.env.jwt.expiresIn,
     } as any);
+    const refreshToken = this.jwt.sign({ ...payload, type: 'refresh' }, {
+      secret: this.env.jwt.secret,
+      expiresIn: '90d',
+    } as any);
     return {
       accessToken,
       access_token: accessToken,
+      refreshToken,
+      refresh_token: refreshToken,
       user: {
         id: user.id,
         email: user.email,
@@ -71,6 +84,22 @@ export class AuthService {
         avatarPath: user.avatarPath,
       },
     };
+  }
+
+  async refresh(token: string) {
+    if (!token) throw new BadRequestException('Refresh token é obrigatório');
+    let payload: AuthJwtPayload;
+    try {
+      payload = this.jwt.verify<AuthJwtPayload>(token, {
+        secret: this.env.jwt.secret,
+      });
+    } catch {
+      throw new UnauthorizedException('Sessão expirada. Faça login novamente.');
+    }
+    const user = await this.users.findById(payload.sub);
+    if (!user)
+      throw new UnauthorizedException('Sessão expirada. Faça login novamente.');
+    return this.tokenResponse(user);
   }
 
   async requestPasswordReset(email: string): Promise<void> {

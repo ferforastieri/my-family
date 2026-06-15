@@ -8,6 +8,8 @@ import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import { NotificationsService } from './notifications.service';
 import { ScheduledNotificationsRepository } from '../../infrastructure/repositories/scheduled-notifications.repository';
+import { NotificationsRealtimeGateway } from '../../interfaces/gateways/notifications-realtime.gateway';
+import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 @Injectable()
 export class NotificationSchedulerService implements OnModuleInit {
@@ -17,6 +19,7 @@ export class NotificationSchedulerService implements OnModuleInit {
     private scheduled: ScheduledNotificationsRepository,
     private notifications: NotificationsService,
     private schedulerRegistry: SchedulerRegistry,
+    private realtime: NotificationsRealtimeGateway,
   ) {}
 
   async onModuleInit() {
@@ -46,11 +49,16 @@ export class NotificationSchedulerService implements OnModuleInit {
       scheduledAt,
     });
     this.registerJob(row);
+    this.realtime.emitScheduledNotificationChanged(row);
     return {
       id: row.id,
       scheduledAt: row.scheduledAt.toISOString(),
       delayMs: row.scheduledAt.getTime() - Date.now(),
     };
+  }
+
+  list(query?: PaginationQuery & { status?: string }) {
+    return this.scheduled.list(query);
   }
 
   private registerJob(row: {
@@ -80,12 +88,14 @@ export class NotificationSchedulerService implements OnModuleInit {
     const name = this.jobName(id);
     try {
       await this.notifications.send(title, body, url);
-      await this.scheduled.markSent(id);
+      const row = await this.scheduled.markSent(id);
+      if (row) this.realtime.emitScheduledNotificationChanged(row);
     } catch (error) {
-      await this.scheduled.markFailed(
+      const row = await this.scheduled.markFailed(
         id,
         error instanceof Error ? error.message : String(error),
       );
+      if (row) this.realtime.emitScheduledNotificationChanged(row);
       this.logger.error(
         `Falha ao enviar notificação agendada ${id}`,
         error instanceof Error ? error.stack : undefined,
