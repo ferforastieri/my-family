@@ -22,10 +22,20 @@ class MainActivity : FlutterActivity() {
                         BackgroundLocationService.saveConfig(this, token, apiBaseUrl)
                         val intent = Intent(this, BackgroundLocationService::class.java)
                             .setAction(BackgroundLocationService.ACTION_START)
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            startForegroundService(intent)
-                        } else {
-                            startService(intent)
+                        try {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                startForegroundService(intent)
+                            } else {
+                                startService(intent)
+                            }
+                        } catch (error: Throwable) {
+                            BackgroundLocationService.clearConfig(this)
+                            result.error(
+                                "start_failed",
+                                error.message ?: "Não foi possível iniciar a localização.",
+                                null,
+                            )
+                            return@setMethodCallHandler
                         }
                         result.success(true)
                     }

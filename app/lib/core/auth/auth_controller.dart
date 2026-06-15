@@ -44,15 +44,17 @@ class AuthController extends ChangeNotifier {
   }
 
   Future<void> _restoreSession() async {
-    if (refreshToken == null && token != null) {
+    if (refreshToken != null) {
       await _refreshSession();
+      return;
+    }
+    if (token != null && await _refreshSession()) {
       return;
     }
     if (token != null) {
       await _loadCurrentUser(clearInvalidToken: true);
       return;
     }
-    await _refreshSession();
   }
 
   void _bindConnectListener() {

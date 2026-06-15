@@ -17,10 +17,14 @@ class BootReceiver : BroadcastReceiver() {
         if (BackgroundLocationService.readConfig(context) == null) return
         val serviceIntent = Intent(context, BackgroundLocationService::class.java)
             .setAction(BackgroundLocationService.ACTION_START)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(serviceIntent)
-        } else {
-            context.startService(serviceIntent)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(serviceIntent)
+            } else {
+                context.startService(serviceIntent)
+            }
+        } catch (_: Throwable) {
+            BackgroundLocationService.clearConfig(context)
         }
     }
 }

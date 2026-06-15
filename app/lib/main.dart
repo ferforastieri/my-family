@@ -51,6 +51,13 @@ void main() {
         repository: repository),
   ));
 
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    Future<void>(() async {
+      await notifications.requestStartupPermissions();
+      await location.requestStartupPermissions();
+    }).catchError((_) {});
+  });
+
   var protectedServicesStarted = false;
   Future<void> startProtectedServices() async {
     if (auth.user == null) return;

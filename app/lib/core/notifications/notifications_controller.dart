@@ -62,6 +62,7 @@ class NotificationsController extends ChangeNotifier {
   bool _pushListenersBound = false;
   Future<void>? _configurePushFuture;
   String? _pendingUrl;
+  bool _pushPermissionRequested = false;
 
   int get badgeCount =>
       notifications.where((notification) => !notification.read).length;
@@ -135,6 +136,10 @@ class NotificationsController extends ChangeNotifier {
     await configurePush();
   }
 
+  Future<void> requestStartupPermissions() async {
+    await configurePush(registerDevice: false);
+  }
+
   Future<void> refresh() async {
     loading = true;
     notifyListeners();
@@ -194,10 +199,10 @@ class NotificationsController extends ChangeNotifier {
     }
   }
 
-  Future<void> configurePush() async {
+  Future<void> configurePush({bool registerDevice = true}) async {
     final current = _configurePushFuture;
     if (current != null) return current;
-    _configurePushFuture = _configurePush();
+    _configurePushFuture = _configurePush(registerDevice: registerDevice);
     try {
       await _configurePushFuture;
     } finally {
@@ -205,7 +210,7 @@ class NotificationsController extends ChangeNotifier {
     }
   }
 
-  Future<void> _configurePush() async {
+  Future<void> _configurePush({required bool registerDevice}) async {
     try {
       pushError = null;
       if (!kIsWeb) {
@@ -241,7 +246,9 @@ class NotificationsController extends ChangeNotifier {
             enableVibration: true,
           ),
         );
-        await android?.requestNotificationsPermission();
+        if (!_pushPermissionRequested) {
+          await android?.requestNotificationsPermission();
+        }
 
         final launchDetails =
             await _localNotifications.getNotificationAppLaunchDetails();
@@ -256,13 +263,21 @@ class NotificationsController extends ChangeNotifier {
       FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
       await FirebaseMessaging.instance.setAutoInitEnabled(true);
-      final permission = await FirebaseMessaging.instance
-          .requestPermission(alert: true, badge: true, sound: true);
+      final permission = _pushPermissionRequested
+          ? await FirebaseMessaging.instance.getNotificationSettings()
+          : await FirebaseMessaging.instance
+              .requestPermission(alert: true, badge: true, sound: true);
+      _pushPermissionRequested = true;
       if (permission.authorizationStatus == AuthorizationStatus.denied) {
         throw StateError('Permissão de notificações negada.');
       }
       fcmToken = await _getTokenWithRetry();
-      await _subscribeToken(fcmToken!);
+      if (registerDevice) {
+        await _subscribeToken(fcmToken!);
+      } else {
+        pushReady = true;
+        notifyListeners();
+      }
 
       if (!_pushListenersBound) {
         FirebaseMessaging.instance.onTokenRefresh.listen(_subscribeTokenSafely);
