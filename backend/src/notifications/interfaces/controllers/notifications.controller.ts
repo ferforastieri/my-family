@@ -63,6 +63,13 @@ export class NotificationsController {
     return { ok: true, message: 'Notificações limpas.' };
   }
 
+  @Get('scheduled/list')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('husband', 'wife')
+  async scheduledList() {
+    return this.scheduler.list();
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('husband', 'wife')

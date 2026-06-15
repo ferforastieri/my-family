@@ -14,7 +14,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { AuthService } from '../../application/services/auth.service';
 import { UserService } from '../../application/services/user.service';
-import { LoginDto, RegisterDto } from '../dto/auth.dto';
+import { LoginDto, RefreshTokenDto, RegisterDto } from '../dto/auth.dto';
 import { WsSessionService } from '../../application/services/ws-session.service';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 import { UpdateUserDto } from '../dto/user.dto';
@@ -57,6 +57,13 @@ export class AuthGateway {
     );
     this.server.emit('users.created', response.user);
     return { message: 'Cadastro realizado com sucesso.', ...response };
+  }
+
+  @SubscribeMessage('auth.refresh')
+  async refresh(@MessageBody() dto: RefreshTokenDto) {
+    const token = dto.refreshToken ?? dto.refresh_token;
+    const response = await this.auth.refresh(token ?? '');
+    return { message: 'Sessão renovada.', ...response };
   }
 
   @SubscribeMessage('auth.me')

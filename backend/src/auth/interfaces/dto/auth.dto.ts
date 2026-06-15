@@ -32,3 +32,13 @@ export class LoginDto {
   @IsString()
   password: string;
 }
+
+export class RefreshTokenDto {
+  @IsString()
+  @IsOptional()
+  refreshToken?: string;
+
+  @IsString()
+  @IsOptional()
+  refresh_token?: string;
+}

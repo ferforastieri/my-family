@@ -40,6 +40,8 @@ class AppPageHeader extends StatelessWidget {
     this.onAction,
     this.onBack,
     this.inlineAction = false,
+    this.showBackButton = true,
+    this.leading,
   });
 
   final String title;
@@ -50,6 +52,8 @@ class AppPageHeader extends StatelessWidget {
   final VoidCallback? onAction;
   final VoidCallback? onBack;
   final bool inlineAction;
+  final bool showBackButton;
+  final Widget? leading;
 
   @override
   Widget build(BuildContext context) {
@@ -77,12 +81,27 @@ class AppPageHeader extends StatelessWidget {
         final titleRow = Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            if (!desktop) ...[
+            if (!desktop && showBackButton) ...[
               AppHeaderIconButton(
                 onPressed: onBack ?? () => _defaultBack(context),
                 icon: const Icon(Icons.arrow_back),
                 tooltip: 'Voltar',
               ),
+              const SizedBox(width: 12),
+            ] else if (!desktop) ...[
+              leading ??
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: palette.primary.withValues(alpha: .12),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: palette.primary.withValues(alpha: .22),
+                      ),
+                    ),
+                    child: Icon(icon, color: palette.primary, size: 22),
+                  ),
               const SizedBox(width: 12),
             ],
             Expanded(
@@ -104,7 +123,7 @@ class AppPageHeader extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (!desktop) ...[
+                      if (!desktop && showBackButton) ...[
                         const SizedBox(width: 8),
                         Icon(icon, color: palette.primary, size: 22),
                       ],

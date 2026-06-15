@@ -38,6 +38,7 @@ class _AdminPageState extends State<AdminPage> {
 
   List<AppUser> users = [];
   List<AppNotification> notifications = [];
+  List<ScheduledNotification> scheduledNotifications = [];
   List<QuizQuestion> questions = [];
   List<GameWord> words = [];
   List<MiniGameConfig> miniGames = [];
@@ -86,6 +87,7 @@ class _AdminPageState extends State<AdminPage> {
     final errors = <String>[];
     PaginatedResult<AppUser>? nextUsers;
     PaginatedResult<AppNotification>? nextNotifications;
+    List<ScheduledNotification>? nextScheduledNotifications;
     PaginatedResult<QuizQuestion>? nextQuestions;
     PaginatedResult<GameWord>? nextWords;
     PaginatedResult<MiniGameConfig>? nextMiniGames;
@@ -102,6 +104,10 @@ class _AdminPageState extends State<AdminPage> {
           notificationsPage,
           _adminPageLimit,
         );
+      }, errors),
+      _fetchPart('agendadas', () async {
+        nextScheduledNotifications =
+            await widget.repository.listScheduledNotifications();
       }, errors),
       _fetchPart('perguntas', () async {
         nextQuestions = await widget.repository.listQuizQuestionsAdminPage(
@@ -131,6 +137,7 @@ class _AdminPageState extends State<AdminPage> {
     return _AdminData(
       users: nextUsers,
       notifications: nextNotifications,
+      scheduledNotifications: nextScheduledNotifications,
       questions: nextQuestions,
       words: nextWords,
       miniGames: nextMiniGames,
@@ -218,6 +225,7 @@ class _AdminPageState extends State<AdminPage> {
     statsPagination = data.stats;
     users = data.users?.items ?? const [];
     notifications = data.notifications?.items ?? const [];
+    scheduledNotifications = data.scheduledNotifications ?? const [];
     questions = data.questions?.items ?? const [];
     words = data.words?.items ?? const [];
     miniGames = data.miniGames?.items ?? const [];
@@ -239,12 +247,14 @@ class _AdminPageState extends State<AdminPage> {
         ),
       _AdminSection.notifications => _NotificationsAdminTab(
           notifications: notifications,
+          scheduledNotifications: scheduledNotifications,
           loading: false,
           onAdd: () => _openNotificationSheet(),
           onEdit: _openNotificationSheet,
           onDelete: _deleteNotification,
           onClear: _clearNotifications,
           onSend: _sendNotification,
+          onScheduleNew: () => _scheduleNotification(),
           onSchedule: _scheduleNotification,
           pagination: _pagination(
             notificationsPagination,
@@ -375,17 +385,22 @@ class _AdminPageState extends State<AdminPage> {
     _invalidateAdmin();
   }
 
-  Future<void> _scheduleNotification(AppNotification notification) async {
+  Future<void> _scheduleNotification([AppNotification? notification]) async {
     await showAppSheet<void>(
       context: context,
       builder: (_) => _ScheduleNotificationSheet(
         notification: notification,
-        onSchedule: (scheduledAt) async {
+        onSchedule: ({
+          required String title,
+          String? body,
+          String? url,
+          required DateTime scheduledAt,
+        }) async {
           try {
             await widget.repository.scheduleNotification(
-              title: notification.title,
-              body: notification.body,
-              url: notification.url,
+              title: title,
+              body: body,
+              url: url,
               scheduledAt: scheduledAt,
             );
             widget.toast.backendSuccess(widget.repository.takeMessage());
@@ -482,6 +497,7 @@ class _AdminData {
   const _AdminData({
     required this.users,
     required this.notifications,
+    required this.scheduledNotifications,
     required this.questions,
     required this.words,
     required this.miniGames,
@@ -491,6 +507,7 @@ class _AdminData {
 
   final PaginatedResult<AppUser>? users;
   final PaginatedResult<AppNotification>? notifications;
+  final List<ScheduledNotification>? scheduledNotifications;
   final PaginatedResult<QuizQuestion>? questions;
   final PaginatedResult<GameWord>? words;
   final PaginatedResult<MiniGameConfig>? miniGames;
@@ -705,6 +722,7 @@ const _adminRealtimeEvents = [
   'notifications.updated',
   'notifications.deleted',
   'notifications.cleared',
+  'notifications.scheduled.changed',
   'games.quiz.created',
   'games.quiz.updated',
   'games.quiz.deleted',
@@ -1048,28 +1066,82 @@ class _UsersAdminTab extends StatelessWidget {
 class _NotificationsAdminTab extends StatelessWidget {
   const _NotificationsAdminTab({
     required this.notifications,
+    required this.scheduledNotifications,
     required this.loading,
     required this.onAdd,
     required this.onEdit,
     required this.onDelete,
     required this.onClear,
     required this.onSend,
+    required this.onScheduleNew,
     required this.onSchedule,
     required this.pagination,
   });
 
   final List<AppNotification> notifications;
+  final List<ScheduledNotification> scheduledNotifications;
   final bool loading;
   final VoidCallback onAdd;
   final ValueChanged<AppNotification> onEdit;
   final ValueChanged<AppNotification> onDelete;
   final VoidCallback onClear;
   final ValueChanged<AppNotification> onSend;
+  final VoidCallback onScheduleNew;
   final ValueChanged<AppNotification> onSchedule;
   final Widget? pagination;
 
   @override
   Widget build(BuildContext context) {
+    final items = <Widget>[
+      if (scheduledNotifications.isNotEmpty) ...[
+        const _AdminSectionTitle('Agendadas'),
+        for (final scheduled in scheduledNotifications)
+          _AdminTile(
+            icon: Icons.schedule_send_outlined,
+            title: scheduled.title,
+            subtitle:
+                '${scheduled.body.isEmpty ? 'Sem texto' : scheduled.body} • ${_scheduledStatusLabel(scheduled.status)} • ${_formatAdminDateTime(scheduled.scheduledAt)}',
+            trailing: _StatusPill(
+              label: _scheduledStatusLabel(scheduled.status),
+              tone: scheduled.status,
+            ),
+          ),
+        const SizedBox(height: 8),
+      ],
+      if (notifications.isNotEmpty) ...[
+        const _AdminSectionTitle('Cadastradas'),
+        for (final notification in notifications)
+          _AdminTile(
+            icon: Icons.notifications_outlined,
+            title: notification.title,
+            subtitle:
+                '${notification.body.isEmpty ? 'Sem texto' : notification.body} • ${notification.url}',
+            actions: [
+              IconButton(
+                onPressed: () => onSend(notification),
+                icon: const Icon(Icons.send_outlined),
+                tooltip: 'Enviar push',
+              ),
+              IconButton(
+                onPressed: () => onSchedule(notification),
+                icon: const Icon(Icons.schedule_send_outlined),
+                tooltip: 'Agendar push',
+              ),
+              IconButton(
+                onPressed: () => onEdit(notification),
+                icon: const Icon(Icons.edit_outlined),
+                tooltip: 'Editar',
+              ),
+              IconButton(
+                onPressed: () => onDelete(notification),
+                icon: const Icon(Icons.delete_outline),
+                tooltip: 'Remover',
+              ),
+            ],
+          ),
+        if (pagination != null) pagination!,
+      ],
+    ];
     return Column(
       children: [
         _AdminToolbar(
@@ -1082,6 +1154,11 @@ class _NotificationsAdminTab extends StatelessWidget {
                 label: 'Nova',
                 icon: Icons.add,
               ),
+              AppButton(
+                onPressed: onScheduleNew,
+                label: 'Agendar',
+                icon: Icons.schedule_send_outlined,
+              ),
               OutlinedButton.icon(
                 onPressed: onClear,
                 icon: const Icon(Icons.clear_all),
@@ -1091,44 +1168,16 @@ class _NotificationsAdminTab extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: _AdminSectionBody(
-            loading: loading,
-            isEmpty: notifications.isEmpty,
-            empty: 'Nenhuma notificação cadastrada.',
-            itemCount: notifications.length + (pagination == null ? 0 : 1),
-            itemBuilder: (context, index) {
-              if (index == notifications.length) return pagination!;
-              final notification = notifications[index];
-              return _AdminTile(
-                icon: Icons.notifications_outlined,
-                title: notification.title,
-                subtitle:
-                    '${notification.body.isEmpty ? 'Sem texto' : notification.body} • ${notification.url}',
-                actions: [
-                  IconButton(
-                    onPressed: () => onSend(notification),
-                    icon: const Icon(Icons.send_outlined),
-                    tooltip: 'Enviar push',
-                  ),
-                  IconButton(
-                    onPressed: () => onSchedule(notification),
-                    icon: const Icon(Icons.schedule_send_outlined),
-                    tooltip: 'Agendar push',
-                  ),
-                  IconButton(
-                    onPressed: () => onEdit(notification),
-                    icon: const Icon(Icons.edit_outlined),
-                    tooltip: 'Editar',
-                  ),
-                  IconButton(
-                    onPressed: () => onDelete(notification),
-                    icon: const Icon(Icons.delete_outline),
-                    tooltip: 'Remover',
-                  ),
-                ],
-              );
-            },
-          ),
+          child: loading
+              ? const _AdminListSkeleton()
+              : items.isEmpty
+                  ? const _EmptyAdminState('Nenhuma notificação cadastrada.')
+                  : ListView.separated(
+                      padding: _adminListPadding,
+                      itemCount: items.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (_, index) => items[index],
+                    ),
         ),
       ],
     );
@@ -1617,6 +1666,57 @@ class _AdminTile extends StatelessWidget {
   }
 }
 
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.label, required this.tone});
+
+  final String label;
+  final String tone;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final color = switch (tone) {
+      'sent' => const Color(0xff16a34a),
+      'failed' => Theme.of(context).colorScheme.error,
+      'cancelled' => palette.muted,
+      _ => palette.primary,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .10),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: .18)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+}
+
+String _scheduledStatusLabel(String status) {
+  return switch (status) {
+    'sent' => 'Enviada',
+    'failed' => 'Falhou',
+    'cancelled' => 'Cancelada',
+    _ => 'Pendente',
+  };
+}
+
+String _formatAdminDateTime(DateTime value) {
+  final local = value.toLocal();
+  return '${local.day.toString().padLeft(2, '0')}/'
+      '${local.month.toString().padLeft(2, '0')}/'
+      '${local.year} ${local.hour.toString().padLeft(2, '0')}:'
+      '${local.minute.toString().padLeft(2, '0')}';
+}
+
 class _AdminListSkeleton extends StatelessWidget {
   const _AdminListSkeleton();
 
@@ -1713,47 +1813,6 @@ class _AdminSwitchRow extends StatelessWidget {
               Switch(value: value, onChanged: onChanged),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AdminInfoRow extends StatelessWidget {
-  const _AdminInfoRow({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-  });
-
-  final IconData icon;
-  final Widget title;
-  final Widget subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
-    return Material(
-      color: palette.primary.withValues(alpha: .04),
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: palette.primary),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  title,
-                  const SizedBox(height: 4),
-                  subtitle,
-                ],
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -2017,12 +2076,17 @@ class _NotificationSheetState extends State<_NotificationSheet> {
 
 class _ScheduleNotificationSheet extends StatefulWidget {
   const _ScheduleNotificationSheet({
-    required this.notification,
+    this.notification,
     required this.onSchedule,
   });
 
-  final AppNotification notification;
-  final Future<void> Function(DateTime scheduledAt) onSchedule;
+  final AppNotification? notification;
+  final Future<void> Function({
+    required String title,
+    String? body,
+    String? url,
+    required DateTime scheduledAt,
+  }) onSchedule;
 
   @override
   State<_ScheduleNotificationSheet> createState() =>
@@ -2031,11 +2095,31 @@ class _ScheduleNotificationSheet extends StatefulWidget {
 
 class _ScheduleNotificationSheetState
     extends State<_ScheduleNotificationSheet> {
-  DateTime selectedDate = DateTime.now().add(const Duration(minutes: 10));
-  TimeOfDay selectedTime =
-      TimeOfDay.fromDateTime(DateTime.now().add(const Duration(minutes: 10)));
+  late DateTime selectedDate;
+  late TimeOfDay selectedTime;
+  late final TextEditingController title;
+  late final TextEditingController body;
+  late final TextEditingController url;
   bool saving = false;
   String? errorText;
+
+  @override
+  void initState() {
+    super.initState();
+    final notification = widget.notification;
+    title = TextEditingController(text: notification?.title ?? '');
+    body = TextEditingController(text: notification?.body ?? '');
+    url = TextEditingController(text: notification?.url ?? '/');
+    _setDateTime(DateTime.now().add(const Duration(minutes: 10)));
+  }
+
+  @override
+  void dispose() {
+    title.dispose();
+    body.dispose();
+    url.dispose();
+    super.dispose();
+  }
 
   DateTime get scheduledAt => DateTime(
         selectedDate.year,
@@ -2045,6 +2129,18 @@ class _ScheduleNotificationSheetState
         selectedTime.minute,
       );
 
+  void _setDateTime(DateTime value) {
+    selectedDate = DateTime(value.year, value.month, value.day);
+    selectedTime = TimeOfDay.fromDateTime(value);
+  }
+
+  void _setPreset(Duration offset) {
+    setState(() {
+      _setDateTime(DateTime.now().add(offset));
+      errorText = null;
+    });
+  }
+
   Future<void> _pickDate() async {
     final now = DateTime.now();
     final picked = await showDatePicker(
@@ -2053,7 +2149,15 @@ class _ScheduleNotificationSheetState
       firstDate: now,
       lastDate: now.add(const Duration(days: 365 * 2)),
     );
-    if (picked != null) setState(() => selectedDate = picked);
+    if (picked != null) {
+      setState(() {
+        selectedDate = picked;
+        if (!scheduledAt.isAfter(now)) {
+          _setDateTime(now.add(const Duration(minutes: 10)));
+        }
+        errorText = null;
+      });
+    }
   }
 
   Future<void> _pickTime() async {
@@ -2061,17 +2165,32 @@ class _ScheduleNotificationSheetState
       context: context,
       initialTime: selectedTime,
     );
-    if (picked != null) setState(() => selectedTime = picked);
+    if (picked != null) {
+      setState(() {
+        selectedTime = picked;
+        errorText = null;
+      });
+    }
   }
 
   Future<void> _schedule() async {
-    if (scheduledAt.isBefore(DateTime.now())) {
+    final titleText = title.text.trim();
+    if (titleText.isEmpty) {
+      setState(() => errorText = 'Informe o título da notificação.');
+      return;
+    }
+    if (!scheduledAt.isAfter(DateTime.now())) {
       setState(() => errorText = 'Escolha uma data e horário no futuro.');
       return;
     }
     setState(() => saving = true);
     try {
-      await widget.onSchedule(scheduledAt);
+      await widget.onSchedule(
+        title: titleText,
+        body: body.text.trim(),
+        url: url.text.trim().isEmpty ? '/' : url.text.trim(),
+        scheduledAt: scheduledAt,
+      );
       if (mounted) Navigator.pop(context);
     } catch (error) {
       if (mounted) {
@@ -2084,6 +2203,7 @@ class _ScheduleNotificationSheetState
 
   @override
   Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
     return SizedBox(
       width: 540,
       child: Column(
@@ -2092,17 +2212,58 @@ class _ScheduleNotificationSheetState
         children: [
           const AppSheetHeader(
             title: 'Agendar notificação',
-            subtitle: 'Escolha quando a família deve receber o push.',
+            subtitle: 'Defina a mensagem e quando a família deve receber.',
             icon: Icons.schedule_send_outlined,
           ),
           const SizedBox(height: 14),
-          _AdminInfoRow(
-            icon: Icons.notifications_outlined,
-            title: Text(widget.notification.title,
-                style: const TextStyle(fontWeight: FontWeight.w900)),
-            subtitle: Text(widget.notification.body.isEmpty
-                ? 'Sem mensagem'
-                : widget.notification.body),
+          TextField(
+            controller: title,
+            decoration: const InputDecoration(labelText: 'Título'),
+            textInputAction: TextInputAction.next,
+            onChanged: (_) {
+              if (errorText != null) setState(() => errorText = null);
+            },
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: body,
+            minLines: 2,
+            maxLines: 4,
+            decoration: const InputDecoration(labelText: 'Mensagem'),
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: url,
+            decoration: const InputDecoration(labelText: 'Rota ao abrir'),
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _schedule(),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ActionChip(
+                avatar: const Icon(Icons.timer_outlined, size: 18),
+                label: const Text('Em 10 min'),
+                onPressed: saving
+                    ? null
+                    : () => _setPreset(const Duration(minutes: 10)),
+              ),
+              ActionChip(
+                avatar: const Icon(Icons.schedule_outlined, size: 18),
+                label: const Text('Em 1 hora'),
+                onPressed:
+                    saving ? null : () => _setPreset(const Duration(hours: 1)),
+              ),
+              ActionChip(
+                avatar: const Icon(Icons.today_outlined, size: 18),
+                label: const Text('Amanhã'),
+                onPressed:
+                    saving ? null : () => _setPreset(const Duration(days: 1)),
+              ),
+            ],
           ),
           const SizedBox(height: 10),
           Row(
@@ -2125,6 +2286,33 @@ class _ScheduleNotificationSheetState
               ),
             ],
           ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: palette.primary.withValues(alpha: .08),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: palette.primary.withValues(alpha: .16),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.event_available_outlined,
+                    color: palette.primary, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Agendado para ${selectedDate.day.toString().padLeft(2, '0')}/${selectedDate.month.toString().padLeft(2, '0')}/${selectedDate.year} às ${selectedTime.format(context)}',
+                    style: TextStyle(
+                      color: palette.foreground,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           if (errorText != null) ...[
             const SizedBox(height: 10),
             Text(
@@ -2138,9 +2326,7 @@ class _ScheduleNotificationSheetState
           const SizedBox(height: 18),
           AppSheetActions(
             onCancel: saving ? null : () => Navigator.pop(context),
-            onSave: saving || scheduledAt.isBefore(DateTime.now())
-                ? null
-                : _schedule,
+            onSave: saving ? null : _schedule,
             loading: saving,
             saveLabel: 'Agendar',
           ),

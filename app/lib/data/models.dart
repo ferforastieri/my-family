@@ -151,6 +151,48 @@ class AppNotification {
       );
 }
 
+class ScheduledNotification {
+  const ScheduledNotification({
+    required this.id,
+    required this.title,
+    required this.body,
+    required this.url,
+    required this.scheduledAt,
+    required this.status,
+    this.sentAt,
+    this.error,
+  });
+
+  final String id;
+  final String title;
+  final String body;
+  final String url;
+  final DateTime scheduledAt;
+  final String status;
+  final DateTime? sentAt;
+  final String? error;
+
+  factory ScheduledNotification.fromJson(Map<String, dynamic> json) {
+    DateTime parseDate(dynamic value) {
+      if (value is num) {
+        return DateTime.fromMillisecondsSinceEpoch(value.toInt());
+      }
+      return DateTime.tryParse(value?.toString() ?? '') ?? DateTime.now();
+    }
+
+    return ScheduledNotification(
+      id: json['id'].toString(),
+      title: (json['title'] ?? 'Nossa Família').toString(),
+      body: (json['body'] ?? '').toString(),
+      url: (json['url'] ?? '/').toString(),
+      scheduledAt: parseDate(json['scheduledAt']),
+      status: (json['status'] ?? 'pending').toString(),
+      sentAt: json['sentAt'] == null ? null : parseDate(json['sentAt']),
+      error: json['error']?.toString(),
+    );
+  }
+}
+
 class ChatConversation {
   const ChatConversation({
     required this.id,

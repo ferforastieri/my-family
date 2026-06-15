@@ -114,6 +114,15 @@ export class NotificationsGateway {
     return { message: 'Notificação agendada.', ...row };
   }
 
+  @SubscribeMessage('notifications.scheduled.list')
+  async listScheduled(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() query?: PaginationQuery & { status?: string },
+  ) {
+    await this.session.requireAdmin(client);
+    return this.scheduler.list(query);
+  }
+
   @SubscribeMessage('notifications.subscribe')
   async subscribe(
     @ConnectedSocket() client: Socket,

@@ -59,6 +59,8 @@ ThemeData buildAppTheme(
       style: TextButton.styleFrom(foregroundColor: palette.primary),
     ),
     inputDecorationTheme: InputDecorationTheme(
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       filled: true,
       fillColor: palette.card.withValues(alpha: .78),
       border: OutlineInputBorder(

@@ -39,13 +39,15 @@ class _AuthSheetState extends State<AuthSheet> {
             icon: register ? Icons.person_add_alt_1_outlined : Icons.login,
           ),
           const SizedBox(height: 16),
-          if (register)
+          if (register) ...[
             TextField(
               controller: name,
               decoration: const InputDecoration(labelText: 'Nome'),
               textInputAction: TextInputAction.next,
               onSubmitted: (_) => _submit(),
             ),
+            const SizedBox(height: 10),
+          ],
           TextField(
             controller: email,
             decoration: const InputDecoration(labelText: 'Email'),
@@ -53,6 +55,7 @@ class _AuthSheetState extends State<AuthSheet> {
             textInputAction: TextInputAction.next,
             onSubmitted: (_) => _submit(),
           ),
+          const SizedBox(height: 10),
           TextField(
             controller: password,
             decoration: const InputDecoration(labelText: 'Senha'),

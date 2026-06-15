@@ -21,18 +21,34 @@ class AuthController extends ChangeNotifier {
   AppUser? user;
   bool loading = true;
   String? token;
+  String? refreshToken;
   bool _connectListenerBound = false;
+  Completer<bool>? _refreshCompleter;
   String? takeMessage() => socket.takeLastMessage();
 
   Future<void> bootstrap() async {
-    token = await tokenStore.read();
+    token = await tokenStore.readAccessToken();
+    refreshToken = await tokenStore.readRefreshToken();
+    socket.onAuthError = _refreshSession;
     _bindConnectListener();
     socket.connect(token: token);
     loading = false;
     notifyListeners();
-    if (token != null) {
-      unawaited(_loadCurrentUser(clearInvalidToken: true));
+    if (token != null || refreshToken != null) {
+      unawaited(_restoreSession());
     }
+  }
+
+  Future<void> _restoreSession() async {
+    if (refreshToken == null && token != null) {
+      await _refreshSession();
+      return;
+    }
+    if (token != null) {
+      await _loadCurrentUser(clearInvalidToken: true);
+      return;
+    }
+    await _refreshSession();
   }
 
   void _bindConnectListener() {
@@ -53,9 +69,11 @@ class AuthController extends ChangeNotifier {
       notifyListeners();
     } catch (error) {
       if (clearInvalidToken && _looksLikeAuthError(error)) {
-        await tokenStore.clear();
-        token = null;
-        notifyListeners();
+        if (await _refreshSession()) {
+          await _loadCurrentUser(clearInvalidToken: false);
+          return;
+        }
+        await _clearAuth();
       }
     }
   }
@@ -102,31 +120,46 @@ class AuthController extends ChangeNotifier {
 
   Future<void> refreshMe() async {
     if (token == null) return;
-    final response = await api.query<Map<String, dynamic>>('auth.me');
-    final rawUser = response['user'];
-    if (rawUser is Map) {
-      user = AppUser.fromJson(Map<String, dynamic>.from(rawUser));
-      notifyListeners();
+    try {
+      final response = await api.query<Map<String, dynamic>>('auth.me');
+      final rawUser = response['user'];
+      if (rawUser is Map) {
+        user = AppUser.fromJson(Map<String, dynamic>.from(rawUser));
+        notifyListeners();
+      }
+    } catch (error) {
+      if (_looksLikeAuthError(error) && await _refreshSession()) {
+        await refreshMe();
+        return;
+      }
+      rethrow;
     }
   }
 
   Future<void> updateAvatar(XFile file) async {
-    final currentToken = token;
-    final request = http.MultipartRequest(
-      'POST',
-      AppConfig.apiUri('/auth/avatar'),
-    );
-    if (currentToken != null) {
-      request.headers['Authorization'] = 'Bearer $currentToken';
+    final bytes = await file.readAsBytes();
+    Future<http.Response> send(String? authToken) async {
+      final request = http.MultipartRequest(
+        'POST',
+        AppConfig.apiUri('/auth/avatar'),
+      );
+      if (authToken != null) {
+        request.headers['Authorization'] = 'Bearer $authToken';
+      }
+      request.files.add(http.MultipartFile.fromBytes(
+        'file',
+        bytes,
+        filename: file.name,
+      ));
+      final streamed = await request.send();
+      return http.Response.fromStream(streamed);
     }
-    request.files.add(http.MultipartFile.fromBytes(
-      'file',
-      await file.readAsBytes(),
-      filename: file.name,
-    ));
 
-    final response = await request.send();
-    final body = await response.stream.bytesToString();
+    var response = await send(token);
+    if (response.statusCode == 401 && await _refreshSession()) {
+      response = await send(token);
+    }
+    final body = response.body;
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception(body.isEmpty ? 'Erro ao enviar avatar.' : body);
     }
@@ -144,18 +177,54 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  Future<void> signOut() async {
+  Future<bool> _refreshSession() async {
+    final activeRefresh = _refreshCompleter;
+    if (activeRefresh != null) return activeRefresh.future;
+    final credential = refreshToken ?? token;
+    if (credential == null) return false;
+    final completer = Completer<bool>();
+    _refreshCompleter = completer;
+    try {
+      final response = await api.mutate<Map<String, dynamic>>('auth.refresh', {
+        'refreshToken': credential,
+      });
+      await _acceptAuth(response);
+      completer.complete(true);
+      return true;
+    } catch (_) {
+      await _clearAuth();
+      completer.complete(false);
+      return false;
+    } finally {
+      if (identical(_refreshCompleter, completer)) _refreshCompleter = null;
+    }
+  }
+
+  Future<void> _clearAuth() async {
     user = null;
     token = null;
+    refreshToken = null;
     await tokenStore.clear();
     socket.connect();
     notifyListeners();
   }
 
+  Future<void> signOut() async {
+    await _clearAuth();
+  }
+
   Future<void> _acceptAuth(Map<String, dynamic> response) async {
     token = (response['accessToken'] ?? response['access_token']) as String;
+    final nextRefreshToken =
+        response['refreshToken'] ?? response['refresh_token'];
+    if (nextRefreshToken is String && nextRefreshToken.isNotEmpty) {
+      refreshToken = nextRefreshToken;
+    }
     user = AppUser.fromJson(Map<String, dynamic>.from(response['user'] as Map));
-    await tokenStore.write(token!);
+    await tokenStore.writeTokens(
+      accessToken: token!,
+      refreshToken: refreshToken,
+    );
     socket.connect(token: token, force: true);
     notifyListeners();
     unawaited(socket.ensureConnected(token: token).catchError((_) {}));

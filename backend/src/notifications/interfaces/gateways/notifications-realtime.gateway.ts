@@ -21,4 +21,8 @@ export class NotificationsRealtimeGateway {
   emitNotificationsCleared() {
     this.server?.emit('notifications.cleared');
   }
+
+  emitScheduledNotificationChanged(notification: unknown) {
+    this.server?.emit('notifications.scheduled.changed', notification);
+  }
 }

@@ -329,6 +329,20 @@ class FamilyRepository {
     });
   }
 
+  Future<List<ScheduledNotification>> listScheduledNotifications() async {
+    final data = await api.query<dynamic>('notifications.scheduled.list', {
+      'page': 1,
+      'limit': 30,
+    });
+    final page = _paginated(
+      data,
+      (row) => ScheduledNotification.fromJson(
+        Map<String, dynamic>.from(row),
+      ),
+    );
+    return page.items;
+  }
+
   Future<List<FamilyList>> listFamilyLists() async {
     return (await listFamilyListsPage(1, 20)).items;
   }

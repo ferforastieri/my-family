@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthService } from '../../application/services/auth.service';
-import { RegisterDto } from '../dto/auth.dto';
+import { RefreshTokenDto, RegisterDto } from '../dto/auth.dto';
 import { LocalAuthGuard } from '../../guards/local-auth.guard';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { UploadService, UploadContext } from '@shared/infrastructure/upload';
@@ -46,6 +46,13 @@ export class AuthController {
       message: 'Login realizado com sucesso.',
       ...this.auth.tokenResponse(req.user as any),
     };
+  }
+
+  @Post('refresh')
+  async refresh(@Body() dto: RefreshTokenDto) {
+    const token = dto.refreshToken ?? dto.refresh_token;
+    const response = await this.auth.refresh(token ?? '');
+    return { message: 'Sessão renovada.', ...response };
   }
 
   @Get('me')
