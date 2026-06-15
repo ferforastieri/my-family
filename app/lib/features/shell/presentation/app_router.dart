@@ -123,9 +123,12 @@ GoRouter buildRouter(
           ),
           GoRoute(
             path: '/',
-            pageBuilder: (context, state) => _page(HomePage(onNavigate: (path) {
-              context.openAppRoute(path);
-            })),
+            pageBuilder: (context, state) => _page(HomePage(
+              repository: repository,
+              onNavigate: (path) {
+                context.openAppRoute(path);
+              },
+            )),
           ),
           GoRoute(
             path: '/nossa-historia',

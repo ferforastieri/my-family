@@ -43,6 +43,7 @@ class _AdminPageState extends State<AdminPage> {
   List<GameWord> words = [];
   List<MiniGameConfig> miniGames = [];
   List<GameStat> stats = [];
+  List<HomeEventConfig> homeEvents = [];
   PaginatedResult<AppUser>? usersPagination;
   PaginatedResult<AppNotification>? notificationsPagination;
   PaginatedResult<QuizQuestion>? questionsPagination;
@@ -92,6 +93,7 @@ class _AdminPageState extends State<AdminPage> {
     PaginatedResult<GameWord>? nextWords;
     PaginatedResult<MiniGameConfig>? nextMiniGames;
     PaginatedResult<GameStat>? nextStats;
+    List<HomeEventConfig>? nextHomeEvents;
     await Future.wait([
       _fetchPart('usuários', () async {
         nextUsers = await widget.repository.listUsersPage(
@@ -133,6 +135,9 @@ class _AdminPageState extends State<AdminPage> {
           _adminPageLimit,
         );
       }, errors),
+      _fetchPart('datas da Home', () async {
+        nextHomeEvents = await widget.repository.getHomeSettings();
+      }, errors),
     ]);
     return _AdminData(
       users: nextUsers,
@@ -142,6 +147,7 @@ class _AdminPageState extends State<AdminPage> {
       words: nextWords,
       miniGames: nextMiniGames,
       stats: nextStats,
+      homeEvents: nextHomeEvents,
       loadError: errors.isEmpty ? null : errors.join(' • '),
     );
   }
@@ -230,6 +236,7 @@ class _AdminPageState extends State<AdminPage> {
     words = data.words?.items ?? const [];
     miniGames = data.miniGames?.items ?? const [];
     stats = data.stats?.items ?? const [];
+    homeEvents = data.homeEvents ?? const [];
     loadError = data.loadError;
   }
 
@@ -295,7 +302,25 @@ class _AdminPageState extends State<AdminPage> {
             (page) => statsPage = page,
           ),
         ),
+      _AdminSection.home => _HomeSettingsAdminTab(
+          events: homeEvents,
+          onEdit: _openHomeSettingsSheet,
+        ),
     };
+  }
+
+  Future<void> _openHomeSettingsSheet() async {
+    await showAppSheet<void>(
+      context: context,
+      builder: (_) => _HomeSettingsSheet(
+        events: homeEvents,
+        onSave: (events) async {
+          await widget.repository.updateHomeSettings(events);
+          widget.toast.backendSuccess(widget.repository.takeMessage());
+          _invalidateAdmin();
+        },
+      ),
+    );
   }
 
   Widget? _pagination<T>(
@@ -502,6 +527,7 @@ class _AdminData {
     required this.words,
     required this.miniGames,
     required this.stats,
+    required this.homeEvents,
     required this.loadError,
   });
 
@@ -512,10 +538,11 @@ class _AdminData {
   final PaginatedResult<GameWord>? words;
   final PaginatedResult<MiniGameConfig>? miniGames;
   final PaginatedResult<GameStat>? stats;
+  final List<HomeEventConfig>? homeEvents;
   final String? loadError;
 }
 
-enum _AdminSection { users, notifications, games, stats }
+enum _AdminSection { users, notifications, games, stats, home }
 
 class _AdminScaffold extends StatelessWidget {
   const _AdminScaffold({
@@ -733,6 +760,7 @@ const _adminRealtimeEvents = [
   'games.mini.updated',
   'games.mini.deleted',
   'games.stats.changed',
+  'home.settings.changed',
 ];
 
 extension _AdminSectionView on _AdminSection {
@@ -741,6 +769,7 @@ extension _AdminSectionView on _AdminSection {
         _AdminSection.notifications => 'Notificações',
         _AdminSection.games => 'Jogos',
         _AdminSection.stats => 'Estatísticas',
+        _AdminSection.home => 'Home',
       };
 
   IconData get icon => switch (this) {
@@ -748,6 +777,7 @@ extension _AdminSectionView on _AdminSection {
         _AdminSection.notifications => Icons.notifications_outlined,
         _AdminSection.games => Icons.sports_esports_outlined,
         _AdminSection.stats => Icons.query_stats_outlined,
+        _AdminSection.home => Icons.home_outlined,
       };
 }
 
@@ -1566,6 +1596,49 @@ class _StatsAdminTab extends StatelessWidget {
   }
 }
 
+class _HomeSettingsAdminTab extends StatelessWidget {
+  const _HomeSettingsAdminTab({
+    required this.events,
+    required this.onEdit,
+  });
+
+  final List<HomeEventConfig> events;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _AdminToolbar(
+          title: 'Datas da Home',
+          subtitle: 'Configure os três marcos exibidos nos cards principais.',
+          action: AppButton(
+            onPressed: events.length == 3 ? onEdit : null,
+            label: 'Editar datas',
+            icon: Icons.edit_calendar_outlined,
+          ),
+        ),
+        Expanded(
+          child: _AdminSectionBody(
+            loading: false,
+            isEmpty: events.isEmpty,
+            empty: 'As datas da Home ainda não foram carregadas.',
+            itemCount: events.length,
+            itemBuilder: (context, index) {
+              final event = events[index];
+              return _AdminTile(
+                icon: _homeEventIcon(index),
+                title: event.title,
+                subtitle: '${_formatAdminDate(event.date)} • ${event.message}',
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _AdminTile extends StatelessWidget {
   const _AdminTile({
     required this.icon,
@@ -1730,6 +1803,21 @@ String _formatAdminDateTime(DateTime value) {
       '${local.minute.toString().padLeft(2, '0')}';
 }
 
+String _formatAdminDate(DateTime value) {
+  final local = value.toLocal();
+  return '${local.day.toString().padLeft(2, '0')}/'
+      '${local.month.toString().padLeft(2, '0')}/'
+      '${local.year}';
+}
+
+IconData _homeEventIcon(int index) {
+  return switch (index) {
+    0 => Icons.favorite_outline,
+    1 => Icons.diamond_outlined,
+    _ => Icons.child_care_outlined,
+  };
+}
+
 class _AdminListSkeleton extends StatelessWidget {
   const _AdminListSkeleton();
 
@@ -1844,6 +1932,124 @@ class _EmptyAdminState extends StatelessWidget {
       child: Text(message,
           textAlign: TextAlign.center,
           style: TextStyle(color: palette.muted, fontWeight: FontWeight.w700)),
+    );
+  }
+}
+
+class _HomeSettingsSheet extends StatefulWidget {
+  const _HomeSettingsSheet({
+    required this.events,
+    required this.onSave,
+  });
+
+  final List<HomeEventConfig> events;
+  final Future<void> Function(List<HomeEventConfig> events) onSave;
+
+  @override
+  State<_HomeSettingsSheet> createState() => _HomeSettingsSheetState();
+}
+
+class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
+  late final List<DateTime?> dates;
+  bool saving = false;
+  String? errorText;
+
+  @override
+  void initState() {
+    super.initState();
+    dates = widget.events.map<DateTime?>((event) => event.date).toList();
+  }
+
+  Future<void> _save() async {
+    if (dates.length != 3 || dates.any((date) => date == null)) {
+      setState(() => errorText = 'Escolha as três datas da Home.');
+      return;
+    }
+    setState(() {
+      saving = true;
+      errorText = null;
+    });
+    try {
+      final events = List.generate(
+        widget.events.length,
+        (index) => HomeEventConfig(
+          title: widget.events[index].title,
+          icon: widget.events[index].icon,
+          date: dates[index]!,
+          message: widget.events[index].message,
+        ),
+      );
+      await widget.onSave(events);
+      if (mounted) Navigator.pop(context);
+    } catch (error) {
+      if (mounted) setState(() => errorText = _friendlyError(error));
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return SizedBox(
+      width: 560,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const AppSheetHeader(
+            title: 'Datas da Home',
+            subtitle: 'Escolha as datas usadas nos três contadores principais.',
+            icon: Icons.edit_calendar_outlined,
+          ),
+          const SizedBox(height: 18),
+          for (var index = 0; index < widget.events.length; index++) ...[
+            Row(
+              children: [
+                Text(
+                  widget.events[index].icon,
+                  style: const TextStyle(fontSize: 24),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    widget.events[index].title,
+                    style: TextStyle(
+                      color: palette.foreground,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            AppDateField(
+              label: 'Data',
+              value: dates[index],
+              onChanged: saving
+                  ? (_) {}
+                  : (date) => setState(() => dates[index] = date),
+            ),
+            if (index != widget.events.length - 1) const SizedBox(height: 16),
+          ],
+          if (errorText != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              errorText!,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+          const SizedBox(height: 20),
+          AppSheetActions(
+            onCancel: saving ? null : () => Navigator.pop(context),
+            onSave: saving ? null : _save,
+            loading: saving,
+          ),
+        ],
+      ),
     );
   }
 }

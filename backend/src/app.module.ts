@@ -25,6 +25,7 @@ import { ChatModule } from './chat/chat.module';
 import { GamesModule } from './games/games.module';
 import { ListsModule } from './lists/lists.module';
 import { LocationModule } from './location/location.module';
+import { HomeSettingsModule } from './home-settings/home-settings.module';
 
 @Module({
   imports: [
@@ -122,6 +123,7 @@ import { LocationModule } from './location/location.module';
     GamesModule,
     ListsModule,
     LocationModule,
+    HomeSettingsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
