@@ -60,7 +60,10 @@ export class NotificationsService {
     return JSON.parse(readFileSync(path, 'utf8')) as admin.ServiceAccount;
   }
 
-  async list(query?: PaginationQuery, user?: UserEntity | null) {
+  async list(
+    query?: PaginationQuery & { type?: string },
+    user?: UserEntity | null,
+  ) {
     const page = await this.repository.list(query);
     return {
       ...page,
