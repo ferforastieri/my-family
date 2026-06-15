@@ -1185,6 +1185,7 @@ class _ResourceDialogState extends State<ResourceDialog> {
               decoration: const InputDecoration(labelText: 'Título ou URL'),
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _save()),
+          const SizedBox(height: 10),
           TextField(
             controller: subtitle,
             decoration: InputDecoration(
@@ -1198,12 +1199,14 @@ class _ResourceDialogState extends State<ResourceDialog> {
                 : TextInputAction.done,
             onSubmitted: widget.resource == 'cartas' ? null : (_) => _save(),
           ),
-          if (widget.resource != 'cartas')
+          if (widget.resource != 'cartas') ...[
+            const SizedBox(height: 10),
             TextField(
                 controller: extra,
                 decoration: const InputDecoration(labelText: 'Extra'),
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _save()),
+          ],
           const SizedBox(height: 18),
           AppSheetActions(
             onCancel: saving ? null : () => Navigator.pop(context),
@@ -1379,6 +1382,7 @@ class _PhotoMemorySheetState extends State<PhotoMemorySheet> {
                 decoration: const InputDecoration(labelText: 'Álbum'),
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _save()),
+            const SizedBox(height: 10),
             TextField(
                 controller: texto,
                 decoration: const InputDecoration(labelText: 'Descrição'),
@@ -1386,6 +1390,7 @@ class _PhotoMemorySheetState extends State<PhotoMemorySheet> {
                 maxLines: 4,
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _save()),
+            const SizedBox(height: 10),
             AppDateField(
               label: 'Data da memória',
               value: date,

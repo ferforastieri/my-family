@@ -99,13 +99,13 @@ export class NotificationsController {
     return { message: 'Notificação atualizada.', ...n };
   }
 
-  @Delete(':id')
+  @Delete('scheduled/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('husband', 'wife')
-  async delete(@Param('id') id: string) {
-    const ok = await this.notifications.delete(id);
-    if (!ok) throw new NotFoundException('Notificação não encontrada');
-    return { ok, message: 'Notificação removida.' };
+  async deleteScheduled(@Param('id') id: string) {
+    const ok = await this.scheduler.delete(id);
+    if (!ok) throw new NotFoundException('Agendamento não encontrado');
+    return { ok, message: 'Agendamento removido.' };
   }
 
   @Post('send')
@@ -137,5 +137,14 @@ export class NotificationsController {
       throw new BadRequestException('scheduledAt inválido');
     const row = await this.scheduler.schedule(body);
     return { message: 'Notificação agendada.', ...row };
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('husband', 'wife')
+  async delete(@Param('id') id: string) {
+    const ok = await this.notifications.delete(id);
+    if (!ok) throw new NotFoundException('Notificação não encontrada');
+    return { ok, message: 'Notificação removida.' };
   }
 }

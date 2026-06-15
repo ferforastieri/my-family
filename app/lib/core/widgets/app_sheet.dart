@@ -23,6 +23,7 @@ class AppSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
+    final theme = Theme.of(context);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return SafeArea(
       child: Padding(
@@ -51,15 +52,26 @@ class AppSheet extends StatelessWidget {
                 width: 42,
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
+                decoration: BoxDecoration(
                   color: palette.primary.withValues(alpha: .28),
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
               Flexible(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: child,
+                child: Theme(
+                  data: theme.copyWith(
+                    inputDecorationTheme: theme.inputDecorationTheme.copyWith(
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 11,
+                      ),
+                    ),
+                  ),
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: child,
+                  ),
                 ),
               ),
             ],

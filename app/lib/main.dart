@@ -38,7 +38,10 @@ void main() {
   final location = LocationController(socket, auth);
   final theme = ThemeController();
   final toast = ToastController();
+  final queryReset = ValueNotifier(0);
+  String? lastUserId;
   runApp(AppQueryProvider(
+    resetListenable: queryReset,
     child: MyFamilyApp(
         auth: auth,
         notifications: notifications,
@@ -62,6 +65,12 @@ void main() {
   }
 
   auth.addListener(() {
+    final userId = auth.user?.id;
+    if (userId != lastUserId) {
+      lastUserId = userId;
+      if (userId == null) protectedServicesStarted = false;
+      queryReset.value++;
+    }
     unawaited(startProtectedServices());
   });
 

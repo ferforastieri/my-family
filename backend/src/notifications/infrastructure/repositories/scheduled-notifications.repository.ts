@@ -112,4 +112,8 @@ export class ScheduledNotificationsRepository {
         .exec(),
     );
   }
+
+  async delete(id: string) {
+    return !!(await this.model.findByIdAndDelete(id).exec());
+  }
 }

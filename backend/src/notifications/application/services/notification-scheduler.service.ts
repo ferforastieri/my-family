@@ -61,6 +61,17 @@ export class NotificationSchedulerService implements OnModuleInit {
     return this.scheduled.list(query);
   }
 
+  async delete(id: string) {
+    const name = this.jobName(id);
+    if (this.schedulerRegistry.doesExist('cron', name)) {
+      this.schedulerRegistry.deleteCronJob(name);
+    }
+    const ok = await this.scheduled.delete(id);
+    if (ok)
+      this.realtime.emitScheduledNotificationChanged({ id, deleted: true });
+    return ok;
+  }
+
   private registerJob(row: {
     id: string;
     title: string;
