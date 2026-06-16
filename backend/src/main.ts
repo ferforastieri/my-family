@@ -48,6 +48,7 @@ async function bootstrap() {
     },
     skipCsrfProtection: (request) =>
       hasBearerToken(request.headers.authorization) ||
+      isAuthHttpEndpoint(request.path) ||
       request.path.startsWith('/socket.io'),
   });
   app.use(doubleCsrfProtection);
@@ -80,4 +81,15 @@ function parseCorsOrigin(origin: string): string | string[] {
 
 function hasBearerToken(authorization?: string): boolean {
   return authorization?.trim().toLowerCase().startsWith('bearer ') === true;
+}
+
+function isAuthHttpEndpoint(path: string): boolean {
+  const normalized = path.startsWith('/api/') ? path.substring(4) : path;
+  return (
+    normalized === '/auth/login' ||
+    normalized === '/auth/register' ||
+    normalized === '/auth/refresh' ||
+    normalized === '/auth/forgot-password' ||
+    normalized === '/auth/reset-password'
+  );
 }

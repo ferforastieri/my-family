@@ -36,10 +36,7 @@ export class ApiExceptionFilter
     }
 
     const response = host.switchToHttp().getResponse<Response>();
-    const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+    const status = exceptionStatus(exception);
     this.logException('http', exception, status);
 
     response.status(status).json({
@@ -51,7 +48,11 @@ export class ApiExceptionFilter
     });
   }
 
-  private logException(type: 'http' | 'ws', exception: unknown, status?: number) {
+  private logException(
+    type: 'http' | 'ws',
+    exception: unknown,
+    status?: number,
+  ) {
     const message = exceptionMessage(exception);
     const errorName = exceptionName(exception);
     const prefix =
@@ -73,6 +74,17 @@ function exceptionMessage(exception: unknown): string {
   }
   if (exception instanceof Error && exception.message) return exception.message;
   return 'Erro interno no servidor.';
+}
+
+function exceptionStatus(exception: unknown): number {
+  if (exception instanceof HttpException) return exception.getStatus();
+  if (typeof exception === 'object' && exception !== null) {
+    const statusCode = (exception as { statusCode?: unknown }).statusCode;
+    if (typeof statusCode === 'number') return statusCode;
+    const status = (exception as { status?: unknown }).status;
+    if (typeof status === 'number') return status;
+  }
+  return HttpStatus.INTERNAL_SERVER_ERROR;
 }
 
 function exceptionName(exception: unknown): string {

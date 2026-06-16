@@ -1,4 +1,10 @@
-import { IsArray, IsIn, IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsIn,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 import {
   userAccessKeys,
   userRoles,
@@ -23,6 +29,11 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   avatarPath?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(8)
+  password?: string;
 }
 
 export class UserResponseDto {

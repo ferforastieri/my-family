@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { UserRepository } from '../../infrastructure/repositories/user.repository';
 import type {
   PaginatedResult,
@@ -31,7 +32,17 @@ export class UserService {
     id: string,
     data: UpdateUserDto,
   ): Promise<UserResponseDto | null> {
-    await this.users.update(id, userUpdateFactory.create(data));
+    const updateData = userUpdateFactory.create(data);
+    const password = data.password?.trim();
+    if (password) {
+      if (password.length < 8) {
+        throw new BadRequestException(
+          'A senha deve ter pelo menos 8 caracteres',
+        );
+      }
+      updateData.passwordHash = await bcrypt.hash(password, 12);
+    }
+    await this.users.update(id, updateData);
     return this.findOne(id);
   }
 
