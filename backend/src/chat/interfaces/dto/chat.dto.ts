@@ -1,4 +1,10 @@
-import { IsArray, IsIn, IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class ChatConversationCreateDto {
   @IsOptional()
@@ -29,6 +35,10 @@ export class ChatMessageSendDto {
   @IsOptional()
   @IsString()
   senderName?: string;
+
+  @IsOptional()
+  @IsString()
+  replyToMessageId?: string;
 }
 
 export class ChatMessageEditDto {
@@ -47,6 +57,18 @@ export class ChatMessageActionDto {
 export class ChatMessagesReadDto {
   @IsString()
   conversationId: string;
+}
+
+export class ChatTypingDto {
+  @IsString()
+  conversationId: string;
+
+  @IsOptional()
+  @IsString()
+  senderName?: string;
+
+  @IsBoolean()
+  isTyping: boolean;
 }
 
 export class ChatConversationResponseDto {
@@ -69,8 +91,19 @@ export class ChatMessageResponseDto {
   text: string | null;
   mediaUrl: string | null;
   mediaType: 'image' | 'video' | 'sticker' | null;
+  replyToMessageId: string | null;
+  replyToMessage: ChatMessageReplyResponseDto | null;
   readBy: string[];
   editedAt: number | null;
   deletedAt: number | null;
   at: number;
+}
+
+export class ChatMessageReplyResponseDto {
+  id: string;
+  senderId: string | null;
+  senderName: string;
+  text: string | null;
+  mediaUrl: string | null;
+  mediaType: 'image' | 'video' | 'sticker' | null;
 }

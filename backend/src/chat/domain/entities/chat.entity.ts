@@ -16,8 +16,19 @@ export interface ChatMessageEntity {
   text?: string | null;
   mediaUrl?: string | null;
   mediaType?: 'image' | 'video' | 'sticker' | null;
+  replyToMessageId?: string | null;
+  replyToMessage?: ChatMessageReplyEntity | null;
   readBy: string[];
   editedAt?: Date | null;
   deletedAt?: Date | null;
   createdAt: Date;
+}
+
+export interface ChatMessageReplyEntity {
+  id: string;
+  senderId?: string | null;
+  senderName: string;
+  text?: string | null;
+  mediaUrl?: string | null;
+  mediaType?: 'image' | 'video' | 'sticker' | null;
 }

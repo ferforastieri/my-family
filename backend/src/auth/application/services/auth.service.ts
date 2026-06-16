@@ -60,6 +60,10 @@ export class AuthService {
     return this.users.update(userId, { avatarPath });
   }
 
+  async updateProfile(userId: string, data: { name?: string }) {
+    return this.users.update(userId, { name: data.name?.trim() });
+  }
+
   tokenResponse(user: UserEntity) {
     const payload = { sub: user.id, email: user.email };
     const accessToken = this.jwt.sign(payload, {
@@ -95,6 +99,9 @@ export class AuthService {
       });
     } catch {
       throw new UnauthorizedException('Sessão expirada. Faça login novamente.');
+    }
+    if (payload.type !== 'refresh') {
+      throw new UnauthorizedException('Refresh token inválido.');
     }
     const user = await this.users.findById(payload.sub);
     if (!user)

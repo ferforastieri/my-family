@@ -24,6 +24,9 @@ export class ChatMessageDocument {
   @Prop({ enum: ['image', 'video', 'sticker'] })
   mediaType?: 'image' | 'video' | 'sticker';
 
+  @Prop()
+  replyToMessageId?: string;
+
   @Prop({ type: [String], default: [] })
   readBy: string[];
 

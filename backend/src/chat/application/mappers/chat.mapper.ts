@@ -40,6 +40,17 @@ export class ChatMessageMapper implements Mapper<
       text: source.text ?? null,
       mediaUrl: source.mediaUrl ?? null,
       mediaType: source.mediaType ?? null,
+      replyToMessageId: source.replyToMessageId ?? null,
+      replyToMessage: source.replyToMessage
+        ? {
+            id: source.replyToMessage.id,
+            senderId: source.replyToMessage.senderId ?? null,
+            senderName: source.replyToMessage.senderName,
+            text: source.replyToMessage.text ?? null,
+            mediaUrl: source.replyToMessage.mediaUrl ?? null,
+            mediaType: source.replyToMessage.mediaType ?? null,
+          }
+        : null,
       readBy: source.readBy,
       editedAt: source.editedAt ? new Date(source.editedAt).getTime() : null,
       deletedAt: source.deletedAt ? new Date(source.deletedAt).getTime() : null,

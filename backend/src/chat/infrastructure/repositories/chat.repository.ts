@@ -25,6 +25,7 @@ export type ChatMessageWrite = {
   text?: string;
   mediaUrl?: string;
   mediaType?: 'image' | 'video' | 'sticker';
+  replyToMessageId?: string | null;
   readBy?: string[];
 };
 
@@ -64,6 +65,7 @@ export class ChatRepository {
       text: doc.text ?? null,
       mediaUrl: doc.mediaUrl ?? null,
       mediaType: doc.mediaType ?? null,
+      replyToMessageId: doc.replyToMessageId ?? null,
       readBy: doc.readBy ?? [],
       editedAt: doc.editedAt ?? null,
       deletedAt: doc.deletedAt ?? null,
@@ -159,7 +161,9 @@ export class ChatRepository {
       this.messages.countDocuments(filter).exec(),
     ]);
     return paginated(
-      docs.reverse().map((doc) => this.toMessage(doc)!),
+      await this.withReplyMessages(
+        docs.reverse().map((doc) => this.toMessage(doc)!),
+      ),
       total,
       page,
       limit,
@@ -167,13 +171,57 @@ export class ChatRepository {
   }
 
   async createMessage(data: ChatMessageWrite) {
-    const message = this.toMessage(await this.messages.create(data))!;
+    const message = (
+      await this.withReplyMessages([
+        this.toMessage(await this.messages.create(data))!,
+      ])
+    )[0];
     await this.conversations
       .findByIdAndUpdate(data.conversationId, {
         $set: { updatedAt: new Date() },
       })
       .exec();
     return message;
+  }
+
+  private async withReplyMessages(messages: ChatMessageEntity[]) {
+    const replyIds = [
+      ...new Set(
+        messages
+          .map((message) => message.replyToMessageId)
+          .filter(
+            (id): id is string => typeof id === 'string' && id.length > 0,
+          ),
+      ),
+    ];
+    if (replyIds.length === 0) return messages;
+    const replyDocs = await this.messages
+      .find({ _id: { $in: replyIds } })
+      .exec();
+    const replies = new Map(
+      replyDocs
+        .map((doc) => this.toMessage(doc))
+        .filter((message): message is ChatMessageEntity => message != null)
+        .map((message) => [message.id, message]),
+    );
+    return messages.map((message) => {
+      const reply = message.replyToMessageId
+        ? replies.get(message.replyToMessageId)
+        : null;
+      return {
+        ...message,
+        replyToMessage: reply
+          ? {
+              id: reply.id,
+              senderId: reply.senderId,
+              senderName: reply.senderName,
+              text: reply.text,
+              mediaUrl: reply.mediaUrl,
+              mediaType: reply.mediaType,
+            }
+          : null,
+      };
+    });
   }
 
   async findMessage(id: string) {

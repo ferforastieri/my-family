@@ -13,6 +13,7 @@ class SocketClient {
   final Map<String, List<void Function(dynamic data)>> _handlers = {};
   String? _lastMessage;
   Future<bool> Function()? onAuthError;
+  Future<String?> Function()? onBeforeRequest;
 
   bool get isConnected => _socket?.connected ?? false;
   String? get token => _token;
@@ -94,8 +95,7 @@ class SocketClient {
     try {
       return await _emitAckOnce<T>(event, payload);
     } catch (error) {
-      if (event != 'auth.refresh' &&
-          _looksLikeAuthError(error) &&
+      if (_looksLikeAuthError(error) &&
           onAuthError != null &&
           await onAuthError!()) {
         return _emitAckOnce<T>(event, payload);
@@ -105,6 +105,10 @@ class SocketClient {
   }
 
   Future<T> _emitAckOnce<T>(String event, [Object? payload]) async {
+    final nextToken = await onBeforeRequest?.call();
+    if (nextToken != null && nextToken != _token) {
+      connect(token: nextToken, force: true);
+    }
     await ensureConnected();
     final completer = Completer<T>();
     _socket!.emitWithAck(

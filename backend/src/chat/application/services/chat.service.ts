@@ -113,7 +113,9 @@ export class ChatService {
     };
   }
 
-  private chatUserLabel(user?: { name?: string | null; email?: string } | null) {
+  private chatUserLabel(
+    user?: { name?: string | null; email?: string } | null,
+  ) {
     const name = user?.name?.trim();
     if (name) return name;
     return user?.email ?? '';
@@ -156,6 +158,12 @@ export class ChatService {
       user?.name || user?.email || body.senderName?.trim() || 'Visitante';
     if (!body.text?.trim() && !body.mediaUrl) {
       throw new BadRequestException('Escreva uma mensagem.');
+    }
+    if (body.replyToMessageId) {
+      const replyTo = await this.chat.findMessage(body.replyToMessageId);
+      if (!replyTo || replyTo.conversationId !== conversationId) {
+        throw new BadRequestException('Mensagem respondida inválida.');
+      }
     }
     const message = await this.chat.createMessage(
       chatMessageFactory.create({
