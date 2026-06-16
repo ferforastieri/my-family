@@ -45,6 +45,8 @@ class SocketClient {
     _socket = io.io(
       _normalizeSocketIoUrl(AppConfig.socketUrl),
       io.OptionBuilder()
+          .enableForceNew()
+          .disableMultiplex()
           .setTransports(kIsWeb ? ['polling', 'websocket'] : ['websocket'])
           .disableAutoConnect()
           .enableReconnection()
