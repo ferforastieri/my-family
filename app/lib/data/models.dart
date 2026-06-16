@@ -242,6 +242,8 @@ class ChatMessage {
     this.text,
     this.mediaUrl,
     this.mediaType,
+    this.replyToMessageId,
+    this.replyToMessage,
     this.readBy = const [],
     this.editedAt,
     this.deletedAt,
@@ -254,6 +256,8 @@ class ChatMessage {
   final String? text;
   final String? mediaUrl;
   final String? mediaType;
+  final String? replyToMessageId;
+  final ChatMessageReply? replyToMessage;
   final List<String> readBy;
   final DateTime? editedAt;
   final DateTime? deletedAt;
@@ -267,6 +271,8 @@ class ChatMessage {
         text: text,
         mediaUrl: mediaUrl,
         mediaType: mediaType,
+        replyToMessageId: replyToMessageId,
+        replyToMessage: replyToMessage,
         readBy: readBy ?? this.readBy,
         editedAt: editedAt,
         deletedAt: deletedAt,
@@ -281,6 +287,12 @@ class ChatMessage {
         text: json['text']?.toString(),
         mediaUrl: json['mediaUrl']?.toString(),
         mediaType: json['mediaType']?.toString(),
+        replyToMessageId: json['replyToMessageId']?.toString(),
+        replyToMessage: json['replyToMessage'] is Map
+            ? ChatMessageReply.fromJson(
+                Map<String, dynamic>.from(json['replyToMessage'] as Map),
+              )
+            : null,
         readBy: ((json['readBy'] as List?) ?? const [])
             .map((id) => id.toString())
             .toList(),
@@ -294,6 +306,42 @@ class ChatMessage {
                 (json['deletedAt'] as num).toInt()),
         at: DateTime.fromMillisecondsSinceEpoch((json['at'] as num?)?.toInt() ??
             DateTime.now().millisecondsSinceEpoch),
+      );
+}
+
+class ChatMessageReply {
+  const ChatMessageReply({
+    required this.id,
+    required this.senderName,
+    this.senderId,
+    this.text,
+    this.mediaUrl,
+    this.mediaType,
+  });
+
+  final String id;
+  final String? senderId;
+  final String senderName;
+  final String? text;
+  final String? mediaUrl;
+  final String? mediaType;
+
+  String get preview {
+    final value = text?.trim();
+    if (value?.isNotEmpty == true) return value!;
+    if (mediaType == 'sticker') return mediaUrl ?? 'Figurinha';
+    if (mediaUrl?.isNotEmpty == true) return 'Mídia';
+    return 'Mensagem';
+  }
+
+  factory ChatMessageReply.fromJson(Map<String, dynamic> json) =>
+      ChatMessageReply(
+        id: json['id'].toString(),
+        senderId: json['senderId']?.toString(),
+        senderName: (json['senderName'] ?? 'Visitante').toString(),
+        text: json['text']?.toString(),
+        mediaUrl: json['mediaUrl']?.toString(),
+        mediaType: json['mediaType']?.toString(),
       );
 }
 

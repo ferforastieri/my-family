@@ -42,6 +42,7 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void initState() {
     super.initState();
+    text.addListener(_handleTypingChanged);
     Future.microtask(() async {
       try {
         await widget.chat.bootstrap();
@@ -58,10 +59,16 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
+    widget.chat.updateTyping('', senderName: _senderName);
+    text.removeListener(_handleTypingChanged);
     text.dispose();
     name.dispose();
     messagesScroll.dispose();
     super.dispose();
+  }
+
+  void _handleTypingChanged() {
+    widget.chat.updateTyping(text.text, senderName: _senderName);
   }
 
   void _scheduleScrollToBottom() {
@@ -279,6 +286,7 @@ class _ChatPageState extends State<ChatPage> {
               onOpenEmojiPanel: _openEmojiPanel,
               onEditMessage: _editMessage,
               onDeleteMessage: _deleteMessage,
+              onReplyMessage: widget.chat.setReply,
               compact: !wide,
               onBack: () => _goBack(context),
               onOpenConversations: _openConversationsSheet,
@@ -608,6 +616,7 @@ class _MessagePane extends StatelessWidget {
     required this.onOpenEmojiPanel,
     required this.onEditMessage,
     required this.onDeleteMessage,
+    required this.onReplyMessage,
     required this.compact,
     required this.onBack,
     required this.onOpenConversations,
@@ -625,6 +634,7 @@ class _MessagePane extends StatelessWidget {
   final VoidCallback onOpenEmojiPanel;
   final ValueChanged<ChatMessage> onEditMessage;
   final ValueChanged<ChatMessage> onDeleteMessage;
+  final ValueChanged<ChatMessage> onReplyMessage;
   final bool compact;
   final VoidCallback onBack;
   final VoidCallback onOpenConversations;
@@ -686,6 +696,8 @@ class _MessagePane extends StatelessWidget {
             ),
           ),
         ],
+        if (chat.typingUsers.isNotEmpty)
+          _TypingIndicator(names: chat.typingUsers.values.toList()),
         Expanded(
           child: active == null
               ? ListView(
@@ -724,6 +736,7 @@ class _MessagePane extends StatelessWidget {
                               compact: compact,
                               onEdit: () => onEditMessage(message),
                               onDelete: () => onDeleteMessage(message),
+                              onReply: () => onReplyMessage(message),
                             ),
                           ],
                         );
@@ -764,30 +777,40 @@ class _MessagePane extends StatelessWidget {
                 tooltip: 'Enviar imagem',
               ),
               Expanded(
-                child: Focus(
-                  onKeyEvent: (_, event) {
-                    if (event is! KeyDownEvent ||
-                        event.logicalKey != LogicalKeyboardKey.enter) {
-                      return KeyEventResult.ignored;
-                    }
-                    if (HardwareKeyboard.instance.isShiftPressed) {
-                      return KeyEventResult.ignored;
-                    }
-                    if (!sending && text.text.trim().isNotEmpty) {
-                      onSendText();
-                    }
-                    return KeyEventResult.handled;
-                  },
-                  child: TextField(
-                    controller: text,
-                    minLines: 1,
-                    maxLines: 4,
-                    decoration: const InputDecoration(
-                      hintText: 'Escreva uma mensagem...',
-                      isDense: true,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (chat.replyingTo != null)
+                      _ReplyComposerPreview(
+                        message: chat.replyingTo!,
+                        onCancel: chat.clearReply,
+                      ),
+                    Focus(
+                      onKeyEvent: (_, event) {
+                        if (event is! KeyDownEvent ||
+                            event.logicalKey != LogicalKeyboardKey.enter) {
+                          return KeyEventResult.ignored;
+                        }
+                        if (HardwareKeyboard.instance.isShiftPressed) {
+                          return KeyEventResult.ignored;
+                        }
+                        if (!sending && text.text.trim().isNotEmpty) {
+                          onSendText();
+                        }
+                        return KeyEventResult.handled;
+                      },
+                      child: TextField(
+                        controller: text,
+                        minLines: 1,
+                        maxLines: 4,
+                        decoration: const InputDecoration(
+                          hintText: 'Escreva uma mensagem...',
+                          isDense: true,
+                        ),
+                        textInputAction: TextInputAction.newline,
+                      ),
                     ),
-                    textInputAction: TextInputAction.newline,
-                  ),
+                  ],
                 ),
               ),
               SizedBox(width: compact ? 6 : 8),
@@ -849,6 +872,142 @@ class _UnreadBadge extends StatelessWidget {
   }
 }
 
+class _TypingIndicator extends StatelessWidget {
+  const _TypingIndicator({required this.names});
+
+  final List<String> names;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final label = names.length == 1
+        ? '${names.first} está digitando...'
+        : '${names.length} pessoas estão digitando...';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+      color: palette.primary.withValues(alpha: .06),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: palette.primary,
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+}
+
+class _ReplyComposerPreview extends StatelessWidget {
+  const _ReplyComposerPreview({
+    required this.message,
+    required this.onCancel,
+  });
+
+  final ChatMessage message;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.fromLTRB(10, 8, 4, 8),
+      decoration: BoxDecoration(
+        color: palette.primary.withValues(alpha: .08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border(left: BorderSide(color: palette.primary, width: 3)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _ReplyText(
+              senderName: message.senderName,
+              preview: _messagePreview(message),
+            ),
+          ),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            onPressed: onCancel,
+            icon: const Icon(Icons.close),
+            tooltip: 'Cancelar resposta',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReplyPreview extends StatelessWidget {
+  const _ReplyPreview({required this.reply});
+
+  final ChatMessageReply reply;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: palette.primary.withValues(alpha: .08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border(left: BorderSide(color: palette.primary, width: 3)),
+      ),
+      child: _ReplyText(senderName: reply.senderName, preview: reply.preview),
+    );
+  }
+}
+
+class _ReplyText extends StatelessWidget {
+  const _ReplyText({
+    required this.senderName,
+    required this.preview,
+  });
+
+  final String senderName;
+  final String preview;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          senderName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: palette.primary,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          preview,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: palette.muted, fontSize: 12, height: 1.25),
+        ),
+      ],
+    );
+  }
+}
+
+String _messagePreview(ChatMessage message) {
+  final text = message.text?.trim();
+  if (text?.isNotEmpty == true) return text!;
+  if (message.mediaType == 'sticker') return message.mediaUrl ?? 'Figurinha';
+  if (message.mediaUrl?.isNotEmpty == true) return 'Mídia';
+  return 'Mensagem';
+}
+
 class _MessageBubble extends StatelessWidget {
   const _MessageBubble({
     required this.message,
@@ -857,6 +1016,7 @@ class _MessageBubble extends StatelessWidget {
     required this.compact,
     required this.onEdit,
     required this.onDelete,
+    required this.onReply,
   });
 
   final ChatMessage message;
@@ -865,6 +1025,7 @@ class _MessageBubble extends StatelessWidget {
   final bool compact;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onReply;
 
   @override
   Widget build(BuildContext context) {
@@ -945,6 +1106,11 @@ class _MessageBubble extends StatelessWidget {
                         fontWeight: FontWeight.w900,
                       ),
                     ),
+                  if (!isDeleted && message.replyToMessage != null) ...[
+                    SizedBox(height: isMine ? 0 : 5),
+                    _ReplyPreview(reply: message.replyToMessage!),
+                    const SizedBox(height: 6),
+                  ],
                   if (isDeleted)
                     Text(
                       'Mensagem apagada',
@@ -1068,7 +1234,9 @@ class _MessageBubble extends StatelessWidget {
         isMine: isMine,
       ),
     );
-    if (action == _MessageAction.edit) {
+    if (action == _MessageAction.reply) {
+      onReply();
+    } else if (action == _MessageAction.edit) {
       onEdit();
     } else if (action == _MessageAction.delete) {
       onDelete();
@@ -1490,7 +1658,7 @@ class _AvatarInitial extends StatelessWidget {
   }
 }
 
-enum _MessageAction { info, edit, delete }
+enum _MessageAction { reply, info, edit, delete }
 
 class _MessageActionsSheet extends StatelessWidget {
   const _MessageActionsSheet({required this.canEdit, required this.isMine});
@@ -1512,6 +1680,11 @@ class _MessageActionsSheet extends StatelessWidget {
             icon: Icons.chat_bubble_outline,
           ),
           const SizedBox(height: 12),
+          _MessageActionTile(
+            icon: Icons.reply,
+            label: 'Responder',
+            onTap: () => Navigator.pop(context, _MessageAction.reply),
+          ),
           _MessageActionTile(
             icon: Icons.info_outline,
             label: 'Informações',

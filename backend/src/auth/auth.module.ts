@@ -14,7 +14,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { RolesGuard } from './guards/roles.guard';
 import { UserRepository } from './infrastructure/repositories/user.repository';
 import { PasswordResetRepository } from './infrastructure/repositories/password-reset.repository';
-import { AuthGateway } from './interfaces/gateways/auth.gateway';
+import { UsersGateway } from './interfaces/gateways/users.gateway';
 import { WsSessionService } from './application/services/ws-session.service';
 
 @Module({
@@ -39,7 +39,7 @@ import { WsSessionService } from './application/services/ws-session.service';
     UserRepository,
     PasswordResetRepository,
     WsSessionService,
-    AuthGateway,
+    UsersGateway,
     LocalStrategy,
     JwtStrategy,
     RolesGuard,

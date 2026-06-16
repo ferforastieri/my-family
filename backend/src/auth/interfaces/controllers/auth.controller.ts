@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Patch,
   Body,
   UseGuards,
   Req,
@@ -65,12 +66,37 @@ export class AuthController {
         email: string;
         name: string | null;
         role: string;
+        access: string[];
         avatarPath?: string | null;
       };
     },
   ) {
-    const { id, email, name, role, avatarPath } = req.user;
-    return { user: { id, email, name, role, avatarPath } };
+    const { id, email, name, role, access, avatarPath } = req.user;
+    return { user: { id, email, name, role, access, avatarPath } };
+  }
+
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  async updateMe(
+    @Req() req: { user: { id: string } },
+    @Body() dto: { name?: string },
+  ) {
+    const user = await this.auth.updateProfile(req.user.id, {
+      name: dto.name,
+    });
+    return {
+      message: 'Perfil atualizado.',
+      user: user
+        ? {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            access: user.access,
+            avatarPath: user.avatarPath,
+          }
+        : null,
+    };
   }
 
   @Post('avatar')

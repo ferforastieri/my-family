@@ -1,22 +1,57 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:fresh_dio/fresh_dio.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 import '../../data/models.dart';
-import '../api/socket_api_client.dart';
 import '../config/app_config.dart';
 import '../socket/socket_client.dart';
 import 'token_store.dart';
 
 class AuthController extends ChangeNotifier {
-  AuthController(this.socket, this.tokenStore);
+  AuthController(this.socket, this.tokenStore) {
+    _fresh = Fresh.oAuth2<OAuth2Token>(
+      tokenStorage: SecureOAuth2TokenStorage(tokenStore),
+      httpClient: Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 20),
+        sendTimeout: const Duration(seconds: 20),
+      )),
+      refreshToken: _refreshOAuthToken,
+      shouldRefresh: (response) {
+        final status = response?.statusCode;
+        return status == 401 || status == 403;
+      },
+      shouldRefreshBeforeRequest: (_, token) {
+        final expiresAt = token?.expiresAt;
+        if (expiresAt == null) return false;
+        return expiresAt.difference(DateTime.now().toUtc()) <
+            const Duration(minutes: 2);
+      },
+      isTokenRequired: (options) {
+        final path = options.path;
+        return !(path.contains('/auth/login') ||
+            path.contains('/auth/register') ||
+            path.contains('/auth/refresh') ||
+            path.contains('/auth/forgot-password') ||
+            path.contains('/auth/reset-password'));
+      },
+    );
+    dio.interceptors.add(_fresh);
+  }
 
   final SocketClient socket;
   final TokenStore tokenStore;
-  late final SocketApiClient api = SocketApiClient(socket);
+  late final Fresh<OAuth2Token> _fresh;
+  late final Dio dio = Dio(BaseOptions(
+    connectTimeout: const Duration(seconds: 10),
+    receiveTimeout: const Duration(seconds: 20),
+    sendTimeout: const Duration(seconds: 20),
+  ));
 
   AppUser? user;
   bool loading = true;
@@ -31,6 +66,7 @@ class AuthController extends ChangeNotifier {
       token = await tokenStore.readAccessToken();
       refreshToken = await tokenStore.readRefreshToken();
       socket.onAuthError = _refreshSession;
+      socket.onBeforeRequest = _ensureFreshAccessToken;
       _bindConnectListener();
       socket.connect(token: token);
       if (token != null || refreshToken != null) {
@@ -51,6 +87,7 @@ class AuthController extends ChangeNotifier {
   Future<void> _restoreSession() async {
     if (refreshToken != null) {
       await _refreshSession();
+      if (user == null) await _loadCurrentUser(clearInvalidToken: true);
       return;
     }
     if (token != null && await _refreshSession()) {
@@ -74,7 +111,7 @@ class AuthController extends ChangeNotifier {
 
   Future<void> _loadCurrentUser({required bool clearInvalidToken}) async {
     try {
-      final response = await api.query<Map<String, dynamic>>('auth.me');
+      final response = await _httpGetMap('/auth/me');
       user =
           AppUser.fromJson(Map<String, dynamic>.from(response['user'] as Map));
       notifyListeners();
@@ -92,7 +129,7 @@ class AuthController extends ChangeNotifier {
   }
 
   Future<void> signIn(String email, String password) async {
-    final response = await api.mutate<Map<String, dynamic>>('auth.login', {
+    final response = await _httpPostMap('/auth/login', {
       'email': email,
       'password': password,
     });
@@ -100,7 +137,7 @@ class AuthController extends ChangeNotifier {
   }
 
   Future<void> register(String email, String password, String name) async {
-    final response = await api.mutate<Map<String, dynamic>>('auth.register', {
+    final response = await _httpPostMap('/auth/register', {
       'email': email,
       'password': password,
       'name': name,
@@ -109,19 +146,18 @@ class AuthController extends ChangeNotifier {
   }
 
   Future<void> forgotPassword(String email) {
-    return api
-        .mutate<Map<String, dynamic>>('auth.forgotPassword', {'email': email});
+    return _httpPostMap('/auth/forgot-password', {'email': email});
   }
 
   Future<void> resetPassword(String token, String newPassword) {
-    return api.mutate<Map<String, dynamic>>('auth.resetPassword', {
+    return _httpPostMap('/auth/reset-password', {
       'token': token,
       'newPassword': newPassword,
     });
   }
 
   Future<void> updateMe({required String name}) async {
-    final response = await api.mutate<Map<String, dynamic>>('auth.updateMe', {
+    final response = await _httpPatchMap('/auth/me', {
       'name': name,
     });
     final rawUser = response['user'];
@@ -134,7 +170,7 @@ class AuthController extends ChangeNotifier {
   Future<void> refreshMe() async {
     if (token == null) return;
     try {
-      final response = await api.query<Map<String, dynamic>>('auth.me');
+      final response = await _httpGetMap('/auth/me');
       final rawUser = response['user'];
       if (rawUser is Map) {
         user = AppUser.fromJson(Map<String, dynamic>.from(rawUser));
@@ -193,15 +229,12 @@ class AuthController extends ChangeNotifier {
   Future<bool> _refreshSession() async {
     final activeRefresh = _refreshCompleter;
     if (activeRefresh != null) return activeRefresh.future;
-    final credential = refreshToken ?? token;
-    if (credential == null) return false;
+    if (refreshToken == null && token == null) return false;
     final completer = Completer<bool>();
     _refreshCompleter = completer;
     try {
-      final response = await api.mutate<Map<String, dynamic>>('auth.refresh', {
-        'refreshToken': credential,
-      });
-      await _acceptAuth(response);
+      final refreshed = await _fresh.refreshToken();
+      _acceptOAuthToken(refreshed);
       completer.complete(true);
       return true;
     } catch (_) {
@@ -213,11 +246,25 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  Future<String?> _ensureFreshAccessToken() async {
+    final currentToken = await _fresh.token;
+    if (currentToken == null) return null;
+    if (!_shouldRefreshSoon(currentToken)) return currentToken.accessToken;
+    try {
+      final refreshed =
+          await _fresh.refreshToken(tokenUsedForRequest: currentToken);
+      _acceptOAuthToken(refreshed);
+    } catch (_) {
+      await _clearAuth();
+    }
+    return token;
+  }
+
   Future<void> _clearAuth({bool notify = true}) async {
     user = null;
     token = null;
     refreshToken = null;
-    await tokenStore.clear();
+    await _fresh.clearToken();
     socket.connect();
     if (notify) notifyListeners();
   }
@@ -234,14 +281,112 @@ class AuthController extends ChangeNotifier {
       refreshToken = nextRefreshToken;
     }
     user = AppUser.fromJson(Map<String, dynamic>.from(response['user'] as Map));
-    await tokenStore.writeTokens(
+    await _fresh.setToken(oauthTokenFromJwt(
       accessToken: token!,
       refreshToken: refreshToken,
-    );
+    ));
     socket.connect(token: token, force: true);
     notifyListeners();
     unawaited(socket.ensureConnected(token: token).catchError((_) {}));
   }
+
+  Future<OAuth2Token> _refreshOAuthToken(
+    OAuth2Token? currentToken,
+    Dio client,
+  ) async {
+    final credential = currentToken?.refreshToken ?? refreshToken;
+    if (credential == null || credential.isEmpty) {
+      throw RevokeTokenException();
+    }
+    try {
+      final response = await client.postUri<Map<String, dynamic>>(
+        AppConfig.apiUri('/auth/refresh'),
+        data: {'refreshToken': credential},
+      );
+      final data = _unwrapHttpResponse(response);
+      final nextToken = (data['accessToken'] ?? data['access_token']) as String;
+      final nextRefresh = data['refreshToken'] ?? data['refresh_token'];
+      final rawUser = data['user'];
+      token = nextToken;
+      if (nextRefresh is String && nextRefresh.isNotEmpty) {
+        refreshToken = nextRefresh;
+      }
+      if (rawUser is Map) {
+        user = AppUser.fromJson(Map<String, dynamic>.from(rawUser));
+      }
+      return oauthTokenFromJwt(
+        accessToken: nextToken,
+        refreshToken: refreshToken,
+      );
+    } catch (_) {
+      throw RevokeTokenException();
+    }
+  }
+
+  void _acceptOAuthToken(OAuth2Token token) {
+    this.token = token.accessToken;
+    refreshToken = token.refreshToken ?? refreshToken;
+    socket.connect(token: this.token, force: true);
+  }
+
+  Future<Map<String, dynamic>> _httpGetMap(
+    String path, {
+    String? authToken,
+  }) async {
+    return _unwrapHttpResponse(await dio.getUri<Map<String, dynamic>>(
+      AppConfig.apiUri(path),
+      options: _httpOptions(authToken),
+    ));
+  }
+
+  Future<Map<String, dynamic>> _httpPostMap(
+    String path,
+    Map<String, dynamic> data, {
+    String? authToken,
+  }) async {
+    return _unwrapHttpResponse(await dio.postUri<Map<String, dynamic>>(
+      AppConfig.apiUri(path),
+      data: data,
+      options: _httpOptions(authToken),
+    ));
+  }
+
+  Future<Map<String, dynamic>> _httpPatchMap(
+    String path,
+    Map<String, dynamic> data, {
+    String? authToken,
+  }) async {
+    return _unwrapHttpResponse(await dio.patchUri<Map<String, dynamic>>(
+      AppConfig.apiUri(path),
+      data: data,
+      options: _httpOptions(authToken),
+    ));
+  }
+
+  Options? _httpOptions(String? authToken) {
+    if (authToken?.isNotEmpty != true) return null;
+    return Options(headers: {'Authorization': 'Bearer $authToken'});
+  }
+
+  Map<String, dynamic> _unwrapHttpResponse(Response<dynamic> response) {
+    final body = response.data;
+    if (body is Map) {
+      final map = Map<String, dynamic>.from(body);
+      final message = map['message'];
+      if (message is String) socket.rememberMessage(message);
+      final data = map['data'];
+      if (data is Map) return Map<String, dynamic>.from(data);
+      return map;
+    }
+    throw StateError('Resposta inválida do servidor.');
+  }
+}
+
+bool _shouldRefreshSoon(OAuth2Token token) {
+  final expiresAt = token.expiresAt;
+  if (expiresAt == null) return false;
+  return expiresAt.difference(DateTime.now().toUtc()) <
+      const Duration(minutes: 2);
 }
 
 Map<String, dynamic> _decodeJsonMap(String body) {
@@ -250,6 +395,10 @@ Map<String, dynamic> _decodeJsonMap(String body) {
 }
 
 bool _looksLikeAuthError(Object error) {
+  if (error is DioException) {
+    final status = error.response?.statusCode;
+    if (status == 401 || status == 403) return true;
+  }
   final message = error.toString().toLowerCase();
   return message.contains('unauthorized') ||
       message.contains('não autorizado') ||

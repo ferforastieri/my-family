@@ -15,6 +15,7 @@ import type {
   ChatMessageEditDto,
   ChatMessageSendDto,
   ChatMessagesReadDto,
+  ChatTypingDto,
 } from '../dto/chat.dto';
 
 @WebSocketGateway({ cors: { origin: '*' } })
@@ -108,5 +109,22 @@ export class ChatGateway {
     const receipt = await this.chat.markMessagesRead(body.conversationId, user);
     this.server?.emit('chat.messages.read', receipt);
     return receipt;
+  }
+
+  @SubscribeMessage('chat.typing')
+  async typing(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: ChatTypingDto,
+  ) {
+    const user = await this.session.requireAccess(client, 'chat');
+    const payload = {
+      conversationId: body.conversationId,
+      userId: user.id,
+      senderName:
+        user.name?.trim() || body.senderName?.trim() || user.email || 'Pessoa',
+      isTyping: body.isTyping,
+    };
+    client.broadcast.emit('chat.typing', payload);
+    return payload;
   }
 }

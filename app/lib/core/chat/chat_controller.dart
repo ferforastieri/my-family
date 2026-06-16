@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -16,11 +18,17 @@ class ChatController extends ChangeNotifier {
   final List<ChatConversation> conversations = [];
   final List<ChatMessage> messages = [];
   final List<ChatUser> users = [];
+  final Map<String, String> typingUsers = {};
   ChatConversation? active;
   bool loading = false;
   bool bootstrapped = false;
   bool _listenersBound = false;
   String? errorMessage;
+  Timer? _typingStopTimer;
+  Timer? _remoteTypingClearTimer;
+  bool _localTypingSent = false;
+  DateTime? _lastTypingSentAt;
+  ChatMessage? replyingTo;
 
   int get unreadCount => conversations.fold(
         0,
@@ -70,6 +78,28 @@ class ChatController extends ChangeNotifier {
         }
         if (changed) notifyListeners();
         _markConversationRead(conversationId);
+      });
+      socket.on('chat.typing', (data) {
+        if (data is! Map) return;
+        final payload = Map<String, dynamic>.from(data);
+        final conversationId = payload['conversationId']?.toString();
+        final userId = payload['userId']?.toString();
+        final senderName = payload['senderName']?.toString();
+        final isTyping = payload['isTyping'] == true;
+        if (conversationId != active?.id ||
+            userId == null ||
+            senderName == null) {
+          return;
+        }
+        if (isTyping) {
+          typingUsers[userId] = senderName;
+          _remoteTypingClearTimer?.cancel();
+          _remoteTypingClearTimer =
+              Timer(const Duration(seconds: 4), clearTypingUsers);
+        } else {
+          typingUsers.remove(userId);
+        }
+        notifyListeners();
       });
       socket.on('chat.conversation.created', (_) => _refreshUnreadCounters());
       socket.on('connect', (_) {
@@ -147,6 +177,8 @@ class ChatController extends ChangeNotifier {
         ..clear()
         ..addAll(rows.map((row) =>
             ChatMessage.fromJson(Map<String, dynamic>.from(row as Map))));
+      clearReply();
+      clearTypingUsers();
       await markRead(conversation.id);
       _markConversationRead(conversation.id);
     } catch (error) {
@@ -181,12 +213,16 @@ class ChatController extends ChangeNotifier {
     if (conversation == null) {
       return;
     }
+    final reply = replyingTo;
     final row = await api.mutate<Map<String, dynamic>>('chat.message.send', {
       'conversationId': conversation.id,
       'text': text.trim(),
+      if (reply != null) 'replyToMessageId': reply.id,
       if (senderName != null && senderName.trim().isNotEmpty)
         'senderName': senderName.trim(),
     });
+    clearReply();
+    await sendTyping(false, senderName: senderName);
     final message = ChatMessage.fromJson(row);
     if (!messages.any((item) => item.id == message.id)) {
       messages.add(message);
@@ -200,6 +236,7 @@ class ChatController extends ChangeNotifier {
     if (conversation == null) {
       return;
     }
+    final reply = replyingTo;
     final relativePath = await repository.uploadPhotoFile(file);
     final ext = relativePath.split('.').last.toLowerCase();
     final mediaType = ['mp4', 'webm'].contains(ext) ? 'video' : 'image';
@@ -214,9 +251,12 @@ class ChatController extends ChangeNotifier {
       'text': text.trim(),
       'mediaUrl': relativePath,
       'mediaType': mediaType,
+      if (reply != null) 'replyToMessageId': reply.id,
       if (senderName != null && senderName.trim().isNotEmpty)
         'senderName': senderName.trim(),
     });
+    clearReply();
+    await sendTyping(false, senderName: senderName);
     final message = ChatMessage.fromJson(row);
     if (!messages.any((item) => item.id == message.id)) {
       messages.add(message);
@@ -228,13 +268,17 @@ class ChatController extends ChangeNotifier {
   Future<void> sendSticker(String sticker, {String? senderName}) async {
     final conversation = active;
     if (conversation == null) return;
+    final reply = replyingTo;
     final row = await api.mutate<Map<String, dynamic>>('chat.message.send', {
       'conversationId': conversation.id,
       'mediaUrl': sticker,
       'mediaType': 'sticker',
+      if (reply != null) 'replyToMessageId': reply.id,
       if (senderName != null && senderName.trim().isNotEmpty)
         'senderName': senderName.trim(),
     });
+    clearReply();
+    await sendTyping(false, senderName: senderName);
     final message = ChatMessage.fromJson(row);
     if (!messages.any((item) => item.id == message.id)) {
       messages.add(message);
@@ -272,9 +316,71 @@ class ChatController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setReply(ChatMessage message) {
+    if (message.deletedAt != null) return;
+    replyingTo = message;
+    notifyListeners();
+  }
+
+  void clearReply() {
+    if (replyingTo == null) return;
+    replyingTo = null;
+    notifyListeners();
+  }
+
+  void updateTyping(String value, {String? senderName}) {
+    final isTyping = value.trim().isNotEmpty;
+    final now = DateTime.now();
+    if (isTyping &&
+        (!_localTypingSent ||
+            _lastTypingSentAt == null ||
+            now.difference(_lastTypingSentAt!) > const Duration(seconds: 2))) {
+      unawaited(sendTyping(true, senderName: senderName));
+    }
+    _typingStopTimer?.cancel();
+    if (isTyping) {
+      _typingStopTimer = Timer(
+        const Duration(milliseconds: 1400),
+        () => unawaited(sendTyping(false, senderName: senderName)),
+      );
+    } else {
+      unawaited(sendTyping(false, senderName: senderName));
+    }
+  }
+
+  Future<void> sendTyping(bool isTyping, {String? senderName}) async {
+    final conversation = active;
+    if (conversation == null) return;
+    if (_localTypingSent == isTyping &&
+        isTyping &&
+        _lastTypingSentAt != null &&
+        DateTime.now().difference(_lastTypingSentAt!) <
+            const Duration(seconds: 2)) {
+      return;
+    }
+    _localTypingSent = isTyping;
+    _lastTypingSentAt = DateTime.now();
+    try {
+      await api.mutate<Map<String, dynamic>>('chat.typing', {
+        'conversationId': conversation.id,
+        'isTyping': isTyping,
+        if (senderName != null && senderName.trim().isNotEmpty)
+          'senderName': senderName.trim(),
+      });
+    } catch (_) {
+      //
+    }
+  }
+
+  void clearTypingUsers() {
+    if (typingUsers.isEmpty) return;
+    typingUsers.clear();
+    notifyListeners();
+  }
+
   void _markConversationRead(String conversationId) {
-    final index =
-        conversations.indexWhere((conversation) => conversation.id == conversationId);
+    final index = conversations
+        .indexWhere((conversation) => conversation.id == conversationId);
     if (index == -1 || conversations[index].unreadCount == 0) return;
     conversations[index] = conversations[index].copyWith(unreadCount: 0);
     notifyListeners();
