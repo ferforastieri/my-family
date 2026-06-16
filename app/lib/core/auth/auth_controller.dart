@@ -394,6 +394,35 @@ Map<String, dynamic> _decodeJsonMap(String body) {
       const JsonDecoder().convert(body) as Map<dynamic, dynamic>);
 }
 
+String authErrorMessage(Object error) {
+  if (error is DioException) {
+    final data = error.response?.data;
+    final message = _messageFromResponseData(data);
+    if (message != null && message.isNotEmpty) return message;
+    if (error.message?.isNotEmpty == true) return error.message!;
+  }
+  return error.toString().replaceFirst('Exception: ', '');
+}
+
+String? _messageFromResponseData(Object? data) {
+  if (data is Map) {
+    final message = data['message'];
+    if (message is String) return message;
+    if (message is List) return message.join(', ');
+    final error = data['error'];
+    if (error is String) return error;
+  }
+  if (data is String && data.isNotEmpty) {
+    try {
+      final decoded = const JsonDecoder().convert(data);
+      return _messageFromResponseData(decoded);
+    } catch (_) {
+      return data;
+    }
+  }
+  return null;
+}
+
 bool _looksLikeAuthError(Object error) {
   if (error is DioException) {
     final status = error.response?.statusCode;
