@@ -10,18 +10,21 @@ const defaultEvents: HomeEventWrite[] = [
     icon: '💕',
     date: new Date('2024-10-12T12:00:00.000Z'),
     message: 'Desde o primeiro olhar, sabia que você era especial',
+    countDirection: 'forward',
   },
   {
     title: 'Nosso Casamento',
     icon: '💍',
     date: new Date('2025-04-15T12:00:00.000Z'),
     message: 'O dia mais feliz da minha vida ao seu lado',
+    countDirection: 'forward',
   },
   {
     title: 'Nascimento do Fernando',
     icon: '👶',
     date: new Date('2026-06-15T12:00:00.000Z'),
     message: 'Nosso maior presente de amor chegando',
+    countDirection: 'backward',
   },
 ];
 
@@ -42,22 +45,25 @@ export class HomeSettingsService {
       icon?: string;
       date?: string;
       message?: string;
+      countDirection?: string;
     }>;
   }) {
-    if (!Array.isArray(input?.events) || input.events.length !== 3) {
-      throw new BadRequestException('Informe exatamente três cards da Home.');
+    if (!Array.isArray(input?.events) || input.events.length < 1) {
+      throw new BadRequestException('Informe pelo menos um card da Home.');
     }
     const events = input.events.map((event, index) => {
       const title = event.title?.trim();
       const icon = event.icon?.trim();
       const message = event.message?.trim();
       const date = new Date(event.date ?? '');
+      const countDirection: HomeEventWrite['countDirection'] =
+        event.countDirection === 'backward' ? 'backward' : 'forward';
       if (!title || !icon || !message || Number.isNaN(date.getTime())) {
         throw new BadRequestException(
           `Preencha corretamente o evento ${index + 1}.`,
         );
       }
-      return { title, icon, message, date };
+      return { title, icon, message, date, countDirection };
     });
     const saved = await this.repository.save(events);
     return this.toDto(saved?.events ?? events);
@@ -70,6 +76,8 @@ export class HomeSettingsService {
         icon: event.icon,
         date: new Date(event.date).toISOString(),
         message: event.message,
+        countDirection:
+          event.countDirection === 'backward' ? 'backward' : 'forward',
       })),
     };
   }

@@ -147,6 +147,7 @@ class _DesktopMainNavigation extends StatelessWidget {
         user?.canAccess('nossaHistoria') == true;
     final hasMore = user?.canAccess('jogos') == true ||
         user?.canAccess('listas') == true ||
+        user?.canAccess('notas') == true ||
         user?.canAccess('localizacao') == true;
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 760),
@@ -229,6 +230,7 @@ class _DesktopMainNavigation extends StatelessWidget {
                 (_isSelected('/atalhos/mais', currentLocation) ||
                     currentLocation == '/jogos' ||
                     currentLocation == '/listas' ||
+                    currentLocation == '/notas' ||
                     currentLocation == '/localizacao'),
             onTap: () {
               if (user == null) {
@@ -457,6 +459,7 @@ class _MobileBottomNavigation extends StatelessWidget {
         user?.canAccess('nossaHistoria') == true;
     final hasMore = user?.canAccess('jogos') == true ||
         user?.canAccess('listas') == true ||
+        user?.canAccess('notas') == true ||
         user?.canAccess('localizacao') == true;
     return SafeArea(
       top: false,
@@ -553,6 +556,7 @@ class _MobileBottomNavigation extends StatelessWidget {
                     (_isSelected('/atalhos/mais', currentLocation) ||
                         currentLocation == '/jogos' ||
                         currentLocation == '/listas' ||
+                        currentLocation == '/notas' ||
                         currentLocation == '/localizacao'),
                 onTap: () {
                   if (user == null) {

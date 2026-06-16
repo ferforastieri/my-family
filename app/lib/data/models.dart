@@ -45,6 +45,7 @@ const appAccessKeys = [
   'cartas',
   'jogos',
   'listas',
+  'notas',
   'localizacao',
   'chat',
   'nossaHistoria',
@@ -585,12 +586,14 @@ class HomeEventConfig {
     required this.icon,
     required this.date,
     required this.message,
+    this.countDirection = HomeCountDirection.forward,
   });
 
   final String title;
   final String icon;
   final DateTime date;
   final String message;
+  final HomeCountDirection countDirection;
 
   factory HomeEventConfig.fromJson(Map<String, dynamic> json) =>
       HomeEventConfig(
@@ -599,6 +602,8 @@ class HomeEventConfig {
         date: DateTime.tryParse(json['date']?.toString() ?? '')?.toLocal() ??
             DateTime.now(),
         message: (json['message'] ?? '').toString(),
+        countDirection:
+            HomeCountDirection.fromJson(json['countDirection']?.toString()),
       );
 
   Map<String, dynamic> toJson() => {
@@ -606,5 +611,19 @@ class HomeEventConfig {
         'icon': icon,
         'date': date.toUtc().toIso8601String(),
         'message': message,
+        'countDirection': countDirection.value,
       };
+}
+
+enum HomeCountDirection {
+  forward('forward'),
+  backward('backward');
+
+  const HomeCountDirection(this.value);
+
+  final String value;
+
+  static HomeCountDirection fromJson(String? value) {
+    return value == backward.value ? backward : forward;
+  }
 }

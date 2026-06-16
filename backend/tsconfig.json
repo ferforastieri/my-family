@@ -21,6 +21,7 @@
       "@fotos/*": ["src/fotos/*"],
       "@musicas/*": ["src/musicas/*"],
       "@cartas/*": ["src/cartas/*"],
+      "@notas/*": ["src/notas/*"],
       "@notifications/*": ["src/notifications/*"]
     },
     "incremental": true,

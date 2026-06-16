@@ -34,6 +34,7 @@ export class HomeSettingsGateway {
         icon: string;
         date: string;
         message: string;
+        countDirection?: string;
       }>;
     },
   ) {

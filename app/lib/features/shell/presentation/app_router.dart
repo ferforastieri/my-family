@@ -111,6 +111,13 @@ GoRouter buildRouter(
                     path: '/listas',
                     icon: Icons.checklist_outlined,
                   ),
+                if (auth.user?.canAccess('notas') == true)
+                  const MobileOptionItem(
+                    label: 'Notas',
+                    description: 'Ideias, lembretes e registros soltos.',
+                    path: '/notas',
+                    icon: Icons.sticky_note_2_outlined,
+                  ),
                 if (auth.user?.canAccess('localizacao') == true)
                   const MobileOptionItem(
                     label: 'Localização',
@@ -189,6 +196,14 @@ GoRouter buildRouter(
             )),
           ),
           GoRoute(
+            path: '/notas',
+            pageBuilder: (context, state) => _page(ResourcePage(
+                title: 'Notas',
+                resource: 'notas',
+                repository: repository,
+                toast: toast)),
+          ),
+          GoRoute(
             path: '/localizacao',
             pageBuilder: (context, state) => _page(LocationPage(
               repository: repository,
@@ -226,6 +241,7 @@ String? _accessForPath(String path) {
     '/carta-de-amor' => 'cartas',
     '/jogos' => 'jogos',
     '/listas' => 'listas',
+    '/notas' => 'notas',
     '/localizacao' => 'localizacao',
     '/chat' => 'chat',
     '/nossa-historia' => 'nossaHistoria',

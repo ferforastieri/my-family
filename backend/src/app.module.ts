@@ -26,6 +26,7 @@ import { GamesModule } from './games/games.module';
 import { ListsModule } from './lists/lists.module';
 import { LocationModule } from './location/location.module';
 import { HomeSettingsModule } from './home-settings/home-settings.module';
+import { NotasModule } from './notas/notas.module';
 
 @Module({
   imports: [
@@ -122,6 +123,7 @@ import { HomeSettingsModule } from './home-settings/home-settings.module';
     ChatModule,
     GamesModule,
     ListsModule,
+    NotasModule,
     LocationModule,
     HomeSettingsModule,
   ],

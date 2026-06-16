@@ -12,6 +12,7 @@ export class HomeSettingsDocument {
     icon: string;
     date: Date;
     message: string;
+    countDirection?: 'forward' | 'backward';
   }>;
 
   createdAt?: Date;

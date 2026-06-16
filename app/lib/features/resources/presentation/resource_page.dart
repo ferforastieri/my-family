@@ -121,7 +121,8 @@ class _ResourcePageState extends State<ResourcePage> {
                 children: [
                   if (widget.resource != 'fotos' &&
                       widget.resource != 'musicas' &&
-                      widget.resource != 'cartas') ...[
+                      widget.resource != 'cartas' &&
+                      widget.resource != 'notas') ...[
                     _ResourceMetrics(
                       resource: widget.resource,
                       total: result.total,
@@ -239,6 +240,14 @@ class _ResourcePageState extends State<ResourcePage> {
         context: context,
         barrierColor: Colors.black.withValues(alpha: .58),
         builder: (_) => _LetterReader(item: item),
+      );
+      return;
+    }
+    if (widget.resource == 'notas') {
+      showDialog<void>(
+        context: context,
+        barrierColor: Colors.black.withValues(alpha: .42),
+        builder: (_) => _NoteReader(item: item),
       );
       return;
     }
@@ -595,7 +604,9 @@ class _ResourceGrid extends StatelessWidget {
       builder: (context, constraints) {
         final visualCards = resource == 'fotos' ||
             resource == 'musicas' ||
-            resource == 'cartas';
+            resource == 'cartas' ||
+            resource == 'notas';
+        final noteCards = resource == 'notas';
         final columns = visualCards
             ? (constraints.maxWidth >= 1280
                 ? 4
@@ -613,9 +624,9 @@ class _ResourceGrid extends StatelessWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           crossAxisCount: columns,
-          childAspectRatio: visualCards ? 1.05 : 1.08,
-          crossAxisSpacing: 32,
-          mainAxisSpacing: 32,
+          childAspectRatio: noteCards ? 2.35 : (visualCards ? 1.05 : 1.08),
+          crossAxisSpacing: noteCards ? 14 : 32,
+          mainAxisSpacing: noteCards ? 14 : 32,
           children: items.map((item) {
             if (resource == 'fotos') {
               return _PhotoCard(
@@ -633,6 +644,14 @@ class _ResourceGrid extends StatelessWidget {
             }
             if (resource == 'cartas') {
               return _LetterCard(
+                item: item,
+                onEdit: onEdit,
+                onDelete: onDelete,
+                onView: onView,
+              );
+            }
+            if (resource == 'notas') {
+              return _NoteCard(
                 item: item,
                 onEdit: onEdit,
                 onDelete: onDelete,
@@ -1013,6 +1032,116 @@ class _LetterCard extends StatelessWidget {
   }
 }
 
+class _NoteCard extends StatelessWidget {
+  const _NoteCard({
+    required this.item,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onView,
+  });
+
+  final FamilyItem item;
+  final ValueChanged<FamilyItem> onEdit;
+  final ValueChanged<FamilyItem> onDelete;
+  final ValueChanged<FamilyItem> onView;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final preview = item.subtitle.trim();
+    return LovePanel(
+      padding: EdgeInsets.zero,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Material(
+          color: palette.card,
+          child: InkWell(
+            onTap: () => onView(item),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 8, 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: palette.primary.withValues(alpha: .10),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.sticky_note_2_outlined,
+                          color: palette.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          item.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: palette.foreground,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            height: 1.08,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: Text(
+                      preview.isEmpty ? 'Nota sem conteúdo.' : preview,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: palette.muted,
+                        fontSize: 13,
+                        height: 1.32,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Abrir nota',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: palette.primary,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => onEdit(item),
+                        icon: const Icon(Icons.edit_outlined),
+                        tooltip: 'Editar',
+                      ),
+                      IconButton(
+                        onPressed: () => onDelete(item),
+                        icon: const Icon(Icons.delete_outline),
+                        tooltip: 'Excluir',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _PhotoCard extends StatelessWidget {
   const _PhotoCard(
       {required this.item,
@@ -1176,13 +1305,17 @@ class _ResourceDialogState extends State<ResourceDialog> {
             title: widget.initial == null
                 ? 'Novo item em ${widget.title}'
                 : 'Editar ${widget.title}',
-            subtitle: 'Preencha as informações e salve a lembrança.',
+            subtitle: widget.resource == 'notas'
+                ? 'Preencha as informações e salve a nota.'
+                : 'Preencha as informações e salve a lembrança.',
             icon: _resourceIcon(widget.resource),
           ),
           const SizedBox(height: 16),
           TextField(
               controller: title,
-              decoration: const InputDecoration(labelText: 'Título ou URL'),
+              decoration: InputDecoration(
+                  labelText:
+                      widget.resource == 'fotos' ? 'Título ou URL' : 'Título'),
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _save()),
           const SizedBox(height: 10),
@@ -1190,16 +1323,26 @@ class _ResourceDialogState extends State<ResourceDialog> {
             controller: subtitle,
             decoration: InputDecoration(
               labelText:
-                  widget.resource == 'cartas' ? 'Carta' : 'Texto / artista',
+                  widget.resource == 'cartas' || widget.resource == 'notas'
+                      ? 'Conteúdo'
+                      : 'Texto / artista',
             ),
-            minLines: widget.resource == 'cartas' ? 7 : 1,
-            maxLines: widget.resource == 'cartas' ? 12 : 1,
-            textInputAction: widget.resource == 'cartas'
-                ? TextInputAction.newline
-                : TextInputAction.done,
-            onSubmitted: widget.resource == 'cartas' ? null : (_) => _save(),
+            minLines: widget.resource == 'cartas' || widget.resource == 'notas'
+                ? 7
+                : 1,
+            maxLines: widget.resource == 'cartas' || widget.resource == 'notas'
+                ? 12
+                : 1,
+            textInputAction:
+                widget.resource == 'cartas' || widget.resource == 'notas'
+                    ? TextInputAction.newline
+                    : TextInputAction.done,
+            onSubmitted:
+                widget.resource == 'cartas' || widget.resource == 'notas'
+                    ? null
+                    : (_) => _save(),
           ),
-          if (widget.resource != 'cartas') ...[
+          if (widget.resource != 'cartas' && widget.resource != 'notas') ...[
             const SizedBox(height: 10),
             TextField(
                 controller: extra,
@@ -1229,6 +1372,7 @@ class _ResourceDialogState extends State<ResourceDialog> {
             'momento': 'Especial',
           },
         'cartas' => {'titulo': title.text, 'conteudo': subtitle.text},
+        'notas' => {'titulo': title.text, 'conteudo': subtitle.text},
         'fotos' => {
             'url': title.text,
             'texto': subtitle.text,
@@ -1525,6 +1669,86 @@ class _LetterReader extends StatelessWidget {
   }
 }
 
+class _NoteReader extends StatelessWidget {
+  const _NoteReader({required this.item});
+
+  final FamilyItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final date = item.data['data']?.toString().split('T').first ?? '';
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    return Dialog(
+      insetPadding: const EdgeInsets.all(18),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 900,
+          maxHeight: screenHeight * .90,
+        ),
+        child: SingleChildScrollView(
+          child: LovePanel(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.sticky_note_2_outlined, color: palette.primary),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Nota',
+                        style: TextStyle(
+                          color: palette.primary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    if (date.isNotEmpty)
+                      Text(
+                        date,
+                        style: TextStyle(
+                          color: palette.muted,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  item.title,
+                  style: TextStyle(
+                    color: palette.foreground,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w900,
+                    height: 1.12,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Divider(color: palette.border),
+                const SizedBox(height: 14),
+                Text(
+                  item.subtitle.isEmpty ? 'Nota sem conteúdo.' : item.subtitle,
+                  style: TextStyle(
+                    color: palette.foreground,
+                    fontSize: 16,
+                    height: 1.62,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _EnvelopePainter extends CustomPainter {
   const _EnvelopePainter({required this.color, required this.lineColor});
 
@@ -1666,6 +1890,7 @@ String _titleFor(String resource, String fallback) {
   return switch (resource) {
     'musicas' => 'Playlist do Nosso Amor',
     'cartas' => 'Cartas de Amor',
+    'notas' => 'Notas',
     'fotos' => 'Nossa Galeria de Memórias',
     _ => fallback,
   };
@@ -1684,6 +1909,8 @@ String _subtitleFor(String resource) {
       'Cada música conta uma história nossa. Uma melodia que nos faz sorrir, dançar e reviver momentos especiais do nosso amor.',
     'cartas' =>
       'Um espaço especial onde guardo todas as minhas declarações de amor para você. Cada carta é um pedacinho do meu coração transformado em palavras.',
+    'notas' =>
+      'Notas livres para guardar ideias, lembretes e detalhes importantes da família.',
     _ => '',
   };
 }
@@ -1692,6 +1919,7 @@ String _actionLabelFor(String resource) {
   return switch (resource) {
     'musicas' => 'Adicionar Nova Música',
     'cartas' => 'Escrever Nova Carta',
+    'notas' => 'Nova Nota',
     'fotos' => 'Adicionar Memória',
     _ => 'Adicionar',
   };
@@ -1708,6 +1936,7 @@ IconData _resourceIcon(String resource) {
   return switch (resource) {
     'musicas' => Icons.music_note_outlined,
     'cartas' => Icons.card_giftcard_outlined,
+    'notas' => Icons.sticky_note_2_outlined,
     'fotos' => Icons.photo_library_outlined,
     _ => Icons.favorite_outline,
   };
@@ -1717,6 +1946,7 @@ String _resourceCountLabel(String resource) {
   return switch (resource) {
     'musicas' => 'Músicas',
     'cartas' => 'Cartas',
+    'notas' => 'Notas',
     'fotos' => 'Memórias',
     _ => 'Itens',
   };
