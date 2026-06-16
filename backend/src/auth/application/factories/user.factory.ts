@@ -3,9 +3,9 @@ import { UpdateUserDto } from '../../interfaces/dto/user.dto';
 
 export class UserUpdateFactory implements Factory<
   UpdateUserDto,
-  UpdateUserDto
+  UpdateUserDto & { passwordHash?: string }
 > {
-  create(input: UpdateUserDto): UpdateUserDto {
+  create(input: UpdateUserDto): UpdateUserDto & { passwordHash?: string } {
     return {
       name: input.name?.trim(),
       role: input.role,

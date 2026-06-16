@@ -1081,6 +1081,11 @@ class _UsersAdminTab extends StatelessWidget {
                     tooltip: 'Editar',
                   ),
                   IconButton(
+                    onPressed: () => onEdit(user),
+                    icon: const Icon(Icons.lock_reset_outlined),
+                    tooltip: 'Alterar senha',
+                  ),
+                  IconButton(
                     onPressed: () => onDelete(user),
                     icon: const Icon(Icons.delete_outline),
                     tooltip: 'Remover',
@@ -2132,14 +2137,20 @@ class _UserSheet extends StatefulWidget {
 
 class _UserSheetState extends State<_UserSheet> {
   late final TextEditingController name;
+  late final TextEditingController password;
+  late final TextEditingController confirmPassword;
   late String role;
   late Set<String> access;
   bool saving = false;
+  bool obscurePassword = true;
+  String? errorText;
 
   @override
   void initState() {
     super.initState();
     name = TextEditingController(text: widget.user.name ?? '');
+    password = TextEditingController();
+    confirmPassword = TextEditingController();
     role =
         appUserRoles.contains(widget.user.role) ? widget.user.role : 'friends';
     access = widget.user.access.toSet();
@@ -2148,18 +2159,35 @@ class _UserSheetState extends State<_UserSheet> {
   @override
   void dispose() {
     name.dispose();
+    password.dispose();
+    confirmPassword.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
+    final nextPassword = password.text.trim();
+    if (nextPassword.isNotEmpty && nextPassword.length < 8) {
+      setState(() => errorText = 'A senha deve ter pelo menos 8 caracteres.');
+      return;
+    }
+    if (nextPassword != confirmPassword.text.trim()) {
+      setState(() => errorText = 'A confirmação da senha não confere.');
+      return;
+    }
     setState(() => saving = true);
     try {
-      await widget.onSave({
+      final data = <String, dynamic>{
         'name': name.text,
         'role': role,
         'access': access.toList(),
-      });
+      };
+      if (nextPassword.isNotEmpty) data['password'] = nextPassword;
+      await widget.onSave(data);
       if (mounted) Navigator.pop(context);
+    } catch (error) {
+      if (mounted) {
+        setState(() => errorText = _friendlyError(error));
+      }
     } finally {
       if (mounted) setState(() => saving = false);
     }
@@ -2175,7 +2203,7 @@ class _UserSheetState extends State<_UserSheet> {
         children: [
           const AppSheetHeader(
             title: 'Editar usuário',
-            subtitle: 'Ajuste o nome e o nível de acesso desta conta.',
+            subtitle: 'Ajuste o nome, acesso e senha desta conta.',
             icon: Icons.person_outline,
           ),
           const SizedBox(height: 14),
@@ -2187,6 +2215,41 @@ class _UserSheetState extends State<_UserSheet> {
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _save(),
           ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: password,
+            obscureText: obscurePassword,
+            decoration: InputDecoration(
+              labelText: 'Nova senha',
+              suffixIcon: IconButton(
+                onPressed: () =>
+                    setState(() => obscurePassword = !obscurePassword),
+                icon: Icon(obscurePassword
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined),
+                tooltip: obscurePassword ? 'Mostrar senha' : 'Ocultar senha',
+              ),
+            ),
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: confirmPassword,
+            obscureText: obscurePassword,
+            decoration: const InputDecoration(labelText: 'Confirmar senha'),
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _save(),
+          ),
+          if (errorText != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              errorText!,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,

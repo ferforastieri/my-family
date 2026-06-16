@@ -48,6 +48,7 @@ export class UsersGateway {
       name: body.name,
       role: body.role,
       access: body.access,
+      password: body.password,
     });
     if (row) this.server.emit('users.updated', row);
     return row ? { message: 'Usuário atualizado.', ...row } : row;
