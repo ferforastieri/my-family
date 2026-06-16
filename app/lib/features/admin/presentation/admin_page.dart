@@ -677,6 +677,7 @@ const _accessOptions = [
   _UserOption('cartas', 'Cartas de Amor', Icons.card_giftcard_outlined),
   _UserOption('jogos', 'Jogos', Icons.sports_esports_outlined),
   _UserOption('listas', 'Listas', Icons.checklist_outlined),
+  _UserOption('notas', 'Notas', Icons.sticky_note_2_outlined),
   _UserOption('localizacao', 'Localização', Icons.location_on_outlined),
   _UserOption('chat', 'Chat', Icons.chat_bubble_outline),
   _UserOption('nossaHistoria', 'Nossa Jornada', Icons.auto_stories_outlined),
@@ -1611,9 +1612,9 @@ class _HomeSettingsAdminTab extends StatelessWidget {
       children: [
         _AdminToolbar(
           title: 'Cards da Home',
-          subtitle: 'Configure os três cards principais exibidos na Home.',
+          subtitle: 'Configure ordem, texto e contagem dos cards da Home.',
           action: AppButton(
-            onPressed: events.length == 3 ? onEdit : null,
+            onPressed: onEdit,
             label: 'Editar cards',
             icon: Icons.dashboard_customize_outlined,
           ),
@@ -1629,7 +1630,8 @@ class _HomeSettingsAdminTab extends StatelessWidget {
               return _AdminTile(
                 icon: _homeEventIcon(index),
                 title: event.title,
-                subtitle: '${_formatAdminDate(event.date)} • ${event.message}',
+                subtitle:
+                    '${_formatAdminDate(event.date)} • ${_homeCountDirectionLabel(event.countDirection)} • ${event.message}',
               );
             },
           ),
@@ -1818,6 +1820,12 @@ IconData _homeEventIcon(int index) {
   };
 }
 
+String _homeCountDirectionLabel(HomeCountDirection direction) {
+  return direction == HomeCountDirection.backward
+      ? 'Conta para trás'
+      : 'Conta para frente';
+}
+
 class _AdminListSkeleton extends StatelessWidget {
   const _AdminListSkeleton();
 
@@ -1950,43 +1958,28 @@ class _HomeSettingsSheet extends StatefulWidget {
 }
 
 class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
-  late final List<TextEditingController> titles;
-  late final List<TextEditingController> icons;
-  late final List<TextEditingController> messages;
-  late final List<DateTime?> dates;
+  late final List<_HomeEventDraft> drafts;
   bool saving = false;
   String? errorText;
 
   @override
   void initState() {
     super.initState();
-    titles = widget.events
-        .map((event) => TextEditingController(text: event.title))
-        .toList();
-    icons = widget.events
-        .map((event) => TextEditingController(text: event.icon))
-        .toList();
-    messages = widget.events
-        .map((event) => TextEditingController(text: event.message))
-        .toList();
-    dates = widget.events.map<DateTime?>((event) => event.date).toList();
+    drafts = widget.events.map(_HomeEventDraft.fromEvent).toList();
+    if (drafts.isEmpty) drafts.add(_HomeEventDraft.empty());
   }
 
   @override
   void dispose() {
-    for (final controller in [...titles, ...icons, ...messages]) {
-      controller.dispose();
+    for (final draft in drafts) {
+      draft.dispose();
     }
     super.dispose();
   }
 
   Future<void> _save() async {
-    if (dates.length != 3 ||
-        titles.any((controller) => controller.text.trim().isEmpty) ||
-        icons.any((controller) => controller.text.trim().isEmpty) ||
-        messages.any((controller) => controller.text.trim().isEmpty) ||
-        dates.any((date) => date == null)) {
-      setState(() => errorText = 'Preencha todos os campos dos três cards.');
+    if (drafts.any((draft) => !draft.isValid)) {
+      setState(() => errorText = 'Preencha todos os campos dos cards.');
       return;
     }
     setState(() {
@@ -1995,12 +1988,13 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
     });
     try {
       final events = List.generate(
-        widget.events.length,
+        drafts.length,
         (index) => HomeEventConfig(
-          title: titles[index].text.trim(),
-          icon: icons[index].text.trim(),
-          date: dates[index]!,
-          message: messages[index].text.trim(),
+          title: drafts[index].title.text.trim(),
+          icon: drafts[index].icon.text.trim(),
+          date: drafts[index].date!,
+          message: drafts[index].message.text.trim(),
+          countDirection: drafts[index].countDirection,
         ),
       );
       await widget.onSave(events);
@@ -2010,6 +2004,34 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
     } finally {
       if (mounted) setState(() => saving = false);
     }
+  }
+
+  void _addCard() {
+    setState(() {
+      drafts.add(_HomeEventDraft.empty());
+      errorText = null;
+    });
+  }
+
+  void _removeCard(int index) {
+    if (drafts.length == 1) {
+      setState(() => errorText = 'Mantenha pelo menos um card na Home.');
+      return;
+    }
+    setState(() {
+      final removed = drafts.removeAt(index);
+      removed.dispose();
+      errorText = null;
+    });
+  }
+
+  void _moveCard(int index, int offset) {
+    final target = index + offset;
+    if (target < 0 || target >= drafts.length) return;
+    setState(() {
+      final draft = drafts.removeAt(index);
+      drafts.insert(target, draft);
+    });
   }
 
   @override
@@ -2023,81 +2045,153 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
         children: [
           const AppSheetHeader(
             title: 'Cards da Home',
-            subtitle: 'Ajuste título, ícone, mensagem e data de cada card.',
+            subtitle: 'Ajuste ordem, título, ícone, mensagem, data e contagem.',
             icon: Icons.dashboard_customize_outlined,
           ),
           const SizedBox(height: 18),
-          for (var index = 0; index < widget.events.length; index++) ...[
-            Row(
-              children: [
-                Container(
-                  width: 34,
-                  height: 34,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: palette.primary.withValues(alpha: .10),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    '${index + 1}',
-                    style: TextStyle(
-                      color: palette.primary,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  'Card ${index + 1}',
-                  style: TextStyle(
-                    color: palette.foreground,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ],
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(context).height * .58,
             ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                SizedBox(
-                  width: 86,
-                  child: TextField(
-                    controller: icons[index],
-                    enabled: !saving,
-                    decoration: const InputDecoration(labelText: 'Ícone'),
-                    textInputAction: TextInputAction.next,
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: drafts.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 16),
+              itemBuilder: (context, index) {
+                final draft = drafts[index];
+                return LovePanel(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 34,
+                            height: 34,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: palette.primary.withValues(alpha: .10),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${index + 1}',
+                              style: TextStyle(
+                                color: palette.primary,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Card ${index + 1}',
+                              style: TextStyle(
+                                color: palette.foreground,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: saving || index == 0
+                                ? null
+                                : () => _moveCard(index, -1),
+                            icon: const Icon(Icons.arrow_upward),
+                            tooltip: 'Subir',
+                          ),
+                          IconButton(
+                            onPressed: saving || index == drafts.length - 1
+                                ? null
+                                : () => _moveCard(index, 1),
+                            icon: const Icon(Icons.arrow_downward),
+                            tooltip: 'Descer',
+                          ),
+                          IconButton(
+                            onPressed: saving ? null : () => _removeCard(index),
+                            icon: const Icon(Icons.delete_outline),
+                            tooltip: 'Remover card',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          SizedBox(
+                            width: 86,
+                            child: TextField(
+                              controller: draft.icon,
+                              enabled: !saving,
+                              decoration:
+                                  const InputDecoration(labelText: 'Ícone'),
+                              textInputAction: TextInputAction.next,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextField(
+                              controller: draft.title,
+                              enabled: !saving,
+                              decoration:
+                                  const InputDecoration(labelText: 'Título'),
+                              textInputAction: TextInputAction.next,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: draft.message,
+                        enabled: !saving,
+                        minLines: 2,
+                        maxLines: 3,
+                        decoration:
+                            const InputDecoration(labelText: 'Mensagem'),
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 10),
+                      AppDateField(
+                        label: 'Data',
+                        value: draft.date,
+                        onChanged: saving
+                            ? (_) {}
+                            : (date) => setState(() => draft.date = date),
+                      ),
+                      const SizedBox(height: 10),
+                      SegmentedButton<HomeCountDirection>(
+                        segments: const [
+                          ButtonSegment(
+                            value: HomeCountDirection.forward,
+                            icon: Icon(Icons.trending_up),
+                            label: Text('Frente'),
+                          ),
+                          ButtonSegment(
+                            value: HomeCountDirection.backward,
+                            icon: Icon(Icons.hourglass_bottom_outlined),
+                            label: Text('Trás'),
+                          ),
+                        ],
+                        selected: {draft.countDirection},
+                        onSelectionChanged: saving
+                            ? null
+                            : (value) => setState(
+                                  () => draft.countDirection = value.first,
+                                ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    controller: titles[index],
-                    enabled: !saving,
-                    decoration: const InputDecoration(labelText: 'Título'),
-                    textInputAction: TextInputAction.next,
-                  ),
-                ),
-              ],
+                );
+              },
             ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: messages[index],
-              enabled: !saving,
-              minLines: 2,
-              maxLines: 3,
-              decoration: const InputDecoration(labelText: 'Mensagem'),
-              textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: AppButton(
+              onPressed: saving ? null : _addCard,
+              label: 'Adicionar card',
+              icon: Icons.add,
             ),
-            const SizedBox(height: 10),
-            AppDateField(
-              label: 'Data',
-              value: dates[index],
-              onChanged: saving
-                  ? (_) {}
-                  : (date) => setState(() => dates[index] = date),
-            ),
-            if (index != widget.events.length - 1) const SizedBox(height: 16),
-          ],
+          ),
           if (errorText != null) ...[
             const SizedBox(height: 12),
             Text(
@@ -2117,6 +2211,50 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
         ],
       ),
     );
+  }
+}
+
+class _HomeEventDraft {
+  _HomeEventDraft({
+    required this.title,
+    required this.icon,
+    required this.message,
+    required this.date,
+    required this.countDirection,
+  });
+
+  factory _HomeEventDraft.fromEvent(HomeEventConfig event) => _HomeEventDraft(
+        title: TextEditingController(text: event.title),
+        icon: TextEditingController(text: event.icon),
+        message: TextEditingController(text: event.message),
+        date: event.date,
+        countDirection: event.countDirection,
+      );
+
+  factory _HomeEventDraft.empty() => _HomeEventDraft(
+        title: TextEditingController(),
+        icon: TextEditingController(text: '💗'),
+        message: TextEditingController(),
+        date: DateTime.now(),
+        countDirection: HomeCountDirection.forward,
+      );
+
+  final TextEditingController title;
+  final TextEditingController icon;
+  final TextEditingController message;
+  DateTime? date;
+  HomeCountDirection countDirection;
+
+  bool get isValid =>
+      title.text.trim().isNotEmpty &&
+      icon.text.trim().isNotEmpty &&
+      message.text.trim().isNotEmpty &&
+      date != null;
+
+  void dispose() {
+    title.dispose();
+    icon.dispose();
+    message.dispose();
   }
 }
 

@@ -11,6 +11,7 @@ export type HomeEventWrite = {
   icon: string;
   date: Date;
   message: string;
+  countDirection?: 'forward' | 'backward';
 };
 
 @Injectable()

@@ -9,6 +9,7 @@ export const userAccessKeys = [
   'cartas',
   'jogos',
   'listas',
+  'notas',
   'localizacao',
   'chat',
   'nossaHistoria',

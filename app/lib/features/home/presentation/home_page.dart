@@ -56,7 +56,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> _loadSettings() async {
     try {
       final loaded = await widget.repository.getHomeSettings();
-      if (!mounted || loaded.length != 3) return;
+      if (!mounted) return;
       setState(() {
         loadError = null;
         events = loaded;
@@ -75,7 +75,7 @@ class _HomePageState extends State<HomePage> {
   void _onSettingsChanged(dynamic data) {
     if (!mounted || data is! Map) return;
     final rows = data['events'];
-    if (rows is! List || rows.length != 3) return;
+    if (rows is! List) return;
     final loaded = rows
         .map((row) => HomeEventConfig.fromJson(
               Map<String, dynamic>.from(row as Map),
@@ -102,7 +102,7 @@ class _HomePageState extends State<HomePage> {
             final content = ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.fromLTRB(
-                  18, mobile ? 16 : 10, 18, mobile ? 0 : 112),
+                  18, mobile ? 16 : 10, 18, mobile ? 0 : 340),
               children: [
                 Center(
                   child: ConstrainedBox(
@@ -124,16 +124,23 @@ class _HomePageState extends State<HomePage> {
                             else if (counters.isEmpty)
                               const _HomeCountersLoading()
                             else if (wide)
-                              GridView.count(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                crossAxisCount: 3,
-                                childAspectRatio: 1.58,
-                                crossAxisSpacing: 16,
-                                mainAxisSpacing: 14,
-                                children: counters
-                                    .map((counter) => CounterCard(counter))
-                                    .toList(),
+                              LayoutBuilder(
+                                builder: (context, gridConstraints) {
+                                  final crossAxisCount =
+                                      gridConstraints.maxWidth >= 1040 ? 3 : 2;
+                                  return GridView.count(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    crossAxisCount: crossAxisCount,
+                                    childAspectRatio: 1.58,
+                                    crossAxisSpacing: 16,
+                                    mainAxisSpacing: 14,
+                                    children: counters
+                                        .map((counter) => CounterCard(counter))
+                                        .toList(),
+                                  );
+                                },
                               )
                             else
                               Column(
@@ -401,6 +408,7 @@ class CounterInfo {
     required this.date,
     required this.message,
     required this.elapsed,
+    required this.countDirection,
   });
 
   final String title;
@@ -408,6 +416,7 @@ class CounterInfo {
   final DateTime date;
   final String message;
   final ElapsedTime elapsed;
+  final HomeCountDirection countDirection;
 }
 
 class ElapsedTime {
@@ -434,15 +443,18 @@ List<CounterInfo> _buildCounters(List<HomeEventConfig> events) {
           icon: event.icon,
           date: event.date,
           message: event.message,
-          elapsed: _elapsed(event.date),
+          elapsed: _elapsed(event.date, event.countDirection),
+          countDirection: event.countDirection,
         ),
       )
       .toList();
 }
 
-ElapsedTime _elapsed(DateTime date) {
+ElapsedTime _elapsed(DateTime date, HomeCountDirection countDirection) {
   final now = DateTime.now();
-  final diff = now.difference(date);
+  final diff = countDirection == HomeCountDirection.backward
+      ? date.difference(now)
+      : now.difference(date);
   final isFuture = diff.isNegative;
   final days = diff.inDays.abs();
   return ElapsedTime(
@@ -671,7 +683,7 @@ class CounterCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              '${info.elapsed.isFuture ? 'Faltam' : 'Já se passaram'} ${info.elapsed.totalDays} dias',
+              '${_counterPrefix(info)} ${info.elapsed.totalDays} dias',
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -705,6 +717,12 @@ class CounterCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _counterPrefix(CounterInfo info) {
+  return info.countDirection == HomeCountDirection.backward
+      ? 'Faltam'
+      : 'Já se passaram';
 }
 
 String _formatDate(DateTime date) {

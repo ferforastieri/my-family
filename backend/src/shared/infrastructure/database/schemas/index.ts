@@ -12,6 +12,7 @@ export * from './location-update.schema';
 export * from './location-place.schema';
 export * from './location-presence.schema';
 export * from './musica.schema';
+export * from './nota.schema';
 export * from './notification.schema';
 export * from './password-reset.schema';
 export * from './push-subscription.schema';
@@ -57,6 +58,7 @@ import {
   LocationPresenceSchema,
 } from './location-presence.schema';
 import { MusicaDocument, MusicaSchema } from './musica.schema';
+import { NotaDocument, NotaSchema } from './nota.schema';
 import {
   NotificationDocument,
   NotificationSchema,
@@ -95,6 +97,7 @@ export const mongoModels = [
   { name: LocationPlaceDocument.name, schema: LocationPlaceSchema },
   { name: LocationPresenceDocument.name, schema: LocationPresenceSchema },
   { name: MusicaDocument.name, schema: MusicaSchema },
+  { name: NotaDocument.name, schema: NotaSchema },
   { name: CartaDocument.name, schema: CartaSchema },
   { name: NotificationDocument.name, schema: NotificationSchema },
   { name: PushSubscriptionDocument.name, schema: PushSubscriptionSchema },
