@@ -103,8 +103,9 @@ class _AuthSheetState extends State<AuthSheet> {
       }
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      widget.toast.error(_cleanError(e));
-      if (mounted) setState(() => error = e.toString());
+      final message = authErrorMessage(e);
+      widget.toast.error(message);
+      if (mounted) setState(() => error = message);
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -122,14 +123,11 @@ class _AuthSheetState extends State<AuthSheet> {
         setState(() => error = 'Se o email existir, você receberá instruções.');
       }
     } catch (e) {
-      widget.toast.error(_cleanError(e));
-      if (mounted) setState(() => error = e.toString());
+      final message = authErrorMessage(e);
+      widget.toast.error(message);
+      if (mounted) setState(() => error = message);
     } finally {
       if (mounted) setState(() => loading = false);
     }
-  }
-
-  String _cleanError(Object error) {
-    return error.toString().replaceFirst('Exception: ', '');
   }
 }

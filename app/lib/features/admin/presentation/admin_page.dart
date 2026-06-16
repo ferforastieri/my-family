@@ -1081,11 +1081,6 @@ class _UsersAdminTab extends StatelessWidget {
                     tooltip: 'Editar',
                   ),
                   IconButton(
-                    onPressed: () => onEdit(user),
-                    icon: const Icon(Icons.lock_reset_outlined),
-                    tooltip: 'Alterar senha',
-                  ),
-                  IconButton(
                     onPressed: () => onDelete(user),
                     icon: const Icon(Icons.delete_outline),
                     tooltip: 'Remover',
