@@ -1008,7 +1008,7 @@ String _messagePreview(ChatMessage message) {
   return 'Mensagem';
 }
 
-class _MessageBubble extends StatelessWidget {
+class _MessageBubble extends StatefulWidget {
   const _MessageBubble({
     required this.message,
     required this.isMine,
@@ -1028,185 +1028,172 @@ class _MessageBubble extends StatelessWidget {
   final VoidCallback onReply;
 
   @override
+  State<_MessageBubble> createState() => _MessageBubbleState();
+}
+
+class _MessageBubbleState extends State<_MessageBubble> {
+  static const double _replyDragTrigger = 56;
+  static const double _replyDragLimit = 72;
+
+  double _dragOffset = 0;
+
+  void _handleDragUpdate(DragUpdateDetails details) {
+    if (widget.message.deletedAt != null) return;
+    final next = (_dragOffset + details.delta.dx)
+        .clamp(-_replyDragLimit, _replyDragLimit)
+        .toDouble();
+    if (next == _dragOffset) return;
+    setState(() => _dragOffset = next);
+  }
+
+  void _handleDragEnd() {
+    final shouldReply = _dragOffset.abs() >= _replyDragTrigger;
+    setState(() => _dragOffset = 0);
+    if (shouldReply) {
+      HapticFeedback.selectionClick();
+      widget.onReply();
+    }
+  }
+
+  void _handleDragCancel() {
+    if (_dragOffset == 0) return;
+    setState(() => _dragOffset = 0);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    final isSticker = message.mediaType == 'sticker';
-    final isDeleted = message.deletedAt != null;
-    final wasRead = message.readBy.any((id) => id != message.senderId);
-    final hasText = message.text?.isNotEmpty == true;
+    final isSticker = widget.message.mediaType == 'sticker';
+    final isDeleted = widget.message.deletedAt != null;
+    final wasRead =
+        widget.message.readBy.any((id) => id != widget.message.senderId);
+    final hasText = widget.message.text?.isNotEmpty == true;
     final textOnly =
-        hasText && !isDeleted && !isSticker && message.mediaUrl == null;
+        hasText && !isDeleted && !isSticker && widget.message.mediaUrl == null;
     final meta = _MessageMeta(
-      edited: message.editedAt != null,
-      time: _timeLabel(message.at),
-      isMine: isMine,
+      edited: widget.message.editedAt != null,
+      time: _timeLabel(widget.message.at),
+      isMine: widget.isMine,
       wasRead: wasRead,
     );
-    final canManage = isMine && !isDeleted;
+    final canManage = widget.isMine && !isDeleted;
+    final replyProgress =
+        (_dragOffset.abs() / _replyDragTrigger).clamp(0.0, 1.0).toDouble();
+    final replyAlignment =
+        _dragOffset < 0 ? Alignment.centerRight : Alignment.centerLeft;
     final bubble = Flexible(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: canManage && textOnly
-            ? () => _openMessageActions(context, canEdit: hasText)
-            : null,
-        onDoubleTap: canManage
-            ? () => _openMessageActions(context, canEdit: hasText)
-            : null,
-        onLongPress: () => _openMessageActions(context, canEdit: hasText),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: isSticker
-                ? Colors.transparent
-                : isMine
-                    ? palette.primary.withValues(alpha: .18)
-                    : palette.card,
-            border: Border.all(
-              color: isSticker
-                  ? Colors.transparent
-                  : isMine
-                      ? palette.primary.withValues(alpha: .24)
-                      : palette.border,
-            ),
-            borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(16),
-              topRight: const Radius.circular(16),
-              bottomLeft: Radius.circular(isMine ? 16 : 5),
-              bottomRight: Radius.circular(isMine ? 5 : 16),
-            ),
-            boxShadow: compact && !isSticker
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: .04),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
+      child: Stack(
+        alignment: replyAlignment,
+        children: [
+          if (!isDeleted)
+            Positioned.fill(
+              child: Opacity(
+                opacity: replyProgress,
+                child: Align(
+                  alignment: replyAlignment,
+                  child: Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: palette.primary.withValues(alpha: .12),
+                      shape: BoxShape.circle,
                     ),
-                  ]
-                : null,
-          ),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: compact ? 280 : 560),
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                compact ? 10 : 12,
-                compact ? 8 : 12,
-                compact ? 10 : 12,
-                compact ? 7 : 12,
+                    child: Icon(
+                      Icons.reply,
+                      size: 19,
+                      color: palette.primary,
+                    ),
+                  ),
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (!isMine)
-                    Text(
-                      message.senderName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: palette.primary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  if (!isDeleted && message.replyToMessage != null) ...[
-                    SizedBox(height: isMine ? 0 : 5),
-                    _ReplyPreview(reply: message.replyToMessage!),
-                    const SizedBox(height: 6),
-                  ],
-                  if (isDeleted)
-                    Text(
-                      'Mensagem apagada',
-                      style: TextStyle(
-                        color: palette.muted,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    )
-                  else if (isSticker && message.mediaUrl != null) ...[
-                    SizedBox(height: isMine ? 0 : 4),
-                    Text(
-                      message.mediaUrl!,
-                      style: TextStyle(fontSize: compact ? 72 : 92, height: 1),
-                    ),
-                  ] else if (message.mediaUrl != null) ...[
-                    SizedBox(height: isMine ? 0 : 6),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: InkWell(
-                        onTap: () => _openImagePreview(
-                            context, _mediaUrl(message.mediaUrl!)),
-                        child: Image.network(
-                          _mediaUrl(message.mediaUrl!),
-                          height: compact ? 180 : 220,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, progress) {
-                            if (progress == null) return child;
-                            return SizedBox(
-                              height: compact ? 180 : 220,
-                              child: const Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                            );
-                          },
-                          errorBuilder: (_, __, ___) => SizedBox(
-                            height: compact ? 120 : 150,
-                            child: const Center(
-                              child:
-                                  Icon(Icons.broken_image_outlined, size: 38),
-                            ),
+            ),
+          AnimatedSlide(
+            offset: Offset(_dragOffset / 260, 0),
+            duration: _dragOffset == 0
+                ? const Duration(milliseconds: 170)
+                : Duration.zero,
+            curve: Curves.easeOutCubic,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onHorizontalDragUpdate: _handleDragUpdate,
+              onHorizontalDragEnd: (_) => _handleDragEnd(),
+              onHorizontalDragCancel: _handleDragCancel,
+              onTap: canManage && textOnly
+                  ? () => _openMessageActions(context, canEdit: hasText)
+                  : null,
+              onDoubleTap: canManage
+                  ? () => _openMessageActions(context, canEdit: hasText)
+                  : null,
+              onLongPress: () => _openMessageActions(context, canEdit: hasText),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: isSticker
+                      ? Colors.transparent
+                      : widget.isMine
+                          ? palette.primary.withValues(alpha: .18)
+                          : palette.card,
+                  border: Border.all(
+                    color: isSticker
+                        ? Colors.transparent
+                        : widget.isMine
+                            ? palette.primary.withValues(alpha: .24)
+                            : palette.border,
+                  ),
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(16),
+                    topRight: const Radius.circular(16),
+                    bottomLeft: Radius.circular(widget.isMine ? 16 : 5),
+                    bottomRight: Radius.circular(widget.isMine ? 5 : 16),
+                  ),
+                  boxShadow: widget.compact && !isSticker
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: .04),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
                           ),
-                        ),
-                      ),
-                    ),
-                  ],
-                  if (textOnly) ...[
-                    _TextMessageLine(
-                      text: message.text!,
-                      compact: compact,
-                      meta: meta,
-                    ),
-                  ] else if (hasText) ...[
-                    SizedBox(height: message.mediaUrl == null ? 0 : 6),
-                    Text(
-                      message.text!,
-                      style: TextStyle(height: compact ? 1.28 : 1.35),
-                    ),
-                  ],
-                  if (!textOnly && !isSticker) ...[
-                    const SizedBox(height: 4),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: meta,
-                    ),
-                  ],
-                ],
+                        ]
+                      : null,
+                ),
+                child: _MessageBubbleContent(
+                  message: widget.message,
+                  isMine: widget.isMine,
+                  compact: widget.compact,
+                  isSticker: isSticker,
+                  isDeleted: isDeleted,
+                  textOnly: textOnly,
+                  hasText: hasText,
+                  meta: meta,
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
 
     final avatar = _MessageAvatar(
-      name: isMine
-          ? (currentUser?.name?.trim().isNotEmpty == true
-              ? currentUser!.name!
-              : currentUser?.email ?? message.senderName)
-          : message.senderName,
-      avatarPath: isMine ? currentUser?.avatarPath : null,
-      isMine: isMine,
-      compact: compact,
+      name: widget.isMine
+          ? (widget.currentUser?.name?.trim().isNotEmpty == true
+              ? widget.currentUser!.name!
+              : widget.currentUser?.email ?? widget.message.senderName)
+          : widget.message.senderName,
+      avatarPath: widget.isMine ? widget.currentUser?.avatarPath : null,
+      isMine: widget.isMine,
+      compact: widget.compact,
     );
 
     return Padding(
       padding: EdgeInsets.only(
-        left: compact ? 8 : 14,
-        right: compact ? 8 : 14,
-        bottom: compact ? 8 : 10,
+        left: widget.compact ? 8 : 14,
+        right: widget.compact ? 8 : 14,
+        bottom: widget.compact ? 8 : 10,
       ),
       child: Row(
         mainAxisAlignment:
-            isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
+            widget.isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
-        children: isMine
+        children: widget.isMine
             ? [
                 const Spacer(),
                 bubble,
@@ -1231,25 +1218,150 @@ class _MessageBubble extends StatelessWidget {
       context: context,
       builder: (sheetContext) => _MessageActionsSheet(
         canEdit: canEdit,
-        isMine: isMine,
+        isMine: widget.isMine,
       ),
     );
     if (action == _MessageAction.reply) {
-      onReply();
+      widget.onReply();
     } else if (action == _MessageAction.edit) {
-      onEdit();
+      widget.onEdit();
     } else if (action == _MessageAction.delete) {
-      onDelete();
+      widget.onDelete();
     } else if (action == _MessageAction.info && context.mounted) {
       showAppSheet<void>(
         context: context,
         builder: (_) => _MessageInfoSheet(
-          message: message,
-          isMine: isMine,
-          wasRead: message.readBy.any((id) => id != message.senderId),
+          message: widget.message,
+          isMine: widget.isMine,
+          wasRead:
+              widget.message.readBy.any((id) => id != widget.message.senderId),
         ),
       );
     }
+  }
+}
+
+class _MessageBubbleContent extends StatelessWidget {
+  const _MessageBubbleContent({
+    required this.message,
+    required this.isMine,
+    required this.compact,
+    required this.isSticker,
+    required this.isDeleted,
+    required this.textOnly,
+    required this.hasText,
+    required this.meta,
+  });
+
+  final ChatMessage message;
+  final bool isMine;
+  final bool compact;
+  final bool isSticker;
+  final bool isDeleted;
+  final bool textOnly;
+  final bool hasText;
+  final Widget meta;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: compact ? 280 : 560),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          compact ? 10 : 12,
+          compact ? 8 : 12,
+          compact ? 10 : 12,
+          compact ? 7 : 12,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!isMine)
+              Text(
+                message.senderName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: palette.primary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            if (!isDeleted && message.replyToMessage != null) ...[
+              SizedBox(height: isMine ? 0 : 5),
+              _ReplyPreview(reply: message.replyToMessage!),
+              const SizedBox(height: 6),
+            ],
+            if (isDeleted)
+              Text(
+                'Mensagem apagada',
+                style: TextStyle(
+                  color: palette.muted,
+                  fontStyle: FontStyle.italic,
+                ),
+              )
+            else if (isSticker && message.mediaUrl != null) ...[
+              SizedBox(height: isMine ? 0 : 4),
+              Text(
+                message.mediaUrl!,
+                style: TextStyle(fontSize: compact ? 72 : 92, height: 1),
+              ),
+            ] else if (message.mediaUrl != null) ...[
+              SizedBox(height: isMine ? 0 : 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: InkWell(
+                  onTap: () =>
+                      _openImagePreview(context, _mediaUrl(message.mediaUrl!)),
+                  child: Image.network(
+                    _mediaUrl(message.mediaUrl!),
+                    height: compact ? 180 : 220,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, progress) {
+                      if (progress == null) return child;
+                      return SizedBox(
+                        height: compact ? 180 : 220,
+                        child: const Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                      );
+                    },
+                    errorBuilder: (_, __, ___) => SizedBox(
+                      height: compact ? 120 : 150,
+                      child: const Center(
+                        child: Icon(Icons.broken_image_outlined, size: 38),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            if (textOnly) ...[
+              _TextMessageLine(
+                text: message.text!,
+                compact: compact,
+                meta: meta,
+              ),
+            ] else if (hasText) ...[
+              SizedBox(height: message.mediaUrl == null ? 0 : 6),
+              Text(
+                message.text!,
+                style: TextStyle(height: compact ? 1.28 : 1.35),
+              ),
+            ],
+            if (!textOnly && !isSticker) ...[
+              const SizedBox(height: 4),
+              Align(
+                alignment: Alignment.centerRight,
+                child: meta,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }
 

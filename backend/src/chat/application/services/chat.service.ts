@@ -173,6 +173,7 @@ export class ChatService {
         text: body.text?.trim(),
         mediaUrl: body.mediaUrl,
         mediaType: body.mediaType,
+        replyToMessageId: body.replyToMessageId,
       }),
     );
     if (body.text?.trim()) {
