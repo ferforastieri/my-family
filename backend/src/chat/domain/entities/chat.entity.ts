@@ -13,6 +13,7 @@ export interface ChatMessageEntity {
   conversationId: string;
   senderId?: string | null;
   senderName: string;
+  senderAvatarPath?: string | null;
   text?: string | null;
   mediaUrl?: string | null;
   mediaType?: 'image' | 'video' | 'sticker' | null;
@@ -28,6 +29,7 @@ export interface ChatMessageReplyEntity {
   id: string;
   senderId?: string | null;
   senderName: string;
+  senderAvatarPath?: string | null;
   text?: string | null;
   mediaUrl?: string | null;
   mediaType?: 'image' | 'video' | 'sticker' | null;

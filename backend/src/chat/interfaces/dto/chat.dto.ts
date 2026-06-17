@@ -88,6 +88,7 @@ export class ChatMessageResponseDto {
   conversationId: string;
   senderId: string | null;
   senderName: string;
+  senderAvatarPath: string | null;
   text: string | null;
   mediaUrl: string | null;
   mediaType: 'image' | 'video' | 'sticker' | null;
@@ -103,6 +104,7 @@ export class ChatMessageReplyResponseDto {
   id: string;
   senderId: string | null;
   senderName: string;
+  senderAvatarPath: string | null;
   text: string | null;
   mediaUrl: string | null;
   mediaType: 'image' | 'video' | 'sticker' | null;

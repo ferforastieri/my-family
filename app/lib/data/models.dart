@@ -240,6 +240,7 @@ class ChatMessage {
     required this.senderName,
     required this.at,
     this.senderId,
+    this.senderAvatarPath,
     this.text,
     this.mediaUrl,
     this.mediaType,
@@ -254,6 +255,7 @@ class ChatMessage {
   final String conversationId;
   final String? senderId;
   final String senderName;
+  final String? senderAvatarPath;
   final String? text;
   final String? mediaUrl;
   final String? mediaType;
@@ -269,6 +271,7 @@ class ChatMessage {
         conversationId: conversationId,
         senderId: senderId,
         senderName: senderName,
+        senderAvatarPath: senderAvatarPath,
         text: text,
         mediaUrl: mediaUrl,
         mediaType: mediaType,
@@ -285,6 +288,7 @@ class ChatMessage {
         conversationId: json['conversationId'].toString(),
         senderId: json['senderId']?.toString(),
         senderName: (json['senderName'] ?? 'Visitante').toString(),
+        senderAvatarPath: json['senderAvatarPath']?.toString(),
         text: json['text']?.toString(),
         mediaUrl: json['mediaUrl']?.toString(),
         mediaType: json['mediaType']?.toString(),
@@ -315,6 +319,7 @@ class ChatMessageReply {
     required this.id,
     required this.senderName,
     this.senderId,
+    this.senderAvatarPath,
     this.text,
     this.mediaUrl,
     this.mediaType,
@@ -323,6 +328,7 @@ class ChatMessageReply {
   final String id;
   final String? senderId;
   final String senderName;
+  final String? senderAvatarPath;
   final String? text;
   final String? mediaUrl;
   final String? mediaType;
@@ -340,6 +346,7 @@ class ChatMessageReply {
         id: json['id'].toString(),
         senderId: json['senderId']?.toString(),
         senderName: (json['senderName'] ?? 'Visitante').toString(),
+        senderAvatarPath: json['senderAvatarPath']?.toString(),
         text: json['text']?.toString(),
         mediaUrl: json['mediaUrl']?.toString(),
         mediaType: json['mediaType']?.toString(),
