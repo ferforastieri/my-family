@@ -88,6 +88,10 @@ class AppPageHeader extends StatelessWidget {
                 tooltip: 'Voltar',
               ),
               const SizedBox(width: 12),
+              if (leading != null) ...[
+                leading!,
+                const SizedBox(width: 12),
+              ],
             ] else if (!desktop) ...[
               leading ??
                   Container(
@@ -123,7 +127,7 @@ class AppPageHeader extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (!desktop && showBackButton) ...[
+                      if (!desktop && showBackButton && leading == null) ...[
                         const SizedBox(width: 8),
                         Icon(icon, color: palette.primary, size: 22),
                       ],

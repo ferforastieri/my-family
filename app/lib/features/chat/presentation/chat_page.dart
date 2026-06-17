@@ -304,10 +304,12 @@ class _ChatPageState extends State<ChatPage> {
                         title: widget.chat.active?.type == 'global'
                             ? 'Chat'
                             : widget.chat.active?.title ?? 'Chat',
-                        subtitle: widget.chat.active?.type == 'global'
-                            ? 'Conversa aberta para todos.'
-                            : 'Conversas da família.',
+                        subtitle: null,
                         icon: Icons.chat_bubble_outline,
+                        leading: _ConversationAvatar(
+                          conversation: widget.chat.active,
+                          size: 42,
+                        ),
                         actionLabel: 'Conversas',
                         actionIcon: Icons.forum_outlined,
                         onAction: _openConversationsSheet,
@@ -1178,7 +1180,8 @@ class _MessageBubbleState extends State<_MessageBubble> {
               ? widget.currentUser!.name!
               : widget.currentUser?.email ?? widget.message.senderName)
           : widget.message.senderName,
-      avatarPath: widget.isMine ? widget.currentUser?.avatarPath : null,
+      avatarPath: widget.message.senderAvatarPath ??
+          (widget.isMine ? widget.currentUser?.avatarPath : null),
       isMine: widget.isMine,
       compact: widget.compact,
     );

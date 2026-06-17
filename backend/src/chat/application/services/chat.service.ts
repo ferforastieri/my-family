@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { UserService } from '@auth/application/services/user.service';
 import type { UserEntity } from '@auth/domain/entities/user.entity';
+import type { ChatMessageEntity } from '@chat/domain/entities/chat.entity';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 import { ChatRepository } from '../../infrastructure/repositories/chat.repository';
 import { ListsService } from '../../../lists/application/services/lists.service';
@@ -135,9 +136,10 @@ export class ChatService {
       throw new ForbiddenException('Sem acesso a esta conversa.');
     }
     const page = await this.chat.listMessages(conversationId, query);
+    const items = await this.withSenderAvatars(page.items);
     return {
       ...page,
-      items: page.items.map((message) => chatMessageMapper.toDto(message)),
+      items: items.map((message) => chatMessageMapper.toDto(message)),
     };
   }
 
@@ -176,6 +178,7 @@ export class ChatService {
         replyToMessageId: body.replyToMessageId,
       }),
     );
+    const [messageWithAvatar] = await this.withSenderAvatars([message]);
     if (body.text?.trim()) {
       const listResult = await this.lists.addFromChat(body.text, user);
       if (listResult) {
@@ -206,10 +209,44 @@ export class ChatService {
       senderId: user?.id ?? '',
       senderName,
       recipientUserIds: recipients,
-      text: message.text,
-      mediaType: message.mediaType,
+      text: messageWithAvatar.text,
+      mediaType: messageWithAvatar.mediaType,
     });
-    return chatMessageMapper.toDto(message);
+    return chatMessageMapper.toDto(messageWithAvatar);
+  }
+
+  private async withSenderAvatars(messages: ChatMessageEntity[]) {
+    const userIds = [
+      ...new Set(
+        messages
+          .flatMap((message) => [
+            message.senderId,
+            message.replyToMessage?.senderId,
+          ])
+          .filter((id): id is string => typeof id === 'string' && id.length > 0),
+      ),
+    ];
+    if (userIds.length === 0) return messages;
+    const page = await this.users.list({ page: 1, limit: 100 });
+    const avatars = new Map(
+      page.items
+        .filter((user) => userIds.includes(user.id))
+        .map((user) => [user.id, user.avatarPath ?? null]),
+    );
+    return messages.map((message) => ({
+      ...message,
+      senderAvatarPath: message.senderId
+        ? avatars.get(message.senderId) ?? null
+        : null,
+      replyToMessage: message.replyToMessage
+        ? {
+            ...message.replyToMessage,
+            senderAvatarPath: message.replyToMessage.senderId
+              ? avatars.get(message.replyToMessage.senderId) ?? null
+              : null,
+          }
+        : message.replyToMessage,
+    }));
   }
 
   private async chatNotificationRecipients() {
