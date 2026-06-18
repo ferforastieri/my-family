@@ -1070,6 +1070,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
     final wasRead =
         widget.message.readBy.any((id) => id != widget.message.senderId);
     final hasText = widget.message.text?.isNotEmpty == true;
+    final hasMedia = !isSticker && widget.message.mediaUrl != null;
     final textOnly =
         hasText && !isDeleted && !isSticker && widget.message.mediaUrl == null;
     final meta = _MessageMeta(
@@ -1084,6 +1085,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
     final replyAlignment =
         _dragOffset < 0 ? Alignment.centerRight : Alignment.centerLeft;
     final bubble = Flexible(
+      fit: FlexFit.loose,
       child: Stack(
         alignment: replyAlignment,
         children: [
@@ -1165,6 +1167,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
                   isDeleted: isDeleted,
                   textOnly: textOnly,
                   hasText: hasText,
+                  hasMedia: hasMedia,
                   meta: meta,
                 ),
               ),
@@ -1198,7 +1201,6 @@ class _MessageBubbleState extends State<_MessageBubble> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: widget.isMine
             ? [
-                const Spacer(),
                 bubble,
                 const SizedBox(width: 7),
                 avatar,
@@ -1207,7 +1209,6 @@ class _MessageBubbleState extends State<_MessageBubble> {
                 avatar,
                 const SizedBox(width: 7),
                 bubble,
-                const Spacer(),
               ],
       ),
     );
@@ -1253,6 +1254,7 @@ class _MessageBubbleContent extends StatelessWidget {
     required this.isDeleted,
     required this.textOnly,
     required this.hasText,
+    required this.hasMedia,
     required this.meta,
   });
 
@@ -1263,13 +1265,16 @@ class _MessageBubbleContent extends StatelessWidget {
   final bool isDeleted;
   final bool textOnly;
   final bool hasText;
+  final bool hasMedia;
   final Widget meta;
 
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
+    final maxWidth =
+        hasMedia ? (compact ? 340.0 : 680.0) : (compact ? 330.0 : 620.0);
     return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: compact ? 280 : 560),
+      constraints: BoxConstraints(maxWidth: maxWidth),
       child: Padding(
         padding: EdgeInsets.fromLTRB(
           compact ? 10 : 12,
@@ -1319,20 +1324,20 @@ class _MessageBubbleContent extends StatelessWidget {
                       _openImagePreview(context, _mediaUrl(message.mediaUrl!)),
                   child: Image.network(
                     _mediaUrl(message.mediaUrl!),
-                    height: compact ? 180 : 220,
+                    height: compact ? 260 : 360,
                     width: double.infinity,
                     fit: BoxFit.cover,
                     loadingBuilder: (context, child, progress) {
                       if (progress == null) return child;
                       return SizedBox(
-                        height: compact ? 180 : 220,
+                        height: compact ? 260 : 360,
                         child: const Center(
                           child: CircularProgressIndicator(),
                         ),
                       );
                     },
                     errorBuilder: (_, __, ___) => SizedBox(
-                      height: compact ? 120 : 150,
+                      height: compact ? 180 : 240,
                       child: const Center(
                         child: Icon(Icons.broken_image_outlined, size: 38),
                       ),

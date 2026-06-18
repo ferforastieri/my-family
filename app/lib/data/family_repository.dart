@@ -450,29 +450,19 @@ class FamilyRepository {
         .mutate<Map<String, dynamic>>('location.places.delete', {'id': id});
   }
 
-  Future<List<HomeEventConfig>> getHomeSettings() async {
+  Future<HomeSettingsConfig> getHomeSettings() async {
     final data = await api.query<Map<String, dynamic>>('home.settings.get');
-    final events = (data['events'] as List?) ?? const [];
-    return events
-        .map((event) => HomeEventConfig.fromJson(
-              Map<String, dynamic>.from(event as Map),
-            ))
-        .toList();
+    return HomeSettingsConfig.fromJson(data);
   }
 
-  Future<List<HomeEventConfig>> updateHomeSettings(
-    List<HomeEventConfig> events,
+  Future<HomeSettingsConfig> updateHomeSettings(
+    HomeSettingsConfig settings,
   ) async {
     final data = await api.mutate<Map<String, dynamic>>(
       'home.settings.update',
-      {'events': events.map((event) => event.toJson()).toList()},
+      settings.toJson(),
     );
-    final rows = (data['events'] as List?) ?? const [];
-    return rows
-        .map((event) => HomeEventConfig.fromJson(
-              Map<String, dynamic>.from(event as Map),
-            ))
-        .toList();
+    return HomeSettingsConfig.fromJson(data);
   }
 
   PaginatedResult<T> _paginated<T>(

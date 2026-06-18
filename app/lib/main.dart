@@ -116,9 +116,13 @@ class MyFamilyApp extends StatelessWidget {
             title: 'Nossa Família',
             debugShowCheckedModeBanner: false,
             theme: buildAppTheme(color: theme.color, mode: theme.mode),
+            builder: (context, child) => _AppTextScale(
+              child: child ?? const SizedBox.shrink(),
+            ),
             home: ToastOverlay(
-                controller: toast,
-                child: const _SystemSafeArea(child: PageSkeleton(cards: 3))),
+              controller: toast,
+              child: const _SystemSafeArea(child: PageSkeleton(cards: 3)),
+            ),
           );
         }
         return MaterialApp.router(
@@ -127,12 +131,33 @@ class MyFamilyApp extends StatelessWidget {
           theme: buildAppTheme(color: theme.color, mode: theme.mode),
           routerConfig:
               buildRouter(auth, notifications, chat, theme, toast, repository),
-          builder: (context, child) => ToastOverlay(
-            controller: toast,
-            child: _SystemSafeArea(child: child ?? const SizedBox.shrink()),
+          builder: (context, child) => _AppTextScale(
+            child: ToastOverlay(
+              controller: toast,
+              child: _SystemSafeArea(child: child ?? const SizedBox.shrink()),
+            ),
           ),
         );
       },
+    );
+  }
+}
+
+class _AppTextScale extends StatelessWidget {
+  const _AppTextScale({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final textScaler = mediaQuery.textScaler.clamp(
+      minScaleFactor: .9,
+      maxScaleFactor: 1.3,
+    );
+    return MediaQuery(
+      data: mediaQuery.copyWith(textScaler: textScaler),
+      child: child,
     );
   }
 }

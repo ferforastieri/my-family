@@ -247,9 +247,10 @@ export class NotificationsService {
       try {
         await admin.messaging().send({
           token: subscription.fcmToken,
-          notification: { title, body },
           data: {
             type: 'chat',
+            title,
+            body,
             url: `/chat?conversationId=${push.conversationId}`,
             conversationId: push.conversationId,
             senderId: push.senderId,
@@ -268,6 +269,8 @@ export class NotificationsService {
           apns: {
             payload: {
               aps: {
+                alert: { title, body },
+                category: 'chat_message_actions',
                 sound: 'default',
                 threadId: `chat-${push.conversationId}`,
               },

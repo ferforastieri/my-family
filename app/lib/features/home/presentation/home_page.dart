@@ -10,6 +10,7 @@ import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/flower_garden.dart';
 import '../../../core/widgets/love_action_card.dart';
 import '../../../core/widgets/love_background.dart';
+import '../../../core/config/app_config.dart';
 import '../../../data/family_repository.dart';
 import '../../../data/models.dart';
 
@@ -31,6 +32,7 @@ class _HomePageState extends State<HomePage> {
   late Timer timer;
   late List<CounterInfo> counters;
   List<HomeEventConfig> events = [];
+  List<String> galleryImages = [];
   String? loadError;
   Offset? cursorPosition;
 
@@ -59,7 +61,8 @@ class _HomePageState extends State<HomePage> {
       if (!mounted) return;
       setState(() {
         loadError = null;
-        events = loaded;
+        events = loaded.events;
+        galleryImages = loaded.galleryImages;
         counters = _buildCounters(events);
       });
     } catch (error) {
@@ -67,6 +70,7 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         loadError = error.toString();
         events = [];
+        galleryImages = [];
         counters = const [];
       });
     }
@@ -81,8 +85,13 @@ class _HomePageState extends State<HomePage> {
               Map<String, dynamic>.from(row as Map),
             ))
         .toList();
+    final images = ((data['galleryImages'] as List?) ?? const [])
+        .map((image) => image.toString())
+        .where((image) => image.trim().isNotEmpty)
+        .toList();
     setState(() {
       events = loaded;
+      galleryImages = images;
       counters = _buildCounters(events);
     });
   }
@@ -121,9 +130,9 @@ class _HomePageState extends State<HomePage> {
                                 message: loadError!,
                                 onRetry: _loadSettings,
                               )
-                            else if (counters.isEmpty)
+                            else if (events.isEmpty && galleryImages.isEmpty)
                               const _HomeCountersLoading()
-                            else if (wide)
+                            else if (counters.isNotEmpty && wide)
                               LayoutBuilder(
                                 builder: (context, gridConstraints) {
                                   final crossAxisCount =
@@ -142,7 +151,7 @@ class _HomePageState extends State<HomePage> {
                                   );
                                 },
                               )
-                            else
+                            else if (counters.isNotEmpty)
                               Column(
                                 children: [
                                   for (var i = 0; i < counters.length; i++) ...[
@@ -152,6 +161,10 @@ class _HomePageState extends State<HomePage> {
                                   ],
                                 ],
                               ),
+                            if (galleryImages.isNotEmpty) ...[
+                              SizedBox(height: mobile ? 18 : 22),
+                              _HomePhotoCarousel(images: galleryImages),
+                            ],
                             if (mobile) ...[
                               const SizedBox(height: 4),
                               const _MobileGardenSection(),
@@ -437,6 +450,7 @@ class ElapsedTime {
 
 List<CounterInfo> _buildCounters(List<HomeEventConfig> events) {
   return events
+      .where((event) => !event.hidden)
       .map(
         (event) => CounterInfo(
           title: event.title,
@@ -448,6 +462,263 @@ List<CounterInfo> _buildCounters(List<HomeEventConfig> events) {
         ),
       )
       .toList();
+}
+
+class _HomePhotoCarousel extends StatefulWidget {
+  const _HomePhotoCarousel({required this.images});
+
+  final List<String> images;
+
+  @override
+  State<_HomePhotoCarousel> createState() => _HomePhotoCarouselState();
+}
+
+class _HomePhotoCarouselState extends State<_HomePhotoCarousel> {
+  late final PageController controller;
+  Timer? autoTimer;
+  int current = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = PageController(viewportFraction: .78);
+    autoTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted || widget.images.length < 2 || !controller.hasClients) {
+        return;
+      }
+      final next = (current + 1) % widget.images.length;
+      controller.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 620),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    autoTimer?.cancel();
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final mobile = MediaQuery.sizeOf(context).width < 760;
+    return Padding(
+      padding: EdgeInsets.only(top: mobile ? 4 : 8, bottom: mobile ? 4 : 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: palette.card.withValues(alpha: .76),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: palette.primary.withValues(alpha: .16),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: palette.primary.withValues(alpha: .10),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.auto_awesome, color: palette.primary, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Nossas fotos',
+                      style: TextStyle(
+                        color: palette.foreground,
+                        fontSize: mobile ? 17 : 19,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.photo_library_outlined,
+                      color: palette.primary,
+                      size: 18,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          SizedBox(
+            height: mobile ? 292 : 386,
+            child: PageView.builder(
+              controller: controller,
+              itemCount: widget.images.length,
+              onPageChanged: (index) => setState(() => current = index),
+              itemBuilder: (context, index) {
+                final image = widget.images[index];
+                return AnimatedBuilder(
+                  animation: controller,
+                  child: _FloatingHomePhoto(
+                    url: _homeMediaUrl(image),
+                    compact: mobile,
+                  ),
+                  builder: (context, child) {
+                    var page = current.toDouble();
+                    if (controller.hasClients &&
+                        controller.position.haveDimensions) {
+                      page = controller.page ?? page;
+                    }
+                    final distance = (page - index).abs().clamp(0.0, 1.0);
+                    final scale = 1 - distance * .10;
+                    final rotate = (index - page).clamp(-1.0, 1.0) * .045;
+                    final y = distance * (mobile ? 22 : 30);
+                    return Transform.translate(
+                      offset: Offset(0, y),
+                      child: Transform.rotate(
+                        angle: rotate,
+                        child: Transform.scale(
+                          scale: scale,
+                          child: Opacity(
+                            opacity: 1 - distance * .24,
+                            child: child,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          if (widget.images.length > 1)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  for (var i = 0; i < widget.images.length; i++)
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      width: i == current ? 18 : 7,
+                      height: 7,
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      decoration: BoxDecoration(
+                        color: i == current
+                            ? palette.primary
+                            : palette.primary.withValues(alpha: .22),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FloatingHomePhoto extends StatelessWidget {
+  const _FloatingHomePhoto({
+    required this.url,
+    required this.compact,
+  });
+
+  final String url;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 7 : 10,
+        vertical: compact ? 14 : 18,
+      ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: .22),
+              blurRadius: compact ? 22 : 34,
+              offset: Offset(0, compact ? 14 : 20),
+            ),
+            BoxShadow(
+              color: palette.primary.withValues(alpha: .20),
+              blurRadius: compact ? 28 : 42,
+              offset: const Offset(0, 0),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.network(
+                url,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
+                  return ColoredBox(
+                    color: palette.primary.withValues(alpha: .06),
+                    child: const Center(child: CircularProgressIndicator()),
+                  );
+                },
+                errorBuilder: (_, __, ___) => ColoredBox(
+                  color: palette.primary.withValues(alpha: .06),
+                  child: const Center(
+                    child: Icon(Icons.broken_image_outlined, size: 42),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.white.withValues(alpha: .10),
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: .18),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: .38),
+                        width: 1.4,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _homeMediaUrl(String url) {
+  if (url.startsWith('http')) return url;
+  return AppConfig.apiUri('/fotos/file?path=${Uri.encodeQueryComponent(url)}')
+      .toString();
 }
 
 ElapsedTime _elapsed(DateTime date, HomeCountDirection countDirection) {

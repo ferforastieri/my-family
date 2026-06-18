@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/api/query_keys.dart';
 import '../../../core/auth/auth_controller.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
@@ -44,6 +46,7 @@ class _AdminPageState extends State<AdminPage> {
   List<MiniGameConfig> miniGames = [];
   List<GameStat> stats = [];
   List<HomeEventConfig> homeEvents = [];
+  List<String> homeGalleryImages = [];
   PaginatedResult<AppUser>? usersPagination;
   PaginatedResult<AppNotification>? notificationsPagination;
   PaginatedResult<QuizQuestion>? questionsPagination;
@@ -93,7 +96,7 @@ class _AdminPageState extends State<AdminPage> {
     PaginatedResult<GameWord>? nextWords;
     PaginatedResult<MiniGameConfig>? nextMiniGames;
     PaginatedResult<GameStat>? nextStats;
-    List<HomeEventConfig>? nextHomeEvents;
+    HomeSettingsConfig? nextHomeSettings;
     await Future.wait([
       _fetchPart('usuários', () async {
         nextUsers = await widget.repository.listUsersPage(
@@ -136,7 +139,7 @@ class _AdminPageState extends State<AdminPage> {
         );
       }, errors),
       _fetchPart('datas da Home', () async {
-        nextHomeEvents = await widget.repository.getHomeSettings();
+        nextHomeSettings = await widget.repository.getHomeSettings();
       }, errors),
     ]);
     return _AdminData(
@@ -147,7 +150,7 @@ class _AdminPageState extends State<AdminPage> {
       words: nextWords,
       miniGames: nextMiniGames,
       stats: nextStats,
-      homeEvents: nextHomeEvents,
+      homeSettings: nextHomeSettings,
       loadError: errors.isEmpty ? null : errors.join(' • '),
     );
   }
@@ -236,7 +239,8 @@ class _AdminPageState extends State<AdminPage> {
     words = data.words?.items ?? const [];
     miniGames = data.miniGames?.items ?? const [];
     stats = data.stats?.items ?? const [];
-    homeEvents = data.homeEvents ?? const [];
+    homeEvents = data.homeSettings?.events ?? const [];
+    homeGalleryImages = data.homeSettings?.galleryImages ?? const [];
     loadError = data.loadError;
   }
 
@@ -304,6 +308,7 @@ class _AdminPageState extends State<AdminPage> {
         ),
       _AdminSection.home => _HomeSettingsAdminTab(
           events: homeEvents,
+          galleryImages: homeGalleryImages,
           onEdit: _openHomeSettingsSheet,
         ),
     };
@@ -314,8 +319,10 @@ class _AdminPageState extends State<AdminPage> {
       context: context,
       builder: (_) => _HomeSettingsSheet(
         events: homeEvents,
-        onSave: (events) async {
-          await widget.repository.updateHomeSettings(events);
+        galleryImages: homeGalleryImages,
+        repository: widget.repository,
+        onSave: (settings) async {
+          await widget.repository.updateHomeSettings(settings);
           widget.toast.backendSuccess(widget.repository.takeMessage());
           _invalidateAdmin();
         },
@@ -527,7 +534,7 @@ class _AdminData {
     required this.words,
     required this.miniGames,
     required this.stats,
-    required this.homeEvents,
+    required this.homeSettings,
     required this.loadError,
   });
 
@@ -538,7 +545,7 @@ class _AdminData {
   final PaginatedResult<GameWord>? words;
   final PaginatedResult<MiniGameConfig>? miniGames;
   final PaginatedResult<GameStat>? stats;
-  final List<HomeEventConfig>? homeEvents;
+  final HomeSettingsConfig? homeSettings;
   final String? loadError;
 }
 
@@ -1600,10 +1607,12 @@ class _StatsAdminTab extends StatelessWidget {
 class _HomeSettingsAdminTab extends StatelessWidget {
   const _HomeSettingsAdminTab({
     required this.events,
+    required this.galleryImages,
     required this.onEdit,
   });
 
   final List<HomeEventConfig> events;
+  final List<String> galleryImages;
   final VoidCallback onEdit;
 
   @override
@@ -1612,7 +1621,8 @@ class _HomeSettingsAdminTab extends StatelessWidget {
       children: [
         _AdminToolbar(
           title: 'Cards da Home',
-          subtitle: 'Configure ordem, texto e contagem dos cards da Home.',
+          subtitle:
+              'Configure ordem, texto, visibilidade e fotos do carrossel.',
           action: AppButton(
             onPressed: onEdit,
             label: 'Editar cards',
@@ -1627,13 +1637,24 @@ class _HomeSettingsAdminTab extends StatelessWidget {
             itemCount: events.length,
             itemBuilder: (context, index) {
               final event = events[index];
+              final status = event.hidden ? 'Oculto' : 'Visível';
               return _AdminTile(
                 icon: _homeEventIcon(index),
                 title: event.title,
                 subtitle:
-                    '${_formatAdminDate(event.date)} • ${_homeCountDirectionLabel(event.countDirection)} • ${event.message}',
+                    '$status • ${_formatAdminDate(event.date)} • ${_homeCountDirectionLabel(event.countDirection)} • ${event.message}',
               );
             },
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: Text(
+            '${galleryImages.length} foto${galleryImages.length == 1 ? '' : 's'} no carrossel',
+            style: TextStyle(
+              color: Theme.of(context).extension<AppPalette>()!.muted,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ),
       ],
@@ -1947,11 +1968,15 @@ class _EmptyAdminState extends StatelessWidget {
 class _HomeSettingsSheet extends StatefulWidget {
   const _HomeSettingsSheet({
     required this.events,
+    required this.galleryImages,
+    required this.repository,
     required this.onSave,
   });
 
   final List<HomeEventConfig> events;
-  final Future<void> Function(List<HomeEventConfig> events) onSave;
+  final List<String> galleryImages;
+  final FamilyRepository repository;
+  final Future<void> Function(HomeSettingsConfig settings) onSave;
 
   @override
   State<_HomeSettingsSheet> createState() => _HomeSettingsSheetState();
@@ -1959,7 +1984,10 @@ class _HomeSettingsSheet extends StatefulWidget {
 
 class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
   late final List<_HomeEventDraft> drafts;
+  late final List<String> galleryImages;
+  final imagePicker = ImagePicker();
   bool saving = false;
+  bool uploadingImages = false;
   String? errorText;
 
   @override
@@ -1967,6 +1995,7 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
     super.initState();
     drafts = widget.events.map(_HomeEventDraft.fromEvent).toList();
     if (drafts.isEmpty) drafts.add(_HomeEventDraft.empty());
+    galleryImages = [...widget.galleryImages];
   }
 
   @override
@@ -1995,9 +2024,15 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
           date: drafts[index].date!,
           message: drafts[index].message.text.trim(),
           countDirection: drafts[index].countDirection,
+          hidden: drafts[index].hidden,
         ),
       );
-      await widget.onSave(events);
+      await widget.onSave(
+        HomeSettingsConfig(
+          events: events,
+          galleryImages: galleryImages,
+        ),
+      );
       if (mounted) Navigator.pop(context);
     } catch (error) {
       if (mounted) setState(() => errorText = _friendlyError(error));
@@ -2031,6 +2066,33 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
     setState(() {
       final draft = drafts.removeAt(index);
       drafts.insert(target, draft);
+    });
+  }
+
+  Future<void> _addGalleryImages() async {
+    setState(() {
+      uploadingImages = true;
+      errorText = null;
+    });
+    try {
+      final files = await imagePicker.pickMultiImage(imageQuality: 86);
+      if (files.isEmpty) return;
+      for (final file in files) {
+        final path = await widget.repository.uploadPhotoFile(file);
+        galleryImages.add(path);
+      }
+      if (mounted) setState(() {});
+    } catch (error) {
+      if (mounted) setState(() => errorText = _friendlyError(error));
+    } finally {
+      if (mounted) setState(() => uploadingImages = false);
+    }
+  }
+
+  void _removeGalleryImage(int index) {
+    setState(() {
+      galleryImages.removeAt(index);
+      errorText = null;
     });
   }
 
@@ -2177,6 +2239,14 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
                                   () => draft.countDirection = value.first,
                                 ),
                       ),
+                      const SizedBox(height: 10),
+                      _AdminSwitchRow(
+                        value: draft.hidden,
+                        onChanged: saving
+                            ? (_) {}
+                            : (value) => setState(() => draft.hidden = value),
+                        label: 'Ocultar este card da Home',
+                      ),
                     ],
                   ),
                 );
@@ -2191,6 +2261,13 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
               label: 'Adicionar card',
               icon: Icons.add,
             ),
+          ),
+          const SizedBox(height: 18),
+          _HomeGalleryEditor(
+            images: galleryImages,
+            uploading: uploadingImages,
+            onAdd: saving || uploadingImages ? null : _addGalleryImages,
+            onRemove: saving || uploadingImages ? null : _removeGalleryImage,
           ),
           if (errorText != null) ...[
             const SizedBox(height: 12),
@@ -2214,6 +2291,121 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
   }
 }
 
+class _HomeGalleryEditor extends StatelessWidget {
+  const _HomeGalleryEditor({
+    required this.images,
+    required this.uploading,
+    required this.onAdd,
+    required this.onRemove,
+  });
+
+  final List<String> images;
+  final bool uploading;
+  final VoidCallback? onAdd;
+  final ValueChanged<int>? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return LovePanel(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.photo_library_outlined, color: palette.primary),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Carrossel de fotos',
+                  style: TextStyle(
+                    color: palette.foreground,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              AppButton(
+                onPressed: onAdd,
+                label: uploading ? 'Enviando...' : 'Adicionar fotos',
+                icon: Icons.add_photo_alternate_outlined,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (images.isEmpty)
+            Text(
+              'Nenhuma foto no carrossel.',
+              style: TextStyle(
+                color: palette.muted,
+                fontWeight: FontWeight.w700,
+              ),
+            )
+          else
+            SizedBox(
+              height: 104,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: images.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 10),
+                itemBuilder: (context, index) {
+                  final image = images[index];
+                  return Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.network(
+                          _adminHomeMediaUrl(image),
+                          width: 128,
+                          height: 104,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 128,
+                            height: 104,
+                            color: palette.primary.withValues(alpha: .08),
+                            child: const Icon(Icons.broken_image_outlined),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: Material(
+                          color: Colors.black.withValues(alpha: .48),
+                          shape: const CircleBorder(),
+                          child: InkWell(
+                            customBorder: const CircleBorder(),
+                            onTap: onRemove == null
+                                ? null
+                                : () => onRemove!(index),
+                            child: const Padding(
+                              padding: EdgeInsets.all(5),
+                              child: Icon(
+                                Icons.close,
+                                size: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+String _adminHomeMediaUrl(String url) {
+  if (url.startsWith('http')) return url;
+  return AppConfig.apiUri('/fotos/file?path=${Uri.encodeQueryComponent(url)}')
+      .toString();
+}
+
 class _HomeEventDraft {
   _HomeEventDraft({
     required this.title,
@@ -2221,6 +2413,7 @@ class _HomeEventDraft {
     required this.message,
     required this.date,
     required this.countDirection,
+    required this.hidden,
   });
 
   factory _HomeEventDraft.fromEvent(HomeEventConfig event) => _HomeEventDraft(
@@ -2229,6 +2422,7 @@ class _HomeEventDraft {
         message: TextEditingController(text: event.message),
         date: event.date,
         countDirection: event.countDirection,
+        hidden: event.hidden,
       );
 
   factory _HomeEventDraft.empty() => _HomeEventDraft(
@@ -2237,6 +2431,7 @@ class _HomeEventDraft {
         message: TextEditingController(),
         date: DateTime.now(),
         countDirection: HomeCountDirection.forward,
+        hidden: false,
       );
 
   final TextEditingController title;
@@ -2244,6 +2439,7 @@ class _HomeEventDraft {
   final TextEditingController message;
   DateTime? date;
   HomeCountDirection countDirection;
+  bool hidden;
 
   bool get isValid =>
       title.text.trim().isNotEmpty &&
