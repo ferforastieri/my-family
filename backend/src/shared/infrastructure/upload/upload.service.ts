@@ -3,7 +3,7 @@ import { Environment } from '@shared/infrastructure/environment/environment.modu
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
-import sharp from 'sharp';
+import sharp = require('sharp');
 
 export enum UploadContext {
   Avatar = 'avatar',

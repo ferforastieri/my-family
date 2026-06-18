@@ -1620,22 +1620,31 @@ class _HomeSettingsAdminTab extends StatelessWidget {
     return Column(
       children: [
         _AdminToolbar(
-          title: 'Cards da Home',
-          subtitle:
-              'Configure ordem, texto, visibilidade e fotos do carrossel.',
+          title: 'Home',
+          subtitle: 'Cards, visibilidade e carrossel de fotos da tela inicial.',
           action: AppButton(
             onPressed: onEdit,
-            label: 'Editar cards',
+            label: 'Editar Home',
             icon: Icons.dashboard_customize_outlined,
           ),
         ),
         Expanded(
           child: _AdminSectionBody(
             loading: false,
-            isEmpty: events.isEmpty,
-            empty: 'As datas da Home ainda não foram carregadas.',
-            itemCount: events.length,
+            isEmpty: events.isEmpty && galleryImages.isEmpty,
+            empty: 'A Home ainda não foi carregada.',
+            itemCount: events.length + 1,
             itemBuilder: (context, index) {
+              if (index == events.length) {
+                return _AdminTile(
+                  icon: Icons.auto_awesome_motion_outlined,
+                  title: 'Carrossel de fotos',
+                  subtitle:
+                      '${galleryImages.length} foto${galleryImages.length == 1 ? '' : 's'} • aparece como card flutuante na Home',
+                  trailing: _HomeGalleryThumbs(images: galleryImages),
+                  onTap: onEdit,
+                );
+              }
               final event = events[index];
               final status = event.hidden ? 'Oculto' : 'Visível';
               return _AdminTile(
@@ -1643,18 +1652,9 @@ class _HomeSettingsAdminTab extends StatelessWidget {
                 title: event.title,
                 subtitle:
                     '$status • ${_formatAdminDate(event.date)} • ${_homeCountDirectionLabel(event.countDirection)} • ${event.message}',
+                onTap: onEdit,
               );
             },
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: Text(
-            '${galleryImages.length} foto${galleryImages.length == 1 ? '' : 's'} no carrossel',
-            style: TextStyle(
-              color: Theme.of(context).extension<AppPalette>()!.muted,
-              fontWeight: FontWeight.w800,
-            ),
           ),
         ),
       ],
@@ -1805,6 +1805,71 @@ class _StatusPill extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _HomeGalleryThumbs extends StatelessWidget {
+  const _HomeGalleryThumbs({required this.images});
+
+  final List<String> images;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    if (images.isEmpty) {
+      return Container(
+        width: 74,
+        height: 42,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: palette.primary.withValues(alpha: .06),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: palette.primary.withValues(alpha: .12)),
+        ),
+        child: Icon(
+          Icons.add_photo_alternate_outlined,
+          color: palette.primary,
+          size: 22,
+        ),
+      );
+    }
+    final preview = images.take(3).toList();
+    return SizedBox(
+      width: 96,
+      height: 46,
+      child: Stack(
+        children: [
+          for (var index = 0; index < preview.length; index++)
+            Positioned(
+              left: index * 26,
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: palette.card, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: .10),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.network(
+                    _adminHomeMediaUrl(preview[index]),
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) =>
+                        const Icon(Icons.broken_image_outlined, size: 18),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
