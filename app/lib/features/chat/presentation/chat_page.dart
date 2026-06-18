@@ -716,9 +716,9 @@ class _MessagePane extends StatelessWidget {
                       reverse: true,
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: EdgeInsets.fromLTRB(
-                        compact ? 8 : 12,
+                        compact ? 4 : 8,
                         16,
-                        compact ? 8 : 12,
+                        compact ? 4 : 8,
                         16,
                       ),
                       itemCount: chat.messages.length,
@@ -1196,8 +1196,8 @@ class _MessageBubbleState extends State<_MessageBubble> {
 
     return Padding(
       padding: EdgeInsets.only(
-        left: widget.compact ? 8 : 14,
-        right: widget.compact ? 8 : 14,
+        left: widget.compact ? 4 : 8,
+        right: widget.compact ? 4 : 8,
         bottom: widget.compact ? 10 : 12,
       ),
       child: Row(

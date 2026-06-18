@@ -33,6 +33,7 @@ class _HomePageState extends State<HomePage> {
   late List<CounterInfo> counters;
   List<HomeEventConfig> events = [];
   List<String> galleryImages = [];
+  int? galleryOrder;
   String? loadError;
   Offset? cursorPosition;
 
@@ -63,6 +64,7 @@ class _HomePageState extends State<HomePage> {
         loadError = null;
         events = loaded.events;
         galleryImages = loaded.galleryImages;
+        galleryOrder = loaded.galleryOrder;
         counters = _buildCounters(events);
       });
     } catch (error) {
@@ -71,6 +73,7 @@ class _HomePageState extends State<HomePage> {
         loadError = error.toString();
         events = [];
         galleryImages = [];
+        galleryOrder = null;
         counters = const [];
       });
     }
@@ -89,9 +92,11 @@ class _HomePageState extends State<HomePage> {
         .map((image) => image.toString())
         .where((image) => image.trim().isNotEmpty)
         .toList();
+    final nextGalleryOrder = (data['galleryOrder'] as num?)?.toInt();
     setState(() {
       events = loaded;
       galleryImages = images;
+      galleryOrder = nextGalleryOrder;
       counters = _buildCounters(events);
     });
   }
@@ -119,6 +124,11 @@ class _HomePageState extends State<HomePage> {
                     child: LayoutBuilder(
                       builder: (context, constraints) {
                         final wide = constraints.maxWidth >= 760;
+                        final homeItems = _buildHomeItems(
+                          events,
+                          galleryImages,
+                          galleryOrder,
+                        );
                         return Column(
                           children: [
                             if (!mobile) ...[
@@ -130,9 +140,9 @@ class _HomePageState extends State<HomePage> {
                                 message: loadError!,
                                 onRetry: _loadSettings,
                               )
-                            else if (events.isEmpty && galleryImages.isEmpty)
+                            else if (homeItems.isEmpty)
                               const _HomeCountersLoading()
-                            else if (counters.isNotEmpty && wide)
+                            else if (wide)
                               LayoutBuilder(
                                 builder: (context, gridConstraints) {
                                   final crossAxisCount =
@@ -145,26 +155,24 @@ class _HomePageState extends State<HomePage> {
                                     childAspectRatio: 1.58,
                                     crossAxisSpacing: 16,
                                     mainAxisSpacing: 14,
-                                    children: counters
-                                        .map((counter) => CounterCard(counter))
+                                    children: homeItems
+                                        .map((item) => item.build(context))
                                         .toList(),
                                   );
                                 },
                               )
-                            else if (counters.isNotEmpty)
+                            else
                               Column(
                                 children: [
-                                  for (var i = 0; i < counters.length; i++) ...[
-                                    CounterCard(counters[i]),
-                                    if (i < counters.length - 1)
+                                  for (var i = 0;
+                                      i < homeItems.length;
+                                      i++) ...[
+                                    homeItems[i].build(context),
+                                    if (i < homeItems.length - 1)
                                       const SizedBox(height: 14),
                                   ],
                                 ],
                               ),
-                            if (galleryImages.isNotEmpty) ...[
-                              SizedBox(height: mobile ? 18 : 22),
-                              _HomePhotoCarousel(images: galleryImages),
-                            ],
                             if (mobile) ...[
                               const SizedBox(height: 4),
                               const _MobileGardenSection(),
@@ -464,6 +472,57 @@ List<CounterInfo> _buildCounters(List<HomeEventConfig> events) {
       .toList();
 }
 
+List<_HomeLayoutItem> _buildHomeItems(
+  List<HomeEventConfig> events,
+  List<String> galleryImages,
+  int? galleryOrder,
+) {
+  final items = <_HomeLayoutItem>[];
+  final normalizedGalleryOrder =
+      (galleryOrder ?? events.length).clamp(0, events.length);
+  for (var index = 0; index <= events.length; index++) {
+    if (galleryImages.isNotEmpty && index == normalizedGalleryOrder) {
+      items.add(_HomeGalleryLayoutItem(galleryImages));
+    }
+    if (index == events.length) continue;
+    final event = events[index];
+    if (event.hidden) continue;
+    items.add(_HomeCounterLayoutItem(CounterInfo(
+      title: event.title,
+      icon: event.icon,
+      date: event.date,
+      message: event.message,
+      elapsed: _elapsed(event.date, event.countDirection),
+      countDirection: event.countDirection,
+    )));
+  }
+  return items;
+}
+
+abstract class _HomeLayoutItem {
+  const _HomeLayoutItem();
+
+  Widget build(BuildContext context);
+}
+
+class _HomeCounterLayoutItem extends _HomeLayoutItem {
+  const _HomeCounterLayoutItem(this.info);
+
+  final CounterInfo info;
+
+  @override
+  Widget build(BuildContext context) => CounterCard(info);
+}
+
+class _HomeGalleryLayoutItem extends _HomeLayoutItem {
+  const _HomeGalleryLayoutItem(this.images);
+
+  final List<String> images;
+
+  @override
+  Widget build(BuildContext context) => _HomePhotoCarousel(images: images);
+}
+
 class _HomePhotoCarousel extends StatefulWidget {
   const _HomePhotoCarousel({required this.images});
 
@@ -506,120 +565,130 @@ class _HomePhotoCarouselState extends State<_HomePhotoCarousel> {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     final mobile = MediaQuery.sizeOf(context).width < 760;
-    return Padding(
-      padding: EdgeInsets.only(top: mobile ? 4 : 8, bottom: mobile ? 4 : 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Center(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: palette.card.withValues(alpha: .76),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(
-                  color: palette.primary.withValues(alpha: .16),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: palette.primary.withValues(alpha: .10),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.auto_awesome, color: palette.primary, size: 18),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Nossas fotos',
-                      style: TextStyle(
-                        color: palette.foreground,
-                        fontSize: mobile ? 17 : 19,
-                        fontWeight: FontWeight.w900,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bounded = constraints.hasBoundedHeight;
+        final photoHeight = bounded
+            ? (constraints.maxHeight - 48).clamp(150.0, 386.0)
+            : (mobile ? 292.0 : 386.0);
+        return Padding(
+          padding:
+              EdgeInsets.only(top: mobile ? 4 : 8, bottom: mobile ? 4 : 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: palette.card.withValues(alpha: .76),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: palette.primary.withValues(alpha: .16),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: palette.primary.withValues(alpha: .10),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(
-                      Icons.photo_library_outlined,
-                      color: palette.primary,
-                      size: 18,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          SizedBox(
-            height: mobile ? 292 : 386,
-            child: PageView.builder(
-              controller: controller,
-              itemCount: widget.images.length,
-              onPageChanged: (index) => setState(() => current = index),
-              itemBuilder: (context, index) {
-                final image = widget.images[index];
-                return AnimatedBuilder(
-                  animation: controller,
-                  child: _FloatingHomePhoto(
-                    url: _homeMediaUrl(image),
-                    compact: mobile,
+                    ],
                   ),
-                  builder: (context, child) {
-                    var page = current.toDouble();
-                    if (controller.hasClients &&
-                        controller.position.haveDimensions) {
-                      page = controller.page ?? page;
-                    }
-                    final distance = (page - index).abs().clamp(0.0, 1.0);
-                    final scale = 1 - distance * .10;
-                    final rotate = (index - page).clamp(-1.0, 1.0) * .045;
-                    final y = distance * (mobile ? 22 : 30);
-                    return Transform.translate(
-                      offset: Offset(0, y),
-                      child: Transform.rotate(
-                        angle: rotate,
-                        child: Transform.scale(
-                          scale: scale,
-                          child: Opacity(
-                            opacity: 1 - distance * .24,
-                            child: child,
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.auto_awesome,
+                            color: palette.primary, size: 18),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Nossas fotos',
+                          style: TextStyle(
+                            color: palette.foreground,
+                            fontSize: mobile ? 17 : 19,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.photo_library_outlined,
+                          color: palette.primary,
+                          size: 18,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: photoHeight,
+                child: PageView.builder(
+                  controller: controller,
+                  itemCount: widget.images.length,
+                  onPageChanged: (index) => setState(() => current = index),
+                  itemBuilder: (context, index) {
+                    final image = widget.images[index];
+                    return AnimatedBuilder(
+                      animation: controller,
+                      child: _FloatingHomePhoto(
+                        url: _homeMediaUrl(image),
+                        compact: mobile || bounded,
                       ),
+                      builder: (context, child) {
+                        var page = current.toDouble();
+                        if (controller.hasClients &&
+                            controller.position.haveDimensions) {
+                          page = controller.page ?? page;
+                        }
+                        final distance = (page - index).abs().clamp(0.0, 1.0);
+                        final scale = 1 - distance * .10;
+                        final rotate = (index - page).clamp(-1.0, 1.0) * .045;
+                        final y = distance * (mobile ? 22 : 30);
+                        return Transform.translate(
+                          offset: Offset(0, y),
+                          child: Transform.rotate(
+                            angle: rotate,
+                            child: Transform.scale(
+                              scale: scale,
+                              child: Opacity(
+                                opacity: 1 - distance * .24,
+                                child: child,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
-          ),
-          if (widget.images.length > 1)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  for (var i = 0; i < widget.images.length; i++)
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      width: i == current ? 18 : 7,
-                      height: 7,
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      decoration: BoxDecoration(
-                        color: i == current
-                            ? palette.primary
-                            : palette.primary.withValues(alpha: .22),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                ],
+                ),
               ),
-            ),
-        ],
-      ),
+              if (widget.images.length > 1 && !bounded)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      for (var i = 0; i < widget.images.length; i++)
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          width: i == current ? 18 : 7,
+                          height: 7,
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          decoration: BoxDecoration(
+                            color: i == current
+                                ? palette.primary
+                                : palette.primary.withValues(alpha: .22),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

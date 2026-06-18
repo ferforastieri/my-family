@@ -35,11 +35,16 @@ export class HomeSettingsService {
   async get() {
     const current = await this.repository.find();
     if (current?.events?.length) {
-      return this.toDto(current.events, current.galleryImages ?? []);
+      return this.toDto(
+        current.events,
+        current.galleryImages ?? [],
+        current.galleryOrder,
+      );
     }
     const created = await this.repository.save({
       events: defaultEvents,
       galleryImages: [],
+      galleryOrder: defaultEvents.length,
     });
     return this.toDto(created?.events ?? defaultEvents);
   }
@@ -54,6 +59,7 @@ export class HomeSettingsService {
       hidden?: boolean;
     }>;
     galleryImages?: string[];
+    galleryOrder?: number;
   }) {
     if (!Array.isArray(input?.events) || input.events.length < 1) {
       throw new BadRequestException('Informe pelo menos um card da Home.');
@@ -84,14 +90,31 @@ export class HomeSettingsService {
           .map((image) => image?.trim())
           .filter((image): image is string => !!image)
       : [];
-    const saved = await this.repository.save({ events, galleryImages });
+    const galleryOrder =
+      typeof input.galleryOrder === 'number' && Number.isFinite(input.galleryOrder)
+        ? Math.max(0, Math.min(events.length, Math.floor(input.galleryOrder)))
+        : events.length;
+    const saved = await this.repository.save({
+      events,
+      galleryImages,
+      galleryOrder,
+    });
     return this.toDto(
       saved?.events ?? events,
       saved?.galleryImages ?? galleryImages,
+      saved?.galleryOrder ?? galleryOrder,
     );
   }
 
-  private toDto(events: HomeEventWrite[], galleryImages: string[] = []) {
+  private toDto(
+    events: HomeEventWrite[],
+    galleryImages: string[] = [],
+    galleryOrder = events.length,
+  ) {
+    const normalizedGalleryOrder = Math.max(
+      0,
+      Math.min(events.length, Math.floor(galleryOrder)),
+    );
     return {
       events: events.map((event) => ({
         title: event.title,
@@ -103,6 +126,7 @@ export class HomeSettingsService {
           event.countDirection === 'backward' ? 'backward' : 'forward',
       })),
       galleryImages,
+      galleryOrder: normalizedGalleryOrder,
     };
   }
 }

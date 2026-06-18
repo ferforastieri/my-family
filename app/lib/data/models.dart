@@ -630,10 +630,12 @@ class HomeSettingsConfig {
   const HomeSettingsConfig({
     required this.events,
     this.galleryImages = const [],
+    this.galleryOrder,
   });
 
   final List<HomeEventConfig> events;
   final List<String> galleryImages;
+  final int? galleryOrder;
 
   factory HomeSettingsConfig.fromJson(Map<String, dynamic> json) {
     final events = (json['events'] as List?) ?? const [];
@@ -648,12 +650,14 @@ class HomeSettingsConfig {
           .map((image) => image.toString())
           .where((image) => image.trim().isNotEmpty)
           .toList(),
+      galleryOrder: (json['galleryOrder'] as num?)?.toInt(),
     );
   }
 
   Map<String, dynamic> toJson() => {
         'events': events.map((event) => event.toJson()).toList(),
         'galleryImages': galleryImages,
+        if (galleryOrder != null) 'galleryOrder': galleryOrder,
       };
 }
 
