@@ -18,6 +18,7 @@ export type HomeEventWrite = {
 export type HomeSettingsWrite = {
   events: HomeEventWrite[];
   galleryImages?: string[];
+  galleryOrder?: number;
 };
 
 @Injectable()

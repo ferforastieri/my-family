@@ -19,6 +19,9 @@ export class HomeSettingsDocument {
   @Prop({ type: [String], required: true, default: [] })
   galleryImages: string[];
 
+  @Prop()
+  galleryOrder?: number;
+
   createdAt?: Date;
   updatedAt?: Date;
 }

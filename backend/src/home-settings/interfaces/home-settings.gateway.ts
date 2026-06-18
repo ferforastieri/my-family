@@ -38,6 +38,7 @@ export class HomeSettingsGateway {
         hidden?: boolean;
       }>;
       galleryImages?: string[];
+      galleryOrder?: number;
     },
   ) {
     await this.session.requireAdmin(client);

@@ -47,6 +47,7 @@ class _AdminPageState extends State<AdminPage> {
   List<GameStat> stats = [];
   List<HomeEventConfig> homeEvents = [];
   List<String> homeGalleryImages = [];
+  int? homeGalleryOrder;
   PaginatedResult<AppUser>? usersPagination;
   PaginatedResult<AppNotification>? notificationsPagination;
   PaginatedResult<QuizQuestion>? questionsPagination;
@@ -241,6 +242,7 @@ class _AdminPageState extends State<AdminPage> {
     stats = data.stats?.items ?? const [];
     homeEvents = data.homeSettings?.events ?? const [];
     homeGalleryImages = data.homeSettings?.galleryImages ?? const [];
+    homeGalleryOrder = data.homeSettings?.galleryOrder;
     loadError = data.loadError;
   }
 
@@ -309,25 +311,15 @@ class _AdminPageState extends State<AdminPage> {
       _AdminSection.home => _HomeSettingsAdminTab(
           events: homeEvents,
           galleryImages: homeGalleryImages,
-          onEdit: _openHomeSettingsSheet,
+          galleryOrder: homeGalleryOrder,
+          repository: widget.repository,
+          onSave: (settings) async {
+            await widget.repository.updateHomeSettings(settings);
+            widget.toast.backendSuccess(widget.repository.takeMessage());
+            _invalidateAdmin();
+          },
         ),
     };
-  }
-
-  Future<void> _openHomeSettingsSheet() async {
-    await showAppSheet<void>(
-      context: context,
-      builder: (_) => _HomeSettingsSheet(
-        events: homeEvents,
-        galleryImages: homeGalleryImages,
-        repository: widget.repository,
-        onSave: (settings) async {
-          await widget.repository.updateHomeSettings(settings);
-          widget.toast.backendSuccess(widget.repository.takeMessage());
-          _invalidateAdmin();
-        },
-      ),
-    );
   }
 
   Widget? _pagination<T>(
@@ -980,12 +972,10 @@ class _AdminActions extends StatelessWidget {
   const _AdminActions({
     required this.children,
     this.fullWidthOnCompact = false,
-    this.alignment = WrapAlignment.end,
   });
 
   final List<Widget> children;
   final bool fullWidthOnCompact;
-  final WrapAlignment alignment;
 
   @override
   Widget build(BuildContext context) {
@@ -1006,7 +996,7 @@ class _AdminActions extends StatelessWidget {
         return Wrap(
           spacing: 8,
           runSpacing: 8,
-          alignment: compact ? WrapAlignment.start : alignment,
+          alignment: compact ? WrapAlignment.start : WrapAlignment.end,
           children: [
             for (final child in children)
               if (compact)
@@ -1185,7 +1175,7 @@ class _NotificationsAdminTab extends StatelessWidget {
           title: 'Notificações',
           subtitle: 'Crie, edite, envie push e acompanhe agendamentos.',
           action: _AdminActions(
-            alignment: WrapAlignment.start,
+            fullWidthOnCompact: true,
             children: [
               AppButton(
                 onPressed: onAdd,
@@ -1608,24 +1598,32 @@ class _HomeSettingsAdminTab extends StatelessWidget {
   const _HomeSettingsAdminTab({
     required this.events,
     required this.galleryImages,
-    required this.onEdit,
+    required this.galleryOrder,
+    required this.repository,
+    required this.onSave,
   });
 
   final List<HomeEventConfig> events;
   final List<String> galleryImages;
-  final VoidCallback onEdit;
+  final int? galleryOrder;
+  final FamilyRepository repository;
+  final Future<void> Function(HomeSettingsConfig settings) onSave;
+
+  int get _normalizedGalleryOrder =>
+      (galleryOrder ?? events.length).clamp(0, events.length);
 
   @override
   Widget build(BuildContext context) {
+    final items = _homeAdminItems();
     return Column(
       children: [
         _AdminToolbar(
           title: 'Home',
           subtitle: 'Cards, visibilidade e carrossel de fotos da tela inicial.',
           action: AppButton(
-            onPressed: onEdit,
-            label: 'Editar Home',
-            icon: Icons.dashboard_customize_outlined,
+            onPressed: () => _openEventSheet(context),
+            label: 'Criar',
+            icon: Icons.add,
           ),
         ),
         Expanded(
@@ -1633,26 +1631,83 @@ class _HomeSettingsAdminTab extends StatelessWidget {
             loading: false,
             isEmpty: events.isEmpty && galleryImages.isEmpty,
             empty: 'A Home ainda não foi carregada.',
-            itemCount: events.length + 1,
+            itemCount: items.length,
             itemBuilder: (context, index) {
-              if (index == events.length) {
+              final item = items[index];
+              if (item.isGallery) {
                 return _AdminTile(
                   icon: Icons.auto_awesome_motion_outlined,
                   title: 'Carrossel de fotos',
                   subtitle:
                       '${galleryImages.length} foto${galleryImages.length == 1 ? '' : 's'} • aparece como card flutuante na Home',
+                  actions: [
+                    IconButton(
+                      onPressed:
+                          item.order <= 0 ? null : () => _moveGallery(-1),
+                      icon: const Icon(Icons.arrow_upward),
+                      tooltip: 'Subir',
+                    ),
+                    IconButton(
+                      onPressed: item.order >= events.length
+                          ? null
+                          : () => _moveGallery(1),
+                      icon: const Icon(Icons.arrow_downward),
+                      tooltip: 'Descer',
+                    ),
+                    IconButton(
+                      onPressed: () => _openGallerySheet(context),
+                      icon: const Icon(Icons.edit_outlined),
+                      tooltip: 'Editar carrossel',
+                    ),
+                  ],
                   trailing: _HomeGalleryThumbs(images: galleryImages),
-                  onTap: onEdit,
+                  onTap: () => _openGallerySheet(context),
                 );
               }
-              final event = events[index];
+              final event = events[item.eventIndex!];
               final status = event.hidden ? 'Oculto' : 'Visível';
               return _AdminTile(
-                icon: _homeEventIcon(index),
+                icon: _homeEventIcon(item.eventIndex!),
                 title: event.title,
                 subtitle:
                     '$status • ${_formatAdminDate(event.date)} • ${_homeCountDirectionLabel(event.countDirection)} • ${event.message}',
-                onTap: onEdit,
+                actions: [
+                  IconButton(
+                    onPressed: item.order <= 0
+                        ? null
+                        : () => _moveEvent(item.eventIndex!, -1),
+                    icon: const Icon(Icons.arrow_upward),
+                    tooltip: 'Subir',
+                  ),
+                  IconButton(
+                    onPressed: item.order >= items.length - 1
+                        ? null
+                        : () => _moveEvent(item.eventIndex!, 1),
+                    icon: const Icon(Icons.arrow_downward),
+                    tooltip: 'Descer',
+                  ),
+                  IconButton(
+                    onPressed: () => _toggleHidden(item.eventIndex!),
+                    icon: Icon(event.hidden
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined),
+                    tooltip: event.hidden ? 'Mostrar' : 'Ocultar',
+                  ),
+                  IconButton(
+                    onPressed: () =>
+                        _openEventSheet(context, index: item.eventIndex),
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: 'Editar',
+                  ),
+                  IconButton(
+                    onPressed: events.length <= 1
+                        ? null
+                        : () => _deleteEvent(item.eventIndex!),
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: 'Remover',
+                  ),
+                ],
+                onTap: () => _openEventSheet(context, index: item.eventIndex),
               );
             },
           ),
@@ -1660,6 +1715,124 @@ class _HomeSettingsAdminTab extends StatelessWidget {
       ],
     );
   }
+
+  List<_HomeAdminItem> _homeAdminItems() {
+    final items = <_HomeAdminItem>[];
+    final galleryOrder = _normalizedGalleryOrder;
+    for (var index = 0; index <= events.length; index++) {
+      if (index == galleryOrder) items.add(_HomeAdminItem.gallery(index));
+      if (index < events.length) items.add(_HomeAdminItem.event(index));
+    }
+    return items;
+  }
+
+  Future<void> _save({
+    List<HomeEventConfig>? nextEvents,
+    List<String>? nextGalleryImages,
+    int? nextGalleryOrder,
+  }) {
+    final eventsToSave = nextEvents ?? events;
+    return onSave(HomeSettingsConfig(
+      events: eventsToSave,
+      galleryImages: nextGalleryImages ?? galleryImages,
+      galleryOrder: (nextGalleryOrder ?? _normalizedGalleryOrder)
+          .clamp(0, eventsToSave.length),
+    ));
+  }
+
+  Future<void> _openEventSheet(BuildContext context, {int? index}) async {
+    final current = index == null ? null : events[index];
+    final draft = current == null
+        ? _HomeEventDraft.empty()
+        : _HomeEventDraft.fromEvent(current);
+    final saved = await showAppSheet<HomeEventConfig>(
+      context: context,
+      builder: (_) => _HomeEventSheet(draft: draft, isNew: current == null),
+    );
+    draft.dispose();
+    if (saved == null) return;
+    final nextEvents = [...events];
+    var nextGalleryOrder = _normalizedGalleryOrder;
+    if (index == null) {
+      nextEvents.add(saved);
+      if (nextGalleryOrder == events.length) {
+        nextGalleryOrder = nextEvents.length;
+      }
+    } else {
+      nextEvents[index] = saved;
+    }
+    await _save(nextEvents: nextEvents, nextGalleryOrder: nextGalleryOrder);
+  }
+
+  Future<void> _openGallerySheet(BuildContext context) async {
+    final images = await showAppSheet<List<String>>(
+      context: context,
+      builder: (_) => _HomeGallerySheet(
+        images: galleryImages,
+        repository: repository,
+      ),
+    );
+    if (images == null) return;
+    await _save(nextGalleryImages: images);
+  }
+
+  Future<void> _deleteEvent(int index) async {
+    final nextEvents = [...events]..removeAt(index);
+    var nextGalleryOrder = _normalizedGalleryOrder;
+    if (index < nextGalleryOrder) nextGalleryOrder--;
+    await _save(nextEvents: nextEvents, nextGalleryOrder: nextGalleryOrder);
+  }
+
+  Future<void> _toggleHidden(int index) async {
+    final event = events[index];
+    final nextEvents = [...events];
+    nextEvents[index] = HomeEventConfig(
+      title: event.title,
+      icon: event.icon,
+      date: event.date,
+      message: event.message,
+      countDirection: event.countDirection,
+      hidden: !event.hidden,
+    );
+    await _save(nextEvents: nextEvents);
+  }
+
+  Future<void> _moveGallery(int offset) {
+    return _save(nextGalleryOrder: _normalizedGalleryOrder + offset);
+  }
+
+  Future<void> _moveEvent(int index, int offset) async {
+    final target = index + offset;
+    if (target < 0 || target >= events.length) return;
+    final nextEvents = [...events];
+    final event = nextEvents.removeAt(index);
+    nextEvents.insert(target, event);
+    var nextGalleryOrder = _normalizedGalleryOrder;
+    if (index < nextGalleryOrder && target >= nextGalleryOrder) {
+      nextGalleryOrder--;
+    } else if (index > nextGalleryOrder && target <= nextGalleryOrder) {
+      nextGalleryOrder++;
+    }
+    await _save(nextEvents: nextEvents, nextGalleryOrder: nextGalleryOrder);
+  }
+}
+
+class _HomeAdminItem {
+  const _HomeAdminItem._({
+    required this.order,
+    required this.isGallery,
+    this.eventIndex,
+  });
+
+  factory _HomeAdminItem.event(int index) =>
+      _HomeAdminItem._(order: index, isGallery: false, eventIndex: index);
+
+  factory _HomeAdminItem.gallery(int order) =>
+      _HomeAdminItem._(order: order, isGallery: true);
+
+  final int order;
+  final bool isGallery;
+  final int? eventIndex;
 }
 
 class _AdminTile extends StatelessWidget {
@@ -1682,7 +1855,18 @@ class _AdminTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    final actionBar = trailing ?? Wrap(spacing: 4, children: actions);
+    final actionBar = trailing == null
+        ? Wrap(spacing: 4, children: actions)
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              trailing!,
+              if (actions.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Wrap(spacing: 4, children: actions),
+              ],
+            ],
+          );
     final panel = LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 620 && actions.length > 2;
@@ -2026,6 +2210,227 @@ class _EmptyAdminState extends StatelessWidget {
       child: Text(message,
           textAlign: TextAlign.center,
           style: TextStyle(color: palette.muted, fontWeight: FontWeight.w700)),
+    );
+  }
+}
+
+class _HomeEventSheet extends StatefulWidget {
+  const _HomeEventSheet({
+    required this.draft,
+    required this.isNew,
+  });
+
+  final _HomeEventDraft draft;
+  final bool isNew;
+
+  @override
+  State<_HomeEventSheet> createState() => _HomeEventSheetState();
+}
+
+class _HomeEventSheetState extends State<_HomeEventSheet> {
+  String? errorText;
+
+  void _save() {
+    final draft = widget.draft;
+    if (!draft.isValid) {
+      setState(() => errorText = 'Preencha todos os campos do card.');
+      return;
+    }
+    Navigator.pop(
+      context,
+      HomeEventConfig(
+        title: draft.title.text.trim(),
+        icon: draft.icon.text.trim(),
+        date: draft.date!,
+        message: draft.message.text.trim(),
+        countDirection: draft.countDirection,
+        hidden: draft.hidden,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final draft = widget.draft;
+    return SizedBox(
+      width: 560,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppSheetHeader(
+            title: widget.isNew ? 'Criar card' : 'Editar card',
+            subtitle: 'Ajuste o conteúdo e a visibilidade deste card.',
+            icon: widget.isNew ? Icons.add : Icons.edit_outlined,
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              SizedBox(
+                width: 86,
+                child: TextField(
+                  controller: draft.icon,
+                  decoration: const InputDecoration(labelText: 'Ícone'),
+                  textInputAction: TextInputAction.next,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  controller: draft.title,
+                  decoration: const InputDecoration(labelText: 'Título'),
+                  textInputAction: TextInputAction.next,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: draft.message,
+            minLines: 2,
+            maxLines: 4,
+            decoration: const InputDecoration(labelText: 'Mensagem'),
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: 10),
+          AppDateField(
+            label: 'Data',
+            value: draft.date,
+            onChanged: (date) => setState(() => draft.date = date),
+          ),
+          const SizedBox(height: 10),
+          SegmentedButton<HomeCountDirection>(
+            segments: const [
+              ButtonSegment(
+                value: HomeCountDirection.forward,
+                icon: Icon(Icons.trending_up),
+                label: Text('Frente'),
+              ),
+              ButtonSegment(
+                value: HomeCountDirection.backward,
+                icon: Icon(Icons.hourglass_bottom_outlined),
+                label: Text('Trás'),
+              ),
+            ],
+            selected: {draft.countDirection},
+            onSelectionChanged: (value) =>
+                setState(() => draft.countDirection = value.first),
+          ),
+          const SizedBox(height: 10),
+          _AdminSwitchRow(
+            value: draft.hidden,
+            onChanged: (value) => setState(() => draft.hidden = value),
+            label: 'Ocultar este card da Home',
+          ),
+          if (errorText != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              errorText!,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+          const SizedBox(height: 20),
+          AppSheetActions(
+            onCancel: () => Navigator.pop(context),
+            onSave: _save,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeGallerySheet extends StatefulWidget {
+  const _HomeGallerySheet({
+    required this.images,
+    required this.repository,
+  });
+
+  final List<String> images;
+  final FamilyRepository repository;
+
+  @override
+  State<_HomeGallerySheet> createState() => _HomeGallerySheetState();
+}
+
+class _HomeGallerySheetState extends State<_HomeGallerySheet> {
+  late final List<String> images;
+  final imagePicker = ImagePicker();
+  bool uploading = false;
+  String? errorText;
+
+  @override
+  void initState() {
+    super.initState();
+    images = [...widget.images];
+  }
+
+  Future<void> _addImages() async {
+    setState(() {
+      uploading = true;
+      errorText = null;
+    });
+    try {
+      final files = await imagePicker.pickMultiImage(imageQuality: 86);
+      for (final file in files) {
+        images.add(await widget.repository.uploadPhotoFile(file));
+      }
+      if (mounted) setState(() {});
+    } catch (error) {
+      if (mounted) setState(() => errorText = _friendlyError(error));
+    } finally {
+      if (mounted) setState(() => uploading = false);
+    }
+  }
+
+  void _removeImage(int index) {
+    setState(() {
+      images.removeAt(index);
+      errorText = null;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 560,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const AppSheetHeader(
+            title: 'Carrossel de fotos',
+            subtitle: 'Edite as fotos do card flutuante da Home.',
+            icon: Icons.auto_awesome_motion_outlined,
+          ),
+          const SizedBox(height: 18),
+          _HomeGalleryEditor(
+            images: images,
+            uploading: uploading,
+            onAdd: uploading ? null : _addImages,
+            onRemove: uploading ? null : _removeImage,
+          ),
+          if (errorText != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              errorText!,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+          const SizedBox(height: 20),
+          AppSheetActions(
+            onCancel: uploading ? null : () => Navigator.pop(context),
+            onSave: uploading ? null : () => Navigator.pop(context, images),
+            loading: uploading,
+          ),
+        ],
+      ),
     );
   }
 }
