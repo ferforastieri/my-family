@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:ui';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -10,12 +12,23 @@ import 'package:go_router/go_router.dart';
 import '../../data/models.dart';
 import '../../firebase_options.dart';
 import '../api/socket_api_client.dart';
+import '../auth/token_store.dart';
 import '../config/app_config.dart';
 import '../socket/socket_client.dart';
 
+const _chatNotificationCategory = 'chat_message_actions';
+const _replyActionId = 'chat_reply';
+const _markReadActionId = 'chat_mark_read';
+
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  DartPluginRegistrant.ensureInitialized();
   await _initializeFirebase();
+  if (!kIsWeb && message.data['type'] == 'chat') {
+    final plugin = FlutterLocalNotificationsPlugin();
+    await _initializeLocalNotifications(plugin);
+    await _showPushNotification(plugin, message);
+  }
 }
 
 Future<FirebaseApp>? _firebaseInitialization;
@@ -42,6 +55,152 @@ Future<FirebaseApp> _initializeFirebase() {
     throw error;
   });
   return _firebaseInitialization!;
+}
+
+Future<void> _initializeLocalNotifications(
+  FlutterLocalNotificationsPlugin plugin, {
+  DidReceiveNotificationResponseCallback? onResponse,
+}) async {
+  await plugin.initialize(
+    settings: InitializationSettings(
+      android: const AndroidInitializationSettings('ic_notification'),
+      iOS: DarwinInitializationSettings(
+        notificationCategories: <DarwinNotificationCategory>[
+          DarwinNotificationCategory(
+            _chatNotificationCategory,
+            actions: <DarwinNotificationAction>[
+              DarwinNotificationAction.text(
+                _replyActionId,
+                'Responder',
+                buttonTitle: 'Enviar',
+                placeholder: 'Mensagem',
+              ),
+              DarwinNotificationAction.plain(
+                _markReadActionId,
+                'Marcar como lida',
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+    onDidReceiveNotificationResponse: onResponse,
+    onDidReceiveBackgroundNotificationResponse:
+        notificationActionBackgroundHandler,
+  );
+}
+
+@pragma('vm:entry-point')
+void notificationActionBackgroundHandler(NotificationResponse response) {
+  unawaited(_handleNotificationResponse(response));
+}
+
+Future<void> _handleNotificationResponse(NotificationResponse response) async {
+  final actionId = response.actionId;
+  if (actionId != _replyActionId && actionId != _markReadActionId) return;
+  final payload = _decodeNotificationPayload(response.payload);
+  final conversationId = payload['conversationId']?.toString();
+  if (conversationId == null || conversationId.isEmpty) return;
+
+  final token = await TokenStore().readAccessToken();
+  if (token == null || token.isEmpty) return;
+  final socket = SocketClient()..connect(token: token);
+  final api = SocketApiClient(socket);
+  try {
+    if (actionId == _replyActionId) {
+      final text = response.input?.trim();
+      if (text == null || text.isEmpty) return;
+      await api.mutate<Map<String, dynamic>>('chat.message.send', {
+        'conversationId': conversationId,
+        'text': text,
+      });
+    } else {
+      await api.mutate<Map<String, dynamic>>('chat.messages.read', {
+        'conversationId': conversationId,
+      });
+    }
+  } finally {
+    socket.disconnect();
+  }
+}
+
+Map<String, dynamic> _decodeNotificationPayload(String? payload) {
+  if (payload == null || payload.isEmpty) return const {};
+  try {
+    final decoded = jsonDecode(payload);
+    if (decoded is Map) return Map<String, dynamic>.from(decoded);
+  } catch (_) {
+    if (payload.startsWith('/')) return {'url': payload};
+  }
+  return const {};
+}
+
+String _notificationPayload(RemoteMessage message) {
+  return jsonEncode({
+    'url': message.data['url'] ?? '/',
+    if (message.data['conversationId'] != null)
+      'conversationId': message.data['conversationId'],
+  });
+}
+
+Future<void> _showPushNotification(
+  FlutterLocalNotificationsPlugin plugin,
+  RemoteMessage message,
+) async {
+  final notification = message.notification;
+  final title = notification?.title ?? message.data['title'] ?? 'Nossa Família';
+  final body = notification?.body ?? message.data['body'] ?? '';
+  final isChat = message.data['type'] == 'chat';
+  final conversationId = message.data['conversationId'];
+
+  await plugin.show(
+    id: message.messageId?.hashCode ?? Object.hash(title, body, conversationId),
+    title: title,
+    body: body,
+    payload: _notificationPayload(message),
+    notificationDetails: NotificationDetails(
+      android: AndroidNotificationDetails(
+        isChat ? 'chat_messages' : 'my_family_notifications',
+        isChat ? 'Mensagens' : 'Nossa Família',
+        icon: 'ic_notification',
+        importance: Importance.max,
+        priority: Priority.max,
+        category: isChat
+            ? AndroidNotificationCategory.message
+            : AndroidNotificationCategory.status,
+        groupKey:
+            isChat && conversationId != null ? 'chat-$conversationId' : null,
+        playSound: true,
+        enableVibration: true,
+        actions: isChat
+            ? const <AndroidNotificationAction>[
+                AndroidNotificationAction(
+                  _replyActionId,
+                  'Responder',
+                  inputs: <AndroidNotificationActionInput>[
+                    AndroidNotificationActionInput(label: 'Mensagem'),
+                  ],
+                  semanticAction: SemanticAction.reply,
+                  allowGeneratedReplies: true,
+                ),
+                AndroidNotificationAction(
+                  _markReadActionId,
+                  'Marcar como lida',
+                  semanticAction: SemanticAction.markAsRead,
+                ),
+              ]
+            : null,
+      ),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+        categoryIdentifier: isChat ? _chatNotificationCategory : null,
+        threadIdentifier:
+            isChat && conversationId != null ? 'chat-$conversationId' : null,
+      ),
+    ),
+  );
 }
 
 class NotificationsController extends ChangeNotifier {
@@ -214,13 +373,16 @@ class NotificationsController extends ChangeNotifier {
     try {
       pushError = null;
       if (!kIsWeb) {
-        await _localNotifications.initialize(
-          settings: const InitializationSettings(
-            android: AndroidInitializationSettings('ic_notification'),
-            iOS: DarwinInitializationSettings(),
-          ),
-          onDidReceiveNotificationResponse: (response) {
-            _openUrl(response.payload);
+        await _initializeLocalNotifications(
+          _localNotifications,
+          onResponse: (response) {
+            if (response.actionId == _replyActionId ||
+                response.actionId == _markReadActionId) {
+              unawaited(_handleNotificationResponse(response));
+              return;
+            }
+            final payload = _decodeNotificationPayload(response.payload);
+            _openUrl(payload['url'] ?? response.payload);
           },
         );
         final android =
@@ -253,7 +415,11 @@ class NotificationsController extends ChangeNotifier {
         final launchDetails =
             await _localNotifications.getNotificationAppLaunchDetails();
         if (launchDetails?.didNotificationLaunchApp == true) {
-          _openUrl(launchDetails?.notificationResponse?.payload);
+          final payload = _decodeNotificationPayload(
+            launchDetails?.notificationResponse?.payload,
+          );
+          _openUrl(
+              payload['url'] ?? launchDetails?.notificationResponse?.payload);
         }
       }
 
@@ -282,41 +448,11 @@ class NotificationsController extends ChangeNotifier {
       if (!_pushListenersBound) {
         FirebaseMessaging.instance.onTokenRefresh.listen(_subscribeTokenSafely);
         FirebaseMessaging.onMessage.listen((message) {
-          final notification = message.notification;
-          if (notification != null && !kIsWeb) {
-            final isChat = message.data['type'] == 'chat';
-            final conversationId = message.data['conversationId'];
-            _localNotifications.show(
-              id: message.messageId?.hashCode ?? notification.hashCode,
-              title: notification.title,
-              body: notification.body,
-              payload: message.data['url'] ?? '/',
-              notificationDetails: NotificationDetails(
-                android: AndroidNotificationDetails(
-                  isChat ? 'chat_messages' : 'my_family_notifications',
-                  isChat ? 'Mensagens' : 'Nossa Família',
-                  icon: 'ic_notification',
-                  importance: Importance.max,
-                  priority: Priority.max,
-                  category: isChat
-                      ? AndroidNotificationCategory.message
-                      : AndroidNotificationCategory.status,
-                  groupKey: isChat && conversationId != null
-                      ? 'chat-$conversationId'
-                      : null,
-                  playSound: true,
-                  enableVibration: true,
-                ),
-                iOS: DarwinNotificationDetails(
-                  presentAlert: true,
-                  presentBadge: true,
-                  presentSound: true,
-                  threadIdentifier: isChat && conversationId != null
-                      ? 'chat-$conversationId'
-                      : null,
-                ),
-              ),
-            );
+          if (!kIsWeb &&
+              (message.notification != null ||
+                  message.data['title'] != null ||
+                  message.data['body'] != null)) {
+            unawaited(_showPushNotification(_localNotifications, message));
           }
         });
         FirebaseMessaging.onMessageOpenedApp.listen(

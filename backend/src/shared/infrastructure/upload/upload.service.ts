@@ -37,7 +37,11 @@ export class UploadService {
       throw new BadRequestException('Arquivo não enviado');
     }
 
-    const ext = path.extname(file.originalname || '') || '.bin';
+    const inputExt = path.extname(file.originalname || '') || '.bin';
+    const shouldOptimizeImage =
+      (context === UploadContext.Fotos || context === UploadContext.Avatar) &&
+      isCompressibleImage(file, inputExt);
+    const ext = shouldOptimizeImage ? '.webp' : inputExt;
     const filename = `${randomUUID()}${ext}`;
     const dir = path.join(this.basePath, context);
 
@@ -45,7 +49,20 @@ export class UploadService {
     const filePath = path.join(dir, filename);
 
     const data = file.buffer ?? (await fs.readFile((file as any).path));
-    await fs.writeFile(filePath, data);
+    if (shouldOptimizeImage) {
+      await sharp(data, { animated: false })
+        .rotate()
+        .resize({
+          width: 1600,
+          height: 1600,
+          fit: 'inside',
+          withoutEnlargement: true,
+        })
+        .webp({ quality: 82, effort: 5 })
+        .toFile(filePath);
+    } else {
+      await fs.writeFile(filePath, data);
+    }
 
     const relativePath = `${context}/${filename}`;
     return { relativePath, filename };
@@ -176,4 +193,16 @@ export class UploadService {
 
 function isImagePath(relativePath: string) {
   return /\.(png|jpe?g|webp|gif)$/i.test(relativePath);
+}
+
+function isCompressibleImage(file: Express.Multer.File, ext: string) {
+  const mimetype = file.mimetype?.toLowerCase() ?? '';
+  const normalizedExt = ext.toLowerCase();
+  if (mimetype === 'image/gif' || normalizedExt === '.gif') return false;
+  return (
+    mimetype.startsWith('image/') ||
+    ['.png', '.jpg', '.jpeg', '.webp', '.heic', '.heif'].includes(
+      normalizedExt,
+    )
+  );
 }

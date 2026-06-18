@@ -8,10 +8,14 @@ if (self.firebaseConfig) {
 
   messaging.onBackgroundMessage((payload) => {
     const notification = payload.notification || {};
-    self.registration.showNotification(notification.title || 'Nossa Família', {
-      body: notification.body || '',
-      icon: '/icons/Icon-192.png',
-      data: payload.data || {},
-    });
+    const data = payload.data || {};
+    self.registration.showNotification(
+      notification.title || data.title || 'Nossa Família',
+      {
+        body: notification.body || data.body || '',
+        icon: '/icons/Icon-192.png',
+        data,
+      }
+    );
   });
 }

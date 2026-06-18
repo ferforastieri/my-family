@@ -13,7 +13,11 @@ export class HomeSettingsDocument {
     date: Date;
     message: string;
     countDirection?: 'forward' | 'backward';
+    hidden?: boolean;
   }>;
+
+  @Prop({ type: [String], required: true, default: [] })
+  galleryImages: string[];
 
   createdAt?: Date;
   updatedAt?: Date;

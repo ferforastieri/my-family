@@ -34,8 +34,13 @@ export class HomeSettingsService {
 
   async get() {
     const current = await this.repository.find();
-    if (current?.events?.length) return this.toDto(current.events);
-    const created = await this.repository.save(defaultEvents);
+    if (current?.events?.length) {
+      return this.toDto(current.events, current.galleryImages ?? []);
+    }
+    const created = await this.repository.save({
+      events: defaultEvents,
+      galleryImages: [],
+    });
     return this.toDto(created?.events ?? defaultEvents);
   }
 
@@ -46,7 +51,9 @@ export class HomeSettingsService {
       date?: string;
       message?: string;
       countDirection?: string;
+      hidden?: boolean;
     }>;
+    galleryImages?: string[];
   }) {
     if (!Array.isArray(input?.events) || input.events.length < 1) {
       throw new BadRequestException('Informe pelo menos um card da Home.');
@@ -63,22 +70,39 @@ export class HomeSettingsService {
           `Preencha corretamente o evento ${index + 1}.`,
         );
       }
-      return { title, icon, message, date, countDirection };
+      return {
+        title,
+        icon,
+        message,
+        date,
+        countDirection,
+        hidden: event.hidden === true,
+      };
     });
-    const saved = await this.repository.save(events);
-    return this.toDto(saved?.events ?? events);
+    const galleryImages = Array.isArray(input.galleryImages)
+      ? input.galleryImages
+          .map((image) => image?.trim())
+          .filter((image): image is string => !!image)
+      : [];
+    const saved = await this.repository.save({ events, galleryImages });
+    return this.toDto(
+      saved?.events ?? events,
+      saved?.galleryImages ?? galleryImages,
+    );
   }
 
-  private toDto(events: HomeEventWrite[]) {
+  private toDto(events: HomeEventWrite[], galleryImages: string[] = []) {
     return {
       events: events.map((event) => ({
         title: event.title,
         icon: event.icon,
         date: new Date(event.date).toISOString(),
         message: event.message,
+        hidden: event.hidden === true,
         countDirection:
           event.countDirection === 'backward' ? 'backward' : 'forward',
       })),
+      galleryImages,
     };
   }
 }

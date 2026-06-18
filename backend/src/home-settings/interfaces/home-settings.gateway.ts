@@ -35,7 +35,9 @@ export class HomeSettingsGateway {
         date: string;
         message: string;
         countDirection?: string;
+        hidden?: boolean;
       }>;
+      galleryImages?: string[];
     },
   ) {
     await this.session.requireAdmin(client);

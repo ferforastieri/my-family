@@ -12,6 +12,12 @@ export type HomeEventWrite = {
   date: Date;
   message: string;
   countDirection?: 'forward' | 'backward';
+  hidden?: boolean;
+};
+
+export type HomeSettingsWrite = {
+  events: HomeEventWrite[];
+  galleryImages?: string[];
 };
 
 @Injectable()
@@ -25,11 +31,11 @@ export class HomeSettingsRepository {
     return this.model.findOne({ key: 'home' }).lean().exec();
   }
 
-  async save(events: HomeEventWrite[]) {
+  async save(settings: HomeSettingsWrite) {
     return this.model
       .findOneAndUpdate(
         { key: 'home' },
-        { $set: { events } },
+        { $set: settings },
         { upsert: true, new: true, setDefaultsOnInsert: true },
       )
       .lean()

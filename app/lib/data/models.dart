@@ -594,6 +594,7 @@ class HomeEventConfig {
     required this.date,
     required this.message,
     this.countDirection = HomeCountDirection.forward,
+    this.hidden = false,
   });
 
   final String title;
@@ -601,6 +602,7 @@ class HomeEventConfig {
   final DateTime date;
   final String message;
   final HomeCountDirection countDirection;
+  final bool hidden;
 
   factory HomeEventConfig.fromJson(Map<String, dynamic> json) =>
       HomeEventConfig(
@@ -611,6 +613,7 @@ class HomeEventConfig {
         message: (json['message'] ?? '').toString(),
         countDirection:
             HomeCountDirection.fromJson(json['countDirection']?.toString()),
+        hidden: json['hidden'] == true,
       );
 
   Map<String, dynamic> toJson() => {
@@ -619,6 +622,38 @@ class HomeEventConfig {
         'date': date.toUtc().toIso8601String(),
         'message': message,
         'countDirection': countDirection.value,
+        'hidden': hidden,
+      };
+}
+
+class HomeSettingsConfig {
+  const HomeSettingsConfig({
+    required this.events,
+    this.galleryImages = const [],
+  });
+
+  final List<HomeEventConfig> events;
+  final List<String> galleryImages;
+
+  factory HomeSettingsConfig.fromJson(Map<String, dynamic> json) {
+    final events = (json['events'] as List?) ?? const [];
+    final galleryImages = (json['galleryImages'] as List?) ?? const [];
+    return HomeSettingsConfig(
+      events: events
+          .map((event) => HomeEventConfig.fromJson(
+                Map<String, dynamic>.from(event as Map),
+              ))
+          .toList(),
+      galleryImages: galleryImages
+          .map((image) => image.toString())
+          .where((image) => image.trim().isNotEmpty)
+          .toList(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'events': events.map((event) => event.toJson()).toList(),
+        'galleryImages': galleryImages,
       };
 }
 
