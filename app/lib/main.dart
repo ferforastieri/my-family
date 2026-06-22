@@ -51,13 +51,6 @@ void main() {
         repository: repository),
   ));
 
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    Future<void>(() async {
-      await notifications.requestStartupPermissions();
-      await location.requestStartupPermissions();
-    }).catchError((_) {});
-  });
-
   var protectedServicesStarted = false;
   Future<void> startProtectedServices() async {
     if (auth.user == null) return;
@@ -66,6 +59,8 @@ void main() {
       return;
     }
     protectedServicesStarted = true;
+    unawaited(notifications.requestStartupPermissions().catchError((_) {}));
+    unawaited(location.requestStartupPermissions().catchError((_) {}));
     unawaited(notifications.bootstrap().catchError((_) {}));
     unawaited(location.bootstrap().catchError((_) {}));
     unawaited(chat.bootstrap().catchError((_) {}));

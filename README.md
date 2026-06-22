@@ -1,210 +1,64 @@
-# Nossa Familia
+# Nossa Família
 
-Projeto privado de estudos para experimentar, integrar e documentar tecnologias modernas em um produto familiar completo. A ideia e construir um app real, com frontend, backend, mobile, tempo real, filas, upload, notificacoes, localizacao e deploy automatizado, sem expor dados pessoais ou credenciais no repositorio.
+SaaS para criar um espaço familiar privado com memórias, cartas, músicas,
+linha do tempo, chat, listas, jogos, notificações e localização.
 
-Este repositorio nao deve conter chaves, IPs publicos/privados, senhas, tokens, service accounts ou arquivos de ambiente reais. Todas as configuracoes sensiveis ficam em secrets do Gitea, variaveis de ambiente locais ignoradas pelo Git ou arquivos gerados no build.
+## Arquitetura
 
-## Objetivo De Estudo
+- `app/`: um único cliente Flutter para Web, Android e iOS.
+- `backend/`: API NestJS, autenticação, multi-tenancy, Stripe e páginas SEO.
+- `nginx/`: gateway público e servidor do build Flutter Web.
+- MongoDB: dados persistentes de todas as famílias, isolados por `tenantId`.
+- Redis/BullMQ: filas, notificações e trabalhos em segundo plano.
 
-O projeto foi criado para estudar na pratica:
+Não existe mais uma aplicação Next.js. As páginas que precisam de indexação são
+HTML renderizado pelo NestJS; a experiência interativa completa fica no Flutter.
 
-- Flutter Web e Android com uma base unica de UI.
-- NestJS com arquitetura por dominio.
-- Socket.IO para comunicacao em tempo real.
-- MongoDB com Mongoose.
-- Redis e BullMQ para filas.
-- Firebase Cloud Messaging para notificacoes mobile.
-- Localizacao mobile em background no Android.
-- Uploads e midias fora do repositorio.
-- Docker Compose para orquestracao local/servidor.
-- Gitea Actions para CI/CD e artefatos.
-- Controle de acesso por papeis e permissoes.
-- Boas praticas de seguranca para secrets e configuracao.
+## Rotas públicas
 
-## Stack
+- `/pt`, `/en`, `/es`: landing pages indexáveis.
+- `/app/`: cliente Flutter Web.
+- `/app/demo`: demonstração no Flutter.
+- `/app/signup`: cadastro e início da assinatura.
+- `/app/login`: autenticação.
+- `/{idioma}/familia/{slug}`: site compartilhado da família, com Open Graph e
+  `noindex` para não expor conteúdo familiar nos buscadores.
+- `/robots.txt` e `/sitemap.xml`: gerados pelo NestJS.
 
-Frontend/mobile:
+Android e iOS apresentam o mesmo fluxo público, demonstração, cadastro,
+assinatura e funcionalidades do Web.
 
-- Flutter
-- Dart
-- Firebase Messaging
-- Flutter Local Notifications
-- Geolocator
-- Flutter Map
-- Socket.IO client
+## Serviços Docker
 
-Backend:
+- `gateway`: única porta pública; encaminha `/app/` ao Flutter e o restante ao Nest.
+- `front`: build Flutter Web servido por Nginx.
+- `backend`: NestJS.
+- `mongo` e `redis`: persistência e filas.
 
-- NestJS
-- TypeScript
-- MongoDB/Mongoose
-- Redis/BullMQ
-- Socket.IO
-- Firebase Admin SDK
-- JWT
-- Helmet, CORS, rate limit e CSRF
+```bash
+docker compose build
+docker compose up -d
+```
 
-Infra:
+O endereço padrão é `http://localhost:3458`.
 
-- Docker Compose
-- Nginx
-- Gitea Actions
-- MongoDB
-- Redis
+## Configuração
 
-## Estrutura
+As variáveis sensíveis devem ficar somente no `.env` local ou no gerenciador de
+segredos do ambiente de deploy. Nunca versione credenciais.
 
-- `app/`: app Flutter Web/Android.
-- `backend/`: API NestJS.
-- `nginx/`: configuracoes nginx.
-- `.gitea/workflows/deploy.yml`: pipeline de build/deploy.
-- `docker-compose.yml`: orquestracao de backend, frontend, banco e filas.
-- `Dockerfile.backend`: imagem do backend.
-- `Dockerfile.front`: build Flutter Web e publicacao via nginx.
+Variáveis principais:
 
-## Funcionalidades
+- `MONGO_ROOT_USER`, `MONGO_ROOT_PASSWORD`, `MONGO_DB`
+- `JWT_SECRET`, `CSRF_SECRET`
+- `REDIS_URL`, `UPLOAD_HOST_PATH`
+- `API_BASE_URL`, `SOCKET_URL`, `PUBLIC_WEB_URL`
+- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID`
+- `BILLING_SUCCESS_URL`, `BILLING_CANCEL_URL`
+- variáveis Firebase usadas no Web, Android e backend
 
-- Autenticacao com JWT.
-- Perfil, avatar e configuracoes.
-- Controle de papeis: `husband`, `wife`, `children`, `friends`.
-- Admins: `husband` e `wife`.
-- Permissoes por area gerenciaveis no painel administrativo.
-- Memorias com fotos, albuns e upload.
-- Playlist.
-- Cartas de amor.
-- Listas compartilhadas.
-- Jogos.
-- Chat em tempo real.
-- Notificacoes com historico, envio imediato e agendamento.
-- Localizacao da familia com mapa, lugares e presenca.
-- Tracking Android em background usando foreground service.
-- Alertas derivados de localizacao, como bateria baixa e entrada/saida de locais.
-
-## Mudancas Recentes
-
-UI e experiencia:
-
-- Padronizacao de margens nas paginas.
-- Ajustes de alinhamento e densidade visual em administracao, listas, jogos, playlist, memorias, cartas e home.
-- Remocao de cards de estatistica em telas onde estavam poluindo a interface.
-- Uso de sheets globais para opcoes.
-- Tela de localizacao revisada sem card de pontos importantes.
-- Criacao/edicao de locais por arraste no mapa, sem digitar latitude/longitude.
-
-Permissoes e administracao:
-
-- Enum de usuario consolidado em ingles.
-- Labels em portugues no frontend.
-- `husband` e `wife` com acesso administrativo.
-- Painel administrativo para gerenciar acessos por area.
-- Correcoes de clique/layout em telas com sobreposicoes indevidas.
-
-Notificacoes:
-
-- Ajuste do fluxo mobile para inicializar Firebase no Android pelo `google-services.json`.
-- Geracao de token FCM via `FirebaseMessaging.getToken()`.
-- Envio do token para o backend por `notifications.subscribe`.
-- Backend com envio FCM imediato quando disponivel.
-- Logs e retorno de envio mais claros.
-- Tokens invalidos sao removidos somente quando o Firebase indica token invalido ou nao registrado.
-
-Localizacao:
-
-- Android passou a ter foreground service nativo para tracking em background.
-- O servico usa `FusedLocationProviderClient`.
-- O tracking envia dados para endpoint HTTP autenticado, evitando dependencia de Socket.IO em background.
-- O app continua recebendo atualizacoes em tempo real pela tela de mapa.
-- Reinicio do tracking apos boot/update quando houver configuracao salva.
-
-Backend:
-
-- Endpoint HTTP autenticado para atualizacao de localizacao mobile.
-- Emissao de evento em tempo real quando localizacao chega via HTTP.
-- Build do backend validado apos alteracoes.
-
-## Configuracao
-
-Use arquivos reais de ambiente apenas localmente e nunca versionados. O repositorio deve conter somente exemplos e nomes de variaveis.
-
-Variaveis principais do backend:
-
-- `NODE_ENV`
-- `PORT`
-- `MONGO_URI`
-- `MONGO_DB`
-- `JWT_SECRET`
-- `JWT_EXPIRES_IN`
-- `UPLOAD_PATH`
-- `CORS_ORIGIN`
-- `REDIS_URL`
-- `CSRF_SECRET`
-- `FIREBASE_SERVICE_ACCOUNT_PATH`
-- `FIREBASE_SERVICE_ACCOUNT_JSON`
-
-Variaveis principais do app/deploy:
-
-- `API_BASE_URL`
-- `SOCKET_URL`
-- `FIREBASE_API_KEY`
-- `FIREBASE_APP_ID`
-- `FIREBASE_MESSAGING_SENDER_ID`
-- `FIREBASE_PROJECT_ID`
-- `FIREBASE_AUTH_DOMAIN`
-- `FIREBASE_STORAGE_BUCKET`
-- `FIREBASE_WEB_PUSH_CERTIFICATE_KEY`
-- `GOOGLE_SERVICES_JSON`
-
-Secrets de infraestrutura:
-
-- `MONGO_ROOT_USER`
-- `MONGO_ROOT_PASSWORD`
-- `MONGO_DB`
-- `JWT_SECRET`
-- `CSRF_SECRET`
-- `UPLOAD_HOST_PATH`
-- `BACKEND_PORT`
-- `FRONT_PORT`
-- `MONGO_PORT`
-- `REDIS_PORT`
-
-## Firebase Mobile
-
-Para notificacoes Android:
-
-- `google-services.json` deve existir no build Android, mas nao deve ser commitado.
-- O service account do Firebase Admin deve ficar em secret, preferencialmente `FIREBASE_SERVICE_ACCOUNT_JSON`.
-- O app gera o token FCM no mobile e envia ao backend em `notifications.subscribe`.
-- O backend persiste tokens na colecao de inscricoes push e usa Firebase Admin para enviar.
-
-## Tracking Android
-
-O tracking em background foi implementado com servico nativo Android:
-
-- Foreground service com notificacao persistente.
-- Permissoes de localizacao e servico em primeiro plano.
-- Envio por HTTP autenticado ao backend.
-- Reinicio apos boot/update quando configurado.
-
-Limites conhecidos:
-
-- O Android pode exigir que o usuario permita localizacao "sempre".
-- Alguns aparelhos aplicam economia de bateria agressiva.
-- Se o app for forcadamente parado pelo usuario, o sistema pode impedir reinicio automatico ate o app ser aberto novamente.
-
-## Deploy
-
-O workflow do Gitea:
-
-1. Faz checkout.
-2. Valida secrets obrigatorios.
-3. Gera `.env` temporario de deploy.
-4. Injeta `google-services.json` a partir de secret.
-5. Gera APK Android release.
-6. Publica o APK como artefato.
-7. Faz build dos containers.
-8. Sobe banco, filas, backend e frontend.
-
-Nenhum valor sensivel deve ser escrito no README, em logs ou em arquivos versionados.
+Para produção, `BILLING_SUCCESS_URL` e `BILLING_CANCEL_URL` devem apontar para
+`https://seu-dominio/app/billing`.
 
 ## Desenvolvimento
 
@@ -216,38 +70,23 @@ npm install
 npm run start:dev
 ```
 
-App:
+Flutter:
 
 ```bash
 cd app
 flutter pub get
-flutter run -d chrome \
-  --dart-define=API_BASE_URL=<api-url> \
-  --dart-define=SOCKET_URL=<socket-url>
+flutter run
 ```
 
-Android:
+Validação:
 
 ```bash
-cd app
-flutter devices
-flutter run -d <device-id> \
-  --dart-define=API_BASE_URL=<api-url> \
-  --dart-define=SOCKET_URL=<socket-url>
+cd backend && npm run build && npm test -- --runInBand
+cd app && flutter analyze && flutter test
 ```
 
-## Validacao
+## Dados existentes
 
-Comandos usados durante desenvolvimento:
-
-```bash
-cd backend
-npm run build
-```
-
-```bash
-cd app
-flutter analyze
-flutter build apk --debug
-```
-
+A migração SaaS está em `backend/scripts/migrate-to-saas.ts`. Ela cria o tenant
+legado, preserva os dados existentes e adiciona o isolamento necessário. Execute
+somente com backup confirmado.

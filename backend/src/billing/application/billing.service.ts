@@ -21,13 +21,17 @@ export class BillingService {
 
   async status() {
     const tenant = await this.tenants.findTenantById(this.context.tenantId);
-    const subscription = await this.repository.findByTenant(this.context.tenantId);
+    const subscription = await this.repository.findByTenant(
+      this.context.tenantId,
+    );
     return { tenantStatus: tenant?.status ?? 'canceled', subscription };
   }
 
   async createCheckout(user: { email: string; role: string }) {
     if (user.role !== 'owner') {
-      throw new ForbiddenException('Somente o proprietário pode contratar o plano.');
+      throw new ForbiddenException(
+        'Somente o proprietário pode contratar o plano.',
+      );
     }
     const stripe = this.stripe();
     const config = this.config();
@@ -65,16 +69,20 @@ export class BillingService {
 
   async createPortal(user: { role: string }) {
     if (user.role !== 'owner') {
-      throw new ForbiddenException('Somente o proprietário gerencia a assinatura.');
+      throw new ForbiddenException(
+        'Somente o proprietário gerencia a assinatura.',
+      );
     }
-    const subscription = await this.repository.findByTenant(this.context.tenantId);
+    const subscription = await this.repository.findByTenant(
+      this.context.tenantId,
+    );
     if (!subscription?.customerId) {
       throw new BadRequestException('Assinatura ainda não iniciada.');
     }
     const config = this.config();
     const portal = await this.stripe().billingPortal.sessions.create({
       customer: subscription.customerId,
-      return_url: config.successUrl.replace('/billing/success', '/billing'),
+      return_url: config.successUrl,
     });
     return { portalUrl: portal.url };
   }
@@ -107,13 +115,15 @@ export class BillingService {
   private async applyEvent(event: Stripe.Event): Promise<void> {
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
-      const tenantId = session.metadata?.tenantId || session.client_reference_id;
+      const tenantId =
+        session.metadata?.tenantId || session.client_reference_id;
       const subscriptionId =
         typeof session.subscription === 'string'
           ? session.subscription
           : session.subscription?.id;
       if (!tenantId || !subscriptionId) return;
-      const subscription = await this.stripe().subscriptions.retrieve(subscriptionId);
+      const subscription =
+        await this.stripe().subscriptions.retrieve(subscriptionId);
       await this.syncSubscription(tenantId, subscription, {
         customerId:
           typeof session.customer === 'string'
@@ -130,7 +140,9 @@ export class BillingService {
       event.type === 'customer.subscription.deleted'
     ) {
       const subscription = event.data.object as Stripe.Subscription;
-      const existing = await this.repository.findBySubscriptionId(subscription.id);
+      const existing = await this.repository.findBySubscriptionId(
+        subscription.id,
+      );
       const tenantId = subscription.metadata?.tenantId || existing?.tenantId;
       if (tenantId) await this.syncSubscription(tenantId, subscription);
     }

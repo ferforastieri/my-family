@@ -166,7 +166,10 @@ class EnvironmentFactory {
         readOptionalEnv('STRIPE_WEBHOOK_SECRET', output.parsed) &&
         readOptionalEnv('STRIPE_PRICE_ID', output.parsed)
           ? {
-              stripeSecretKey: readOptionalEnv('STRIPE_SECRET_KEY', output.parsed)!,
+              stripeSecretKey: readOptionalEnv(
+                'STRIPE_SECRET_KEY',
+                output.parsed,
+              )!,
               stripeWebhookSecret: readOptionalEnv(
                 'STRIPE_WEBHOOK_SECRET',
                 output.parsed,
@@ -174,10 +177,10 @@ class EnvironmentFactory {
               stripePriceId: readOptionalEnv('STRIPE_PRICE_ID', output.parsed)!,
               successUrl:
                 readOptionalEnv('BILLING_SUCCESS_URL', output.parsed) ||
-                'http://localhost:3000/app/billing/success',
+                'http://localhost:3458/app/billing',
               cancelUrl:
                 readOptionalEnv('BILLING_CANCEL_URL', output.parsed) ||
-                'http://localhost:3000/signup?checkout=cancelled',
+                'http://localhost:3458/app/billing',
             }
           : undefined,
     });

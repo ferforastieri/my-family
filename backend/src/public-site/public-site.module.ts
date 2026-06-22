@@ -7,6 +7,6 @@ import { PublicSiteService } from './public-site.service';
   imports: [MongoModelsModule],
   controllers: [PublicSiteController],
   providers: [PublicSiteService],
+  exports: [PublicSiteService],
 })
 export class PublicSiteModule {}
-

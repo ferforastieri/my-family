@@ -144,6 +144,7 @@ class AuthController extends ChangeNotifier {
     String name,
     String familyName, {
     String? slug,
+    String locale = 'pt-BR',
   }) async {
     final response = await _httpPostMap('/auth/register', {
       'email': email,
@@ -151,7 +152,7 @@ class AuthController extends ChangeNotifier {
       'name': name,
       'familyName': familyName,
       if (slug?.trim().isNotEmpty == true) 'slug': slug!.trim(),
-      'locale': 'pt-BR',
+      'locale': locale,
     });
     await _acceptAuth(response);
   }

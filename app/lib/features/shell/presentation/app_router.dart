@@ -16,6 +16,10 @@ import '../../games/presentation/games_page.dart';
 import '../../home/presentation/home_page.dart';
 import '../../lists/presentation/lists_page.dart';
 import '../../location/presentation/location_page.dart';
+import '../../marketing/domain/marketing_copy.dart';
+import '../../marketing/presentation/demo_page.dart';
+import '../../marketing/presentation/marketing_page.dart';
+import '../../marketing/presentation/public_auth_page.dart';
 import '../../profile/presentation/profile_page.dart';
 import '../../resources/presentation/resource_page.dart';
 import 'app_shell.dart';
@@ -34,10 +38,14 @@ GoRouter buildRouter(
     refreshListenable: auth,
     redirect: (context, state) {
       final path = state.uri.path;
-      final accessKey = _accessForPath(path);
-      if (path != '/perfil' && auth.user == null) {
-        return '/perfil';
+      const publicPaths = {'/welcome', '/demo', '/signup', '/login'};
+      if (auth.user == null) {
+        return publicPaths.contains(path) ? null : '/welcome';
       }
+      if (path == '/welcome' || path == '/signup' || path == '/login') {
+        return auth.tenant?.isActive == true ? '/' : '/billing';
+      }
+      final accessKey = _accessForPath(path);
       if (auth.user != null &&
           auth.tenant?.isActive != true &&
           path != '/billing' &&
@@ -51,6 +59,37 @@ GoRouter buildRouter(
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/welcome',
+        pageBuilder: (context, state) => _page(MarketingPage(
+          initialLocale:
+              MarketingLocale.resolve(state.uri.queryParameters['locale']),
+        )),
+      ),
+      GoRoute(
+        path: '/demo',
+        pageBuilder: (context, state) => _page(DemoPage(
+          locale: MarketingLocale.resolve(state.uri.queryParameters['locale']),
+        )),
+      ),
+      GoRoute(
+        path: '/signup',
+        pageBuilder: (context, state) => _page(PublicAuthPage(
+          auth: auth,
+          toast: toast,
+          locale: MarketingLocale.resolve(state.uri.queryParameters['locale']),
+          register: true,
+        )),
+      ),
+      GoRoute(
+        path: '/login',
+        pageBuilder: (context, state) => _page(PublicAuthPage(
+          auth: auth,
+          toast: toast,
+          locale: MarketingLocale.resolve(state.uri.queryParameters['locale']),
+          register: false,
+        )),
+      ),
       ShellRoute(
         builder: (context, state, child) => AppShell(
           auth: auth,

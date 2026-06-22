@@ -1,11 +1,11 @@
 {
-  "name": "FMF",
-  "short_name": "FMF",
+  "name": "Nossa Família",
+  "short_name": "Nossa Família",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#fff7fb",
   "theme_color": "#d84f7b",
-  "description": "App privado FMF.",
+  "description": "Memórias, histórias e momentos compartilhados em família.",
   "gcm_sender_id": "103953800507",
   "icons": [
     {
