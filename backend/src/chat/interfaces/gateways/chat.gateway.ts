@@ -17,6 +17,7 @@ import type {
   ChatMessagesReadDto,
   ChatTypingDto,
 } from '../dto/chat.dto';
+import { emitToTenant, tenantRoom } from '@tenancy/application/tenant-context';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class ChatGateway {
@@ -50,7 +51,7 @@ export class ChatGateway {
   ) {
     const user = await this.session.requireAccess(client, 'chat');
     const conversation = await this.chat.createDirectConversation(user, body);
-    this.server?.emit('chat.conversation.created', conversation);
+    emitToTenant(this.server, 'chat.conversation.created', conversation);
     return { message: 'Conversa criada.', ...conversation };
   }
 
@@ -74,7 +75,7 @@ export class ChatGateway {
       body,
       user,
     );
-    this.server?.emit('chat.message.created', message);
+    emitToTenant(this.server, 'chat.message.created', message);
     return { message: 'Mensagem enviada.', ...message };
   }
 
@@ -85,7 +86,7 @@ export class ChatGateway {
   ) {
     const user = await this.session.requireAccess(client, 'chat');
     const message = await this.chat.editMessage(body, user);
-    this.server?.emit('chat.message.updated', message);
+    emitToTenant(this.server, 'chat.message.updated', message);
     return { message: 'Mensagem editada.', ...message };
   }
 
@@ -96,7 +97,7 @@ export class ChatGateway {
   ) {
     const user = await this.session.requireAccess(client, 'chat');
     const message = await this.chat.deleteMessage(body.messageId, user);
-    this.server?.emit('chat.message.updated', message);
+    emitToTenant(this.server, 'chat.message.updated', message);
     return { message: 'Mensagem apagada.', ...message };
   }
 
@@ -107,7 +108,7 @@ export class ChatGateway {
   ) {
     const user = await this.session.requireAccess(client, 'chat');
     const receipt = await this.chat.markMessagesRead(body.conversationId, user);
-    this.server?.emit('chat.messages.read', receipt);
+    emitToTenant(this.server, 'chat.messages.read', receipt);
     return receipt;
   }
 
@@ -124,7 +125,7 @@ export class ChatGateway {
         user.name?.trim() || body.senderName?.trim() || user.email || 'Pessoa',
       isTyping: body.isTyping,
     };
-    client.broadcast.emit('chat.typing', payload);
+    client.to(tenantRoom(user.tenantId)).emit('chat.typing', payload);
     return payload;
   }
 }

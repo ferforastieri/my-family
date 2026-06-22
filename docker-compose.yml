@@ -57,8 +57,11 @@ services:
       THROTTLE_TTL_MS: ${THROTTLE_TTL_MS:?THROTTLE_TTL_MS is required}
       THROTTLE_LIMIT: ${THROTTLE_LIMIT:?THROTTLE_LIMIT is required}
       CSRF_SECRET: ${CSRF_SECRET:?CSRF_SECRET is required}
-    ports:
-      - "${BACKEND_PORT:-3459}:3001"
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:?STRIPE_SECRET_KEY is required}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:?STRIPE_WEBHOOK_SECRET is required}
+      STRIPE_PRICE_ID: ${STRIPE_PRICE_ID:?STRIPE_PRICE_ID is required}
+      BILLING_SUCCESS_URL: ${BILLING_SUCCESS_URL:?BILLING_SUCCESS_URL is required}
+      BILLING_CANCEL_URL: ${BILLING_CANCEL_URL:?BILLING_CANCEL_URL is required}
     volumes:
       - ${UPLOAD_HOST_PATH:?UPLOAD_HOST_PATH is required}:/data/uploads
     depends_on:
@@ -85,9 +88,38 @@ services:
         FIREBASE_WEB_PUSH_CERTIFICATE_KEY: ${FIREBASE_WEB_PUSH_CERTIFICATE_KEY:-}
     container_name: my-family-front
     restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - my-family-network
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        NEXT_PUBLIC_API_BASE_URL: /api
+    container_name: my-family-web
+    restart: unless-stopped
+    environment:
+      API_INTERNAL_URL: http://backend:3001/api
+      NEXT_PUBLIC_API_BASE_URL: /api
+    depends_on:
+      - backend
+    networks:
+      - my-family-network
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway
+    container_name: my-family-gateway
+    restart: unless-stopped
     ports:
       - "${FRONT_PORT:-3458}:80"
     depends_on:
+      - web
+      - front
       - backend
     networks:
       - my-family-network

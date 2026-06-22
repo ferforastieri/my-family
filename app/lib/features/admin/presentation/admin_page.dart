@@ -664,10 +664,9 @@ class _AdminLoadingState extends StatelessWidget {
 }
 
 const _roleOptions = [
-  _UserOption('husband', 'Marido', Icons.admin_panel_settings_outlined),
-  _UserOption('wife', 'Esposa', Icons.admin_panel_settings_outlined),
-  _UserOption('children', 'Filhos', Icons.child_care_outlined),
-  _UserOption('friends', 'Amigos', Icons.favorite_outline),
+  _UserOption('owner', 'Proprietário', Icons.workspace_premium_outlined),
+  _UserOption('admin', 'Administrador', Icons.admin_panel_settings_outlined),
+  _UserOption('member', 'Membro', Icons.favorite_outline),
 ];
 
 const _accessOptions = [
@@ -692,10 +691,9 @@ class _UserOption {
 
 String _roleLabel(String role) {
   return switch (role) {
-    'husband' => 'Marido',
-    'wife' => 'Esposa',
-    'children' => 'Filhos',
-    'friends' => 'Amigos',
+    'owner' => 'Proprietário',
+    'admin' => 'Administrador',
+    'member' => 'Membro',
     _ => role,
   };
 }
@@ -2951,7 +2949,7 @@ class _UserSheetState extends State<_UserSheet> {
     password = TextEditingController();
     confirmPassword = TextEditingController();
     role =
-        appUserRoles.contains(widget.user.role) ? widget.user.role : 'friends';
+        appUserRoles.contains(widget.user.role) ? widget.user.role : 'member';
     access = widget.user.access.toSet();
   }
 
@@ -3072,8 +3070,8 @@ class _UserSheetState extends State<_UserSheet> {
           ),
           const SizedBox(height: 8),
           Text(
-            role == 'husband' || role == 'wife'
-                ? 'Marido e esposa acessam tudo automaticamente.'
+            role == 'owner' || role == 'admin'
+                ? 'Proprietários e administradores acessam tudo automaticamente.'
                 : 'Marque os módulos liberados para esta conta.',
           ),
           const SizedBox(height: 10),

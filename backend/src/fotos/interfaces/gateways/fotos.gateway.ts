@@ -10,6 +10,7 @@ import { WsSessionService } from '@auth/application/services/ws-session.service'
 import { FotosService } from '../../application/services/fotos.service';
 import type { FotoWriteDto } from '../dto/foto.dto';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
+import { emitToTenant } from '@tenancy/application/tenant-context';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class FotosGateway {
@@ -43,7 +44,7 @@ export class FotosGateway {
   ) {
     await this.session.requireAccess(client, 'memorias');
     const row = await this.fotos.create(data);
-    this.server.emit('fotos.created', row);
+    emitToTenant(this.server, 'fotos.created', row);
     return { message: 'Memória salva com sucesso.', ...row };
   }
 
@@ -54,7 +55,7 @@ export class FotosGateway {
   ) {
     await this.session.requireAccess(client, 'memorias');
     const row = await this.fotos.update(body.id, body.data);
-    if (row) this.server.emit('fotos.updated', row);
+    if (row) emitToTenant(this.server, 'fotos.updated', row);
     return row ? { message: 'Memória atualizada.', ...row } : row;
   }
 
@@ -65,7 +66,7 @@ export class FotosGateway {
   ) {
     await this.session.requireAccess(client, 'memorias');
     const ok = await this.fotos.delete(body.id);
-    if (ok) this.server.emit('fotos.deleted', { id: body.id });
+    if (ok) emitToTenant(this.server, 'fotos.deleted', { id: body.id });
     return { ok, message: 'Memória removida.' };
   }
 }

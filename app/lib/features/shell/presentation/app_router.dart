@@ -9,6 +9,7 @@ import '../../../core/theme/theme_controller.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../data/family_repository.dart';
 import '../../admin/presentation/admin_page.dart';
+import '../../billing/presentation/billing_page.dart';
 import '../../chat/presentation/chat_page.dart';
 import '../../content/presentation/editable_text_collection_page.dart';
 import '../../games/presentation/games_page.dart';
@@ -34,8 +35,14 @@ GoRouter buildRouter(
     redirect: (context, state) {
       final path = state.uri.path;
       final accessKey = _accessForPath(path);
-      if ((_requiresAuth(path) || accessKey != null) && auth.user == null) {
+      if (path != '/perfil' && auth.user == null) {
         return '/perfil';
+      }
+      if (auth.user != null &&
+          auth.tenant?.isActive != true &&
+          path != '/billing' &&
+          path != '/perfil') {
+        return '/billing';
       }
       if (path == '/admin' && auth.user?.isAdmin != true) return '/';
       if (accessKey != null && auth.user?.canAccess(accessKey) != true) {
@@ -55,6 +62,13 @@ GoRouter buildRouter(
           child: child,
         ),
         routes: [
+          GoRoute(
+            path: '/billing',
+            pageBuilder: (context, state) => _page(BillingPage(
+              auth: auth,
+              toast: toast,
+            )),
+          ),
           GoRoute(
             path: '/atalhos/memorias',
             pageBuilder: (context, state) => _page(MobileOptionsPage(
@@ -226,12 +240,6 @@ GoRouter buildRouter(
       ),
     ],
   );
-}
-
-bool _requiresAuth(String path) {
-  return path == '/atalhos/memorias' ||
-      path == '/atalhos/mais' ||
-      path == '/admin';
 }
 
 String? _accessForPath(String path) {

@@ -10,6 +10,8 @@ export class UserMapper implements Mapper<UserEntity, UserResponseDto> {
       name: source.name ?? null,
       role: source.role,
       access: source.access,
+      tenantId: source.tenantId,
+      tenantSlug: source.tenantSlug ?? null,
       avatarPath: source.avatarPath ?? null,
       createdAt: source.createdAt,
     };

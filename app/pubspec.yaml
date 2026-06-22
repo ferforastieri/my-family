@@ -30,6 +30,7 @@ dependencies:
   fquery_core: ^3.0.2
   dio: ^5.9.2
   fresh_dio: ^0.6.0
+  url_launcher: ^6.3.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -4,6 +4,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
 import sharp = require('sharp');
+import { TenantContext } from '@tenancy/application/tenant-context';
 
 export enum UploadContext {
   Avatar = 'avatar',
@@ -27,7 +28,10 @@ export class UploadService {
     return path.isAbsolute(p) ? p : path.resolve(p);
   }
 
-  constructor(private env: Environment) {}
+  constructor(
+    private env: Environment,
+    private tenantContext: TenantContext,
+  ) {}
 
   async saveFile(
     file: Express.Multer.File,
@@ -43,7 +47,8 @@ export class UploadService {
       isCompressibleImage(file, inputExt);
     const ext = shouldOptimizeImage ? '.webp' : inputExt;
     const filename = `${randomUUID()}${ext}`;
-    const dir = path.join(this.basePath, context);
+    const tenantId = this.tenantContext.tenantId;
+    const dir = path.join(this.basePath, 'tenants', tenantId, context);
 
     await fs.mkdir(dir, { recursive: true });
     const filePath = path.join(dir, filename);
@@ -64,7 +69,7 @@ export class UploadService {
       await fs.writeFile(filePath, data);
     }
 
-    const relativePath = `${context}/${filename}`;
+    const relativePath = `tenants/${tenantId}/${context}/${filename}`;
     return { relativePath, filename };
   }
 
@@ -104,11 +109,20 @@ export class UploadService {
   }
 
   resolvePath(relativePath: string): string {
-    return path.join(this.basePath, relativePath);
+    return this.resolveTenantPath(this.tenantContext.tenantId, relativePath);
+  }
+
+  resolveTenantPath(tenantId: string, relativePath: string): string {
+    const normalized = relativePath.replace(/\\/g, '/').replace(/^\/+/, '');
+    const prefix = `tenants/${tenantId}/`;
+    if (!normalized.startsWith(prefix) || normalized.includes('../')) {
+      throw new BadRequestException('Caminho de mídia inválido.');
+    }
+    return path.join(this.basePath, normalized);
   }
 
   async removeFile(relativePath: string): Promise<void> {
-    const fullPath = path.join(this.basePath, relativePath);
+    const fullPath = this.resolvePath(relativePath);
     try {
       await fs.unlink(fullPath);
     } catch {}
@@ -125,10 +139,11 @@ export class UploadService {
     referencedPaths: Set<string>,
     olderThanMs: number,
   ) {
-    const dir = path.join(this.basePath, context);
+    const tenantId = this.tenantContext.tenantId;
+    const dir = path.join(this.basePath, 'tenants', tenantId, context);
     const removed: string[] = [];
     const cutoff = Date.now() - olderThanMs;
-    for (const relativePath of await this.listRelativeFiles(dir, context)) {
+    for (const relativePath of await this.listRelativeFiles(dir)) {
       if (
         relativePath.endsWith('.meta.json') ||
         relativePath.startsWith('thumbs/')
@@ -160,7 +175,6 @@ export class UploadService {
 
   private async listRelativeFiles(
     dir: string,
-    context: UploadContext,
   ): Promise<string[]> {
     let entries: Array<{ name: string; isDirectory(): boolean }>;
     try {
@@ -178,11 +192,11 @@ export class UploadService {
       const entryName = String(entry.name);
       const entryPath = path.join(dir, entryName);
       if (entry.isDirectory()) {
-        files.push(...(await this.listRelativeFiles(entryPath, context)));
+        files.push(...(await this.listRelativeFiles(entryPath)));
       } else {
         files.push(
           path
-            .relative(path.join(this.basePath, context, '..'), entryPath)
+            .relative(this.basePath, entryPath)
             .replace(/\\/g, '/'),
         );
       }

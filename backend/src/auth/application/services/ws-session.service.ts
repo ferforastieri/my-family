@@ -13,6 +13,8 @@ import {
   type UserEntity,
   type UserRole,
 } from '@auth/domain/entities/user.entity';
+import { tenantRoom } from '@tenancy/application/tenant-context';
+import { TenantService } from '@tenancy/application/tenant.service';
 
 @Injectable()
 export class WsSessionService {
@@ -20,6 +22,7 @@ export class WsSessionService {
     private jwt: JwtService,
     private env: Environment,
     private auth: AuthService,
+    private tenants: TenantService,
   ) {}
 
   private tokenFromClient(client: Socket): string | null {
@@ -32,15 +35,27 @@ export class WsSessionService {
   }
 
   async getUser(client: Socket): Promise<UserEntity | null> {
+    const cached = client.data.user as UserEntity | undefined;
+    if (cached?.tenantId) return cached;
     const token = this.tokenFromClient(client);
     if (!token) return null;
     try {
-      const payload = this.jwt.verify<{ sub: string; type?: string }>(token, {
+      const payload = this.jwt.verify<{
+        sub: string;
+        tenantId: string;
+        type?: string;
+      }>(token, {
         secret: this.env.jwt.secret,
       });
-      if (payload.type === 'refresh') return null;
-      const user = await this.auth.findById(payload.sub);
-      if (user) client.data.user = user;
+      if (payload.type === 'refresh' || !payload.tenantId) return null;
+      const user = await this.auth.findAuthenticatedUser(
+        payload.sub,
+        payload.tenantId,
+      );
+      if (user) {
+        client.data.user = user;
+        await client.join(tenantRoom(user.tenantId));
+      }
       return user;
     } catch {
       return null;
@@ -64,6 +79,7 @@ export class WsSessionService {
     const user = await this.requireUser(client);
     if (!isAdminRole(user.role))
       throw new ForbiddenException('Acesso administrativo obrigatório.');
+    await this.tenants.assertEntitled(user.tenantId);
     return user;
   }
 
@@ -72,7 +88,10 @@ export class WsSessionService {
     accessKey: UserAccessKey,
   ): Promise<UserEntity> {
     const user = await this.requireUser(client);
-    if (isAdminRole(user.role) || user.access.includes(accessKey)) return user;
+    if (isAdminRole(user.role) || user.access.includes(accessKey)) {
+      await this.tenants.assertEntitled(user.tenantId);
+      return user;
+    }
     throw new ForbiddenException('Acesso não liberado para este recurso.');
   }
 }

@@ -31,4 +31,4 @@ export type HomeSettingsMongoDocument = HydratedDocument<HomeSettingsDocument>;
 export const HomeSettingsSchema =
   SchemaFactory.createForClass(HomeSettingsDocument);
 
-HomeSettingsSchema.index({ key: 1 }, { unique: true });
+HomeSettingsSchema.index({ tenantId: 1, key: 1 }, { unique: true });

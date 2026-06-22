@@ -19,6 +19,8 @@ class _AuthSheetState extends State<AuthSheet> {
   final email = TextEditingController();
   final password = TextEditingController();
   final name = TextEditingController();
+  final familyName = TextEditingController();
+  final slug = TextEditingController();
   bool register = false;
   bool loading = false;
   String? error;
@@ -45,6 +47,21 @@ class _AuthSheetState extends State<AuthSheet> {
               decoration: const InputDecoration(labelText: 'Nome'),
               textInputAction: TextInputAction.next,
               onSubmitted: (_) => _submit(),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: familyName,
+              decoration: const InputDecoration(labelText: 'Nome da família'),
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: slug,
+              decoration: const InputDecoration(
+                labelText: 'Endereço desejado',
+                hintText: 'familia-silva',
+              ),
+              textInputAction: TextInputAction.next,
             ),
             const SizedBox(height: 10),
           ],
@@ -95,7 +112,13 @@ class _AuthSheetState extends State<AuthSheet> {
     });
     try {
       if (register) {
-        await widget.auth.register(email.text, password.text, name.text);
+        await widget.auth.register(
+          email.text,
+          password.text,
+          name.text,
+          familyName.text,
+          slug: slug.text,
+        );
         widget.toast.backendSuccess(widget.auth.takeMessage());
       } else {
         await widget.auth.signIn(email.text, password.text);

@@ -2,17 +2,17 @@ import {
   IsEmail,
   IsString,
   MinLength,
-  IsOptional,
   IsIn,
+  IsOptional,
 } from 'class-validator';
-import { userRoles } from '@auth/domain/entities/user.entity';
+import type { TenantLocale } from '@tenancy/domain/tenant.entity';
 
 export class RegisterDto {
   @IsEmail()
   email: string;
 
   @IsString()
-  @MinLength(6)
+  @MinLength(8)
   password: string;
 
   @IsString()
@@ -20,9 +20,17 @@ export class RegisterDto {
   name?: string;
 
   @IsString()
+  @MinLength(2)
+  familyName: string;
+
+  @IsString()
+  @MinLength(3)
   @IsOptional()
-  @IsIn(userRoles)
-  role?: (typeof userRoles)[number];
+  slug?: string;
+
+  @IsIn(['pt-BR', 'en', 'es'])
+  @IsOptional()
+  locale?: TenantLocale;
 }
 
 export class LoginDto {
@@ -31,6 +39,10 @@ export class LoginDto {
 
   @IsString()
   password: string;
+
+  @IsString()
+  @IsOptional()
+  tenantSlug?: string;
 }
 
 export class RefreshTokenDto {

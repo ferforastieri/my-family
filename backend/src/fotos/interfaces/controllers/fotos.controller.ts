@@ -23,6 +23,8 @@ import { UploadService, UploadContext } from '@shared/infrastructure/upload';
 import type { FotoWriteDto } from '../dto/foto.dto';
 
 @Controller('fotos')
+@UseGuards(JwtAuthGuard, AccessGuard)
+@Access('memorias')
 export class FotosController {
   constructor(
     private readonly fotosService: FotosService,
@@ -36,7 +38,7 @@ export class FotosController {
 
   @Get('file')
   getFile(@Query('path') relativePath: string) {
-    if (!relativePath || !relativePath.startsWith('fotos/')) {
+    if (!relativePath || !relativePath.includes('/fotos/')) {
       throw new BadRequestException('Caminho inválido');
     }
     const fullPath = this.upload.resolvePath(relativePath);

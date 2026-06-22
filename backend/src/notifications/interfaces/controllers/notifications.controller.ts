@@ -24,6 +24,7 @@ import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@auth/guards/roles.guard';
 import { Roles } from '@auth/decorators/roles.decorator';
 @Controller('notifications')
+@UseGuards(JwtAuthGuard)
 export class NotificationsController {
   constructor(
     private notifications: NotificationsService,
@@ -65,14 +66,14 @@ export class NotificationsController {
 
   @Get('scheduled/list')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('husband', 'wife')
+  @Roles('owner', 'admin')
   async scheduledList() {
     return this.scheduler.list();
   }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('husband', 'wife')
+  @Roles('owner', 'admin')
   async one(@Param('id') id: string) {
     const n = await this.notifications.findOne(id);
     if (!n) throw new NotFoundException('Notificação não encontrada');
@@ -81,7 +82,7 @@ export class NotificationsController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('husband', 'wife')
+  @Roles('owner', 'admin')
   async create(@Body() dto: NotificationCreateDto) {
     const row = await this.notifications.create(dto);
     return { message: 'Notificação salva.', ...row };
@@ -89,7 +90,7 @@ export class NotificationsController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('husband', 'wife')
+  @Roles('owner', 'admin')
   async update(
     @Param('id') id: string,
     @Body() dto: Partial<NotificationCreateDto>,
@@ -101,7 +102,7 @@ export class NotificationsController {
 
   @Delete('scheduled/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('husband', 'wife')
+  @Roles('owner', 'admin')
   async deleteScheduled(@Param('id') id: string) {
     const ok = await this.scheduler.delete(id);
     if (!ok) throw new NotFoundException('Agendamento não encontrado');
@@ -110,7 +111,7 @@ export class NotificationsController {
 
   @Post('send')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('husband', 'wife')
+  @Roles('owner', 'admin')
   async sendNow(@Body() body: NotificationSendDto) {
     if (!body?.title) throw new BadRequestException('title é obrigatório');
     const row = await this.notifications.send(body.title, body.body, body.url);
@@ -119,7 +120,7 @@ export class NotificationsController {
 
   @Post('schedule')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('husband', 'wife')
+  @Roles('owner', 'admin')
   async schedule(
     @Body()
     body: {
@@ -141,7 +142,7 @@ export class NotificationsController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('husband', 'wife')
+  @Roles('owner', 'admin')
   async delete(@Param('id') id: string) {
     const ok = await this.notifications.delete(id);
     if (!ok) throw new NotFoundException('Notificação não encontrada');

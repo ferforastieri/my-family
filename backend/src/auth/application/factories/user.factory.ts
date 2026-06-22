@@ -8,8 +8,6 @@ export class UserUpdateFactory implements Factory<
   create(input: UpdateUserDto): UpdateUserDto & { passwordHash?: string } {
     return {
       name: input.name?.trim(),
-      role: input.role,
-      access: input.access,
       avatarPath: input.avatarPath,
     };
   }

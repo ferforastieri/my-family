@@ -10,6 +10,7 @@ import { WsSessionService } from '@auth/application/services/ws-session.service'
 import { CartasService } from '../../application/services/cartas.service';
 import type { CartaWriteDto } from '../dto/carta.dto';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
+import { emitToTenant } from '@tenancy/application/tenant-context';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class CartasGateway {
@@ -37,7 +38,7 @@ export class CartasGateway {
   ) {
     const user = await this.session.requireAccess(client, 'cartas');
     const row = await this.cartas.create('letter', data, user);
-    this.server.emit('cartas.created', row);
+    emitToTenant(this.server, 'cartas.created', row);
     return { message: 'Texto salvo.', ...row };
   }
 
@@ -48,7 +49,7 @@ export class CartasGateway {
   ) {
     await this.session.requireAccess(client, 'cartas');
     const row = await this.cartas.update(body.id, 'letter', body.data);
-    if (row) this.server.emit('cartas.updated', row);
+    if (row) emitToTenant(this.server, 'cartas.updated', row);
     return row ? { message: 'Texto atualizado.', ...row } : row;
   }
 
@@ -59,7 +60,7 @@ export class CartasGateway {
   ) {
     await this.session.requireAccess(client, 'cartas');
     const ok = await this.cartas.delete(body.id, 'letter');
-    if (ok) this.server.emit('cartas.deleted', { id: body.id });
+    if (ok) emitToTenant(this.server, 'cartas.deleted', { id: body.id });
     return { ok, message: 'Texto removido.' };
   }
 
@@ -79,7 +80,7 @@ export class CartasGateway {
   ) {
     const user = await this.session.requireAccess(client, 'nossaHistoria');
     const row = await this.cartas.create('journey', data, user);
-    this.server.emit('journey.created', row);
+    emitToTenant(this.server, 'journey.created', row);
     return { message: 'Capítulo salvo.', ...row };
   }
 
@@ -90,7 +91,7 @@ export class CartasGateway {
   ) {
     await this.session.requireAccess(client, 'nossaHistoria');
     const row = await this.cartas.update(body.id, 'journey', body.data);
-    if (row) this.server.emit('journey.updated', row);
+    if (row) emitToTenant(this.server, 'journey.updated', row);
     return row ? { message: 'Capítulo atualizado.', ...row } : row;
   }
 
@@ -101,7 +102,7 @@ export class CartasGateway {
   ) {
     await this.session.requireAccess(client, 'nossaHistoria');
     const ok = await this.cartas.delete(body.id, 'journey');
-    if (ok) this.server.emit('journey.deleted', { id: body.id });
+    if (ok) emitToTenant(this.server, 'journey.deleted', { id: body.id });
     return { ok, message: 'Capítulo removido.' };
   }
 }

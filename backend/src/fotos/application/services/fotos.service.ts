@@ -55,7 +55,7 @@ export class FotosService {
   async delete(id: string) {
     const foto = await this.fotos.findById(id);
     const deleted = await this.fotos.delete(id);
-    if (deleted && foto?.url?.startsWith('fotos/')) {
+    if (deleted && foto?.url?.includes('/fotos/')) {
       await this.upload.removeFile(foto.url);
     }
     return deleted;

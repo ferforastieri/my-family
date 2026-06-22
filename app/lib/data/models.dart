@@ -7,6 +7,8 @@ class AppUser {
     this.name,
     this.avatarPath,
     this.createdAt,
+    this.tenantId,
+    this.tenantSlug,
   });
 
   final String id;
@@ -16,11 +18,13 @@ class AppUser {
   final String? name;
   final String? avatarPath;
   final DateTime? createdAt;
+  final String? tenantId;
+  final String? tenantSlug;
 
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
         id: json['id'].toString(),
         email: json['email'] as String,
-        role: (json['role'] ?? 'friends') as String,
+        role: (json['role'] ?? 'member') as String,
         access: ((json['access'] as List?) ?? const [])
             .map((key) => key.toString())
             .where(appAccessKeys.contains)
@@ -30,14 +34,48 @@ class AppUser {
         createdAt: json['createdAt'] == null
             ? null
             : DateTime.tryParse(json['createdAt'].toString()),
+        tenantId: json['tenantId']?.toString(),
+        tenantSlug: json['tenantSlug']?.toString(),
       );
 
-  bool get isAdmin => role == 'husband' || role == 'wife';
+  bool get isAdmin => role == 'owner' || role == 'admin';
 
   bool canAccess(String key) => isAdmin || access.contains(key);
 }
 
-const appUserRoles = ['husband', 'wife', 'children', 'friends'];
+const appUserRoles = ['owner', 'admin', 'member'];
+
+class TenantInfo {
+  const TenantInfo({
+    required this.id,
+    required this.name,
+    required this.slug,
+    required this.status,
+    required this.defaultLocale,
+    required this.isPublished,
+    required this.isDemo,
+  });
+
+  final String id;
+  final String name;
+  final String slug;
+  final String status;
+  final String defaultLocale;
+  final bool isPublished;
+  final bool isDemo;
+
+  bool get isActive => status == 'active' || isDemo;
+
+  factory TenantInfo.fromJson(Map<String, dynamic> json) => TenantInfo(
+        id: json['id'].toString(),
+        name: json['name']?.toString() ?? '',
+        slug: json['slug']?.toString() ?? '',
+        status: json['status']?.toString() ?? 'pending_payment',
+        defaultLocale: json['defaultLocale']?.toString() ?? 'pt-BR',
+        isPublished: json['isPublished'] == true,
+        isDemo: json['isDemo'] == true,
+      );
+}
 
 const appAccessKeys = [
   'memorias',

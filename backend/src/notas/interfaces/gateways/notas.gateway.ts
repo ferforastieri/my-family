@@ -10,6 +10,7 @@ import { WsSessionService } from '@auth/application/services/ws-session.service'
 import { NotasService } from '../../application/services/notas.service';
 import type { NotaWriteDto } from '../dto/nota.dto';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
+import { emitToTenant } from '@tenancy/application/tenant-context';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class NotasGateway {
@@ -37,7 +38,7 @@ export class NotasGateway {
   ) {
     await this.session.requireAccess(client, 'notas');
     const row = await this.notas.create(data);
-    this.server.emit('notas.created', row);
+    emitToTenant(this.server, 'notas.created', row);
     return { message: 'Nota salva com sucesso.', ...row };
   }
 
@@ -48,7 +49,7 @@ export class NotasGateway {
   ) {
     await this.session.requireAccess(client, 'notas');
     const row = await this.notas.update(body.id, body.data);
-    if (row) this.server.emit('notas.updated', row);
+    if (row) emitToTenant(this.server, 'notas.updated', row);
     return row ? { message: 'Nota atualizada.', ...row } : row;
   }
 
@@ -59,7 +60,7 @@ export class NotasGateway {
   ) {
     await this.session.requireAccess(client, 'notas');
     const ok = await this.notas.delete(body.id);
-    if (ok) this.server.emit('notas.deleted', { id: body.id });
+    if (ok) emitToTenant(this.server, 'notas.deleted', { id: body.id });
     return { ok, message: 'Nota removida.' };
   }
 }

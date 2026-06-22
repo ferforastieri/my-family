@@ -12,19 +12,12 @@ import {
   PaginationQuery,
   toId,
 } from '@shared/infrastructure/database/mongo.utils';
-import {
-  normalizeAccessKeys,
-  type UserAccessKey,
-  type UserEntity,
-  type UserRole,
-} from '@auth/domain/entities/user.entity';
+import type { UserEntity } from '@auth/domain/entities/user.entity';
 
 export type CreateUserData = {
   email: string;
   passwordHash: string;
   name?: string;
-  role?: UserRole;
-  access?: UserAccessKey[];
 };
 
 @Injectable()
@@ -40,8 +33,11 @@ export class UserRepository {
       email: doc.email,
       passwordHash: doc.passwordHash ?? null,
       name: doc.name ?? null,
-      role: doc.role,
-      access: normalizeAccessKeys(doc.access),
+      role: 'member',
+      access: [],
+      tenantId: '',
+      membershipId: '',
+      tenantSlug: null,
       avatarPath: doc.avatarPath ?? null,
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
@@ -81,12 +77,16 @@ export class UserRepository {
     return this.toEntity(doc)!;
   }
 
+  async findManyByIds(ids: string[]): Promise<UserEntity[]> {
+    if (!ids.length) return [];
+    const documents = await this.model.find({ _id: { $in: ids } }).exec();
+    return documents.map((document) => this.toEntity(document)!);
+  }
+
   async update(
     id: string,
     data: {
       name?: string;
-      role?: UserRole;
-      access?: UserAccessKey[];
       avatarPath?: string;
       passwordHash?: string;
     },

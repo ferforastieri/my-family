@@ -31,6 +31,7 @@ export class ScheduledNotificationsRepository {
     if (!doc) return null;
     return {
       id: toId(doc),
+      tenantId: doc.tenantId,
       title: doc.title,
       body: doc.body ?? '',
       url: doc.url ?? '/',

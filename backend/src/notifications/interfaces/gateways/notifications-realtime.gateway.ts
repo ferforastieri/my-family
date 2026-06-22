@@ -1,5 +1,6 @@
 import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server } from 'socket.io';
+import { emitToTenant } from '@tenancy/application/tenant-context';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class NotificationsRealtimeGateway {
@@ -7,22 +8,22 @@ export class NotificationsRealtimeGateway {
   private server?: Server;
 
   emitNotificationCreated(notification: unknown) {
-    this.server?.emit('notifications.created', notification);
+    emitToTenant(this.server, 'notifications.created', notification);
   }
 
   emitNotificationUpdated(notification: unknown) {
-    this.server?.emit('notifications.updated', notification);
+    emitToTenant(this.server, 'notifications.updated', notification);
   }
 
   emitNotificationDeleted(id: string) {
-    this.server?.emit('notifications.deleted', { id });
+    emitToTenant(this.server, 'notifications.deleted', { id });
   }
 
   emitNotificationsCleared() {
-    this.server?.emit('notifications.cleared');
+    emitToTenant(this.server, 'notifications.cleared');
   }
 
   emitScheduledNotificationChanged(notification: unknown) {
-    this.server?.emit('notifications.scheduled.changed', notification);
+    emitToTenant(this.server, 'notifications.scheduled.changed', notification);
   }
 }

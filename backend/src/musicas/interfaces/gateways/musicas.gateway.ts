@@ -10,6 +10,7 @@ import { WsSessionService } from '@auth/application/services/ws-session.service'
 import { MusicasService } from '../../application/services/musicas.service';
 import type { MusicaWriteDto } from '../dto/musica.dto';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
+import { emitToTenant } from '@tenancy/application/tenant-context';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class MusicasGateway {
@@ -37,7 +38,7 @@ export class MusicasGateway {
   ) {
     await this.session.requireAccess(client, 'playlist');
     const row = await this.musicas.create(data);
-    this.server.emit('musicas.created', row);
+    emitToTenant(this.server, 'musicas.created', row);
     return { message: 'Música salva com sucesso.', ...row };
   }
 
@@ -48,7 +49,7 @@ export class MusicasGateway {
   ) {
     await this.session.requireAccess(client, 'playlist');
     const row = await this.musicas.update(body.id, body.data);
-    if (row) this.server.emit('musicas.updated', row);
+    if (row) emitToTenant(this.server, 'musicas.updated', row);
     return row ? { message: 'Música atualizada.', ...row } : row;
   }
 
@@ -59,7 +60,7 @@ export class MusicasGateway {
   ) {
     await this.session.requireAccess(client, 'playlist');
     const ok = await this.musicas.delete(body.id);
-    if (ok) this.server.emit('musicas.deleted', { id: body.id });
+    if (ok) emitToTenant(this.server, 'musicas.deleted', { id: body.id });
     return { ok, message: 'Música removida.' };
   }
 }

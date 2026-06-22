@@ -27,6 +27,10 @@ import { ListsModule } from './lists/lists.module';
 import { LocationModule } from './location/location.module';
 import { HomeSettingsModule } from './home-settings/home-settings.module';
 import { NotasModule } from './notas/notas.module';
+import { TenancyModule } from './tenancy/tenancy.module';
+import { BillingModule } from './billing/billing.module';
+import { PublicSiteModule } from './public-site/public-site.module';
+import { TenantContextInterceptor } from './auth/application/services/tenant-context.interceptor';
 
 @Module({
   imports: [
@@ -114,6 +118,9 @@ import { NotasModule } from './notas/notas.module';
     QueueModule,
     EmailModule,
     UploadModule,
+    TenancyModule,
+    BillingModule,
+    PublicSiteModule,
     HealthModule,
     AuthModule,
     FotosModule,
@@ -130,6 +137,7 @@ import { NotasModule } from './notas/notas.module';
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_INTERCEPTOR, useClass: ApiResponseInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: TenantContextInterceptor },
     { provide: APP_FILTER, useClass: ApiExceptionFilter },
   ],
   controllers: [CsrfController],

@@ -15,6 +15,7 @@ import type {
   QuizQuestionWriteDto,
 } from '../dto/game.dto';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
+import { emitToTenant } from '@tenancy/application/tenant-context';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class GamesGateway {
@@ -51,7 +52,7 @@ export class GamesGateway {
   ) {
     await this.session.requireAdmin(client);
     const row = await this.games.createQuestion(body);
-    this.server.emit('games.quiz.created', row);
+    emitToTenant(this.server, 'games.quiz.created', row);
     return { message: 'Pergunta salva.', ...row };
   }
 
@@ -62,7 +63,7 @@ export class GamesGateway {
   ) {
     await this.session.requireAdmin(client);
     const row = await this.games.updateQuestion(body.id, body.data);
-    if (row) this.server.emit('games.quiz.updated', row);
+    if (row) emitToTenant(this.server, 'games.quiz.updated', row);
     return row ? { message: 'Pergunta atualizada.', ...row } : row;
   }
 
@@ -73,7 +74,7 @@ export class GamesGateway {
   ) {
     await this.session.requireAdmin(client);
     const ok = await this.games.deleteQuestion(body.id);
-    if (ok) this.server.emit('games.quiz.deleted', { id: body.id });
+    if (ok) emitToTenant(this.server, 'games.quiz.deleted', { id: body.id });
     return { ok, message: 'Pergunta removida.' };
   }
 
@@ -102,7 +103,7 @@ export class GamesGateway {
   ) {
     await this.session.requireAdmin(client);
     const row = await this.games.createWord(body);
-    this.server.emit('games.words.created', row);
+    emitToTenant(this.server, 'games.words.created', row);
     return { message: 'Palavra salva.', ...row };
   }
 
@@ -113,7 +114,7 @@ export class GamesGateway {
   ) {
     await this.session.requireAdmin(client);
     const row = await this.games.updateWord(body.id, body.data);
-    if (row) this.server.emit('games.words.updated', row);
+    if (row) emitToTenant(this.server, 'games.words.updated', row);
     return row ? { message: 'Palavra atualizada.', ...row } : row;
   }
 
@@ -124,7 +125,7 @@ export class GamesGateway {
   ) {
     await this.session.requireAdmin(client);
     const ok = await this.games.deleteWord(body.id);
-    if (ok) this.server.emit('games.words.deleted', { id: body.id });
+    if (ok) emitToTenant(this.server, 'games.words.deleted', { id: body.id });
     return { ok, message: 'Palavra removida.' };
   }
 
@@ -153,7 +154,7 @@ export class GamesGateway {
   ) {
     await this.session.requireAdmin(client);
     const row = await this.games.createMiniGame(body);
-    this.server.emit('games.mini.created', row);
+    emitToTenant(this.server, 'games.mini.created', row);
     return { message: 'Mini jogo salvo.', ...row };
   }
 
@@ -164,7 +165,7 @@ export class GamesGateway {
   ) {
     await this.session.requireAdmin(client);
     const row = await this.games.updateMiniGame(body.id, body.data);
-    if (row) this.server.emit('games.mini.updated', row);
+    if (row) emitToTenant(this.server, 'games.mini.updated', row);
     return row ? { message: 'Mini jogo atualizado.', ...row } : row;
   }
 
@@ -175,7 +176,7 @@ export class GamesGateway {
   ) {
     await this.session.requireAdmin(client);
     const ok = await this.games.deleteMiniGame(body.id);
-    if (ok) this.server.emit('games.mini.deleted', { id: body.id });
+    if (ok) emitToTenant(this.server, 'games.mini.deleted', { id: body.id });
     return { ok, message: 'Mini jogo removido.' };
   }
 
@@ -186,7 +187,7 @@ export class GamesGateway {
   ) {
     const user = await this.session.requireAccess(client, 'jogos');
     const row = await this.games.complete(body, user);
-    this.server.emit('games.stats.changed', row);
+    emitToTenant(this.server, 'games.stats.changed', row);
     return { message: 'Jogo concluído.', ...row };
   }
 

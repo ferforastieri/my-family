@@ -1,7 +1,7 @@
-export const userRoles = ['husband', 'wife', 'children', 'friends'] as const;
+export const userRoles = ['owner', 'admin', 'member'] as const;
 export type UserRole = (typeof userRoles)[number];
 
-export const adminRoles: UserRole[] = ['husband', 'wife'];
+export const adminRoles: UserRole[] = ['owner', 'admin'];
 
 export const userAccessKeys = [
   'memorias',
@@ -17,7 +17,7 @@ export const userAccessKeys = [
 export type UserAccessKey = (typeof userAccessKeys)[number];
 
 export function isAdminRole(role?: string | null): role is UserRole {
-  return role === 'husband' || role === 'wife';
+  return role === 'owner' || role === 'admin';
 }
 
 export function normalizeAccessKeys(
@@ -36,6 +36,9 @@ export interface UserEntity {
   name?: string | null;
   role: UserRole;
   access: UserAccessKey[];
+  tenantId: string;
+  membershipId: string;
+  tenantSlug?: string | null;
   avatarPath?: string | null;
   createdAt: Date;
   updatedAt: Date;

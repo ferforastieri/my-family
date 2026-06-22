@@ -54,6 +54,7 @@ class AuthController extends ChangeNotifier {
   ));
 
   AppUser? user;
+  TenantInfo? tenant;
   bool loading = true;
   String? token;
   String? refreshToken;
@@ -114,6 +115,7 @@ class AuthController extends ChangeNotifier {
       final response = await _httpGetMap('/auth/me');
       user =
           AppUser.fromJson(Map<String, dynamic>.from(response['user'] as Map));
+      _acceptTenant(response['tenant']);
       notifyListeners();
     } catch (error) {
       if (clearInvalidToken && _looksLikeAuthError(error)) {
@@ -136,11 +138,20 @@ class AuthController extends ChangeNotifier {
     await _acceptAuth(response);
   }
 
-  Future<void> register(String email, String password, String name) async {
+  Future<void> register(
+    String email,
+    String password,
+    String name,
+    String familyName, {
+    String? slug,
+  }) async {
     final response = await _httpPostMap('/auth/register', {
       'email': email,
       'password': password,
       'name': name,
+      'familyName': familyName,
+      if (slug?.trim().isNotEmpty == true) 'slug': slug!.trim(),
+      'locale': 'pt-BR',
     });
     await _acceptAuth(response);
   }
@@ -163,6 +174,7 @@ class AuthController extends ChangeNotifier {
     final rawUser = response['user'];
     if (rawUser is Map) {
       user = AppUser.fromJson(Map<String, dynamic>.from(rawUser));
+      _acceptTenant(response['tenant']);
       notifyListeners();
     }
   }
@@ -262,6 +274,7 @@ class AuthController extends ChangeNotifier {
 
   Future<void> _clearAuth({bool notify = true}) async {
     user = null;
+    tenant = null;
     token = null;
     refreshToken = null;
     await _fresh.clearToken();
@@ -281,6 +294,7 @@ class AuthController extends ChangeNotifier {
       refreshToken = nextRefreshToken;
     }
     user = AppUser.fromJson(Map<String, dynamic>.from(response['user'] as Map));
+    _acceptTenant(response['tenant']);
     await _fresh.setToken(oauthTokenFromJwt(
       accessToken: token!,
       refreshToken: refreshToken,
@@ -314,6 +328,7 @@ class AuthController extends ChangeNotifier {
       if (rawUser is Map) {
         user = AppUser.fromJson(Map<String, dynamic>.from(rawUser));
       }
+      _acceptTenant(data['tenant']);
       return oauthTokenFromJwt(
         accessToken: nextToken,
         refreshToken: refreshToken,
@@ -327,6 +342,51 @@ class AuthController extends ChangeNotifier {
     this.token = token.accessToken;
     refreshToken = token.refreshToken ?? refreshToken;
     socket.connect(token: this.token, force: true);
+  }
+
+  Future<String> createCheckout() async {
+    final response = await _httpPostMap('/billing/checkout', const {});
+    return response['checkoutUrl']?.toString() ?? '';
+  }
+
+  Future<String> createBillingPortal() async {
+    final response = await _httpPostMap('/billing/portal', const {});
+    return response['portalUrl']?.toString() ?? '';
+  }
+
+  Future<void> refreshTenant() async {
+    final response = await _httpGetMap('/tenants/current');
+    tenant = TenantInfo.fromJson(response);
+    notifyListeners();
+  }
+
+  Future<void> updateTenant({
+    required String name,
+    required String slug,
+    required String locale,
+  }) async {
+    final response = await _httpPatchMap('/tenants/current', {
+      'name': name,
+      'slug': slug,
+      'defaultLocale': locale,
+    });
+    tenant = TenantInfo.fromJson(response);
+    notifyListeners();
+  }
+
+  Future<void> setPublished(bool published) async {
+    final response = await _httpPostMap(
+      '/tenants/current/publication',
+      {'isPublished': published},
+    );
+    tenant = TenantInfo.fromJson(response);
+    notifyListeners();
+  }
+
+  void _acceptTenant(Object? rawTenant) {
+    if (rawTenant is Map) {
+      tenant = TenantInfo.fromJson(Map<String, dynamic>.from(rawTenant));
+    }
   }
 
   Future<Map<String, dynamic>> _httpGetMap(

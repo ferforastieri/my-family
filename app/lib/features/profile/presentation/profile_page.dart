@@ -53,6 +53,7 @@ class ProfilePage extends StatelessWidget {
                     builder: (_) => EditProfileSheet(auth: auth, toast: toast),
                   ),
                   onAdmin: () => context.openAppRoute('/admin'),
+                  onBilling: () => context.openAppRoute('/billing'),
                   onSignOut: () async {
                     await auth.signOut();
                     if (context.mounted) context.go('/');
@@ -70,6 +71,7 @@ class _SignedProfileCard extends StatefulWidget {
     required this.toast,
     required this.onEditProfile,
     required this.onAdmin,
+    required this.onBilling,
     required this.onSignOut,
   });
 
@@ -77,6 +79,7 @@ class _SignedProfileCard extends StatefulWidget {
   final ToastController toast;
   final VoidCallback onEditProfile;
   final VoidCallback onAdmin;
+  final VoidCallback onBilling;
   final VoidCallback onSignOut;
 
   @override
@@ -142,6 +145,13 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
                 description: 'Atualize seu nome e suas informações.',
                 onTap: widget.onEditProfile,
               ),
+              const SizedBox(height: 10),
+              _ProfileActionTile(
+                icon: Icons.workspace_premium_outlined,
+                label: 'Assinatura e publicação',
+                description: 'Gerencie o plano e o endereço do seu site.',
+                onTap: widget.onBilling,
+              ),
               if (user.isAdmin) ...[
                 const SizedBox(height: 10),
                 _ProfileActionTile(
@@ -178,10 +188,9 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
 
 String _roleLabel(String role) {
   return switch (role) {
-    'husband' => 'Marido',
-    'wife' => 'Esposa',
-    'children' => 'Filhos',
-    'friends' => 'Amigos',
+    'owner' => 'Proprietário',
+    'admin' => 'Administrador',
+    'member' => 'Membro',
     _ => 'Perfil',
   };
 }

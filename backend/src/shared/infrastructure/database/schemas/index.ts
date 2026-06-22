@@ -19,6 +19,9 @@ export * from './push-subscription.schema';
 export * from './user.schema';
 export * from './quiz-question.schema';
 export * from './scheduled-notification.schema';
+export * from './tenant.schema';
+export * from './membership.schema';
+export * from './subscription.schema';
 
 import { CartaDocument, CartaSchema } from './carta.schema';
 import {
@@ -80,8 +83,42 @@ import {
   ScheduledNotificationDocument,
   ScheduledNotificationSchema,
 } from './scheduled-notification.schema';
+import { TenantDocument, TenantSchema } from './tenant.schema';
+import { MembershipDocument, MembershipSchema } from './membership.schema';
+import {
+  BillingEventDocument,
+  BillingEventSchema,
+  SubscriptionDocument,
+  SubscriptionSchema,
+} from './subscription.schema';
+import { applyTenantScope } from '@tenancy/infrastructure/tenant-scope.plugin';
+
+[
+  CartaSchema,
+  ChatConversationSchema,
+  ChatMessageSchema,
+  FotoSchema,
+  FamilyListSchema,
+  FamilyListItemSchema,
+  GameCompletionSchema,
+  MiniGameConfigSchema,
+  GameWordSchema,
+  HomeSettingsSchema,
+  LocationUpdateSchema,
+  LocationPlaceSchema,
+  LocationPresenceSchema,
+  MusicaSchema,
+  NotaSchema,
+  NotificationSchema,
+  QuizQuestionSchema,
+  ScheduledNotificationSchema,
+].forEach(applyTenantScope);
 
 export const mongoModels = [
+  { name: TenantDocument.name, schema: TenantSchema },
+  { name: MembershipDocument.name, schema: MembershipSchema },
+  { name: SubscriptionDocument.name, schema: SubscriptionSchema },
+  { name: BillingEventDocument.name, schema: BillingEventSchema },
   { name: UserDocument.name, schema: UserSchema },
   { name: PasswordResetDocument.name, schema: PasswordResetSchema },
   { name: ChatConversationDocument.name, schema: ChatConversationSchema },

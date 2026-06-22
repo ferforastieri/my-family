@@ -1,9 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
-import type {
-  UserAccessKey,
-  UserRole,
-} from '@auth/domain/entities/user.entity';
+import type { UserAccessKey } from '@auth/domain/entities/user.entity';
 
 @Schema({ timestamps: true, collection: 'users' })
 export class UserDocument {
@@ -16,8 +13,9 @@ export class UserDocument {
   @Prop()
   name?: string;
 
-  @Prop({ required: true, default: 'friends' })
-  role: UserRole;
+  // Campos legados lidos apenas pelo script de migração para memberships.
+  @Prop()
+  role?: string;
 
   @Prop({ type: [String], default: [] })
   access: UserAccessKey[];

@@ -13,6 +13,8 @@ import {
 import { notificationFactory } from '../factories/notification.factory';
 import { notificationMapper } from '../mappers/notification.mapper';
 import type { UserEntity } from '@auth/domain/entities/user.entity';
+import { TenantContext } from '@tenancy/application/tenant-context';
+import { TenantRepository } from '@tenancy/infrastructure/tenant.repository';
 
 export type ChatPush = {
   conversationId: string;
@@ -39,6 +41,8 @@ export class NotificationsService {
     private repository: NotificationsRepository,
     private env: Environment,
     private realtime: NotificationsRealtimeGateway,
+    private tenantContext: TenantContext,
+    private tenants: TenantRepository,
   ) {
     const serviceAccount = this.loadFirebaseServiceAccount();
     if (serviceAccount && admin.apps.length === 0) {
@@ -171,8 +175,12 @@ export class NotificationsService {
       return { sent: 0 };
     }
 
+    const memberships = await this.tenants.listMembershipsForTenant(
+      this.tenantContext.tenantId,
+    );
+    const memberIds = memberships.map((membership) => membership.userId);
     const excluded = new Set(options.excludeUserIds ?? []);
-    const subs = (await this.repository.listSubscriptions()).filter(
+    const subs = (await this.repository.listSubscriptionsForUsers(memberIds)).filter(
       (sub) => !sub.userId || !excluded.has(sub.userId),
     );
     let sent = 0;

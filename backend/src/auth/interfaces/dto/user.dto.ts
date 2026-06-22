@@ -43,5 +43,7 @@ export class UserResponseDto {
   role: UserRole;
   access: UserAccessKey[];
   avatarPath: string | null;
+  tenantId: string;
+  tenantSlug: string | null;
   createdAt: Date;
 }

@@ -23,6 +23,7 @@
       "@cartas/*": ["src/cartas/*"],
       "@notas/*": ["src/notas/*"],
       "@notifications/*": ["src/notifications/*"]
+      ,"@tenancy/*": ["src/tenancy/*"]
     },
     "incremental": true,
     "skipLibCheck": true,

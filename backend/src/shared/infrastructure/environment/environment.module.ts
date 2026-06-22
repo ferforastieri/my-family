@@ -43,6 +43,13 @@ export class Environment {
     throttleLimit: number;
     csrfSecret: string;
   };
+  billing?: {
+    stripeSecretKey: string;
+    stripeWebhookSecret: string;
+    stripePriceId: string;
+    successUrl: string;
+    cancelUrl: string;
+  };
 
   isProduction(): boolean {
     return this.type === 'production';
@@ -154,6 +161,25 @@ class EnvironmentFactory {
         throttleLimit,
         csrfSecret,
       },
+      billing:
+        readOptionalEnv('STRIPE_SECRET_KEY', output.parsed) &&
+        readOptionalEnv('STRIPE_WEBHOOK_SECRET', output.parsed) &&
+        readOptionalEnv('STRIPE_PRICE_ID', output.parsed)
+          ? {
+              stripeSecretKey: readOptionalEnv('STRIPE_SECRET_KEY', output.parsed)!,
+              stripeWebhookSecret: readOptionalEnv(
+                'STRIPE_WEBHOOK_SECRET',
+                output.parsed,
+              )!,
+              stripePriceId: readOptionalEnv('STRIPE_PRICE_ID', output.parsed)!,
+              successUrl:
+                readOptionalEnv('BILLING_SUCCESS_URL', output.parsed) ||
+                'http://localhost:3000/app/billing/success',
+              cancelUrl:
+                readOptionalEnv('BILLING_CANCEL_URL', output.parsed) ||
+                'http://localhost:3000/signup?checkout=cancelled',
+            }
+          : undefined,
     });
   }
 }
@@ -172,6 +198,13 @@ function readNumberEnv(name: string, parsed?: Record<string, string>): number {
     throw new Error(`${name} deve ser um número positivo`);
   }
   return value;
+}
+
+function readOptionalEnv(
+  name: string,
+  parsed?: Record<string, string>,
+): string | undefined {
+  return process.env[name] || parsed?.[name] || undefined;
 }
 
 @Global()

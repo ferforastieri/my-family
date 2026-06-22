@@ -5,48 +5,118 @@ import type {
   PaginatedResult,
   PaginationQuery,
 } from '@shared/infrastructure/database/mongo.utils';
+import { normalizePagination } from '@shared/infrastructure/database/mongo.utils';
+import { TenantContext } from '@tenancy/application/tenant-context';
+import { TenantRepository } from '@tenancy/infrastructure/tenant.repository';
+import type { MembershipEntity, TenantEntity } from '@tenancy/domain/tenant.entity';
+import type { UserEntity } from '@auth/domain/entities/user.entity';
 import { userMapper } from '../mappers/user.mapper';
-import { userUpdateFactory } from '../factories/user.factory';
 import { UpdateUserDto, UserResponseDto } from '../../interfaces/dto/user.dto';
 
 @Injectable()
 export class UserService {
-  constructor(private users: UserRepository) {}
+  constructor(
+    private users: UserRepository,
+    private tenants: TenantRepository,
+    private context: TenantContext,
+  ) {}
 
   async list(
     query?: PaginationQuery,
   ): Promise<PaginatedResult<UserResponseDto>> {
-    const page = await this.users.list(query);
+    const { page, limit, skip } = normalizePagination(query, {
+      page: 1,
+      limit: 20,
+      maxLimit: 100,
+    });
+    const [tenant, memberships] = await Promise.all([
+      this.tenants.findTenantById(this.context.tenantId),
+      this.tenants.listMembershipsForTenant(this.context.tenantId),
+    ]);
+    if (!tenant) return { items: [], total: 0, page, limit, pages: 0 };
+    const selected = memberships.slice(skip, skip + limit);
+    const accounts = await this.users.findManyByIds(
+      selected.map((membership) => membership.userId),
+    );
+    const accountById = new Map(accounts.map((account) => [account.id, account]));
+    const items = selected
+      .map((membership) => {
+        const account = accountById.get(membership.userId);
+        return account
+          ? userMapper.toDto(this.withMembership(account, membership, tenant))
+          : null;
+      })
+      .filter((item): item is UserResponseDto => item !== null);
     return {
-      ...page,
-      items: page.items.map((user) => userMapper.toDto(user)),
+      items,
+      total: memberships.length,
+      page,
+      limit,
+      pages: Math.ceil(memberships.length / limit),
     };
   }
 
   async findOne(id: string): Promise<UserResponseDto | null> {
-    const row = await this.users.findById(id);
-    return row ? userMapper.toDto(row) : null;
+    const [account, membership, tenant] = await Promise.all([
+      this.users.findById(id),
+      this.tenants.findMembership(this.context.tenantId, id),
+      this.tenants.findTenantById(this.context.tenantId),
+    ]);
+    if (!account || !membership || !tenant) return null;
+    return userMapper.toDto(this.withMembership(account, membership, tenant));
   }
 
   async update(
     id: string,
     data: UpdateUserDto,
   ): Promise<UserResponseDto | null> {
-    const updateData = userUpdateFactory.create(data);
-    const password = data.password?.trim();
-    if (password) {
-      if (password.length < 8) {
-        throw new BadRequestException(
-          'A senha deve ter pelo menos 8 caracteres',
-        );
-      }
-      updateData.passwordHash = await bcrypt.hash(password, 12);
+    const membership = await this.tenants.findMembership(this.context.tenantId, id);
+    if (!membership) return null;
+    if (membership.role === 'owner' && data.role && data.role !== 'owner') {
+      throw new BadRequestException('O proprietário não pode perder a propriedade.');
     }
-    await this.users.update(id, updateData);
+    if (membership.role !== 'owner' && data.role === 'owner') {
+      throw new BadRequestException('A transferência de propriedade usa um fluxo próprio.');
+    }
+    const accountUpdate: { name?: string; avatarPath?: string; passwordHash?: string } = {
+      name: data.name?.trim(),
+      avatarPath: data.avatarPath,
+    };
+    if (data.password?.trim()) {
+      accountUpdate.passwordHash = await bcrypt.hash(data.password.trim(), 12);
+    }
+    await Promise.all([
+      this.users.update(id, accountUpdate),
+      this.tenants.updateMembership(this.context.tenantId, id, {
+        role: data.role,
+        access: data.access,
+      }),
+    ]);
     return this.findOne(id);
   }
 
   async delete(id: string): Promise<boolean> {
-    return this.users.delete(id);
+    const membership = await this.tenants.findMembership(this.context.tenantId, id);
+    if (!membership) return false;
+    if (membership.role === 'owner') {
+      throw new BadRequestException('O proprietário não pode ser removido.');
+    }
+    return this.tenants.deleteMembership(this.context.tenantId, id);
+  }
+
+  private withMembership(
+    account: UserEntity,
+    membership: MembershipEntity,
+    tenant: TenantEntity,
+  ): UserEntity {
+    return {
+      ...account,
+      tenantId: tenant.id,
+      tenantSlug: tenant.slug,
+      membershipId: membership.id,
+      role: membership.role,
+      access: membership.access,
+    };
   }
 }
+

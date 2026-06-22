@@ -10,6 +10,7 @@ import { WsSessionService } from '@auth/application/services/ws-session.service'
 import { LocationService } from '../../application/services/location.service';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 import { LocationPlaceWriteDto, LocationUpdateDto } from '../dto/location.dto';
+import { emitToTenant } from '@tenancy/application/tenant-context';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class LocationGateway {
@@ -22,7 +23,7 @@ export class LocationGateway {
   ) {}
 
   emitLocationUpdated(row: unknown) {
-    this.server?.emit('location.updated', row);
+    emitToTenant(this.server, 'location.updated', row);
   }
 
   @SubscribeMessage('location.update')
@@ -58,7 +59,7 @@ export class LocationGateway {
   ) {
     await this.session.requireAccess(client, 'localizacao');
     const row = await this.locations.createPlace(data);
-    this.server?.emit('location.places.changed', row);
+    emitToTenant(this.server, 'location.places.changed', row);
     return { message: 'Local salvo.', ...row };
   }
 
@@ -69,7 +70,7 @@ export class LocationGateway {
   ) {
     await this.session.requireAccess(client, 'localizacao');
     const row = await this.locations.updatePlace(body.id, body.data);
-    if (row) this.server?.emit('location.places.changed', row);
+    if (row) emitToTenant(this.server, 'location.places.changed', row);
     return row ? { message: 'Local atualizado.', ...row } : row;
   }
 
@@ -80,7 +81,7 @@ export class LocationGateway {
   ) {
     await this.session.requireAccess(client, 'localizacao');
     const ok = await this.locations.deletePlace(body.id);
-    if (ok) this.server?.emit('location.places.changed', { id: body.id });
+    if (ok) emitToTenant(this.server, 'location.places.changed', { id: body.id });
     return { ok, message: 'Local removido.' };
   }
 }

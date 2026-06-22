@@ -13,28 +13,32 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthService } from '../../application/services/auth.service';
-import { RefreshTokenDto, RegisterDto } from '../dto/auth.dto';
+import { LoginDto, RefreshTokenDto, RegisterDto } from '../dto/auth.dto';
 import { LocalAuthGuard } from '../../guards/local-auth.guard';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { UploadService, UploadContext } from '@shared/infrastructure/upload';
 import { StreamableFile } from '@nestjs/common';
 import { createReadStream } from 'fs';
+import { TenantService } from '@tenancy/application/tenant.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private auth: AuthService,
     private upload: UploadService,
+    private tenants: TenantService,
   ) {}
 
   @Post('register')
   async register(@Body() dto: RegisterDto) {
-    const response = await this.auth.register(
-      dto.email,
-      dto.password,
-      dto.name,
-      dto.role,
-    );
+    const response = await this.auth.register({
+      email: dto.email,
+      password: dto.password,
+      name: dto.name,
+      familyName: dto.familyName,
+      slug: dto.slug,
+      locale: dto.locale,
+    });
     return { message: 'Cadastro realizado com sucesso.', ...response };
   }
 
@@ -42,10 +46,16 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   async login(
     @Req() req: { user: { id: string; email: string; name: string | null } },
+    @Body() body: LoginDto,
   ) {
     return {
       message: 'Login realizado com sucesso.',
-      ...this.auth.tokenResponse(req.user as any),
+      ...(await this.auth.tokenResponse(
+        req.user as any,
+        undefined,
+        undefined,
+        body.tenantSlug,
+      )),
     };
   }
 
@@ -71,31 +81,27 @@ export class AuthController {
       };
     },
   ) {
-    const { id, email, name, role, access, avatarPath } = req.user;
-    return { user: { id, email, name, role, access, avatarPath } };
+    return {
+      user: this.auth.publicUser(req.user as any),
+      tenant: await this.tenants.current(),
+    };
   }
 
   @Patch('me')
   @UseGuards(JwtAuthGuard)
   async updateMe(
-    @Req() req: { user: { id: string } },
+    @Req() req: { user: { id: string; tenantId: string } },
     @Body() dto: { name?: string },
   ) {
     const user = await this.auth.updateProfile(req.user.id, {
       name: dto.name,
     });
+    const sessionUser = user
+      ? await this.auth.findAuthenticatedUser(user.id, req.user.tenantId)
+      : null;
     return {
       message: 'Perfil atualizado.',
-      user: user
-        ? {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            access: user.access,
-            avatarPath: user.avatarPath,
-          }
-        : null,
+      user: sessionUser ? this.auth.publicUser(sessionUser) : null,
     };
   }
 
@@ -103,7 +109,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   async uploadAvatar(
-    @Req() req: { user: { id: string } },
+    @Req() req: { user: { id: string; tenantId: string } },
     @UploadedFile() file: Express.Multer.File,
   ) {
     if (!file) throw new BadRequestException('Nenhum arquivo enviado');
@@ -112,17 +118,12 @@ export class AuthController {
       UploadContext.Avatar,
     );
     const user = await this.auth.updateAvatar(req.user.id, relativePath);
+    const sessionUser = user
+      ? await this.auth.findAuthenticatedUser(user.id, req.user.tenantId)
+      : null;
     return {
       message: 'Foto do perfil atualizada.',
-      user: user
-        ? {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            avatarPath: user.avatarPath,
-          }
-        : null,
+      user: sessionUser ? this.auth.publicUser(sessionUser) : null,
     };
   }
 
@@ -147,10 +148,11 @@ export class AuthController {
 
   @Get('avatar')
   getAvatar(@Query('path') relativePath: string) {
-    if (!relativePath || !relativePath.startsWith('avatar/')) {
+    const match = relativePath?.match(/^tenants\/([^/]+)\/avatar\//);
+    if (!match) {
       throw new BadRequestException('Caminho inválido');
     }
-    const fullPath = this.upload.resolvePath(relativePath);
+    const fullPath = this.upload.resolveTenantPath(match[1], relativePath);
     const file = createReadStream(fullPath);
     const ext = relativePath.split('.').pop()?.toLowerCase();
     const type =

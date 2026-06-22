@@ -3,6 +3,8 @@ import { HydratedDocument } from 'mongoose';
 
 @Schema({ timestamps: true, collection: 'scheduled_notifications' })
 export class ScheduledNotificationDocument {
+  tenantId: string;
+
   @Prop({ required: true })
   title: string;
 

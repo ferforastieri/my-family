@@ -11,6 +11,7 @@ import { UserService } from '../../application/services/user.service';
 import { WsSessionService } from '../../application/services/ws-session.service';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 import { UpdateUserDto } from '../dto/user.dto';
+import { emitToTenant } from '@tenancy/application/tenant-context';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 @UsePipes(
@@ -50,7 +51,7 @@ export class UsersGateway {
       access: body.access,
       password: body.password,
     });
-    if (row) this.server.emit('users.updated', row);
+    if (row) emitToTenant(this.server, 'users.updated', row);
     return row ? { message: 'Usuário atualizado.', ...row } : row;
   }
 
@@ -61,7 +62,7 @@ export class UsersGateway {
   ) {
     await this.session.requireAdmin(client);
     const ok = await this.users.delete(body.id);
-    if (ok) this.server.emit('users.deleted', { id: body.id });
+    if (ok) emitToTenant(this.server, 'users.deleted', { id: body.id });
     return { ok, message: 'Usuário removido.' };
   }
 }

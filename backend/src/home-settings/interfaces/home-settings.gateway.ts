@@ -8,6 +8,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/services/ws-session.service';
 import { HomeSettingsService } from '../application/home-settings.service';
+import { emitToTenant } from '@tenancy/application/tenant-context';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class HomeSettingsGateway {
@@ -20,7 +21,8 @@ export class HomeSettingsGateway {
   ) {}
 
   @SubscribeMessage('home.settings.get')
-  get() {
+  async get(@ConnectedSocket() client: Socket) {
+    await this.session.requireUser(client);
     return this.settings.get();
   }
 
@@ -43,7 +45,7 @@ export class HomeSettingsGateway {
   ) {
     await this.session.requireAdmin(client);
     const settings = await this.settings.update(body);
-    this.server.emit('home.settings.changed', settings);
+    emitToTenant(this.server, 'home.settings.changed', settings);
     return { message: 'Datas da Home atualizadas.', ...settings };
   }
 }

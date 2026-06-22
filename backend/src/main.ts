@@ -13,6 +13,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     cors: false,
     bufferLogs: true,
+    rawBody: true,
   });
   app.useLogger(app.get(Logger));
   const environment = app.get(Environment);
@@ -49,6 +50,7 @@ async function bootstrap() {
     skipCsrfProtection: (request) =>
       hasBearerToken(request.headers.authorization) ||
       isAuthHttpEndpoint(request.path) ||
+      request.path.endsWith('/billing/webhook') ||
       request.path.startsWith('/socket.io'),
   });
   app.use(doubleCsrfProtection);

@@ -1,9 +1,14 @@
 class AppConfig {
   static const _apiBaseUrl = String.fromEnvironment('API_BASE_URL');
   static const _socketUrl = String.fromEnvironment('SOCKET_URL');
+  static const _publicWebUrl = String.fromEnvironment('PUBLIC_WEB_URL');
 
   static String get apiBaseUrl => _requiredEnv('API_BASE_URL', _apiBaseUrl);
   static String get socketUrl => _requiredEnv('SOCKET_URL', _socketUrl);
+  static String get publicWebUrl {
+    if (_publicWebUrl.trim().isNotEmpty) return _publicWebUrl;
+    return Uri.base.hasScheme ? Uri.base.origin : '';
+  }
 
   static const firebaseApiKey = String.fromEnvironment('FIREBASE_API_KEY');
   static const firebaseAppId = String.fromEnvironment('FIREBASE_APP_ID');
@@ -28,6 +33,10 @@ class AppConfig {
   static Uri apiUri(String path) {
     final normalized = path.startsWith('/') ? path : '/$path';
     return Uri.parse('$apiBaseUrl$normalized');
+  }
+
+  static Uri publicSiteUri(String slug, {String locale = 'pt'}) {
+    return Uri.parse('$publicWebUrl/$locale/familia/$slug');
   }
 
   static String _requiredEnv(String name, String value) {

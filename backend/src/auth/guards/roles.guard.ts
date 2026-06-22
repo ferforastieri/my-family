@@ -7,12 +7,16 @@ import {
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 import { isAdminRole, type UserRole } from '@auth/domain/entities/user.entity';
+import { TenantService } from '@tenancy/application/tenant.service';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(
+    private reflector: Reflector,
+    private tenants: TenantService,
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(
       ROLES_KEY,
       [context.getHandler(), context.getClass()],
@@ -33,6 +37,9 @@ export class RolesGuard implements CanActivate {
     ) {
       throw new ForbiddenException('Acesso não autorizado para sua role.');
     }
+    await this.tenants.assertEntitled(
+      (user as { tenantId?: string }).tenantId,
+    );
     return true;
   }
 }
