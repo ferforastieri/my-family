@@ -20,11 +20,9 @@ import {
   NotificationCreateDto,
   NotificationSendDto,
 } from '../dto/notification.dto';
-import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@auth/guards/roles.guard';
 import { Roles } from '@auth/decorators/roles.decorator';
 @Controller('notifications')
-@UseGuards(JwtAuthGuard)
 export class NotificationsController {
   constructor(
     private notifications: NotificationsService,
@@ -37,7 +35,6 @@ export class NotificationsController {
   }
 
   @Post('subscribe')
-  @UseGuards(JwtAuthGuard)
   async subscribe(
     @Req() request: Request & { user: UserEntity },
     @Body() body: { subscription: FcmSubscriptionDto; userAgent?: string },
@@ -65,14 +62,14 @@ export class NotificationsController {
   }
 
   @Get('scheduled/list')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('owner', 'admin')
   async scheduledList() {
     return this.scheduler.list();
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('owner', 'admin')
   async one(@Param('id') id: string) {
     const n = await this.notifications.findOne(id);
@@ -81,7 +78,7 @@ export class NotificationsController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('owner', 'admin')
   async create(@Body() dto: NotificationCreateDto) {
     const row = await this.notifications.create(dto);
@@ -89,7 +86,7 @@ export class NotificationsController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('owner', 'admin')
   async update(
     @Param('id') id: string,
@@ -101,7 +98,7 @@ export class NotificationsController {
   }
 
   @Delete('scheduled/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('owner', 'admin')
   async deleteScheduled(@Param('id') id: string) {
     const ok = await this.scheduler.delete(id);
@@ -110,7 +107,7 @@ export class NotificationsController {
   }
 
   @Post('send')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('owner', 'admin')
   async sendNow(@Body() body: NotificationSendDto) {
     if (!body?.title) throw new BadRequestException('title é obrigatório');
@@ -119,7 +116,7 @@ export class NotificationsController {
   }
 
   @Post('schedule')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('owner', 'admin')
   async schedule(
     @Body()
@@ -141,7 +138,7 @@ export class NotificationsController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('owner', 'admin')
   async delete(@Param('id') id: string) {
     const ok = await this.notifications.delete(id);

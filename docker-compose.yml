@@ -40,7 +40,6 @@ services:
       REDIS_URL: redis://redis:6379
       PORT: 3001
       NODE_ENV: production
-      LOG_LEVEL: ${LOG_LEVEL:?LOG_LEVEL is required}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
@@ -89,21 +88,9 @@ services:
         FIREBASE_WEB_PUSH_CERTIFICATE_KEY: ${FIREBASE_WEB_PUSH_CERTIFICATE_KEY:-}
     container_name: my-family-front
     restart: unless-stopped
-    depends_on:
-      - backend
-    networks:
-      - my-family-network
-
-  gateway:
-    build:
-      context: .
-      dockerfile: Dockerfile.gateway
-    container_name: my-family-gateway
-    restart: unless-stopped
     ports:
       - "${FRONT_PORT:-3458}:80"
     depends_on:
-      - front
       - backend
     networks:
       - my-family-network

@@ -9,13 +9,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { UserService } from '@auth/application/services/user.service';
-import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@auth/guards/roles.guard';
 import { Roles } from '@auth/decorators/roles.decorator';
 import { UpdateUserDto } from '../dto/user.dto';
 
 @Controller('users')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(RolesGuard)
 @Roles('owner', 'admin')
 export class UsersController {
   constructor(private user: UserService) {}

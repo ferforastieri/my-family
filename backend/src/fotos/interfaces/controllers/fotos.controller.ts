@@ -18,12 +18,11 @@ import { createReadStream } from 'fs';
 import { FotosService } from '../../application/services/fotos.service';
 import { Access } from '@auth/decorators/access.decorator';
 import { AccessGuard } from '@auth/guards/access.guard';
-import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { UploadService, UploadContext } from '@shared/infrastructure/upload';
 import type { FotoWriteDto } from '../dto/foto.dto';
 
 @Controller('fotos')
-@UseGuards(JwtAuthGuard, AccessGuard)
+@UseGuards(AccessGuard)
 @Access('memorias')
 export class FotosController {
   constructor(
@@ -60,7 +59,7 @@ export class FotosController {
   }
 
   @Post('upload')
-  @UseGuards(JwtAuthGuard, AccessGuard)
+  @UseGuards(AccessGuard)
   @Access('memorias')
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
@@ -79,7 +78,7 @@ export class FotosController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, AccessGuard)
+  @UseGuards(AccessGuard)
   @Access('memorias')
   async create(@Body() data: FotoWriteDto) {
     const row = await this.fotosService.create(data);
@@ -87,7 +86,7 @@ export class FotosController {
   }
 
   @Put(':id')
-  @UseGuards(JwtAuthGuard, AccessGuard)
+  @UseGuards(AccessGuard)
   @Access('memorias')
   async update(@Param('id') id: string, @Body() data: Partial<FotoWriteDto>) {
     const row = await this.fotosService.update(id, data);
@@ -95,7 +94,7 @@ export class FotosController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, AccessGuard)
+  @UseGuards(AccessGuard)
   @Access('memorias')
   async delete(@Param('id') id: string) {
     return {

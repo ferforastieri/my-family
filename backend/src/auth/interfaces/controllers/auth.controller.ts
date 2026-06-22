@@ -4,18 +4,17 @@ import {
   Get,
   Patch,
   Body,
-  UseGuards,
   Req,
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  UnauthorizedException,
   Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthService } from '../../application/services/auth.service';
 import { LoginDto, RefreshTokenDto, RegisterDto } from '../dto/auth.dto';
-import { LocalAuthGuard } from '../../guards/local-auth.guard';
-import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
+import { Public } from '../../decorators/public.decorator';
 import { UploadService, UploadContext } from '@shared/infrastructure/upload';
 import { StreamableFile } from '@nestjs/common';
 import { createReadStream } from 'fs';
@@ -30,6 +29,7 @@ export class AuthController {
   ) {}
 
   @Post('register')
+  @Public()
   async register(@Body() dto: RegisterDto) {
     const response = await this.auth.register({
       email: dto.email,
@@ -43,15 +43,14 @@ export class AuthController {
   }
 
   @Post('login')
-  @UseGuards(LocalAuthGuard)
-  async login(
-    @Req() req: { user: { id: string; email: string; name: string | null } },
-    @Body() body: LoginDto,
-  ) {
+  @Public()
+  async login(@Body() body: LoginDto) {
+    const user = await this.auth.validateUser(body.email, body.password);
+    if (!user) throw new UnauthorizedException('Email ou senha inválidos.');
     return {
       message: 'Login realizado com sucesso.',
       ...(await this.auth.tokenResponse(
-        req.user as any,
+        user,
         undefined,
         undefined,
         body.tenantSlug,
@@ -60,6 +59,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @Public()
   async refresh(@Body() dto: RefreshTokenDto) {
     const token = dto.refreshToken ?? dto.refresh_token;
     const response = await this.auth.refresh(token ?? '');
@@ -67,7 +67,6 @@ export class AuthController {
   }
 
   @Get('me')
-  @UseGuards(JwtAuthGuard)
   async me(
     @Req()
     req: {
@@ -88,7 +87,6 @@ export class AuthController {
   }
 
   @Patch('me')
-  @UseGuards(JwtAuthGuard)
   async updateMe(
     @Req() req: { user: { id: string; tenantId: string } },
     @Body() dto: { name?: string },
@@ -106,7 +104,6 @@ export class AuthController {
   }
 
   @Post('avatar')
-  @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   async uploadAvatar(
     @Req() req: { user: { id: string; tenantId: string } },
@@ -128,6 +125,7 @@ export class AuthController {
   }
 
   @Post('forgot-password')
+  @Public()
   async forgotPassword(@Body('email') email: string) {
     if (!email) throw new BadRequestException('Email é obrigatório');
     await this.auth.requestPasswordReset(email);
@@ -138,6 +136,7 @@ export class AuthController {
   }
 
   @Post('reset-password')
+  @Public()
   async resetPassword(@Body() body: { token: string; newPassword: string }) {
     const { token, newPassword } = body;
     if (!token || !newPassword)
@@ -147,6 +146,7 @@ export class AuthController {
   }
 
   @Get('avatar')
+  @Public()
   getAvatar(@Query('path') relativePath: string) {
     const match = relativePath?.match(/^tenants\/([^/]+)\/avatar\//);
     if (!match) {

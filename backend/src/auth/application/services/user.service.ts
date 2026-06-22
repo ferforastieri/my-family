@@ -8,7 +8,10 @@ import type {
 import { normalizePagination } from '@shared/infrastructure/database/mongo.utils';
 import { TenantContext } from '@tenancy/application/tenant-context';
 import { TenantRepository } from '@tenancy/infrastructure/tenant.repository';
-import type { MembershipEntity, TenantEntity } from '@tenancy/domain/tenant.entity';
+import type {
+  MembershipEntity,
+  TenantEntity,
+} from '@tenancy/domain/tenant.entity';
 import type { UserEntity } from '@auth/domain/entities/user.entity';
 import { userMapper } from '../mappers/user.mapper';
 import { UpdateUserDto, UserResponseDto } from '../../interfaces/dto/user.dto';
@@ -38,7 +41,9 @@ export class UserService {
     const accounts = await this.users.findManyByIds(
       selected.map((membership) => membership.userId),
     );
-    const accountById = new Map(accounts.map((account) => [account.id, account]));
+    const accountById = new Map(
+      accounts.map((account) => [account.id, account]),
+    );
     const items = selected
       .map((membership) => {
         const account = accountById.get(membership.userId);
@@ -70,15 +75,26 @@ export class UserService {
     id: string,
     data: UpdateUserDto,
   ): Promise<UserResponseDto | null> {
-    const membership = await this.tenants.findMembership(this.context.tenantId, id);
+    const membership = await this.tenants.findMembership(
+      this.context.tenantId,
+      id,
+    );
     if (!membership) return null;
     if (membership.role === 'owner' && data.role && data.role !== 'owner') {
-      throw new BadRequestException('O proprietário não pode perder a propriedade.');
+      throw new BadRequestException(
+        'O proprietário não pode perder a propriedade.',
+      );
     }
     if (membership.role !== 'owner' && data.role === 'owner') {
-      throw new BadRequestException('A transferência de propriedade usa um fluxo próprio.');
+      throw new BadRequestException(
+        'A transferência de propriedade usa um fluxo próprio.',
+      );
     }
-    const accountUpdate: { name?: string; avatarPath?: string; passwordHash?: string } = {
+    const accountUpdate: {
+      name?: string;
+      avatarPath?: string;
+      passwordHash?: string;
+    } = {
       name: data.name?.trim(),
       avatarPath: data.avatarPath,
     };
@@ -96,7 +112,10 @@ export class UserService {
   }
 
   async delete(id: string): Promise<boolean> {
-    const membership = await this.tenants.findMembership(this.context.tenantId, id);
+    const membership = await this.tenants.findMembership(
+      this.context.tenantId,
+      id,
+    );
     if (!membership) return false;
     if (membership.role === 'owner') {
       throw new BadRequestException('O proprietário não pode ser removido.');
@@ -119,4 +138,3 @@ export class UserService {
     };
   }
 }
-

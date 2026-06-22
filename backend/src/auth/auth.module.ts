@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
+import { APP_GUARD } from '@nestjs/core';
 import { DatabaseModule } from '@shared/infrastructure/database/database.module';
 import { MongoModelsModule } from '@shared/infrastructure/database/database.providers';
 import { EnvironmentModule } from '@shared/infrastructure/environment/environment.module';
@@ -9,8 +9,7 @@ import { AuthService } from './application/services/auth.service';
 import { AuthController } from './interfaces/controllers/auth.controller';
 import { UserService } from './application/services/user.service';
 import { UsersController } from './interfaces/controllers/users.controller';
-import { LocalStrategy } from './strategies/local.strategy';
-import { JwtStrategy } from './strategies/jwt.strategy';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { UserRepository } from './infrastructure/repositories/user.repository';
 import { PasswordResetRepository } from './infrastructure/repositories/password-reset.repository';
@@ -21,7 +20,6 @@ import { WsSessionService } from './application/services/ws-session.service';
   imports: [
     DatabaseModule,
     MongoModelsModule,
-    PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [EnvironmentModule],
       inject: [Environment],
@@ -40,8 +38,7 @@ import { WsSessionService } from './application/services/ws-session.service';
     PasswordResetRepository,
     WsSessionService,
     UsersGateway,
-    LocalStrategy,
-    JwtStrategy,
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
     RolesGuard,
   ],
   exports: [AuthService, UserService, WsSessionService, RolesGuard],

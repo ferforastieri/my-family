@@ -1,7 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { NestFactory } from '@nestjs/core';
 import { RequestMethod, ValidationPipe } from '@nestjs/common';
-import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
 import * as cookieParser from 'cookie-parser';
 import { doubleCsrf } from 'csrf-csrf';
@@ -12,10 +11,8 @@ async function bootstrap() {
   EventEmitter.defaultMaxListeners = 50;
   const app = await NestFactory.create(AppModule, {
     cors: false,
-    bufferLogs: true,
     rawBody: true,
   });
-  app.useLogger(app.get(Logger));
   const environment = app.get(Environment);
 
   app.getHttpAdapter().getInstance().disable('x-powered-by');

@@ -7,7 +7,10 @@ import {
   SubscriptionDocument,
   SubscriptionMongoDocument,
 } from '@shared/infrastructure/database/schemas';
-import { cleanUndefined, toId } from '@shared/infrastructure/database/mongo.utils';
+import {
+  cleanUndefined,
+  toId,
+} from '@shared/infrastructure/database/mongo.utils';
 
 export type SubscriptionRecord = {
   id: string;
@@ -33,7 +36,9 @@ export class BillingRepository {
     private events: Model<BillingEventMongoDocument>,
   ) {}
 
-  private toRecord(document: SubscriptionMongoDocument | null): SubscriptionRecord | null {
+  private toRecord(
+    document: SubscriptionMongoDocument | null,
+  ): SubscriptionRecord | null {
     if (!document) return null;
     return {
       id: toId(document),
@@ -63,7 +68,9 @@ export class BillingRepository {
 
   async upsert(
     tenantId: string,
-    data: Partial<Omit<SubscriptionRecord, 'id' | 'tenantId' | 'createdAt' | 'updatedAt'>>,
+    data: Partial<
+      Omit<SubscriptionRecord, 'id' | 'tenantId' | 'createdAt' | 'updatedAt'>
+    >,
   ) {
     return this.toRecord(
       await this.subscriptions
@@ -93,4 +100,3 @@ export class BillingRepository {
     await this.events.deleteOne({ providerEventId }).exec();
   }
 }
-

@@ -198,7 +198,8 @@ export class AuthService {
     const row = await this.passwordResets.findByToken(token);
     if (!row) throw new BadRequestException('Token inválido ou expirado');
     if (row.used) throw new BadRequestException('Token já utilizado');
-    if (row.expiresAt < new Date()) throw new BadRequestException('Token expirado');
+    if (row.expiresAt < new Date())
+      throw new BadRequestException('Token expirado');
     const user = await this.users.findById(row.userId);
     if (!user) throw new BadRequestException('Usuário não encontrado');
     if (newPassword.length < 8) {
@@ -212,7 +213,9 @@ export class AuthService {
   private async resolveSession(userId: string, slug?: string) {
     const memberships = await this.tenants.listMembershipsForUser(userId);
     if (!memberships.length) {
-      throw new UnauthorizedException('Usuário não pertence a nenhuma família.');
+      throw new UnauthorizedException(
+        'Usuário não pertence a nenhuma família.',
+      );
     }
     if (slug) {
       const tenant = await this.tenants.findTenantBySlug(slug);
@@ -220,7 +223,9 @@ export class AuthService {
         ? memberships.find((row) => row.tenantId === tenant.id)
         : undefined;
       if (!tenant || !membership) {
-        throw new UnauthorizedException('Acesso não autorizado a esta família.');
+        throw new UnauthorizedException(
+          'Acesso não autorizado a esta família.',
+        );
       }
       return { tenant, membership };
     }
@@ -245,4 +250,3 @@ export class AuthService {
     };
   }
 }
-

@@ -7,9 +7,7 @@ import {
 import { from, mergeMap, Observable } from 'rxjs';
 import type { Socket } from 'socket.io';
 import type { UserEntity } from '@auth/domain/entities/user.entity';
-import {
-  TenantContext,
-} from '@tenancy/application/tenant-context';
+import { TenantContext } from '@tenancy/application/tenant-context';
 import type { TenantContextValue } from '@tenancy/domain/tenant.entity';
 import { WsSessionService } from './ws-session.service';
 
@@ -66,4 +64,3 @@ export class TenantContextInterceptor implements NestInterceptor {
     };
   }
 }
-

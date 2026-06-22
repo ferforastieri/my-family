@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { LoggerModule } from 'nestjs-pino';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import {
   Environment,
@@ -36,72 +35,6 @@ import { TenantContextInterceptor } from './auth/application/services/tenant-con
 @Module({
   imports: [
     EnvironmentModule.forRoot(),
-    LoggerModule.forRootAsync({
-      inject: [Environment],
-      useFactory: (environment: Environment) => ({
-        pinoHttp: {
-          level: environment.log.level,
-          transport: {
-            target: 'pino-pretty',
-            options: {
-              colorize: true,
-              levelFirst: true,
-              singleLine: true,
-              translateTime: 'SYS:yyyy-mm-dd HH:MM:ss.l o',
-              ignore: 'pid,hostname,context,env',
-              messageFormat: '[{context}] {msg}',
-              errorLikeObjectKeys: ['err', 'error'],
-            },
-          },
-          customProps: () => ({
-            env: environment.type,
-          }),
-          customSuccessMessage: (request, response) =>
-            `${request.method} ${request.url} -> ${response.statusCode}`,
-          customErrorMessage: (request, response, error) =>
-            `${request.method} ${request.url} -> ${response.statusCode}: ${error.message}`,
-          serializers: {
-            req(request) {
-              return {
-                id: request.id,
-                method: request.method,
-                url: request.url,
-                query: request.query,
-                params: request.params,
-                remoteAddress: request.remoteAddress,
-                remotePort: request.remotePort,
-              };
-            },
-            res(response) {
-              return {
-                statusCode: response.statusCode,
-              };
-            },
-            err(error) {
-              return {
-                type: error.type,
-                message: error.message,
-                stack: error.stack,
-              };
-            },
-          },
-          redact: {
-            paths: [
-              'req.headers.authorization',
-              'req.headers.cookie',
-              'req.body.password',
-              'req.body.newPassword',
-              'req.body.token',
-              'req.body.refreshToken',
-              'req.body.subscription.token',
-              'req.body.firebaseServiceAccountJson',
-              'req.body.FIREBASE_SERVICE_ACCOUNT_JSON',
-            ],
-            censor: '[REDACTED]',
-          },
-        },
-      }),
-    }),
     ThrottlerModule.forRootAsync({
       inject: [Environment],
       useFactory: (environment: Environment) => ({

@@ -9,6 +9,7 @@ import { Environment } from '@shared/infrastructure/environment/environment.modu
 import { TenantContext } from '@tenancy/application/tenant-context';
 import { TenantRepository } from '@tenancy/infrastructure/tenant.repository';
 import { BillingRepository } from '../infrastructure/billing.repository';
+import { JobsService, type PaymentJob } from '@shared/infrastructure/queue';
 
 @Injectable()
 export class BillingService {
@@ -17,6 +18,7 @@ export class BillingService {
     private context: TenantContext,
     private tenants: TenantRepository,
     private repository: BillingRepository,
+    private jobs: JobsService,
   ) {}
 
   async status() {
@@ -100,14 +102,23 @@ export class BillingService {
     } catch {
       throw new BadRequestException('Webhook Stripe inválido.');
     }
-    if (!(await this.repository.reserveEvent(event.id, event.type))) {
-      return { received: true, duplicate: true };
+    await this.jobs.enqueuePaymentEvent({
+      eventId: event.id,
+      eventType: event.type,
+      payload: event as unknown as Record<string, unknown>,
+    });
+    return { received: true, queued: true };
+  }
+
+  async processPaymentEvent(job: PaymentJob) {
+    if (!(await this.repository.reserveEvent(job.eventId, job.eventType))) {
+      return { processed: false, duplicate: true };
     }
     try {
-      await this.applyEvent(event);
-      return { received: true };
+      await this.applyEvent(job.payload as unknown as Stripe.Event);
+      return { processed: true };
     } catch (error) {
-      await this.repository.releaseEvent(event.id);
+      await this.repository.releaseEvent(job.eventId);
       throw error;
     }
   }

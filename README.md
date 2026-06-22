@@ -7,7 +7,7 @@ linha do tempo, chat, listas, jogos, notificações e localização.
 
 - `app/`: um único cliente Flutter para Web, Android e iOS.
 - `backend/`: API NestJS, autenticação, multi-tenancy, Stripe e páginas SEO.
-- `nginx/`: gateway público e servidor do build Flutter Web.
+- `nginx/`: servidor do Flutter Web e proxy público para o NestJS.
 - MongoDB: dados persistentes de todas as famílias, isolados por `tenantId`.
 - Redis/BullMQ: filas, notificações e trabalhos em segundo plano.
 
@@ -30,8 +30,7 @@ assinatura e funcionalidades do Web.
 
 ## Serviços Docker
 
-- `gateway`: única porta pública; encaminha `/app/` ao Flutter e o restante ao Nest.
-- `front`: build Flutter Web servido por Nginx.
+- `front`: única porta pública; serve o Flutter em `/app/` e encaminha o restante ao Nest.
 - `backend`: NestJS.
 - `mongo` e `redis`: persistência e filas.
 

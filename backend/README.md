@@ -34,6 +34,8 @@ Cada feature segue a separacao:
 - `chat`: chat em tempo real.
 - `notifications`: historico, envio imediato, agendamento e push mobile.
 - `location`: localizacao, locais, presenca e alertas.
+- `billing`: checkout Stripe, portal, webhook e processamento assíncrono.
+- `tenancy`: famílias, membros e isolamento dos dados SaaS.
 - `health`: healthcheck.
 
 ## Papeis E Acessos
@@ -91,6 +93,11 @@ Filas BullMQ:
 - `media`: processamento de midia.
 - `location`: alertas derivados de localizacao.
 - `cleanup`: limpeza recorrente de arquivos orfaos.
+- `payments`: eventos Stripe com idempotência, retentativas exponenciais e retenção de falhas.
+
+O webhook valida a assinatura antes de responder e adiciona o evento à fila. A
+atualização da assinatura e do tenant é executada pelo worker, evitando timeout
+do webhook e perda de eventos em falhas temporárias.
 
 ## Desenvolvimento
 
@@ -123,14 +130,19 @@ Variaveis principais:
 - `CSRF_SECRET`
 - `FIREBASE_SERVICE_ACCOUNT_PATH`
 - `FIREBASE_SERVICE_ACCOUNT_JSON`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_PRICE_ID`
+- `BILLING_SUCCESS_URL`
+- `BILLING_CANCEL_URL`
 
 ## Seguranca
 
 - JWT para usuarios autenticados.
+- Guard JWT global baseado em `@nestjs/jwt`, com rotas anônimas marcadas por `@Public()`.
 - Guards de admin e acesso por area.
 - CSRF em rotas sem bearer token.
 - Rate limit global.
 - Helmet em HTTP.
 - Secrets somente por ambiente seguro.
 - Nenhum IP, senha, token ou chave deve aparecer na documentacao.
-

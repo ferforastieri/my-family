@@ -1,32 +1,15 @@
 import { Global, Injectable, Module } from '@nestjs/common';
-import { configDotenv } from 'dotenv';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class Environment {
   type: 'development' | 'production' | 'staging';
-  http: {
-    port: number;
-  };
-  database: {
-    mongo: {
-      uri: string;
-      dbName?: string;
-    };
-  };
-  jwt: {
-    secret: string;
-    expiresIn: string;
-  };
+  http: { port: number };
+  database: { mongo: { uri: string; dbName?: string } };
+  jwt: { secret: string; expiresIn: string };
   uploadPath: string;
-  cors: {
-    origin: string;
-  };
-  smtp?: {
-    host: string;
-    port: number;
-    user: string;
-    pass: string;
-  };
+  cors: { origin: string };
+  smtp?: { host: string; port: number; user: string; pass: string };
   emailFrom?: string;
   emailFromName?: string;
   passwordResetUrl?: string;
@@ -35,9 +18,6 @@ export class Environment {
     serviceAccountJson?: string;
   };
   redis?: { url: string };
-  log: {
-    level: string;
-  };
   security: {
     throttleTtlMs: number;
     throttleLimit: number;
@@ -51,6 +31,10 @@ export class Environment {
     cancelUrl: string;
   };
 
+  constructor(data: Partial<Environment>) {
+    Object.assign(this, data);
+  }
+
   isProduction(): boolean {
     return this.type === 'production';
   }
@@ -62,124 +46,78 @@ export class Environment {
   isStaging(): boolean {
     return this.type === 'staging';
   }
-
-  constructor(data: Partial<Environment>) {
-    Object.assign(this, data);
-  }
 }
 
 class EnvironmentFactory {
-  static createFromEnv(path = '.env'): Environment {
-    const output = configDotenv({
-      path,
-    });
-    const uploadPath = process.env.UPLOAD_PATH || output.parsed?.UPLOAD_PATH;
-    if (!uploadPath) {
-      throw new Error('UPLOAD_PATH é obrigatório');
-    }
-    const logLevel = readEnv('LOG_LEVEL', output.parsed);
-    const throttleTtlMs = readNumberEnv('THROTTLE_TTL_MS', output.parsed);
-    const throttleLimit = readNumberEnv('THROTTLE_LIMIT', output.parsed);
-    const csrfSecret = readEnv('CSRF_SECRET', output.parsed);
+  static create(config: ConfigService): Environment {
+    const uploadPath = required(config, 'UPLOAD_PATH');
+    const type = (config.get<string>('NODE_ENV') || 'development') as
+      | 'development'
+      | 'production'
+      | 'staging';
+    const stripeSecretKey = config.get<string>('STRIPE_SECRET_KEY');
+    const stripeWebhookSecret = config.get<string>('STRIPE_WEBHOOK_SECRET');
+    const stripePriceId = config.get<string>('STRIPE_PRICE_ID');
+    const smtpHost = config.get<string>('SMTP_HOST');
+    const smtpUser = config.get<string>('SMTP_USER');
+    const smtpPass = config.get<string>('SMTP_PASS');
+    const firebasePath = config.get<string>('FIREBASE_SERVICE_ACCOUNT_PATH');
+    const firebaseJson = config.get<string>('FIREBASE_SERVICE_ACCOUNT_JSON');
+    const redisUrl = config.get<string>('REDIS_URL');
 
     return new Environment({
-      type:
-        ((process.env.NODE_ENV || output.parsed?.NODE_ENV) as
-          | 'development'
-          | 'production'
-          | 'staging') || 'development',
-      http: {
-        port: +(process.env.PORT || output.parsed?.PORT || 3000),
-      },
+      type,
+      http: { port: number(config, 'PORT', 3000) },
       database: {
         mongo: {
           uri:
-            process.env.MONGO_URI ||
-            output.parsed?.MONGO_URI ||
+            config.get<string>('MONGO_URI') ||
             'mongodb://localhost:27017/my-family',
-          dbName:
-            process.env.MONGO_DB || output.parsed?.MONGO_DB || 'my-family',
+          dbName: config.get<string>('MONGO_DB') || 'my-family',
         },
       },
       jwt: {
-        secret:
-          process.env.JWT_SECRET || output.parsed?.JWT_SECRET || 'change-me',
-        expiresIn:
-          process.env.JWT_EXPIRES_IN || output.parsed?.JWT_EXPIRES_IN || '7d',
+        secret: config.get<string>('JWT_SECRET') || 'change-me',
+        expiresIn: config.get<string>('JWT_EXPIRES_IN') || '7d',
       },
       uploadPath,
-      cors: {
-        origin: process.env.CORS_ORIGIN || output.parsed?.CORS_ORIGIN || '*',
-      },
+      cors: { origin: config.get<string>('CORS_ORIGIN') || '*' },
       smtp:
-        (process.env.SMTP_HOST || output.parsed?.SMTP_HOST) &&
-        (process.env.SMTP_USER || output.parsed?.SMTP_USER) &&
-        (process.env.SMTP_PASS || output.parsed?.SMTP_PASS)
+        smtpHost && smtpUser && smtpPass
           ? {
-              host: process.env.SMTP_HOST || output.parsed!.SMTP_HOST,
-              port: +(
-                process.env.SMTP_PORT ||
-                output.parsed?.SMTP_PORT ||
-                '587'
-              ),
-              user: process.env.SMTP_USER || output.parsed!.SMTP_USER,
-              pass: process.env.SMTP_PASS || output.parsed!.SMTP_PASS,
+              host: smtpHost,
+              port: number(config, 'SMTP_PORT', 587),
+              user: smtpUser,
+              pass: smtpPass,
             }
           : undefined,
-      emailFrom: process.env.EMAIL_FROM || output.parsed?.EMAIL_FROM,
-      emailFromName:
-        process.env.EMAIL_FROM_NAME ||
-        output.parsed?.EMAIL_FROM_NAME ||
-        'Nossa Família',
-      passwordResetUrl:
-        process.env.PASSWORD_RESET_URL ||
-        output.parsed?.PASSWORD_RESET_URL ||
-        '',
+      emailFrom: config.get<string>('EMAIL_FROM'),
+      emailFromName: config.get<string>('EMAIL_FROM_NAME') || 'Nossa Família',
+      passwordResetUrl: config.get<string>('PASSWORD_RESET_URL') || '',
       firebase:
-        process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
-        output.parsed?.FIREBASE_SERVICE_ACCOUNT_PATH ||
-        process.env.FIREBASE_SERVICE_ACCOUNT_JSON ||
-        output.parsed?.FIREBASE_SERVICE_ACCOUNT_JSON
+        firebasePath || firebaseJson
           ? {
-              serviceAccountPath:
-                process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
-                output.parsed?.FIREBASE_SERVICE_ACCOUNT_PATH,
-              serviceAccountJson:
-                process.env.FIREBASE_SERVICE_ACCOUNT_JSON ||
-                output.parsed?.FIREBASE_SERVICE_ACCOUNT_JSON,
+              serviceAccountPath: firebasePath,
+              serviceAccountJson: firebaseJson,
             }
           : undefined,
-      redis:
-        process.env.REDIS_URL || output.parsed?.REDIS_URL
-          ? { url: process.env.REDIS_URL || output.parsed?.REDIS_URL! }
-          : undefined,
-      log: {
-        level: logLevel,
-      },
+      redis: redisUrl ? { url: redisUrl } : undefined,
       security: {
-        throttleTtlMs,
-        throttleLimit,
-        csrfSecret,
+        throttleTtlMs: positive(config, 'THROTTLE_TTL_MS'),
+        throttleLimit: positive(config, 'THROTTLE_LIMIT'),
+        csrfSecret: required(config, 'CSRF_SECRET'),
       },
       billing:
-        readOptionalEnv('STRIPE_SECRET_KEY', output.parsed) &&
-        readOptionalEnv('STRIPE_WEBHOOK_SECRET', output.parsed) &&
-        readOptionalEnv('STRIPE_PRICE_ID', output.parsed)
+        stripeSecretKey && stripeWebhookSecret && stripePriceId
           ? {
-              stripeSecretKey: readOptionalEnv(
-                'STRIPE_SECRET_KEY',
-                output.parsed,
-              )!,
-              stripeWebhookSecret: readOptionalEnv(
-                'STRIPE_WEBHOOK_SECRET',
-                output.parsed,
-              )!,
-              stripePriceId: readOptionalEnv('STRIPE_PRICE_ID', output.parsed)!,
+              stripeSecretKey,
+              stripeWebhookSecret,
+              stripePriceId,
               successUrl:
-                readOptionalEnv('BILLING_SUCCESS_URL', output.parsed) ||
+                config.get<string>('BILLING_SUCCESS_URL') ||
                 'http://localhost:3458/app/billing',
               cancelUrl:
-                readOptionalEnv('BILLING_CANCEL_URL', output.parsed) ||
+                config.get<string>('BILLING_CANCEL_URL') ||
                 'http://localhost:3458/app/billing',
             }
           : undefined,
@@ -187,27 +125,28 @@ class EnvironmentFactory {
   }
 }
 
-function readEnv(name: string, parsed?: Record<string, string>): string {
-  const value = process.env[name] || parsed?.[name];
-  if (!value) {
-    throw new Error(`${name} é obrigatório`);
-  }
+function required(config: ConfigService, name: string): string {
+  const value = config.get<string>(name);
+  if (!value) throw new Error(`${name} é obrigatório`);
   return value;
 }
 
-function readNumberEnv(name: string, parsed?: Record<string, string>): number {
-  const value = Number(readEnv(name, parsed));
+function positive(config: ConfigService, name: string): number {
+  const value = Number(required(config, name));
   if (!Number.isFinite(value) || value <= 0) {
     throw new Error(`${name} deve ser um número positivo`);
   }
   return value;
 }
 
-function readOptionalEnv(
-  name: string,
-  parsed?: Record<string, string>,
-): string | undefined {
-  return process.env[name] || parsed?.[name] || undefined;
+function number(config: ConfigService, name: string, fallback: number): number {
+  const raw = config.get<string>(name);
+  if (!raw) return fallback;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error(`${name} deve ser um número positivo`);
+  }
+  return value;
 }
 
 @Global()
@@ -216,14 +155,13 @@ export class EnvironmentModule {
   static forRoot() {
     const environment = {
       provide: Environment,
-      useFactory: () => {
-        const env = EnvironmentFactory.createFromEnv();
-        return env;
-      },
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => EnvironmentFactory.create(config),
     };
 
     return {
       module: EnvironmentModule,
+      imports: [ConfigModule.forRoot({ isGlobal: true })],
       providers: [environment],
       exports: [environment],
     };

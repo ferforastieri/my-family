@@ -26,6 +26,12 @@ export type LowBatteryJob = {
   batteryLevel: number;
 };
 
+export type PaymentJob = {
+  eventId: string;
+  eventType: string;
+  payload: Record<string, unknown>;
+};
+
 @Injectable()
 export class JobsService implements OnApplicationBootstrap {
   constructor(
@@ -37,6 +43,8 @@ export class JobsService implements OnApplicationBootstrap {
     private location: Queue<LowBatteryJob>,
     @InjectQueue(QUEUE_NAMES.cleanup)
     private cleanup: Queue,
+    @InjectQueue(QUEUE_NAMES.payments)
+    private payments: Queue<PaymentJob>,
     private tenantContext: TenantContext,
     private tenants: TenantRepository,
   ) {}
@@ -80,6 +88,16 @@ export class JobsService implements OnApplicationBootstrap {
       backoff: { type: 'exponential', delay: 20_000 },
       removeOnComplete: true,
       removeOnFail: 50,
+    });
+  }
+
+  enqueuePaymentEvent(data: PaymentJob) {
+    return this.payments.add('stripe-event', data, {
+      jobId: `stripe-${data.eventId.replace(/[^a-zA-Z0-9_-]/g, '-')}`,
+      attempts: 8,
+      backoff: { type: 'exponential', delay: 5_000 },
+      removeOnComplete: { age: 86_400, count: 1_000 },
+      removeOnFail: { age: 604_800, count: 1_000 },
     });
   }
 

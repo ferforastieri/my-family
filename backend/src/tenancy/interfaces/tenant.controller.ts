@@ -1,6 +1,12 @@
-import { Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
-import { IsBoolean, IsIn, IsObject, IsOptional, IsString, MinLength } from 'class-validator';
-import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
+import { Body, Controller, Get, Patch, Post } from '@nestjs/common';
+import {
+  IsBoolean,
+  IsIn,
+  IsObject,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 import { TenantService } from '../application/tenant.service';
 import type { TenantLocale } from '../domain/tenant.entity';
 
@@ -30,7 +36,6 @@ class PublishTenantDto {
 }
 
 @Controller('tenants')
-@UseGuards(JwtAuthGuard)
 export class TenantController {
   constructor(private tenants: TenantService) {}
 
@@ -49,4 +54,3 @@ export class TenantController {
     return this.tenants.setPublished(body.isPublished);
   }
 }
-

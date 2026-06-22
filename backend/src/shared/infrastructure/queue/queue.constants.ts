@@ -3,4 +3,5 @@ export const QUEUE_NAMES = {
   media: 'media',
   location: 'location',
   cleanup: 'cleanup',
+  payments: 'payments',
 } as const;

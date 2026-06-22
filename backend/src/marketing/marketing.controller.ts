@@ -1,6 +1,7 @@
 import { Controller, Get, Param, Req, Res } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { PublicSiteService } from '../public-site/public-site.service';
+import { Public } from '@auth/decorators/public.decorator';
 import {
   isMarketingLocale,
   marketingCss,
@@ -9,6 +10,7 @@ import {
 } from './marketing.page';
 
 @Controller()
+@Public()
 export class MarketingController {
   constructor(private readonly publicSites: PublicSiteService) {}
 

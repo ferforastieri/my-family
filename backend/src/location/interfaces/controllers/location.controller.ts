@@ -4,9 +4,7 @@ import {
   ForbiddenException,
   Post,
   Req,
-  UseGuards,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import {
   isAdminRole,
   type UserEntity,
@@ -16,7 +14,6 @@ import { LocationGateway } from '../gateways/location.gateway';
 import { LocationUpdateDto } from '../dto/location.dto';
 
 @Controller('location')
-@UseGuards(JwtAuthGuard)
 export class LocationController {
   constructor(
     private locations: LocationService,

@@ -32,6 +32,7 @@ import { JobsService } from './jobs.service';
       { name: QUEUE_NAMES.media },
       { name: QUEUE_NAMES.location },
       { name: QUEUE_NAMES.cleanup },
+      { name: QUEUE_NAMES.payments },
     ),
   ],
   providers: [JobsService],
