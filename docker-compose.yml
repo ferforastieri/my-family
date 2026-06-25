@@ -32,16 +32,27 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
+      args:
+        API_BASE_URL: ${API_BASE_URL:-}
+        SOCKET_URL: ${SOCKET_URL:-}
+        PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-}
+        FIREBASE_API_KEY: ${FIREBASE_API_KEY:-}
+        FIREBASE_APP_ID: ${FIREBASE_APP_ID:-}
+        FIREBASE_MESSAGING_SENDER_ID: ${FIREBASE_MESSAGING_SENDER_ID:-}
+        FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-}
+        FIREBASE_AUTH_DOMAIN: ${FIREBASE_AUTH_DOMAIN:-}
+        FIREBASE_STORAGE_BUCKET: ${FIREBASE_STORAGE_BUCKET:-}
+        FIREBASE_WEB_PUSH_CERTIFICATE_KEY: ${FIREBASE_WEB_PUSH_CERTIFICATE_KEY:-}
     container_name: my-family-backend
     restart: unless-stopped
     environment:
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-my_family}:${MONGO_ROOT_PASSWORD}@mongo:27017/my-family?authSource=admin
       REDIS_URL: redis://redis:6379
-      PORT: 3001
+      PORT: 3000
       NODE_ENV: production
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
-      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3458}
       BUCKET: ${BUCKET:?BUCKET is required}
       ENDPOINT: ${ENDPOINT:?ENDPOINT is required}
       REGION: ${REGION:?REGION is required}
@@ -64,35 +75,13 @@ services:
       STRIPE_PRICE_ID: ${STRIPE_PRICE_ID:?STRIPE_PRICE_ID is required}
       BILLING_SUCCESS_URL: ${BILLING_SUCCESS_URL:?BILLING_SUCCESS_URL is required}
       BILLING_CANCEL_URL: ${BILLING_CANCEL_URL:?BILLING_CANCEL_URL is required}
+    ports:
+      - "${APP_PORT:-3458}:3000"
     depends_on:
       mongo:
         condition: service_started
       redis:
         condition: service_healthy
-    networks:
-      - my-family-network
-
-  front:
-    build:
-      context: .
-      dockerfile: Dockerfile.front
-      args:
-        API_BASE_URL: ${API_BASE_URL:?API_BASE_URL is required}
-        SOCKET_URL: ${SOCKET_URL:?SOCKET_URL is required}
-        PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-}
-        FIREBASE_API_KEY: ${FIREBASE_API_KEY:-}
-        FIREBASE_APP_ID: ${FIREBASE_APP_ID:-}
-        FIREBASE_MESSAGING_SENDER_ID: ${FIREBASE_MESSAGING_SENDER_ID:-}
-        FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-}
-        FIREBASE_AUTH_DOMAIN: ${FIREBASE_AUTH_DOMAIN:-}
-        FIREBASE_STORAGE_BUCKET: ${FIREBASE_STORAGE_BUCKET:-}
-        FIREBASE_WEB_PUSH_CERTIFICATE_KEY: ${FIREBASE_WEB_PUSH_CERTIFICATE_KEY:-}
-    container_name: my-family-front
-    restart: unless-stopped
-    ports:
-      - "${FRONT_PORT:-3458}:80"
-    depends_on:
-      - backend
     networks:
       - my-family-network
 

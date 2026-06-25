@@ -6,8 +6,8 @@ linha do tempo, chat, listas, jogos, notificações e localização.
 ## Arquitetura
 
 - `app/`: um único cliente Flutter para Web, Android e iOS.
-- `backend/`: API NestJS, autenticação, multi-tenancy, Stripe e páginas SEO.
-- `nginx/`: servidor do Flutter Web e proxy público para o NestJS.
+- `backend/`: API NestJS, autenticação, multi-tenancy, Stripe, páginas SEO e
+  entrega do Flutter Web em `/app/`.
 - MongoDB: dados persistentes de todas as famílias, isolados por `tenantId`.
 - Redis/BullMQ: filas, notificações e trabalhos em segundo plano.
 
@@ -30,8 +30,8 @@ assinatura e funcionalidades do Web.
 
 ## Serviços Docker
 
-- `front`: única porta pública; serve o Flutter em `/app/` e encaminha o restante ao Nest.
-- `backend`: NestJS.
+- `backend`: única porta pública; serve o Flutter em `/app/`, as páginas SEO,
+  a API e o Socket.IO.
 - `mongo` e `redis`: persistência e filas.
 
 ```bash
@@ -41,16 +41,17 @@ docker compose up -d
 
 O endereço padrão é `http://localhost:3458`.
 
-## Produção: Cloudflare Pages + Railway
+## Produção: Railway + Cloudflare DNS
 
-- Cloudflare Pages: Flutter Web em `/app/` e proxy público para páginas SEO,
-  API, Stripe e Socket.IO.
-- Railway: NestJS, MongoDB, Redis/BullMQ e Bucket S3 privado.
-- GitHub Actions: compila o Flutter e publica os arquivos no Pages.
+- Railway: um serviço fullstack criado a partir deste repositório. O
+  `Dockerfile.backend` compila o Flutter Web e o NestJS, e o Nest entrega tudo
+  pelo mesmo domínio.
+- MongoDB, Redis/BullMQ e Bucket S3 ficam como serviços/integrações do Railway.
+- Cloudflare não hospeda o app; fica apenas como DNS, proxy, SSL, WAF e regras
+  de segurança na frente do domínio do Railway.
 
-Os arquivos necessários já estão em `railway.toml`, `deploy/cloudflare/` e
-`.github/workflows/deploy-cloudflare-pages.yml`. O procedimento completo está em
-[`docs/deploy-cloudflare-railway.md`](docs/deploy-cloudflare-railway.md).
+O procedimento completo está em
+[`docs/deploy-railway-cloudflare-dns.md`](docs/deploy-railway-cloudflare-dns.md).
 
 ## Configuração
 
@@ -63,7 +64,6 @@ Variáveis principais:
 - `JWT_SECRET`, `CSRF_SECRET`
 - `REDIS_URL`
 - `BUCKET`, `ENDPOINT`, `REGION`, `ACCESS_KEY_ID`, `SECRET_ACCESS_KEY`
-- `API_BASE_URL`, `SOCKET_URL`, `PUBLIC_WEB_URL`
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID`
 - `BILLING_SUCCESS_URL`, `BILLING_CANCEL_URL`
 - variáveis Firebase usadas no Web, Android e backend

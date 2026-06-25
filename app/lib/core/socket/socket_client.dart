@@ -40,8 +40,8 @@ class SocketClient {
     _lastConnectError = null;
     final auth = token == null ? <String, dynamic>{} : {'token': token};
     final headers = token == null
-        ? <String, dynamic>{}
-        : {'Authorization': 'Bearer $token'};
+        ? <String, String>{}
+        : <String, String>{'Authorization': 'Bearer $token'};
     _socket = io.io(
       _normalizeSocketIoUrl(AppConfig.socketUrl),
       io.OptionBuilder()

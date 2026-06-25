@@ -21,7 +21,7 @@ export class SupportSessionDocument {
   @Prop({ required: true, trim: true })
   reason: string;
 
-  @Prop({ required: true, index: true })
+  @Prop({ required: true })
   expiresAt: Date;
 
   @Prop()

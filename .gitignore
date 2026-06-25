@@ -65,4 +65,3 @@ build
 
 deploy-local.sh
 entrypoint.sh
-nginx/nginx.conf

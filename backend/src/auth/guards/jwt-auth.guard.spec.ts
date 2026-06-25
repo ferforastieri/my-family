@@ -4,7 +4,7 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 describe('JwtAuthGuard', () => {
   const createGuard = () => {
     const jwt = { verifyAsync: jest.fn() };
-    const auth = { findAuthenticatedUser: jest.fn() };
+    const auth = { resolvePayload: jest.fn() };
     const reflector = { getAllAndOverride: jest.fn().mockReturnValue(false) };
     const guard = new JwtAuthGuard(
       jwt as never,
@@ -20,33 +20,32 @@ describe('JwtAuthGuard', () => {
 
     await expect(guard.canActivate(context({}))).resolves.toBe(true);
     expect(jwt.verifyAsync).not.toHaveBeenCalled();
-    expect(auth.findAuthenticatedUser).not.toHaveBeenCalled();
+    expect(auth.resolvePayload).not.toHaveBeenCalled();
   });
 
   it('valida o bearer token e adiciona o usuário à requisição', async () => {
     const { guard, jwt, auth } = createGuard();
     const request = { headers: { authorization: 'Bearer access-token' } };
-    jwt.verifyAsync.mockResolvedValue({ sub: 'user-1', tenantId: 'tenant-1' });
-    auth.findAuthenticatedUser.mockResolvedValue({
+    const payload = { sub: 'user-1', tenantId: 'tenant-1' };
+    jwt.verifyAsync.mockResolvedValue(payload);
+    auth.resolvePayload.mockResolvedValue({
       id: 'user-1',
       tenantId: 'tenant-1',
     });
 
     await expect(guard.canActivate(context(request))).resolves.toBe(true);
-    expect(auth.findAuthenticatedUser).toHaveBeenCalledWith(
-      'user-1',
-      'tenant-1',
-    );
+    expect(auth.resolvePayload).toHaveBeenCalledWith(payload);
     expect((request as any).user.id).toBe('user-1');
   });
 
   it('rejeita refresh token em uma rota protegida', async () => {
-    const { guard, jwt } = createGuard();
+    const { guard, jwt, auth } = createGuard();
     jwt.verifyAsync.mockResolvedValue({
       sub: 'user-1',
       tenantId: 'tenant-1',
       type: 'refresh',
     });
+    auth.resolvePayload.mockResolvedValue(null);
 
     await expect(
       guard.canActivate(

@@ -15,10 +15,10 @@ Cliente Web/Android do SaaS Nossa Família.
 
 ## Areas Do App
 
-- Landing page, demonstração, login e cadastro
-- Painel do cliente em `/painel`
-- Administração da família em `/cliente/admin`
-- Administração global da plataforma em `/plataforma`
+- Demonstração, login e cadastro em `/app/demo`, `/app/login` e `/app/signup`
+- Painel do cliente em `/app/cliente/:tenantSlug/dashboard`
+- Administração da família dentro da área autenticada do cliente
+- Administração global da plataforma em `/app/admin/dashboard`
 - Home
 - Memorias/fotos
 - Playlist
@@ -82,7 +82,7 @@ flutter run -d <device-id> \
 
 ```bash
 flutter analyze
-flutter build web --release --no-wasm-dry-run
+flutter build web --release --no-wasm-dry-run --base-href=/app/
 flutter build apk --debug
 flutter build apk --release
 ```
