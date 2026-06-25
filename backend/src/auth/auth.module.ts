@@ -15,11 +15,13 @@ import { UserRepository } from './infrastructure/repositories/user.repository';
 import { PasswordResetRepository } from './infrastructure/repositories/password-reset.repository';
 import { UsersGateway } from './interfaces/gateways/users.gateway';
 import { WsSessionService } from './application/services/ws-session.service';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
   imports: [
     DatabaseModule,
     MongoModelsModule,
+    AuditModule,
     JwtModule.registerAsync({
       imports: [EnvironmentModule],
       inject: [Environment],

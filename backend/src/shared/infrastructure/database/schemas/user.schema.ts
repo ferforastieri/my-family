@@ -13,6 +13,9 @@ export class UserDocument {
   @Prop()
   name?: string;
 
+  @Prop({ enum: ['admin'], index: true })
+  platformRole?: 'admin';
+
   // Campos legados lidos apenas pelo script de migração para memberships.
   @Prop()
   role?: string;

@@ -31,6 +31,8 @@ import { BillingModule } from './billing/billing.module';
 import { PublicSiteModule } from './public-site/public-site.module';
 import { MarketingModule } from './marketing/marketing.module';
 import { TenantContextInterceptor } from './auth/application/services/tenant-context.interceptor';
+import { AuditModule } from './audit/audit.module';
+import { PlatformAdminModule } from './platform-admin/platform-admin.module';
 
 @Module({
   imports: [
@@ -49,6 +51,7 @@ import { TenantContextInterceptor } from './auth/application/services/tenant-con
       }),
     }),
     DatabaseModule,
+    AuditModule,
     QueueModule,
     EmailModule,
     UploadModule,
@@ -56,6 +59,7 @@ import { TenantContextInterceptor } from './auth/application/services/tenant-con
     BillingModule,
     PublicSiteModule,
     MarketingModule,
+    PlatformAdminModule,
     HealthModule,
     AuthModule,
     FotosModule,

@@ -170,6 +170,7 @@ export class AuthService {
       id: user.id,
       email: user.email,
       name: user.name,
+      platformRole: user.platformRole ?? null,
       role: user.role,
       access: user.access,
       avatarPath: user.avatarPath,

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -10,6 +12,7 @@ import '../../../core/toast/toast_controller.dart';
 import '../../../data/family_repository.dart';
 import '../../admin/presentation/admin_page.dart';
 import '../../billing/presentation/billing_page.dart';
+import '../../client_dashboard/presentation/client_dashboard_page.dart';
 import '../../chat/presentation/chat_page.dart';
 import '../../content/presentation/editable_text_collection_page.dart';
 import '../../games/presentation/games_page.dart';
@@ -21,6 +24,7 @@ import '../../marketing/presentation/demo_page.dart';
 import '../../marketing/presentation/marketing_page.dart';
 import '../../marketing/presentation/public_auth_page.dart';
 import '../../profile/presentation/profile_page.dart';
+import '../../platform_admin/presentation/platform_admin_page.dart';
 import '../../resources/presentation/resource_page.dart';
 import 'app_shell.dart';
 
@@ -43,16 +47,22 @@ GoRouter buildRouter(
         return publicPaths.contains(path) ? null : '/welcome';
       }
       if (path == '/welcome' || path == '/signup' || path == '/login') {
-        return auth.tenant?.isActive == true ? '/' : '/billing';
+        return auth.tenant?.isActive == true ? '/painel' : '/billing';
       }
       final accessKey = _accessForPath(path);
       if (auth.user != null &&
           auth.tenant?.isActive != true &&
           path != '/billing' &&
-          path != '/perfil') {
+          path != '/perfil' &&
+          path != '/plataforma') {
         return '/billing';
       }
-      if (path == '/admin' && auth.user?.isAdmin != true) return '/';
+      if (path == '/plataforma' && auth.user?.isPlatformAdmin != true) {
+        return '/painel';
+      }
+      if (path == '/cliente/admin' && auth.user?.isAdmin != true) {
+        return '/painel';
+      }
       if (accessKey != null && auth.user?.canAccess(accessKey) != true) {
         return '/';
       }
@@ -90,17 +100,29 @@ GoRouter buildRouter(
           register: false,
         )),
       ),
+      GoRoute(
+        path: '/plataforma',
+        pageBuilder: (context, state) => _page(PlatformAdminPage(auth: auth)),
+      ),
       ShellRoute(
-        builder: (context, state, child) => AppShell(
-          auth: auth,
-          notifications: notifications,
-          chat: chat,
-          theme: theme,
-          toast: toast,
-          currentLocation: state.uri.path,
-          child: child,
-        ),
+        builder: (context, state, child) {
+          unawaited(auth.trackEvent('navigation', path: state.uri.path));
+          return AppShell(
+            auth: auth,
+            notifications: notifications,
+            chat: chat,
+            theme: theme,
+            toast: toast,
+            currentLocation: state.uri.path,
+            child: child,
+          );
+        },
         routes: [
+          GoRoute(
+            path: '/painel',
+            pageBuilder: (context, state) =>
+                _page(ClientDashboardPage(auth: auth)),
+          ),
           GoRoute(
             path: '/billing',
             pageBuilder: (context, state) => _page(BillingPage(
@@ -271,7 +293,7 @@ GoRouter buildRouter(
             )),
           ),
           GoRoute(
-            path: '/admin',
+            path: '/cliente/admin',
             pageBuilder: (context, state) => _page(
                 AdminPage(auth: auth, repository: repository, toast: toast)),
           ),

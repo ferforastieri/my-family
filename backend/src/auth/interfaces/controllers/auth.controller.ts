@@ -30,6 +30,8 @@ import {
 } from '@shared/infrastructure/upload';
 import { StreamableFile } from '@nestjs/common';
 import { TenantService } from '@tenancy/application/tenant.service';
+import { AuditService } from '../../../audit/application/audit.service';
+import type { Request } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -37,11 +39,12 @@ export class AuthController {
     private auth: AuthService,
     private upload: UploadService,
     private tenants: TenantService,
+    private audit: AuditService,
   ) {}
 
   @Post('register')
   @Public()
-  async register(@Body() dto: RegisterDto) {
+  async register(@Body() dto: RegisterDto, @Req() request: Request) {
     const response = await this.auth.register({
       email: dto.email,
       password: dto.password,
@@ -50,23 +53,86 @@ export class AuthController {
       slug: dto.slug,
       locale: dto.locale,
     });
+    await this.audit.record({
+      action: 'auth.register',
+      resource: 'auth',
+      source: 'http',
+      success: true,
+      ...this.audit.requestActor(request),
+      actorUserId: response.user.id,
+      actorEmail: response.user.email,
+      tenantId: response.tenant.id,
+      method: request.method,
+      path: request.originalUrl,
+      metadata: { tenantSlug: response.tenant.slug },
+    });
     return { message: 'Cadastro realizado com sucesso.', ...response };
   }
 
   @Post('login')
   @Public()
-  async login(@Body() body: LoginDto) {
+  async login(@Body() body: LoginDto, @Req() request: Request) {
     const user = await this.auth.validateUser(body.email, body.password);
-    if (!user) throw new UnauthorizedException('Email ou senha inválidos.');
+    if (!user) {
+      await this.audit.record({
+        action: 'auth.login.failed',
+        resource: 'auth',
+        source: 'http',
+        success: false,
+        ...this.audit.requestActor(request),
+        actorEmail: body.email,
+        method: request.method,
+        path: request.originalUrl,
+        statusCode: 401,
+      });
+      throw new UnauthorizedException('Email ou senha inválidos.');
+    }
+    const response = await this.auth.tokenResponse(
+      user,
+      undefined,
+      undefined,
+      body.tenantSlug,
+    );
+    await this.audit.record({
+      action: 'auth.login',
+      resource: 'auth',
+      source: 'http',
+      success: true,
+      ...this.audit.requestActor(request),
+      actorUserId: user.id,
+      actorEmail: user.email,
+      tenantId: response.tenant.id,
+      method: request.method,
+      path: request.originalUrl,
+      statusCode: 201,
+      metadata: { tenantSlug: response.tenant.slug },
+    });
     return {
       message: 'Login realizado com sucesso.',
-      ...(await this.auth.tokenResponse(
-        user,
-        undefined,
-        undefined,
-        body.tenantSlug,
-      )),
+      ...response,
     };
+  }
+
+  @Post('logout')
+  async logout(
+    @Req()
+    request: Request & {
+      user: { id: string; email: string; tenantId: string };
+    },
+  ) {
+    await this.audit.record({
+      action: 'auth.logout',
+      resource: 'auth',
+      source: 'http',
+      success: true,
+      actorUserId: request.user.id,
+      actorEmail: request.user.email,
+      tenantId: request.user.tenantId,
+      method: request.method,
+      path: request.originalUrl,
+      ...this.audit.requestActor(request),
+    });
+    return { message: 'Sessão encerrada.' };
   }
 
   @Post('refresh')

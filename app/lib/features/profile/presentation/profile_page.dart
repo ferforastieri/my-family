@@ -52,7 +52,8 @@ class ProfilePage extends StatelessWidget {
                     context: context,
                     builder: (_) => EditProfileSheet(auth: auth, toast: toast),
                   ),
-                  onAdmin: () => context.openAppRoute('/admin'),
+                  onAdmin: () => context.openAppRoute('/cliente/admin'),
+                  onPlatformAdmin: () => context.go('/plataforma'),
                   onBilling: () => context.openAppRoute('/billing'),
                   onSignOut: () async {
                     await auth.signOut();
@@ -71,6 +72,7 @@ class _SignedProfileCard extends StatefulWidget {
     required this.toast,
     required this.onEditProfile,
     required this.onAdmin,
+    required this.onPlatformAdmin,
     required this.onBilling,
     required this.onSignOut,
   });
@@ -79,6 +81,7 @@ class _SignedProfileCard extends StatefulWidget {
   final ToastController toast;
   final VoidCallback onEditProfile;
   final VoidCallback onAdmin;
+  final VoidCallback onPlatformAdmin;
   final VoidCallback onBilling;
   final VoidCallback onSignOut;
 
@@ -156,9 +159,19 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
                 const SizedBox(height: 10),
                 _ProfileActionTile(
                   icon: Icons.admin_panel_settings_outlined,
-                  label: 'Administração',
+                  label: 'Administração da família',
                   description: 'Gerencie usuários, notificações e jogos.',
                   onTap: widget.onAdmin,
+                ),
+              ],
+              if (user.isPlatformAdmin) ...[
+                const SizedBox(height: 10),
+                _ProfileActionTile(
+                  icon: Icons.shield_outlined,
+                  label: 'Administração da plataforma',
+                  description:
+                      'Estatísticas, famílias, assinaturas e auditoria.',
+                  onTap: widget.onPlatformAdmin,
                 ),
               ],
               const SizedBox(height: 18),

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -32,6 +33,26 @@ void main() {
   ));
   final socket = SocketClient();
   final auth = AuthController(socket, TokenStore());
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    unawaited(auth.trackEvent(
+      'flutter.error',
+      metadata: {
+        'exception': details.exceptionAsString(),
+        if (details.library != null) 'library': details.library,
+      },
+    ));
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    unawaited(auth.trackEvent(
+      'platform.error',
+      metadata: {
+        'exception': error.toString(),
+        'stack': stack.toString(),
+      },
+    ));
+    return false;
+  };
   final repository = FamilyRepository(socket);
   final chat = ChatController(socket, repository);
   final notifications = NotificationsController(socket);
@@ -59,6 +80,7 @@ void main() {
       return;
     }
     protectedServicesStarted = true;
+    unawaited(auth.trackEvent('app.opened'));
     unawaited(notifications.requestStartupPermissions().catchError((_) {}));
     unawaited(location.requestStartupPermissions().catchError((_) {}));
     unawaited(notifications.bootstrap().catchError((_) {}));

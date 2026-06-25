@@ -183,7 +183,7 @@ class _AdminPageState extends State<AdminPage> {
       body: LoveBackground(
         child: AppFixedHeaderScrollView(
           header: AppPageHeader(
-            title: 'Administração',
+            title: 'Administração da família',
             subtitle: selected.label,
             icon: Icons.admin_panel_settings_outlined,
             actionLabel: 'Menu',

@@ -33,6 +33,7 @@ export class UserRepository {
       email: doc.email,
       passwordHash: doc.passwordHash ?? null,
       name: doc.name ?? null,
+      platformRole: doc.platformRole ?? null,
       role: 'member',
       access: [],
       tenantId: '',
@@ -89,6 +90,7 @@ export class UserRepository {
       name?: string;
       avatarPath?: string;
       passwordHash?: string;
+      platformRole?: 'admin';
     },
   ): Promise<UserEntity | null> {
     const doc = await this.model

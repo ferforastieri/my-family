@@ -106,104 +106,7 @@ export class GamesRepository {
     };
   }
 
-  async seedQuestions() {
-    const count = await this.questions.countDocuments().exec();
-    if (count > 0) return;
-    await this.questions.insertMany([
-      {
-        question: 'Onde nosso amor mora primeiro?',
-        options: ['No cuidado', 'Na pressa', 'No silêncio frio'],
-        correctIndex: 0,
-        active: true,
-      },
-      {
-        question: 'Qual é o melhor plano para a família?',
-        options: ['Crescer juntos', 'Competir sempre', 'Ficar distante'],
-        correctIndex: 0,
-        active: true,
-      },
-      {
-        question: 'O que deixa uma casa mais parecida com lar?',
-        options: ['Amor e fé', 'Só móveis novos', 'Barulho'],
-        correctIndex: 0,
-        active: true,
-      },
-    ]);
-  }
-
-  async seedWords() {
-    const count = await this.words.countDocuments().exec();
-    if (count > 0) return;
-    await this.words.insertMany(
-      [
-        'FERNANDO',
-        'MIRIAM',
-        'FAMILIA',
-        'AMOR',
-        'TEMPLO',
-        'FE',
-        'LAR',
-        'ETERNOS',
-        'CARINHO',
-        'FILHO',
-        'JESUS',
-        'ALIANCA',
-      ].map((word) => ({ word, active: true })),
-    );
-  }
-
-  async seedMiniGames() {
-    const defaults: MiniGameConfigWrite[] = [
-      {
-        type: 'memory_match',
-        title: 'Memória da Família',
-        instructions: 'Encontre os pares de lembranças iguais.',
-        items: ['Amor', 'Templo', 'Rudy', 'Shopping', 'Filme', 'Fernando'],
-        active: true,
-      },
-      {
-        type: 'love_order',
-        title: 'Linha do Amor',
-        instructions: 'Toque nos momentos na ordem certa da história.',
-        items: [
-          'Mutual',
-          'Primeiro encontro',
-          'Namoro',
-          'Casamento',
-          'Fernando',
-        ],
-        active: true,
-      },
-      {
-        type: 'this_or_that',
-        title: 'Isso ou Aquilo',
-        instructions:
-          'Escolha uma opção em cada rodada. Não existe certo ou errado: é sobre preferências da família.',
-        items: [
-          'Programa perfeito|Shopping|Filme no sofá',
-          'Pipoca|Doce|Salgada',
-          'Fim de semana|Sair para passear|Ficar em casa juntinhos',
-          'Noite ideal|Conversar até tarde|Ver uma série',
-          'Passeio em família|Parque|Cinema',
-        ],
-        active: true,
-      },
-    ];
-    await Promise.all(
-      defaults.map((game) =>
-        this.miniGames
-          .updateOne(
-            { type: game.type },
-            { $setOnInsert: game },
-            { upsert: true },
-          )
-          .exec(),
-      ),
-    );
-  }
-
   async listQuestions(includeInactive = false, query?: PaginationQuery) {
-    await this.seedQuestions();
     const filter = includeInactive ? {} : { active: true };
     const { page, limit, skip } = normalizePagination(query, {
       page: 1,
@@ -246,7 +149,6 @@ export class GamesRepository {
   }
 
   async listWords(includeInactive = false, query?: PaginationQuery) {
-    await this.seedWords();
     const filter = includeInactive ? {} : { active: true };
     const { page, limit, skip } = normalizePagination(query, {
       page: 1,
@@ -266,7 +168,6 @@ export class GamesRepository {
   }
 
   async listMiniGames(includeInactive = false, query?: PaginationQuery) {
-    await this.seedMiniGames();
     const filter = includeInactive ? {} : { active: true };
     const { page, limit, skip } = normalizePagination(query, {
       page: 1,

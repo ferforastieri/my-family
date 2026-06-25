@@ -146,11 +146,23 @@ Variaveis principais:
 - JWT para usuarios autenticados.
 - Guard JWT global baseado em `@nestjs/jwt`, com rotas anônimas marcadas por `@Public()`.
 - Guards de admin e acesso por area.
+- `platformRole=admin` separado das permissões de cada família.
 - CSRF em rotas sem bearer token.
 - Rate limit global.
 - Helmet em HTTP.
 - Secrets somente por ambiente seguro.
 - Nenhum IP, senha, token ou chave deve aparecer na documentacao.
+
+## Monitoramento e auditoria
+
+- Todas as requisições HTTP geram logs estruturados no console.
+- Login, falhas, alterações, operações administrativas e mutações WebSocket
+  são persistidos em `audit_logs`.
+- Os registros incluem usuário, família, IP, user-agent, rota, resultado e
+  duração, sem armazenar senhas, tokens, cookies ou secrets.
+- A retenção padrão dos registros persistidos é de 180 dias.
+- O painel global usa `GET /api/platform/admin/overview` e
+  `GET /api/platform/admin/audit`.
 
 ## Armazenamento
 

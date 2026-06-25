@@ -6,6 +6,7 @@ import {
   MinLength,
 } from 'class-validator';
 import {
+  type PlatformRole,
   userAccessKeys,
   userRoles,
   type UserAccessKey,
@@ -45,6 +46,7 @@ export class UserResponseDto {
   id: string;
   email: string;
   name: string | null;
+  platformRole: PlatformRole | null;
   role: UserRole;
   access: UserAccessKey[];
   avatarPath: string | null;

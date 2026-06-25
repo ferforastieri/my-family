@@ -1,6 +1,6 @@
 # App Flutter
 
-Cliente Web/Android do projeto Nossa Familia. Este app e parte de um projeto de estudos para praticar Flutter, Firebase Messaging, Socket.IO, mapas, upload, notificacoes e tracking mobile.
+Cliente Web/Android do SaaS Nossa Família.
 
 ## Tecnologias
 
@@ -15,6 +15,10 @@ Cliente Web/Android do projeto Nossa Familia. Este app e parte de um projeto de 
 
 ## Areas Do App
 
+- Landing page, demonstração, login e cadastro
+- Painel do cliente em `/painel`
+- Administração da família em `/cliente/admin`
+- Administração global da plataforma em `/plataforma`
 - Home
 - Memorias/fotos
 - Playlist
@@ -23,8 +27,11 @@ Cliente Web/Android do projeto Nossa Familia. Este app e parte de um projeto de 
 - Jogos
 - Chat
 - Localizacao
-- Administracao
 - Perfil
+
+Os componentes reutilizáveis de layout, métricas, seções, botões, cabeçalhos,
+tema e feedback ficam em `lib/core/widgets` e `lib/core/theme`. As regras e
+telas específicas ficam isoladas por feature em `lib/features`.
 
 ## Notificacoes Mobile
 
@@ -82,4 +89,3 @@ flutter build apk --release
 - Nao versionar `google-services.json`.
 - Nao colocar IPs, tokens ou chaves nos READMEs.
 - Usar secrets do Gitea ou arquivos locais ignorados para configuracao real.
-

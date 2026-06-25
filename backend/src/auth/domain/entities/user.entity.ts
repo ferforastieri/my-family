@@ -1,5 +1,7 @@
 export const userRoles = ['owner', 'admin', 'member'] as const;
 export type UserRole = (typeof userRoles)[number];
+export const platformRoles = ['admin'] as const;
+export type PlatformRole = (typeof platformRoles)[number];
 
 export const adminRoles: UserRole[] = ['owner', 'admin'];
 
@@ -21,6 +23,7 @@ export interface UserEntity {
   email: string;
   passwordHash?: string | null;
   name?: string | null;
+  platformRole?: PlatformRole | null;
   role: UserRole;
   access: UserAccessKey[];
   tenantId: string;

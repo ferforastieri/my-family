@@ -4,6 +4,7 @@ class AppUser {
     required this.email,
     required this.role,
     required this.access,
+    this.platformRole,
     this.name,
     this.avatarPath,
     this.createdAt,
@@ -14,6 +15,7 @@ class AppUser {
   final String id;
   final String email;
   final String role;
+  final String? platformRole;
   final List<String> access;
   final String? name;
   final String? avatarPath;
@@ -25,6 +27,7 @@ class AppUser {
         id: json['id'].toString(),
         email: json['email'] as String,
         role: (json['role'] ?? 'member') as String,
+        platformRole: json['platformRole']?.toString(),
         access: ((json['access'] as List?) ?? const [])
             .map((key) => key.toString())
             .where(appAccessKeys.contains)
@@ -39,6 +42,7 @@ class AppUser {
       );
 
   bool get isAdmin => role == 'owner' || role == 'admin';
+  bool get isPlatformAdmin => platformRole == 'admin';
 
   bool canAccess(String key) => isAdmin || access.contains(key);
 }

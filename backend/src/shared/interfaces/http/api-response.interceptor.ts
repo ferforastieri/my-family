@@ -7,6 +7,9 @@ import {
 } from '@nestjs/common';
 import { map, Observable } from 'rxjs';
 import { ApiMessage, ApiResponse, isApiResponse } from './api-response';
+import { AuditService } from '../../../audit/application/audit.service';
+import type { Socket } from 'socket.io';
+import type { UserEntity } from '@auth/domain/entities/user.entity';
 
 @Injectable()
 export class ApiResponseInterceptor<T> implements NestInterceptor<
@@ -14,6 +17,8 @@ export class ApiResponseInterceptor<T> implements NestInterceptor<
   ApiResponse<T>
 > {
   private readonly logger = new Logger(ApiResponseInterceptor.name);
+
+  constructor(private readonly audit: AuditService) {}
 
   intercept(
     context: ExecutionContext,
@@ -42,9 +47,26 @@ export class ApiResponseInterceptor<T> implements NestInterceptor<
     message: string,
   ) {
     if (type !== 'ws') return;
-    this.logger.log(
-      `${context.getClass().name}.${context.getHandler().name} -> ${message}`,
-    );
+    const client = context.switchToWs().getClient<Socket>();
+    const user = client.data.user as UserEntity | undefined;
+    const handler = context.getHandler().name;
+    const resource = context
+      .getClass()
+      .name.replace(/Gateway$/, '')
+      .toLowerCase();
+    this.logger.log(`${context.getClass().name}.${handler} -> ${message}`);
+    if (isMutationHandler(handler)) {
+      void this.audit.record({
+        action: `websocket.${resource}.${handler}`,
+        resource,
+        source: 'websocket',
+        success: true,
+        actorUserId: user?.id,
+        actorEmail: user?.email,
+        tenantId: user?.tenantId,
+        metadata: { message },
+      });
+    }
   }
 
   private responseMessage(
@@ -57,6 +79,12 @@ export class ApiResponseInterceptor<T> implements NestInterceptor<
       ? 'Ação realizada com sucesso.'
       : 'Requisição concluída.';
   }
+}
+
+function isMutationHandler(handler: string): boolean {
+  return /create|update|delete|send|schedule|clear|read|subscribe|complete/i.test(
+    handler,
+  );
 }
 
 function stripMessage<T>(body: T): T {

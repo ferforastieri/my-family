@@ -155,11 +155,11 @@ class _DesktopMainNavigation extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _DesktopNavPill(
-            icon: Icons.home_outlined,
-            selectedIcon: Icons.home,
-            label: 'Início',
-            selected: currentLocation == '/',
-            onTap: () => context.openAppRoute('/'),
+            icon: Icons.dashboard_outlined,
+            selectedIcon: Icons.dashboard,
+            label: 'Painel',
+            selected: currentLocation == '/painel',
+            onTap: () => context.openAppRoute('/painel'),
           ),
           _DesktopNavPill(
             icon: Icons.photo_library_outlined,
@@ -245,7 +245,7 @@ class _DesktopMainNavigation extends StatelessWidget {
             selectedIcon: Icons.person,
             label: 'Perfil',
             selected: _isSelected('/perfil', currentLocation) ||
-                _isSelected('/admin', currentLocation),
+                _isSelected('/cliente/admin', currentLocation),
             onTap: () {
               if (auth.user == null) {
                 onLogin();
@@ -480,11 +480,11 @@ class _MobileBottomNavigation extends StatelessWidget {
           child: Row(
             children: [
               _MobileNavButton(
-                icon: Icons.home_outlined,
-                selectedIcon: Icons.home,
-                label: 'Início',
-                selected: currentLocation == '/',
-                onTap: () => context.openAppRoute('/'),
+                icon: Icons.dashboard_outlined,
+                selectedIcon: Icons.dashboard,
+                label: 'Painel',
+                selected: currentLocation == '/painel',
+                onTap: () => context.openAppRoute('/painel'),
               ),
               _MobileNavButton(
                 icon: Icons.photo_library_outlined,
@@ -571,7 +571,7 @@ class _MobileBottomNavigation extends StatelessWidget {
                 selectedIcon: Icons.person,
                 label: 'Perfil',
                 selected: _isSelected('/perfil', currentLocation) ||
-                    _isSelected('/admin', currentLocation),
+                    _isSelected('/cliente/admin', currentLocation),
                 onTap: () {
                   if (auth.user == null) {
                     onLogin();

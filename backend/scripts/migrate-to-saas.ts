@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { MongoClient, ObjectId, type Db } from 'mongodb';
+import { MongoClient, type Db } from 'mongodb';
 
 const apply = process.argv.includes('--apply');
 const mongoUri = process.env.MONGO_URI;
@@ -132,7 +132,6 @@ async function main() {
     }
     await migrateStoredPaths(db, tenantId);
     await rebuildTenantIndexes(db);
-    await seedDemo(db, String(owner._id));
     report('resultado', `migração concluída para tenant ${tenantId}`);
   } finally {
     await client.close();
@@ -234,115 +233,6 @@ async function replaceIndex(
   if (names.includes(oldName))
     await db.collection(collection).dropIndex(oldName);
   await db.collection(collection).createIndex(keys, options);
-}
-
-async function seedDemo(db: Db, ownerUserId: string) {
-  const now = new Date();
-  let demo = await db.collection('tenants').findOne({ slug: 'demo' });
-  if (!demo) {
-    const result = await db.collection('tenants').insertOne({
-      name: 'Família Aurora',
-      slug: 'demo',
-      ownerUserId,
-      defaultLocale: 'pt-BR',
-      status: 'active',
-      isDemo: true,
-      isPublished: true,
-      theme: { color: 'pink' },
-      createdAt: now,
-      updatedAt: now,
-    });
-    demo = { _id: result.insertedId };
-  }
-  const tenantId = String(demo._id);
-  await db.collection('home_settings').updateOne(
-    { tenantId, key: 'home' },
-    {
-      $set: {
-        events: [
-          {
-            title: 'Nossa história',
-            icon: '♥',
-            date: new Date('2018-06-12'),
-            message: 'O dia em que tudo começou.',
-          },
-          {
-            title: 'Nossa casa',
-            icon: '⌂',
-            date: new Date('2021-03-20'),
-            message: 'Um lugar para chamar de nosso.',
-          },
-          {
-            title: 'Pequenos milagres',
-            icon: '✿',
-            date: new Date('2024-09-08'),
-            message: 'A família floresceu mais uma vez.',
-          },
-        ],
-        galleryImages: [],
-        galleryOrder: 3,
-        updatedAt: now,
-      },
-      $setOnInsert: { createdAt: now },
-    },
-    { upsert: true },
-  );
-  const demoCollections = ['musicas', 'cartas'];
-  for (const name of demoCollections)
-    await db.collection(name).deleteMany({ tenantId });
-  await db.collection('musicas').insertMany([
-    {
-      tenantId,
-      titulo: 'Canção da manhã',
-      artista: 'Aurora',
-      linkSpotify: '#',
-      descricao: 'A música dos nossos domingos.',
-      momento: 'Casa',
-      data: now,
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      tenantId,
-      titulo: 'Estrada de flores',
-      artista: 'Jardim',
-      linkSpotify: '#',
-      descricao: 'Para viagens sem pressa.',
-      momento: 'Viagens',
-      data: now,
-      createdAt: now,
-      updatedAt: now,
-    },
-  ]);
-  await db.collection('cartas').insertMany([
-    {
-      tenantId,
-      tipo: 'journey',
-      titulo: 'Quando nos encontramos',
-      conteudo: 'Uma conversa simples virou o começo de tudo.',
-      data: new Date('2018-06-12'),
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      tenantId,
-      tipo: 'journey',
-      titulo: 'Nosso primeiro lar',
-      conteudo: 'Caixas pelo chão, planos por toda parte e muito carinho.',
-      data: new Date('2021-03-20'),
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      tenantId,
-      tipo: 'letter',
-      titulo: 'Para os dias comuns',
-      conteudo: 'É neles que mora a parte mais bonita da nossa história.',
-      data: now,
-      createdAt: now,
-      updatedAt: now,
-    },
-  ]);
 }
 
 function normalizeAccess(value: unknown) {

@@ -9,6 +9,8 @@ import {
 import { BaseWsExceptionFilter, WsException } from '@nestjs/websockets';
 import { Response } from 'express';
 import type { Socket } from 'socket.io';
+import { AuditService } from '../../../audit/application/audit.service';
+import type { UserEntity } from '@auth/domain/entities/user.entity';
 
 @Catch()
 export class ApiExceptionFilter
@@ -16,6 +18,10 @@ export class ApiExceptionFilter
   implements ExceptionFilter
 {
   private readonly logger = new Logger(ApiExceptionFilter.name);
+
+  constructor(private readonly audit?: AuditService) {
+    super();
+  }
 
   catch(exception: unknown, host: ArgumentsHost) {
     if (host.getType() === 'ws') {
@@ -34,6 +40,20 @@ export class ApiExceptionFilter
         return;
       }
       const client = host.switchToWs().getClient<Socket>();
+      const user = client.data.user as UserEntity | undefined;
+      void this.audit?.record({
+        action: 'websocket.error',
+        resource: 'websocket',
+        source: 'websocket',
+        success: false,
+        actorUserId: user?.id,
+        actorEmail: user?.email,
+        tenantId: user?.tenantId,
+        metadata: {
+          error: exceptionName(exception),
+          message: exceptionMessage(exception),
+        },
+      });
       client.emit('exception', payload);
       return;
     }
