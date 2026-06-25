@@ -174,7 +174,7 @@ class _DesktopMainNavigation extends StatelessWidget {
             icon: Icons.dashboard_outlined,
             selectedIcon: Icons.dashboard,
             label: context.tr('Painel'),
-            selected: currentLocation == '/painel',
+            selected: _isDashboardLocation(currentLocation),
             onTap: () => context.openAppRoute('/painel'),
           ),
           _DesktopNavPill(
@@ -550,7 +550,7 @@ class _MobileBottomNavigation extends StatelessWidget {
                 icon: Icons.dashboard_outlined,
                 selectedIcon: Icons.dashboard,
                 label: context.tr('Painel'),
-                selected: currentLocation == '/painel',
+                selected: _isDashboardLocation(currentLocation),
                 onTap: () => context.openAppRoute('/painel'),
               ),
               _MobileNavButton(
@@ -819,4 +819,11 @@ bool _isSelected(String itemPath, String currentLocation) {
   if (itemPath == '/') return currentLocation == '/';
   return currentLocation == itemPath ||
       currentLocation.startsWith('$itemPath/');
+}
+
+bool _isDashboardLocation(String currentLocation) {
+  return currentLocation == '/painel' ||
+      currentLocation == '/app/cliente/dashboard' ||
+      (currentLocation.startsWith('/app/cliente/') &&
+          currentLocation.endsWith('/dashboard'));
 }

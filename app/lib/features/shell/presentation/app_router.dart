@@ -40,33 +40,50 @@ GoRouter buildRouter(
 ) {
   return GoRouter(
     navigatorKey: notifications.navigatorKey,
-    initialLocation: '/',
+    initialLocation: '/app/cliente',
     refreshListenable: auth,
     redirect: (context, state) {
       final path = state.uri.path;
-      const publicPaths = {'/welcome', '/demo', '/signup', '/login'};
+      const publicPaths = {
+        '/welcome',
+        '/demo',
+        '/signup',
+        '/login',
+        '/app/demo',
+        '/app/signup',
+        '/app/login',
+      };
       if (auth.user == null) {
-        return publicPaths.contains(path) ? null : '/welcome';
+        return publicPaths.contains(path) ? null : '/app/login';
       }
-      if (path == '/welcome' || path == '/signup' || path == '/login') {
-        return auth.tenant?.isActive == true ? '/painel' : '/billing';
+      if (publicPaths.contains(path)) {
+        return auth.tenant?.isActive == true
+            ? _clientDashboardPath(auth)
+            : '/app/billing';
+      }
+      if (path == '/app/cliente') {
+        return _clientDashboardPath(auth);
       }
       final accessKey = _accessForPath(path);
       if (auth.user != null &&
           auth.tenant?.isActive != true &&
           path != '/billing' &&
+          path != '/app/billing' &&
           path != '/perfil' &&
-          path != '/plataforma') {
-        return '/billing';
+          path != '/app/perfil' &&
+          path != '/plataforma' &&
+          path != '/app/admin/dashboard') {
+        return '/app/billing';
       }
-      if (path == '/plataforma' && auth.user?.isPlatformAdmin != true) {
-        return '/painel';
+      if ((path == '/plataforma' || path == '/app/admin/dashboard') &&
+          auth.user?.isPlatformAdmin != true) {
+        return _clientDashboardPath(auth);
       }
       if (path == '/cliente/admin' && auth.user?.isAdmin != true) {
-        return '/painel';
+        return _clientDashboardPath(auth);
       }
       if (accessKey != null && auth.user?.canAccess(accessKey) != true) {
-        return '/';
+        return _clientDashboardPath(auth);
       }
       return null;
     },
@@ -103,7 +120,35 @@ GoRouter buildRouter(
         )),
       ),
       GoRoute(
+        path: '/app/demo',
+        pageBuilder: (context, state) => _page(DemoPage(
+          locale: MarketingLocale.resolve(state.uri.queryParameters['locale']),
+        )),
+      ),
+      GoRoute(
+        path: '/app/signup',
+        pageBuilder: (context, state) => _page(PublicAuthPage(
+          auth: auth,
+          toast: toast,
+          locale: MarketingLocale.resolve(state.uri.queryParameters['locale']),
+          register: true,
+        )),
+      ),
+      GoRoute(
+        path: '/app/login',
+        pageBuilder: (context, state) => _page(PublicAuthPage(
+          auth: auth,
+          toast: toast,
+          locale: MarketingLocale.resolve(state.uri.queryParameters['locale']),
+          register: state.uri.queryParameters['mode'] == 'register',
+        )),
+      ),
+      GoRoute(
         path: '/plataforma',
+        pageBuilder: (context, state) => _page(PlatformAdminPage(auth: auth)),
+      ),
+      GoRoute(
+        path: '/app/admin/dashboard',
         pageBuilder: (context, state) => _page(PlatformAdminPage(auth: auth)),
       ),
       ShellRoute(
@@ -127,7 +172,31 @@ GoRouter buildRouter(
                 _page(ClientDashboardPage(auth: auth)),
           ),
           GoRoute(
+            path: '/app/cliente/:tenantSlug/dashboard',
+            pageBuilder: (context, state) =>
+                _page(ClientDashboardPage(auth: auth)),
+          ),
+          GoRoute(
+            path: '/app/cliente/dashboard',
+            pageBuilder: (context, state) =>
+                _page(ClientDashboardPage(auth: auth)),
+          ),
+          GoRoute(
             path: '/billing',
+            pageBuilder: (context, state) => _page(BillingPage(
+              auth: auth,
+              toast: toast,
+            )),
+          ),
+          GoRoute(
+            path: '/app/billing',
+            pageBuilder: (context, state) => _page(BillingPage(
+              auth: auth,
+              toast: toast,
+            )),
+          ),
+          GoRoute(
+            path: '/app/cliente/:tenantSlug/assinatura',
             pageBuilder: (context, state) => _page(BillingPage(
               auth: auth,
               toast: toast,
@@ -319,6 +388,12 @@ String? _accessForPath(String path) {
     '/nossa-historia' => 'nossaHistoria',
     _ => null,
   };
+}
+
+String _clientDashboardPath(AuthController auth) {
+  final slug = auth.tenant?.slug ?? auth.user?.tenantSlug;
+  if (slug == null || slug.isEmpty) return '/app/cliente/dashboard';
+  return '/app/cliente/$slug/dashboard';
 }
 
 Page<void> _page(Widget child) {
