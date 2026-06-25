@@ -77,18 +77,10 @@ BILLING_CANCEL_URL=https://seu-dominio.com/app/billing
 PASSWORD_RESET_URL=https://seu-dominio.com/app/reset-password
 ```
 
-As mudanças de banco devem ser scripts versionados e executados de forma
-controlada. O script atual de migração SaaS fica em
-`backend/scripts/migrate-to-saas.ts` e roda com:
-
-```bash
-cd backend
-npm run migrate:saas
-```
-
-Não coloque mutação de banco dentro do build Docker. A imagem precisa ser
-reprodutível; migração deve ser uma etapa explícita do deploy ou uma tarefa
-operacional idempotente.
+Mudanças de dados e schema do MongoDB devem ser feitas com operações explícitas
+do próprio MongoDB, como `updateMany`, pipelines de atualização, criação de
+índices e validação de schema. Não coloque mutação de banco dentro do build
+Docker; a imagem precisa ser reprodutível.
 
 ## Configuração
 
@@ -140,7 +132,6 @@ cd backend && npm run build && npm test -- --runInBand
 cd app && flutter analyze && flutter test
 ```
 
-## Dados existentes
+## Dados
 
-A migração SaaS cria o tenant legado, preserva os dados existentes e adiciona o
-isolamento necessário. Execute somente com backup confirmado.
+Para mudanças destrutivas, faça backup do MongoDB antes de subir a versão.

@@ -121,14 +121,8 @@ Build:
 npm run build
 ```
 
-Migração SaaS:
-
-```bash
-npm run migrate:saas
-```
-
-Migrations devem ser scripts explícitos e idempotentes. Build de imagem não deve
-alterar banco.
+Mudanças de dados e schema devem ser operações explícitas do MongoDB. Build de
+imagem não altera banco.
 
 ## Ambiente
 
