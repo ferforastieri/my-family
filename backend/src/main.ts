@@ -159,3 +159,4 @@ function isAuthHttpEndpoint(path: string): boolean {
     normalized === '/auth/reset-password'
   );
 }
+
