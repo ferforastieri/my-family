@@ -6,7 +6,12 @@ import { applyTenantScope } from '@tenancy/infrastructure/tenant-scope.plugin';
 export class CartaDocument {
   tenantId: string;
 
-  @Prop({ required: true, enum: ['letter', 'journey'], index: true })
+  @Prop({
+    type: String,
+    required: true,
+    enum: ['letter', 'journey'],
+    index: true,
+  })
   tipo: 'letter' | 'journey';
 
   @Prop({ required: true })

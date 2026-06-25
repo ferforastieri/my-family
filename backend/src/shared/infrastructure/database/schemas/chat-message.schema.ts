@@ -21,7 +21,7 @@ export class ChatMessageDocument {
   @Prop()
   mediaUrl?: string;
 
-  @Prop({ enum: ['image', 'video', 'sticker'] })
+  @Prop({ type: String, enum: ['image', 'video', 'sticker'] })
   mediaType?: 'image' | 'video' | 'sticker';
 
   @Prop()

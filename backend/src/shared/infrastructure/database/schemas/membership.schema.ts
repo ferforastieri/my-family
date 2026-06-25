@@ -11,7 +11,7 @@ export class MembershipDocument {
   @Prop({ required: true, index: true })
   userId: string;
 
-  @Prop({ required: true, enum: ['owner', 'admin', 'member'] })
+  @Prop({ type: String, required: true, enum: ['owner', 'admin', 'member'] })
   role: MembershipRole;
 
   @Prop({ type: [String], required: true, default: [] })

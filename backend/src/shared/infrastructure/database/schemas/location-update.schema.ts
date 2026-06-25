@@ -36,7 +36,11 @@ export class LocationUpdateDocument {
   @Prop()
   isCharging?: boolean;
 
-  @Prop({ default: 'unknown', enum: ['web', 'android', 'ios', 'unknown'] })
+  @Prop({
+    type: String,
+    default: 'unknown',
+    enum: ['web', 'android', 'ios', 'unknown'],
+  })
   platform?: 'web' | 'android' | 'ios' | 'unknown';
 
   createdAt: Date;

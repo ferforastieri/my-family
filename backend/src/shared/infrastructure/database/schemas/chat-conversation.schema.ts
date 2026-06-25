@@ -3,7 +3,7 @@ import { HydratedDocument } from 'mongoose';
 
 @Schema({ timestamps: true, collection: 'chat_conversations' })
 export class ChatConversationDocument {
-  @Prop({ required: true, enum: ['global', 'direct'] })
+  @Prop({ type: String, required: true, enum: ['global', 'direct'] })
   type: 'global' | 'direct';
 
   @Prop({ required: true })

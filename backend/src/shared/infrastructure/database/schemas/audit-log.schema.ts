@@ -12,7 +12,12 @@ export class AuditLogDocument {
   @Prop({ required: true, index: true })
   resource: string;
 
-  @Prop({ required: true, enum: ['http', 'websocket', 'system'], index: true })
+  @Prop({
+    type: String,
+    required: true,
+    enum: ['http', 'websocket', 'system'],
+    index: true,
+  })
   source: 'http' | 'websocket' | 'system';
 
   @Prop({ index: true })

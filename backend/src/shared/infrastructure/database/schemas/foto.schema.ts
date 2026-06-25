@@ -12,7 +12,7 @@ export class FotoDocument {
   @Prop()
   album?: string;
 
-  @Prop({ required: true, enum: ['imagem', 'video'] })
+  @Prop({ type: String, required: true, enum: ['imagem', 'video'] })
   tipo: 'imagem' | 'video';
 
   @Prop()

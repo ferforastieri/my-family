@@ -16,10 +16,16 @@ export class TenantDocument {
   @Prop({ required: true, index: true })
   ownerUserId: string;
 
-  @Prop({ required: true, enum: ['pt-BR', 'en', 'es'], default: 'pt-BR' })
+  @Prop({
+    type: String,
+    required: true,
+    enum: ['pt-BR', 'en', 'es'],
+    default: 'pt-BR',
+  })
   defaultLocale: TenantLocale;
 
   @Prop({
+    type: String,
     required: true,
     enum: [
       'draft',
