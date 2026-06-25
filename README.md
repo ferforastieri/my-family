@@ -59,7 +59,7 @@ segredos do ambiente de deploy. Nunca versione credenciais.
 
 Variáveis principais:
 
-- `MONGO_ROOT_USER`, `MONGO_ROOT_PASSWORD`, `MONGO_DB`
+- `MONGO_ROOT_USER`, `MONGO_ROOT_PASSWORD`
 - `JWT_SECRET`, `CSRF_SECRET`
 - `REDIS_URL`
 - `BUCKET`, `ENDPOINT`, `REGION`, `ACCESS_KEY_ID`, `SECRET_ACCESS_KEY`

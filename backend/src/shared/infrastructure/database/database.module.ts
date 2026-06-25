@@ -11,7 +11,6 @@ export const MongoDatabaseModule = MongooseModule.forRootAsync({
   inject: [Environment],
   useFactory: (env: Environment) => ({
     uri: env.database.mongo.uri,
-    dbName: env.database.mongo.dbName,
   }),
 });
 

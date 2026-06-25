@@ -3,7 +3,6 @@ import { MongoClient, ObjectId, type Db } from 'mongodb';
 
 const apply = process.argv.includes('--apply');
 const mongoUri = process.env.MONGO_URI;
-const dbName = process.env.MONGO_DB || 'my-family';
 const allAccess = [
   'memorias',
   'playlist',
@@ -42,7 +41,7 @@ async function main() {
   const client = new MongoClient(mongoUri);
   await client.connect();
   try {
-    const db = client.db(dbName);
+    const db = client.db();
     const users = await db
       .collection('users')
       .find()

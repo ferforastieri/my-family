@@ -5,7 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 export class Environment {
   type: 'development' | 'production' | 'staging';
   http: { port: number };
-  database: { mongo: { uri: string; dbName?: string } };
+  database: { mongo: { uri: string } };
   jwt: { secret: string; expiresIn: string };
   storage: {
     bucket: string;
@@ -80,7 +80,6 @@ class EnvironmentFactory {
           uri:
             config.get<string>('MONGO_URI') ||
             'mongodb://localhost:27017/my-family',
-          dbName: config.get<string>('MONGO_DB') || 'my-family',
         },
       },
       jwt: {

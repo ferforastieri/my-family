@@ -6,7 +6,7 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-my_family}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
-      MONGO_INITDB_DATABASE: ${MONGO_DB:-my-family}
+      MONGO_INITDB_DATABASE: my-family
     volumes:
       - mongo_data:/data/db
     ports:
@@ -35,8 +35,7 @@ services:
     container_name: my-family-backend
     restart: unless-stopped
     environment:
-      MONGO_URI: mongodb://${MONGO_ROOT_USER:-my_family}:${MONGO_ROOT_PASSWORD}@mongo:27017/${MONGO_DB:-my-family}?authSource=admin
-      MONGO_DB: ${MONGO_DB:-my-family}
+      MONGO_URI: mongodb://${MONGO_ROOT_USER:-my_family}:${MONGO_ROOT_PASSWORD}@mongo:27017/my-family?authSource=admin
       REDIS_URL: redis://redis:6379
       PORT: 3001
       NODE_ENV: production
