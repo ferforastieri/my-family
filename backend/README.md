@@ -13,8 +13,8 @@ Backend do projeto Nossa Familia. Ele foi criado como estudo pratico de arquitet
 - JWT
 - Helmet, CORS, CSRF e rate limit
 
-Em produção, este serviço também entrega o build Flutter Web em `/app/`. As
-rotas públicas indexáveis continuam renderizadas pelo NestJS.
+Este serviço também entrega o build Flutter Web em `/app/`. As rotas públicas
+indexáveis continuam renderizadas pelo NestJS.
 
 ## Organizacao
 
@@ -120,6 +120,15 @@ Build:
 ```bash
 npm run build
 ```
+
+Migração SaaS:
+
+```bash
+npm run migrate:saas
+```
+
+Migrations devem ser scripts explícitos e idempotentes. Build de imagem não deve
+alterar banco.
 
 ## Ambiente
 

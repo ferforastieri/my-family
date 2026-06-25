@@ -1,6 +1,8 @@
 # App Flutter
 
-Cliente Web/Android do SaaS Nossa Família.
+Cliente Flutter do SaaS Nossa Família. O Android é o build de aplicativo usado
+agora; o Web continua disponível em `/app/` quando o serviço fullstack do
+Railway é usado.
 
 ## Tecnologias
 
@@ -82,9 +84,12 @@ flutter run -d <device-id> \
 
 ```bash
 flutter analyze
-flutter build web --release --no-wasm-dry-run --base-href=/app/
 flutter build apk --debug
-flutter build apk --release
+flutter build apk --release \
+  --dart-define=API_BASE_URL=https://seu-dominio.com/api \
+  --dart-define=SOCKET_URL=https://seu-dominio.com \
+  --dart-define=PUBLIC_WEB_URL=https://seu-dominio.com
+flutter build web --release --no-wasm-dry-run --base-href=/app/
 ```
 
 ## Seguranca

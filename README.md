@@ -41,17 +41,54 @@ docker compose up -d
 
 O endereço padrão é `http://localhost:3458`.
 
-## Produção: Railway + Cloudflare DNS
+## Deploy
 
-- Railway: um serviço fullstack criado a partir deste repositório. O
-  `Dockerfile.backend` compila o Flutter Web e o NestJS, e o Nest entrega tudo
-  pelo mesmo domínio.
-- MongoDB, Redis/BullMQ e Bucket S3 ficam como serviços/integrações do Railway.
-- Cloudflare não hospeda o app; fica apenas como DNS, proxy, SSL, WAF e regras
-  de segurança na frente do domínio do Railway.
+- Railway cria o serviço a partir deste repositório, usando `railway.toml` e
+  `Dockerfile.backend`.
+- O serviço Railway expõe o backend, as páginas SEO, `/api`, `/socket.io` e o
+  Flutter Web em `/app/`.
+- MongoDB, Redis/BullMQ e Bucket S3 ficam no Railway ou em serviços externos
+  compatíveis apontados por variáveis.
+- Cloudflare fica como DNS, proxy, SSL, WAF e camada de segurança do domínio.
+- Android é build de aplicativo, não serviço Railway. O APK/AAB é gerado a
+  partir de `app/` com Flutter, apontando para o domínio público do backend.
 
-O procedimento completo está em
-[`docs/deploy-railway-cloudflare-dns.md`](docs/deploy-railway-cloudflare-dns.md).
+No Railway, mantenha a raiz do repositório como fonte do serviço. As variáveis
+principais do serviço são:
+
+```text
+NODE_ENV=production
+PORT=3000
+CORS_ORIGIN=https://seu-dominio.com
+MONGO_URI=<mongo-uri>
+REDIS_URL=<redis-url>
+JWT_SECRET=<segredo>
+CSRF_SECRET=<segredo>
+BUCKET=<bucket>
+ENDPOINT=<endpoint-s3>
+REGION=<regiao>
+ACCESS_KEY_ID=<access-key>
+SECRET_ACCESS_KEY=<secret-key>
+STRIPE_SECRET_KEY=<stripe-secret>
+STRIPE_WEBHOOK_SECRET=<stripe-webhook-secret>
+STRIPE_PRICE_ID=<stripe-price>
+BILLING_SUCCESS_URL=https://seu-dominio.com/app/billing
+BILLING_CANCEL_URL=https://seu-dominio.com/app/billing
+PASSWORD_RESET_URL=https://seu-dominio.com/app/reset-password
+```
+
+As mudanças de banco devem ser scripts versionados e executados de forma
+controlada. O script atual de migração SaaS fica em
+`backend/scripts/migrate-to-saas.ts` e roda com:
+
+```bash
+cd backend
+npm run migrate:saas
+```
+
+Não coloque mutação de banco dentro do build Docker. A imagem precisa ser
+reprodutível; migração deve ser uma etapa explícita do deploy ou uma tarefa
+operacional idempotente.
 
 ## Configuração
 
@@ -67,9 +104,6 @@ Variáveis principais:
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID`
 - `BILLING_SUCCESS_URL`, `BILLING_CANCEL_URL`
 - variáveis Firebase usadas no Web, Android e backend
-
-Para produção, `BILLING_SUCCESS_URL` e `BILLING_CANCEL_URL` devem apontar para
-`https://seu-dominio/app/billing`.
 
 ## Desenvolvimento
 
@@ -89,6 +123,16 @@ flutter pub get
 flutter run
 ```
 
+Android:
+
+```bash
+cd app
+flutter build apk --release \
+  --dart-define=API_BASE_URL=https://seu-dominio.com/api \
+  --dart-define=SOCKET_URL=https://seu-dominio.com \
+  --dart-define=PUBLIC_WEB_URL=https://seu-dominio.com
+```
+
 Validação:
 
 ```bash
@@ -98,6 +142,5 @@ cd app && flutter analyze && flutter test
 
 ## Dados existentes
 
-A migração SaaS está em `backend/scripts/migrate-to-saas.ts`. Ela cria o tenant
-legado, preserva os dados existentes e adiciona o isolamento necessário. Execute
-somente com backup confirmado.
+A migração SaaS cria o tenant legado, preserva os dados existentes e adiciona o
+isolamento necessário. Execute somente com backup confirmado.
