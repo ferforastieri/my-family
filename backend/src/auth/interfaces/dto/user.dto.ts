@@ -7,6 +7,7 @@ import {
 } from 'class-validator';
 import {
   type PlatformRole,
+  type SessionScope,
   userAccessKeys,
   userRoles,
   type UserAccessKey,
@@ -47,10 +48,11 @@ export class UserResponseDto {
   email: string;
   name: string | null;
   platformRole: PlatformRole | null;
+  sessionScope: SessionScope;
   role: UserRole;
   access: UserAccessKey[];
   avatarPath: string | null;
-  tenantId: string;
+  tenantId: string | null;
   tenantSlug: string | null;
   createdAt: Date;
 }

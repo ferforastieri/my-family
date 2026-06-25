@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../core/notifications/notifications_controller.dart';
 import '../../../core/theme/app_theme.dart';
@@ -25,7 +26,7 @@ class NotificationsSheet extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text('Notificações',
+                    child: Text(context.tr('Notificações'),
                         style: TextStyle(
                             color: palette.primary,
                             fontSize: 24,
@@ -37,7 +38,8 @@ class NotificationsSheet extends StatelessWidget {
               if (!notifications.pushReady)
                 Text(
                   notifications.pushError ??
-                      'Este aparelho ainda não está registrado para receber notificações.',
+                      context.tr(
+                          'Este aparelho ainda não está registrado para receber notificações.'),
                   style: TextStyle(
                       color: palette.muted, fontWeight: FontWeight.w700),
                 ),
@@ -58,7 +60,8 @@ class NotificationsSheet extends StatelessWidget {
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 22),
                                 child: Text(
-                                  'Nenhuma notificação por enquanto.',
+                                  context
+                                      .tr('Nenhuma notificação por enquanto.'),
                                   textAlign: TextAlign.center,
                                   style: TextStyle(color: palette.muted),
                                 ),

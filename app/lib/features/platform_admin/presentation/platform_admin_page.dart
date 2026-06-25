@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/auth/auth_controller.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_dashboard.dart';
 import '../data/platform_admin_repository.dart';
@@ -38,12 +39,12 @@ class _PlatformAdminPageState extends State<PlatformAdminPage> {
         IconButton(
           onPressed: _reload,
           icon: const Icon(Icons.refresh),
-          tooltip: 'Atualizar',
+          tooltip: context.tr('Atualizar'),
         ),
         IconButton(
           onPressed: () => context.go('/painel'),
           icon: const Icon(Icons.family_restroom_outlined),
-          tooltip: 'Painel da família',
+          tooltip: context.tr('Painel da família'),
         ),
       ],
       children: [
@@ -90,19 +91,22 @@ class _Overview extends StatelessWidget {
             AppMetricCard(
               label: 'Usuários',
               value: '${metrics.totalUsers}',
-              caption: '+${metrics.newUsers30d} nos últimos 30 dias',
+              caption: context.tr('+{count} nos últimos 30 dias',
+                  args: {'count': metrics.newUsers30d}),
               icon: Icons.people_alt_outlined,
             ),
             AppMetricCard(
               label: 'Famílias',
               value: '${metrics.totalTenants}',
-              caption: '${metrics.activeTenants} ativas',
+              caption: context
+                  .tr('{count} ativas', args: {'count': metrics.activeTenants}),
               icon: Icons.family_restroom_outlined,
             ),
             AppMetricCard(
               label: 'Assinaturas ativas',
               value: '${metrics.activeSubscriptions}',
-              caption: '${metrics.pendingTenants} aguardando pagamento',
+              caption: context.tr('{count} aguardando pagamento',
+                  args: {'count': metrics.pendingTenants}),
               icon: Icons.credit_score_outlined,
             ),
             AppMetricCard(
@@ -154,14 +158,15 @@ class _TenantList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (items.isEmpty) return const Text('Nenhuma família cadastrada.');
+    if (items.isEmpty) return Text(context.tr('Nenhuma família cadastrada.'));
     return Column(
       children: [
         for (final item in items)
           _ListRow(
             icon: item.isPublished ? Icons.public : Icons.public_off_outlined,
             title: item.name,
-            subtitle: '${item.slug} · ${_tenantStatus(item.status)}',
+            subtitle:
+                '${item.slug} · ${context.tr(_tenantStatus(item.status))}',
             trailing: _date(item.createdAt),
           ),
       ],
@@ -176,14 +181,14 @@ class _AuditList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (items.isEmpty) return const Text('Nenhuma atividade registrada.');
+    if (items.isEmpty) return Text(context.tr('Nenhuma atividade registrada.'));
     return Column(
       children: [
         for (final item in items)
           _ListRow(
             icon:
                 item.success ? Icons.check_circle_outline : Icons.error_outline,
-            title: item.actorEmail ?? 'Sistema',
+            title: item.actorEmail ?? context.tr('Sistema'),
             subtitle: item.action,
             trailing: _date(item.createdAt),
             success: item.success,
@@ -259,7 +264,7 @@ class _ErrorState extends StatelessWidget {
           FilledButton.icon(
             onPressed: onRetry,
             icon: const Icon(Icons.refresh),
-            label: const Text('Tentar novamente'),
+            label: Text(context.tr('Tentar novamente')),
           ),
         ],
       ),

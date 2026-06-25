@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../i18n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import 'app_button.dart';
 
@@ -9,12 +10,14 @@ class AppHeaderActionsScope extends InheritedWidget {
     super.key,
     required this.onNotifications,
     required this.onTheme,
+    required this.onLanguage,
     required this.notificationCount,
     required super.child,
   });
 
   final VoidCallback onNotifications;
   final VoidCallback onTheme;
+  final VoidCallback onLanguage;
   final int notificationCount;
 
   static AppHeaderActionsScope? maybeOf(BuildContext context) {
@@ -25,6 +28,7 @@ class AppHeaderActionsScope extends InheritedWidget {
   bool updateShouldNotify(AppHeaderActionsScope oldWidget) {
     return onNotifications != oldWidget.onNotifications ||
         onTheme != oldWidget.onTheme ||
+        onLanguage != oldWidget.onLanguage ||
         notificationCount != oldWidget.notificationCount;
   }
 }
@@ -65,11 +69,11 @@ class AppPageHeader extends StatelessWidget {
             ? AppHeaderIconButton(
                 onPressed: onAction!,
                 icon: Icon(actionIcon ?? Icons.more_horiz),
-                tooltip: actionLabel!,
+                tooltip: context.tr(actionLabel!),
               )
             : AppButton(
                 onPressed: onAction,
-                label: actionLabel!,
+                label: context.tr(actionLabel!),
                 icon: actionIcon,
               );
 
@@ -85,7 +89,7 @@ class AppPageHeader extends StatelessWidget {
               AppHeaderIconButton(
                 onPressed: onBack ?? () => _defaultBack(context),
                 icon: const Icon(Icons.arrow_back),
-                tooltip: 'Voltar',
+                tooltip: context.tr('Voltar'),
               ),
               const SizedBox(width: 12),
               if (leading != null) ...[
@@ -117,7 +121,7 @@ class AppPageHeader extends StatelessWidget {
                     children: [
                       Flexible(
                         child: Text(
-                          title,
+                          context.tr(title),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -136,7 +140,7 @@ class AppPageHeader extends StatelessWidget {
                   if (!desktop && subtitle != null && subtitle!.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
-                      subtitle!,
+                      context.tr(subtitle!),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: palette.muted, fontSize: 13),
@@ -154,13 +158,19 @@ class AppPageHeader extends StatelessWidget {
                     count: mobileActions.notificationCount,
                     child: const Icon(Icons.notifications_outlined),
                   ),
-                  tooltip: 'Notificações',
+                  tooltip: context.tr('Notificações'),
+                ),
+                const SizedBox(width: 6),
+                AppHeaderIconButton(
+                  onPressed: mobileActions.onLanguage,
+                  icon: const Icon(Icons.translate_outlined),
+                  tooltip: context.tr('Idioma'),
                 ),
                 const SizedBox(width: 6),
                 AppHeaderIconButton(
                   onPressed: mobileActions.onTheme,
                   icon: const Icon(Icons.palette_outlined),
-                  tooltip: 'Cor e tema',
+                  tooltip: context.tr('Cor e tema'),
                 ),
               ],
             ],

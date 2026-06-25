@@ -17,7 +17,11 @@ export type AuditPage = {
     source: string;
     actorUserId?: string;
     actorEmail?: string;
+    effectiveUserId?: string;
+    effectiveUserEmail?: string;
     tenantId?: string;
+    membershipId?: string;
+    supportSessionId?: string;
     method?: string;
     path?: string;
     statusCode?: number;
@@ -89,7 +93,11 @@ export class AuditService {
         source: document.source,
         actorUserId: document.actorUserId,
         actorEmail: document.actorEmail,
+        effectiveUserId: document.effectiveUserId,
+        effectiveUserEmail: document.effectiveUserEmail,
         tenantId: document.tenantId,
+        membershipId: document.membershipId,
+        supportSessionId: document.supportSessionId,
         method: document.method,
         path: document.path,
         statusCode: document.statusCode,
@@ -114,9 +122,13 @@ export class AuditService {
   requestActor(request: Request): Partial<AuditRecord> {
     const user = (request as Request & { user?: UserEntity }).user;
     return {
-      actorUserId: user?.id,
-      actorEmail: user?.email,
-      tenantId: user?.tenantId,
+      actorUserId: user?.actorUserId ?? user?.id,
+      actorEmail: user?.actorEmail ?? user?.email,
+      effectiveUserId: user?.actorUserId ? user.id : undefined,
+      effectiveUserEmail: user?.actorUserId ? user.email : undefined,
+      tenantId: user?.tenantId ?? undefined,
+      membershipId: user?.membershipId ?? undefined,
+      supportSessionId: user?.supportSessionId ?? undefined,
       ip: clientIp(request),
       userAgent: request.headers['user-agent'],
     };

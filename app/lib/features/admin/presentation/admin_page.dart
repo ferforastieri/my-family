@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/api/query_keys.dart';
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/config/app_config.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
@@ -184,7 +185,7 @@ class _AdminPageState extends State<AdminPage> {
         child: AppFixedHeaderScrollView(
           header: AppPageHeader(
             title: 'Administração da família',
-            subtitle: selected.label,
+            subtitle: context.tr(selected.label),
             icon: Icons.admin_panel_settings_outlined,
             actionLabel: 'Menu',
             actionIcon: Icons.menu_open_outlined,
@@ -593,7 +594,7 @@ class _AdminRightNavigation extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Menu administrativo',
+                    context.tr('Menu administrativo'),
                     style: TextStyle(
                       color: palette.foreground,
                       fontSize: 18,
@@ -604,12 +605,12 @@ class _AdminRightNavigation extends StatelessWidget {
                 IconButton(
                   onPressed: () => Navigator.maybePop(context),
                   icon: const Icon(Icons.close),
-                  tooltip: 'Fechar',
+                  tooltip: context.tr('Fechar'),
                 ),
               ],
             ),
             Text(
-              'Escolha uma área para gerenciar.',
+              context.tr('Escolha uma área para gerenciar.'),
               style: TextStyle(
                 color: palette.muted,
                 fontWeight: FontWeight.w700,
@@ -842,7 +843,7 @@ class _AdminNavTile extends StatelessWidget {
                   color: selected ? palette.primary : palette.muted),
               const SizedBox(width: 10),
               Text(
-                section.label,
+                context.tr(section.label),
                 style: TextStyle(
                   color: selected ? palette.primary : palette.foreground,
                   fontWeight: FontWeight.w900,
@@ -894,14 +895,14 @@ class _AdminToolbar extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      context.tr(title),
                       textAlign: TextAlign.left,
                       style: const TextStyle(
                           fontSize: 20, fontWeight: FontWeight.w900),
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      subtitle,
+                      context.tr(subtitle),
                       textAlign: TextAlign.left,
                       style: TextStyle(color: palette.muted, height: 1.25),
                     ),
@@ -1022,7 +1023,7 @@ class _AdminSectionTitle extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Text(
-        title,
+        context.tr(title),
         style: TextStyle(
           color: palette.foreground,
           fontSize: 16,
@@ -1074,12 +1075,12 @@ class _UsersAdminTab extends StatelessWidget {
                   IconButton(
                     onPressed: () => onEdit(user),
                     icon: const Icon(Icons.edit_outlined),
-                    tooltip: 'Editar',
+                    tooltip: context.tr('Editar'),
                   ),
                   IconButton(
                     onPressed: () => onDelete(user),
                     icon: const Icon(Icons.delete_outline),
-                    tooltip: 'Remover',
+                    tooltip: context.tr('Remover'),
                   ),
                 ],
               );
@@ -1149,17 +1150,17 @@ class _NotificationsAdminTab extends StatelessWidget {
                 IconButton(
                   onPressed: () => onSend(notification),
                   icon: const Icon(Icons.send_outlined),
-                  tooltip: 'Enviar push',
+                  tooltip: context.tr('Enviar push'),
                 ),
                 IconButton(
                   onPressed: () => onEdit(notification),
                   icon: const Icon(Icons.edit_outlined),
-                  tooltip: 'Editar',
+                  tooltip: context.tr('Editar'),
                 ),
                 IconButton(
                   onPressed: () => onDelete(notification),
                   icon: const Icon(Icons.delete_outline),
-                  tooltip: 'Remover',
+                  tooltip: context.tr('Remover'),
                 ),
               ],
             ),
@@ -1304,13 +1305,13 @@ class _GamesAdminTabState extends State<_GamesAdminTab> {
                                 onPressed: () =>
                                     widget.onEditQuestion(question),
                                 icon: const Icon(Icons.edit_outlined),
-                                tooltip: 'Editar',
+                                tooltip: context.tr('Editar'),
                               ),
                               IconButton(
                                 onPressed: () =>
                                     widget.onDeleteQuestion(question),
                                 icon: const Icon(Icons.delete_outline),
-                                tooltip: 'Remover',
+                                tooltip: context.tr('Remover'),
                               ),
                             ],
                           ),
@@ -1332,12 +1333,12 @@ class _GamesAdminTabState extends State<_GamesAdminTab> {
                               IconButton(
                                 onPressed: () => widget.onEditWord(word),
                                 icon: const Icon(Icons.edit_outlined),
-                                tooltip: 'Editar',
+                                tooltip: context.tr('Editar'),
                               ),
                               IconButton(
                                 onPressed: () => widget.onDeleteWord(word),
                                 icon: const Icon(Icons.delete_outline),
-                                tooltip: 'Remover',
+                                tooltip: context.tr('Remover'),
                               ),
                             ],
                           ),
@@ -1408,12 +1409,12 @@ class _MiniGameConfigSection extends StatelessWidget {
               IconButton(
                 onPressed: () => onEdit(miniGame),
                 icon: const Icon(Icons.edit_outlined),
-                tooltip: 'Editar',
+                tooltip: context.tr('Editar'),
               ),
               IconButton(
                 onPressed: () => onDelete(miniGame),
                 icon: const Icon(Icons.delete_outline),
-                tooltip: 'Remover',
+                tooltip: context.tr('Remover'),
               ),
             ],
           ),
@@ -1433,31 +1434,31 @@ class _GameAdminNav extends StatelessWidget {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SegmentedButton<_GamesAdminSection>(
-        segments: const [
+        segments: [
           ButtonSegment(
             value: _GamesAdminSection.quiz,
-            icon: Icon(Icons.quiz_outlined),
-            label: Text('Quiz do Amor'),
+            icon: const Icon(Icons.quiz_outlined),
+            label: Text(context.tr('Quiz do Amor')),
           ),
           ButtonSegment(
             value: _GamesAdminSection.words,
-            icon: Icon(Icons.grid_on_outlined),
-            label: Text('Caça Palavras'),
+            icon: const Icon(Icons.grid_on_outlined),
+            label: Text(context.tr('Caça Palavras')),
           ),
           ButtonSegment(
             value: _GamesAdminSection.memoryMatch,
-            icon: Icon(Icons.style_outlined),
-            label: Text('Memória da Família'),
+            icon: const Icon(Icons.style_outlined),
+            label: Text(context.tr('Memória da Família')),
           ),
           ButtonSegment(
             value: _GamesAdminSection.loveOrder,
-            icon: Icon(Icons.timeline_outlined),
-            label: Text('Linha do Amor'),
+            icon: const Icon(Icons.timeline_outlined),
+            label: Text(context.tr('Linha do Amor')),
           ),
           ButtonSegment(
             value: _GamesAdminSection.thisOrThat,
-            icon: Icon(Icons.compare_arrows_outlined),
-            label: Text('Isso ou Aquilo'),
+            icon: const Icon(Icons.compare_arrows_outlined),
+            label: Text(context.tr('Isso ou Aquilo')),
           ),
         ],
         selected: {selected},
@@ -1643,19 +1644,19 @@ class _HomeSettingsAdminTab extends StatelessWidget {
                       onPressed:
                           item.order <= 0 ? null : () => _moveGallery(-1),
                       icon: const Icon(Icons.arrow_upward),
-                      tooltip: 'Subir',
+                      tooltip: context.tr('Subir'),
                     ),
                     IconButton(
                       onPressed: item.order >= events.length
                           ? null
                           : () => _moveGallery(1),
                       icon: const Icon(Icons.arrow_downward),
-                      tooltip: 'Descer',
+                      tooltip: context.tr('Descer'),
                     ),
                     IconButton(
                       onPressed: () => _openGallerySheet(context),
                       icon: const Icon(Icons.edit_outlined),
-                      tooltip: 'Editar carrossel',
+                      tooltip: context.tr('Editar carrossel'),
                     ),
                   ],
                   trailing: _HomeGalleryThumbs(images: galleryImages),
@@ -1675,14 +1676,14 @@ class _HomeSettingsAdminTab extends StatelessWidget {
                         ? null
                         : () => _moveEvent(item.eventIndex!, -1),
                     icon: const Icon(Icons.arrow_upward),
-                    tooltip: 'Subir',
+                    tooltip: context.tr('Subir'),
                   ),
                   IconButton(
                     onPressed: item.order >= items.length - 1
                         ? null
                         : () => _moveEvent(item.eventIndex!, 1),
                     icon: const Icon(Icons.arrow_downward),
-                    tooltip: 'Descer',
+                    tooltip: context.tr('Descer'),
                   ),
                   IconButton(
                     onPressed: () => _toggleHidden(item.eventIndex!),
@@ -1695,14 +1696,14 @@ class _HomeSettingsAdminTab extends StatelessWidget {
                     onPressed: () =>
                         _openEventSheet(context, index: item.eventIndex),
                     icon: const Icon(Icons.edit_outlined),
-                    tooltip: 'Editar',
+                    tooltip: context.tr('Editar'),
                   ),
                   IconButton(
                     onPressed: events.length <= 1
                         ? null
                         : () => _deleteEvent(item.eventIndex!),
                     icon: const Icon(Icons.delete_outline),
-                    tooltip: 'Remover',
+                    tooltip: context.tr('Remover'),
                   ),
                 ],
                 onTap: () => _openEventSheet(context, index: item.eventIndex),
@@ -1881,12 +1882,12 @@ class _AdminTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title,
+              Text(context.tr(title),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontWeight: FontWeight.w900)),
               const SizedBox(height: 4),
-              Text(subtitle,
+              Text(context.tr(subtitle),
                   maxLines: compact ? 3 : 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(color: palette.muted)),
@@ -1970,7 +1971,7 @@ class _StatusPill extends StatelessWidget {
             border: Border.all(color: color.withValues(alpha: .18)),
           ),
           child: Text(
-            label,
+            context.tr(label),
             style: TextStyle(
               color: color,
               fontSize: 12,
@@ -1983,7 +1984,7 @@ class _StatusPill extends StatelessWidget {
           IconButton(
             onPressed: onDelete,
             icon: const Icon(Icons.delete_outline),
-            tooltip: 'Remover agendamento',
+            tooltip: context.tr('Remover agendamento'),
           ),
         ],
       ],
@@ -2140,7 +2141,7 @@ class _AdminCheckRow extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    label,
+                    context.tr(label),
                     style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                 ),
@@ -2183,7 +2184,7 @@ class _AdminSwitchRow extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  label,
+                  context.tr(label),
                   style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
               ),
@@ -2205,7 +2206,7 @@ class _EmptyAdminState extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     return Center(
-      child: Text(message,
+      child: Text(context.tr(message),
           textAlign: TextAlign.center,
           style: TextStyle(color: palette.muted, fontWeight: FontWeight.w700)),
     );
@@ -2268,7 +2269,7 @@ class _HomeEventSheetState extends State<_HomeEventSheet> {
                 width: 86,
                 child: TextField(
                   controller: draft.icon,
-                  decoration: const InputDecoration(labelText: 'Ícone'),
+                  decoration: InputDecoration(labelText: context.tr('Ícone')),
                   textInputAction: TextInputAction.next,
                 ),
               ),
@@ -2276,7 +2277,7 @@ class _HomeEventSheetState extends State<_HomeEventSheet> {
               Expanded(
                 child: TextField(
                   controller: draft.title,
-                  decoration: const InputDecoration(labelText: 'Título'),
+                  decoration: InputDecoration(labelText: context.tr('Título')),
                   textInputAction: TextInputAction.next,
                 ),
               ),
@@ -2287,7 +2288,7 @@ class _HomeEventSheetState extends State<_HomeEventSheet> {
             controller: draft.message,
             minLines: 2,
             maxLines: 4,
-            decoration: const InputDecoration(labelText: 'Mensagem'),
+            decoration: InputDecoration(labelText: context.tr('Mensagem')),
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: 10),
@@ -2298,16 +2299,16 @@ class _HomeEventSheetState extends State<_HomeEventSheet> {
           ),
           const SizedBox(height: 10),
           SegmentedButton<HomeCountDirection>(
-            segments: const [
+            segments: [
               ButtonSegment(
                 value: HomeCountDirection.forward,
-                icon: Icon(Icons.trending_up),
-                label: Text('Frente'),
+                icon: const Icon(Icons.trending_up),
+                label: Text(context.tr('Frente')),
               ),
               ButtonSegment(
                 value: HomeCountDirection.backward,
-                icon: Icon(Icons.hourglass_bottom_outlined),
-                label: Text('Trás'),
+                icon: const Icon(Icons.hourglass_bottom_outlined),
+                label: Text(context.tr('Trás')),
               ),
             ],
             selected: {draft.countDirection},
@@ -2627,19 +2628,19 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
                                 ? null
                                 : () => _moveCard(index, -1),
                             icon: const Icon(Icons.arrow_upward),
-                            tooltip: 'Subir',
+                            tooltip: context.tr('Subir'),
                           ),
                           IconButton(
                             onPressed: saving || index == drafts.length - 1
                                 ? null
                                 : () => _moveCard(index, 1),
                             icon: const Icon(Icons.arrow_downward),
-                            tooltip: 'Descer',
+                            tooltip: context.tr('Descer'),
                           ),
                           IconButton(
                             onPressed: saving ? null : () => _removeCard(index),
                             icon: const Icon(Icons.delete_outline),
-                            tooltip: 'Remover card',
+                            tooltip: context.tr('Remover card'),
                           ),
                         ],
                       ),
@@ -2651,8 +2652,8 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
                             child: TextField(
                               controller: draft.icon,
                               enabled: !saving,
-                              decoration:
-                                  const InputDecoration(labelText: 'Ícone'),
+                              decoration: InputDecoration(
+                                  labelText: context.tr('Ícone')),
                               textInputAction: TextInputAction.next,
                             ),
                           ),
@@ -2661,8 +2662,8 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
                             child: TextField(
                               controller: draft.title,
                               enabled: !saving,
-                              decoration:
-                                  const InputDecoration(labelText: 'Título'),
+                              decoration: InputDecoration(
+                                  labelText: context.tr('Título')),
                               textInputAction: TextInputAction.next,
                             ),
                           ),
@@ -2675,7 +2676,7 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
                         minLines: 2,
                         maxLines: 3,
                         decoration:
-                            const InputDecoration(labelText: 'Mensagem'),
+                            InputDecoration(labelText: context.tr('Mensagem')),
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 10),
@@ -2688,16 +2689,16 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
                       ),
                       const SizedBox(height: 10),
                       SegmentedButton<HomeCountDirection>(
-                        segments: const [
+                        segments: [
                           ButtonSegment(
                             value: HomeCountDirection.forward,
-                            icon: Icon(Icons.trending_up),
-                            label: Text('Frente'),
+                            icon: const Icon(Icons.trending_up),
+                            label: Text(context.tr('Frente')),
                           ),
                           ButtonSegment(
                             value: HomeCountDirection.backward,
-                            icon: Icon(Icons.hourglass_bottom_outlined),
-                            label: Text('Trás'),
+                            icon: const Icon(Icons.hourglass_bottom_outlined),
+                            label: Text(context.tr('Trás')),
                           ),
                         ],
                         selected: {draft.countDirection},
@@ -3008,7 +3009,7 @@ class _UserSheetState extends State<_UserSheet> {
           const SizedBox(height: 14),
           TextField(
             controller: name,
-            decoration: const InputDecoration(labelText: 'Nome'),
+            decoration: InputDecoration(labelText: context.tr('Nome')),
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _save(),
           ),
@@ -3017,14 +3018,15 @@ class _UserSheetState extends State<_UserSheet> {
             controller: password,
             obscureText: obscurePassword,
             decoration: InputDecoration(
-              labelText: 'Nova senha',
+              labelText: context.tr('Nova senha'),
               suffixIcon: IconButton(
                 onPressed: () =>
                     setState(() => obscurePassword = !obscurePassword),
                 icon: Icon(obscurePassword
                     ? Icons.visibility_outlined
                     : Icons.visibility_off_outlined),
-                tooltip: obscurePassword ? 'Mostrar senha' : 'Ocultar senha',
+                tooltip: context
+                    .tr(obscurePassword ? 'Mostrar senha' : 'Ocultar senha'),
               ),
             ),
             textInputAction: TextInputAction.next,
@@ -3033,7 +3035,8 @@ class _UserSheetState extends State<_UserSheet> {
           TextField(
             controller: confirmPassword,
             obscureText: obscurePassword,
-            decoration: const InputDecoration(labelText: 'Confirmar senha'),
+            decoration:
+                InputDecoration(labelText: context.tr('Confirmar senha')),
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _save(),
           ),
@@ -3177,7 +3180,7 @@ class _NotificationSheetState extends State<_NotificationSheet> {
           const SizedBox(height: 14),
           TextField(
             controller: title,
-            decoration: const InputDecoration(labelText: 'Título'),
+            decoration: InputDecoration(labelText: context.tr('Título')),
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _save(),
           ),
@@ -3186,14 +3189,14 @@ class _NotificationSheetState extends State<_NotificationSheet> {
             controller: body,
             minLines: 2,
             maxLines: 4,
-            decoration: const InputDecoration(labelText: 'Mensagem'),
+            decoration: InputDecoration(labelText: context.tr('Mensagem')),
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _save(),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: url,
-            decoration: const InputDecoration(labelText: 'Rota ao abrir'),
+            decoration: InputDecoration(labelText: context.tr('Rota ao abrir')),
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _save(),
           ),
@@ -3363,7 +3366,7 @@ class _ScheduleNotificationSheetState
           const SizedBox(height: 14),
           TextField(
             controller: title,
-            decoration: const InputDecoration(labelText: 'Título'),
+            decoration: InputDecoration(labelText: context.tr('Título')),
             textInputAction: TextInputAction.next,
             onChanged: (_) {
               if (errorText != null) setState(() => errorText = null);
@@ -3374,13 +3377,13 @@ class _ScheduleNotificationSheetState
             controller: body,
             minLines: 2,
             maxLines: 4,
-            decoration: const InputDecoration(labelText: 'Mensagem'),
+            decoration: InputDecoration(labelText: context.tr('Mensagem')),
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: 10),
           TextField(
             controller: url,
-            decoration: const InputDecoration(labelText: 'Rota ao abrir'),
+            decoration: InputDecoration(labelText: context.tr('Rota ao abrir')),
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _schedule(),
           ),
@@ -3391,20 +3394,20 @@ class _ScheduleNotificationSheetState
             children: [
               ActionChip(
                 avatar: const Icon(Icons.timer_outlined, size: 18),
-                label: const Text('Em 10 min'),
+                label: Text(context.tr('Em 10 min')),
                 onPressed: saving
                     ? null
                     : () => _setPreset(const Duration(minutes: 10)),
               ),
               ActionChip(
                 avatar: const Icon(Icons.schedule_outlined, size: 18),
-                label: const Text('Em 1 hora'),
+                label: Text(context.tr('Em 1 hora')),
                 onPressed:
                     saving ? null : () => _setPreset(const Duration(hours: 1)),
               ),
               ActionChip(
                 avatar: const Icon(Icons.today_outlined, size: 18),
-                label: const Text('Amanhã'),
+                label: Text(context.tr('Amanhã')),
                 onPressed:
                     saving ? null : () => _setPreset(const Duration(days: 1)),
               ),
@@ -3555,7 +3558,7 @@ class _QuestionSheetState extends State<_QuestionSheet> {
           const SizedBox(height: 14),
           TextField(
             controller: question,
-            decoration: const InputDecoration(labelText: 'Pergunta'),
+            decoration: InputDecoration(labelText: context.tr('Pergunta')),
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _save(),
           ),
@@ -3567,14 +3570,16 @@ class _QuestionSheetState extends State<_QuestionSheet> {
                 children: [
                   ChoiceChip(
                     selected: correctIndex == i,
-                    label: const Text('Correta'),
+                    label: Text(context.tr('Correta')),
                     onSelected: (_) => setState(() => correctIndex = i),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: TextField(
                       controller: options[i],
-                      decoration: InputDecoration(labelText: 'Opção ${i + 1}'),
+                      decoration: InputDecoration(
+                          labelText: context
+                              .tr('Opção {index}', args: {'index': i + 1})),
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) => _save(),
                     ),
@@ -3653,7 +3658,7 @@ class _WordSheetState extends State<_WordSheet> {
           const SizedBox(height: 14),
           TextField(
             controller: word,
-            decoration: const InputDecoration(labelText: 'Palavra'),
+            decoration: InputDecoration(labelText: context.tr('Palavra')),
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _save(),
           ),
@@ -3833,21 +3838,23 @@ class _MiniGameSheetState extends State<_MiniGameSheet> {
         children: [
           AppSheetHeader(
             title: widget.miniGame == null
-                ? 'Novo ${_miniGameAdminLabel(type)}'
-                : 'Editar ${_miniGameAdminLabel(type)}',
+                ? context.tr('Novo {title}',
+                    args: {'title': _miniGameAdminLabel(type)})
+                : context.tr('Editar {title}',
+                    args: {'title': _miniGameAdminLabel(type)}),
             subtitle: _itemsHelp,
             icon: _miniGameAdminIcon(type),
           ),
           const SizedBox(height: 14),
           TextField(
             controller: title,
-            decoration: const InputDecoration(labelText: 'Título'),
+            decoration: InputDecoration(labelText: context.tr('Título')),
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: 10),
           TextField(
             controller: instructions,
-            decoration: const InputDecoration(labelText: 'Instrução'),
+            decoration: InputDecoration(labelText: context.tr('Instrução')),
             maxLines: 2,
             textInputAction: TextInputAction.newline,
           ),
@@ -3862,7 +3869,7 @@ class _MiniGameSheetState extends State<_MiniGameSheet> {
           if (formError != null) ...[
             const SizedBox(height: 8),
             Text(
-              formError!,
+              context.tr(formError!),
               style: TextStyle(
                 color: Theme.of(context).colorScheme.error,
                 fontWeight: FontWeight.w700,
@@ -3920,7 +3927,7 @@ class _MiniGameItemsEditor extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    title,
+                    context.tr(title),
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w900,
@@ -3930,7 +3937,7 @@ class _MiniGameItemsEditor extends StatelessWidget {
                 IconButton.filledTonal(
                   onPressed: onAdd,
                   icon: const Icon(Icons.add),
-                  tooltip: 'Adicionar',
+                  tooltip: context.tr('Adicionar'),
                 ),
               ],
             ),
@@ -3981,14 +3988,17 @@ class _MiniGameItemFields extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    '${index + 1}. ${_miniGameItemTitle(type)}',
+                    context.tr('{index}. {title}', args: {
+                      'index': index + 1,
+                      'title': context.tr(_miniGameItemTitle(type)),
+                    }),
                     style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                 ),
                 IconButton(
                   onPressed: onRemove,
                   icon: const Icon(Icons.delete_outline),
-                  tooltip: 'Remover',
+                  tooltip: context.tr('Remover'),
                 ),
               ],
             ),
@@ -3999,12 +4009,14 @@ class _MiniGameItemFields extends StatelessWidget {
                   final compact = constraints.maxWidth < 420;
                   final optionA = TextField(
                     controller: fields[1],
-                    decoration: const InputDecoration(labelText: 'Opção A'),
+                    decoration:
+                        InputDecoration(labelText: context.tr('Opção A')),
                     textInputAction: TextInputAction.next,
                   );
                   final optionB = TextField(
                     controller: fields[2],
-                    decoration: const InputDecoration(labelText: 'Opção B'),
+                    decoration:
+                        InputDecoration(labelText: context.tr('Opção B')),
                     textInputAction: TextInputAction.next,
                   );
                   return Column(
@@ -4012,7 +4024,7 @@ class _MiniGameItemFields extends StatelessWidget {
                       TextField(
                         controller: fields[0],
                         decoration:
-                            const InputDecoration(labelText: 'Pergunta'),
+                            InputDecoration(labelText: context.tr('Pergunta')),
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 8),
@@ -4039,8 +4051,8 @@ class _MiniGameItemFields extends StatelessWidget {
             else
               TextField(
                 controller: fields.first,
-                decoration:
-                    InputDecoration(labelText: _miniGameItemLabel(type)),
+                decoration: InputDecoration(
+                    labelText: context.tr(_miniGameItemLabel(type))),
                 textInputAction: TextInputAction.next,
               ),
           ],

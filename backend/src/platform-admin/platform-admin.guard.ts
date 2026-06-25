@@ -13,7 +13,10 @@ export class PlatformAdminGuard implements CanActivate {
     const request = context
       .switchToHttp()
       .getRequest<Request & { user?: UserEntity }>();
-    if (request.user?.platformRole !== 'admin') {
+    if (
+      request.user?.platformRole !== 'admin' ||
+      request.user.sessionScope !== 'platform'
+    ) {
       throw new ForbiddenException(
         'Acesso restrito ao administrador da plataforma.',
       );

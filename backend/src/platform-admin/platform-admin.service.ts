@@ -10,6 +10,11 @@ import {
   UserMongoDocument,
 } from '@shared/infrastructure/database/schemas';
 import { AuditService } from '../audit/application/audit.service';
+import {
+  normalizePagination,
+  paginated,
+  type PaginationQuery,
+} from '@shared/infrastructure/database/mongo.utils';
 
 @Injectable()
 export class PlatformAdminService {
@@ -94,5 +99,89 @@ export class PlatformAdminService {
 
   auditLogs(page: number, limit: number) {
     return this.audit.list(page, limit);
+  }
+
+  async listTenants(query?: PaginationQuery) {
+    const { page, limit, skip } = normalizePagination(query);
+    const [items, total] = await Promise.all([
+      this.tenants
+        .find()
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean()
+        .exec(),
+      this.tenants.countDocuments().exec(),
+    ]);
+    return paginated(
+      items.map((tenant) => ({
+        id: String(tenant._id),
+        name: tenant.name,
+        slug: tenant.slug,
+        status: tenant.status,
+        ownerUserId: tenant.ownerUserId,
+        isPublished: tenant.isPublished,
+        createdAt: tenant.createdAt,
+      })),
+      total,
+      page,
+      limit,
+    );
+  }
+
+  async listUsers(query?: PaginationQuery) {
+    const { page, limit, skip } = normalizePagination(query);
+    const [items, total] = await Promise.all([
+      this.users
+        .find()
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .select('email name platformRole createdAt')
+        .lean()
+        .exec(),
+      this.users.countDocuments().exec(),
+    ]);
+    return paginated(
+      items.map((user) => ({
+        id: String(user._id),
+        email: user.email,
+        name: user.name ?? null,
+        platformRole: user.platformRole ?? null,
+        createdAt: user.createdAt,
+      })),
+      total,
+      page,
+      limit,
+    );
+  }
+
+  async listSubscriptions(query?: PaginationQuery) {
+    const { page, limit, skip } = normalizePagination(query);
+    const [items, total] = await Promise.all([
+      this.subscriptions
+        .find()
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean()
+        .exec(),
+      this.subscriptions.countDocuments().exec(),
+    ]);
+    return paginated(
+      items.map((subscription) => ({
+        id: String(subscription._id),
+        tenantId: subscription.tenantId,
+        provider: subscription.provider,
+        status: subscription.status,
+        priceId: subscription.priceId ?? null,
+        currentPeriodEnd: subscription.currentPeriodEnd ?? null,
+        cancelAtPeriodEnd: subscription.cancelAtPeriodEnd ?? false,
+        createdAt: subscription.createdAt,
+      })),
+      total,
+      page,
+      limit,
+    );
   }
 }

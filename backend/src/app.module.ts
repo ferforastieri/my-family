@@ -33,6 +33,8 @@ import { MarketingModule } from './marketing/marketing.module';
 import { TenantContextInterceptor } from './auth/application/services/tenant-context.interceptor';
 import { AuditModule } from './audit/audit.module';
 import { PlatformAdminModule } from './platform-admin/platform-admin.module';
+import { SiteConfigModule } from './site-config/site-config.module';
+import { ClientPanelModule } from './client-panel/client-panel.module';
 
 @Module({
   imports: [
@@ -60,6 +62,8 @@ import { PlatformAdminModule } from './platform-admin/platform-admin.module';
     PublicSiteModule,
     MarketingModule,
     PlatformAdminModule,
+    SiteConfigModule,
+    ClientPanelModule,
     HealthModule,
     AuthModule,
     FotosModule,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../i18n/app_localizations.dart';
 import '../theme/app_theme.dart';
 
 class AppDashboardPage extends StatelessWidget {
@@ -46,7 +47,7 @@ class AppDashboardPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          title,
+                          context.tr(title),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -55,7 +56,7 @@ class AppDashboardPage extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          subtitle,
+                          context.tr(subtitle),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -172,7 +173,7 @@ class AppMetricCard extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           Text(
-            value,
+            context.tr(value),
             style: const TextStyle(
               fontSize: 30,
               height: 1,
@@ -180,11 +181,14 @@ class AppMetricCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
+          Text(
+            context.tr(label),
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
           if (caption != null) ...[
             const SizedBox(height: 4),
             Text(
-              caption!,
+              context.tr(caption!),
               style: TextStyle(color: palette.muted, fontSize: 12),
             ),
           ],
@@ -229,7 +233,7 @@ class AppDashboardSection extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      context.tr(title),
                       style: const TextStyle(
                         fontSize: 19,
                         fontWeight: FontWeight.w900,
@@ -238,7 +242,7 @@ class AppDashboardSection extends StatelessWidget {
                     if (subtitle != null) ...[
                       const SizedBox(height: 4),
                       Text(
-                        subtitle!,
+                        context.tr(subtitle!),
                         style: TextStyle(color: palette.muted),
                       ),
                     ],
@@ -291,11 +295,11 @@ class AppDashboardAction extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
+                  Text(context.tr(title),
                       style: const TextStyle(fontWeight: FontWeight.w900)),
                   const SizedBox(height: 3),
                   Text(
-                    description,
+                    context.tr(description),
                     style: TextStyle(color: palette.muted, fontSize: 12),
                   ),
                 ],

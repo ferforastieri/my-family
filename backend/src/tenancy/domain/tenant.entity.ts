@@ -1,4 +1,5 @@
 import type { UserAccessKey } from '@shared/domain/access';
+import type { SessionScope } from '@auth/domain/entities/user.entity';
 
 export const tenantLocales = ['pt-BR', 'en', 'es'] as const;
 export type TenantLocale = (typeof tenantLocales)[number];
@@ -50,6 +51,9 @@ export interface TenantContextValue {
   access?: UserAccessKey[];
   isDemo?: boolean;
   isPublic?: boolean;
+  sessionScope?: SessionScope;
+  actorUserId?: string;
+  supportSessionId?: string;
 }
 
 export function isTenantAdmin(role?: string | null): boolean {

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/api/query_keys.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
@@ -363,7 +364,7 @@ class _QuizQuestionView extends StatelessWidget {
         if (showName) ...[
           TextField(
             controller: name,
-            decoration: const InputDecoration(labelText: 'Seu nome'),
+            decoration: InputDecoration(labelText: context.tr('Seu nome')),
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => FocusScope.of(context).unfocus(),
           ),
@@ -634,14 +635,15 @@ class _WordSearchContent extends StatelessWidget {
         if (showName) ...[
           TextField(
             controller: name,
-            decoration: const InputDecoration(labelText: 'Seu nome'),
+            decoration: InputDecoration(labelText: context.tr('Seu nome')),
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => FocusScope.of(context).unfocus(),
           ),
           const SizedBox(height: 14),
         ],
         Text(
-          'Encontre as palavras na horizontal, vertical e diagonal.',
+          context
+              .tr('Encontre as palavras na horizontal, vertical e diagonal.'),
           style: TextStyle(color: palette.muted),
         ),
         const SizedBox(height: 18),
@@ -704,7 +706,7 @@ class _WordSearchSidePanel extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Palavras',
+                    context.tr('Palavras'),
                     style: TextStyle(
                       color: palette.foreground,
                       fontSize: 18,
@@ -756,7 +758,7 @@ class _WordSearchSidePanel extends StatelessWidget {
             FilledButton.icon(
               onPressed: onNewGame,
               icon: const Icon(Icons.shuffle),
-              label: const Text('Novo sorteio'),
+              label: Text(context.tr('Novo sorteio')),
             ),
           ],
         ),
@@ -989,7 +991,7 @@ class _PlayerNameField extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 14),
       child: TextField(
         controller: controller,
-        decoration: const InputDecoration(labelText: 'Seu nome'),
+        decoration: InputDecoration(labelText: context.tr('Seu nome')),
         textInputAction: TextInputAction.done,
         onSubmitted: (_) => FocusScope.of(context).unfocus(),
       ),
@@ -1139,7 +1141,7 @@ class _MemoryMatchGameState extends State<_MemoryMatchGame> {
         FilledButton.icon(
           onPressed: () => setState(_reset),
           icon: const Icon(Icons.shuffle),
-          label: const Text('Recomeçar'),
+          label: Text(context.tr('Recomeçar')),
         ),
       ],
     );
@@ -1194,7 +1196,7 @@ class _LoveOrderGameState extends State<_LoveOrderGame> {
     if (picked.contains(item)) return;
     final expected = _orderItems[picked.length];
     if (item != expected) {
-      widget.common.toast.error('Quase! Esse momento vem depois.');
+      widget.common.toast.error(context.tr('Quase! Esse momento vem depois.'));
       return;
     }
     setState(() => picked.add(item));
@@ -1243,7 +1245,7 @@ class _LoveOrderGameState extends State<_LoveOrderGame> {
             padding: const EdgeInsets.all(14),
             child: Text(
               picked.isEmpty
-                  ? 'Comece pelo primeiro momento.'
+                  ? context.tr('Comece pelo primeiro momento.')
                   : picked.join('  >  '),
               style: TextStyle(
                 color: palette.foreground,
@@ -1256,7 +1258,7 @@ class _LoveOrderGameState extends State<_LoveOrderGame> {
         FilledButton.icon(
           onPressed: () => setState(_reset),
           icon: const Icon(Icons.replay),
-          label: const Text('Recomeçar'),
+          label: Text(context.tr('Recomeçar')),
         ),
       ],
     );
@@ -1561,13 +1563,15 @@ class _QuizFinished extends StatelessWidget {
       children: [
         Icon(Icons.celebration, size: 54, color: palette.primary),
         const SizedBox(height: 12),
-        Text('Você acertou $score de $total.',
+        Text(
+            context.tr('Você acertou {score} de {total}.',
+                args: {'score': score, 'total': total}),
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
         const SizedBox(height: 14),
         FilledButton.icon(
           onPressed: onRestart,
           icon: const Icon(Icons.replay),
-          label: const Text('Jogar novamente'),
+          label: Text(context.tr('Jogar novamente')),
         ),
       ],
     );
@@ -1593,13 +1597,14 @@ class _PreferenceFinished extends StatelessWidget {
         Icon(Icons.favorite, size: 54, color: palette.primary),
         const SizedBox(height: 12),
         Text(
-          'Você escolheu $answered de $total.',
+          context.tr('Você escolheu {answered} de {total}.',
+              args: {'answered': answered, 'total': total}),
           style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
         Text(
-          'Aqui não tem resposta certa, só preferência.',
+          context.tr('Aqui não tem resposta certa, só preferência.'),
           textAlign: TextAlign.center,
           style: TextStyle(color: palette.muted),
         ),
@@ -1607,7 +1612,7 @@ class _PreferenceFinished extends StatelessWidget {
         FilledButton.icon(
           onPressed: onRestart,
           icon: const Icon(Icons.replay),
-          label: const Text('Jogar novamente'),
+          label: Text(context.tr('Jogar novamente')),
         ),
       ],
     );

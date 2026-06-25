@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/chat/chat_controller.dart';
 import '../../../core/notifications/notifications_controller.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/toast/toast_controller.dart';
@@ -33,6 +34,7 @@ GoRouter buildRouter(
   NotificationsController notifications,
   ChatController chat,
   ThemeController theme,
+  LocaleController locale,
   ToastController toast,
   FamilyRepository repository,
 ) {
@@ -112,6 +114,7 @@ GoRouter buildRouter(
             notifications: notifications,
             chat: chat,
             theme: theme,
+            locale: locale,
             toast: toast,
             currentLocation: state.uri.path,
             child: child,
@@ -215,7 +218,7 @@ GoRouter buildRouter(
           GoRoute(
             path: '/nossa-historia',
             pageBuilder: (context, state) => _page(EditableTextCollectionPage(
-              title: 'Nossa Jornada',
+              title: context.tr('Nossa Jornada'),
               prefix: 'journey',
               repository: repository,
               toast: toast,

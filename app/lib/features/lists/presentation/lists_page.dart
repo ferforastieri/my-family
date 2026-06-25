@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/api/query_keys.dart';
 import '../../../core/auth/auth_controller.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
@@ -148,7 +149,7 @@ class _ListsPageState extends State<ListsPage> {
 
   bool _ensureLogged() {
     if (widget.auth.user != null) return true;
-    widget.toast.info('Entre para editar as listas da família.');
+    widget.toast.info(context.tr('Entre para editar as listas da família.'));
     return false;
   }
 
@@ -374,9 +375,9 @@ class _SimpleListsPanel extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Listas da família',
-                          style: TextStyle(
+                        Text(
+                          context.tr('Listas da família'),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 21,
                             fontWeight: FontWeight.w900,
@@ -385,8 +386,9 @@ class _SimpleListsPanel extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           lists.isEmpty
-                              ? 'Crie a primeira lista.'
-                              : '${lists.length} listas organizadas',
+                              ? context.tr('Crie a primeira lista.')
+                              : context.tr('{count} listas organizadas',
+                                  args: {'count': lists.length}),
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: .84),
                             fontWeight: FontWeight.w700,
@@ -398,7 +400,7 @@ class _SimpleListsPanel extends StatelessWidget {
                   IconButton.filledTonal(
                     onPressed: onCreate,
                     icon: const Icon(Icons.add),
-                    tooltip: 'Nova lista',
+                    tooltip: context.tr('Nova lista'),
                   ),
                 ],
               ),
@@ -439,7 +441,7 @@ class _SimpleListsPanel extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  selected?.title ?? 'Itens',
+                                  selected?.title ?? context.tr('Itens'),
                                   style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w900,
@@ -448,11 +450,13 @@ class _SimpleListsPanel extends StatelessWidget {
                                 const SizedBox(height: 3),
                                 Text(
                                   selected == null
-                                      ? 'Selecione ou crie uma lista.'
+                                      ? context
+                                          .tr('Selecione ou crie uma lista.')
                                       : selected?.description?.isNotEmpty ==
                                               true
                                           ? selected!.description!
-                                          : '$pending pendentes.',
+                                          : context.tr('{count} pendentes.',
+                                              args: {'count': pending}),
                                   style: TextStyle(
                                     color: palette.muted,
                                     fontWeight: FontWeight.w700,
@@ -466,13 +470,13 @@ class _SimpleListsPanel extends StatelessWidget {
                                 ? null
                                 : () => onDeleteList(selected!),
                             icon: const Icon(Icons.delete_outline),
-                            tooltip: 'Excluir lista',
+                            tooltip: context.tr('Excluir lista'),
                           ),
                           const SizedBox(width: 4),
                           IconButton.filled(
                             onPressed: selected == null ? null : onAdd,
                             icon: const Icon(Icons.add_task_outlined),
-                            tooltip: 'Adicionar item',
+                            tooltip: context.tr('Adicionar item'),
                           ),
                         ],
                       ),
@@ -529,12 +533,12 @@ class _EmptyState extends StatelessWidget {
           Icon(icon, color: palette.primary, size: 32),
           const SizedBox(height: 8),
           Text(
-            title,
+            context.tr(title),
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 4),
           Text(
-            text,
+            context.tr(text),
             textAlign: TextAlign.center,
             style: TextStyle(color: palette.muted),
           ),
@@ -577,7 +581,7 @@ class _ListPickerButton extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Escolher lista',
+                  context.tr('Escolher lista'),
                   style: TextStyle(
                     color: palette.muted,
                     fontSize: 12,
@@ -586,7 +590,7 @@ class _ListPickerButton extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  selected?.title ?? 'Selecione uma lista',
+                  selected?.title ?? context.tr('Selecione uma lista'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -716,7 +720,7 @@ class _ListItemRow extends StatelessWidget {
           IconButton(
             onPressed: onDelete,
             icon: const Icon(Icons.delete_outline),
-            tooltip: 'Excluir',
+            tooltip: context.tr('Excluir'),
           ),
         ],
       ),
@@ -767,7 +771,7 @@ class _DeleteListSheet extends StatelessWidget {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancelar'),
+                  child: Text(context.tr('Cancelar')),
                 ),
               ),
               const SizedBox(width: 10),
@@ -775,7 +779,7 @@ class _DeleteListSheet extends StatelessWidget {
                 child: FilledButton.icon(
                   onPressed: () => Navigator.pop(context, true),
                   icon: const Icon(Icons.delete_outline),
-                  label: const Text('Excluir'),
+                  label: Text(context.tr('Excluir')),
                 ),
               ),
             ],
@@ -806,19 +810,19 @@ class _ListFormSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(title,
+          Text(context.tr(title),
               style:
                   const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
           const SizedBox(height: 16),
           TextField(
             controller: titleController,
-            decoration: const InputDecoration(labelText: 'Nome da lista'),
+            decoration: InputDecoration(labelText: context.tr('Nome da lista')),
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: 12),
           TextField(
             controller: descriptionController,
-            decoration: const InputDecoration(labelText: 'Descrição'),
+            decoration: InputDecoration(labelText: context.tr('Descrição')),
             onSubmitted: (_) async {
               await onSave();
               if (context.mounted) Navigator.pop(context);
@@ -852,13 +856,14 @@ class _ItemFormSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('Novo item',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+          Text(context.tr('Novo item'),
+              style:
+                  const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
           const SizedBox(height: 16),
           TextField(
             controller: controller,
             autofocus: true,
-            decoration: const InputDecoration(labelText: 'Item'),
+            decoration: InputDecoration(labelText: context.tr('Item')),
             textInputAction: TextInputAction.done,
             onSubmitted: (_) async {
               await onSave();

@@ -16,6 +16,7 @@ import { PasswordResetRepository } from './infrastructure/repositories/password-
 import { UsersGateway } from './interfaces/gateways/users.gateway';
 import { WsSessionService } from './application/services/ws-session.service';
 import { AuditModule } from '../audit/audit.module';
+import { SupportSessionService } from './application/services/support-session.service';
 
 @Module({
   imports: [
@@ -39,10 +40,17 @@ import { AuditModule } from '../audit/audit.module';
     UserRepository,
     PasswordResetRepository,
     WsSessionService,
+    SupportSessionService,
     UsersGateway,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     RolesGuard,
   ],
-  exports: [AuthService, UserService, WsSessionService, RolesGuard],
+  exports: [
+    AuthService,
+    UserService,
+    WsSessionService,
+    SupportSessionService,
+    RolesGuard,
+  ],
 })
 export class AuthModule {}

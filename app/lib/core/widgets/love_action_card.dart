@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/app_localizations.dart';
 import '../theme/app_theme.dart';
 
 class LovePanel extends StatelessWidget {
@@ -92,7 +93,7 @@ class LoveActionCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      context.tr(title),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -103,7 +104,7 @@ class LoveActionCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      description,
+                      context.tr(description),
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: palette.muted, height: 1.35),

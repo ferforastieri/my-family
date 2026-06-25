@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/app_localizations.dart';
 import '../theme/app_theme.dart';
 
 class AppDropdownAction<T> {
@@ -34,7 +35,7 @@ class AppDropdown<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     return PopupMenuButton<T>(
-      tooltip: tooltip,
+      tooltip: tooltip == null ? null : context.tr(tooltip!),
       offset: const Offset(0, 12),
       color: palette.card,
       elevation: 14,
@@ -60,7 +61,7 @@ class AppDropdown<T> extends StatelessWidget {
                       action.destructive ? Colors.redAccent : palette.primary,
                 ),
                 title: Text(
-                  action.label,
+                  context.tr(action.label),
                   style: TextStyle(
                     color: action.destructive
                         ? Colors.redAccent

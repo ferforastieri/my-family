@@ -37,7 +37,11 @@ export class RolesGuard implements CanActivate {
     ) {
       throw new ForbiddenException('Acesso não autorizado para sua role.');
     }
-    await this.tenants.assertEntitled((user as { tenantId?: string }).tenantId);
+    const tenantId = (user as { tenantId?: string | null }).tenantId;
+    if (!tenantId) {
+      throw new ForbiddenException('Selecione uma família para continuar.');
+    }
+    await this.tenants.assertEntitled(tenantId);
     return true;
   }
 }

@@ -13,6 +13,7 @@ import { CartasService } from '@cartas/application/services/cartas.service';
 import { TenantContext } from '@tenancy/application/tenant-context';
 import { TenantService } from '@tenancy/application/tenant.service';
 import { TenantRepository } from '@tenancy/infrastructure/tenant.repository';
+import { SiteConfigService } from '../site-config/application/site-config.service';
 
 @Injectable()
 export class PublicSiteService {
@@ -21,6 +22,7 @@ export class PublicSiteService {
     private tenants: TenantService,
     private tenantRepository: TenantRepository,
     private cartas: CartasService,
+    private siteConfigs: SiteConfigService,
     @InjectModel(HomeSettingsDocument.name)
     private homeSettings: Model<HomeSettingsMongoDocument>,
     @InjectModel(FotoDocument.name)
@@ -40,6 +42,13 @@ export class PublicSiteService {
     return this.load(tenant);
   }
 
+  async publishedSlugs(): Promise<string[]> {
+    const tenants = await this.tenantRepository.listAllTenants();
+    return tenants
+      .filter((tenant) => tenant.isPublished && tenant.status === 'active')
+      .map((tenant) => tenant.slug);
+  }
+
   private async load(tenant: {
     id: string;
     name: string;
@@ -56,25 +65,33 @@ export class PublicSiteService {
         isPublic: true,
       },
       async () => {
-        const [home, photos, songs, letters, journey] = await Promise.all([
+        const siteConfig = await this.siteConfigs.publishedForTenant(tenant.id);
+        const sections = new Map(
+          siteConfig.value.sections.map((section) => [section.key, section]),
+        );
+        const photoIds = selectedIds(sections, 'gallery');
+        const songIds = selectedIds(sections, 'songs');
+        const letterIds = selectedIds(sections, 'letters');
+        const journeyIds = selectedIds(sections, 'journey');
+        const [home, photos, songs, allLetters, allJourney] = await Promise.all([
           this.homeSettings.findOne({ key: 'home' }).lean().exec(),
           this.photos
-            .find()
+            .find(photoIds.length ? { _id: { $in: photoIds } } : { _id: null })
             .sort({ data: -1, createdAt: -1 })
-            .limit(24)
+            .limit(100)
             .lean()
             .exec(),
           this.songs
-            .find()
+            .find(songIds.length ? { _id: { $in: songIds } } : { _id: null })
             .sort({ data: -1, createdAt: -1 })
-            .limit(24)
+            .limit(100)
             .lean()
             .exec(),
-          this.cartas.listForPublic('letter', 12, -1),
-          this.cartas.listForPublic('journey', 30, 1),
+          this.cartas.listForPublic('letter', 100, -1),
+          this.cartas.listForPublic('journey', 100, 1),
         ]);
-        const publicGallery = home?.galleryImages ?? [];
-        const isDemo = tenant.isDemo;
+        const letters = orderSelected(allLetters, letterIds);
+        const journey = orderSelected(allJourney, journeyIds);
         return {
           tenant: {
             name: tenant.name,
@@ -83,6 +100,8 @@ export class PublicSiteService {
             theme: tenant.theme,
             isDemo: tenant.isDemo,
           },
+          site: siteConfig.value,
+          publishedAt: siteConfig.publishedAt,
           home: home
             ? {
                 events: home.events,
@@ -90,16 +109,10 @@ export class PublicSiteService {
                 galleryOrder: home.galleryOrder,
               }
             : { events: [], galleryImages: [], galleryOrder: null },
-          photos: isDemo
-            ? photos.map(stripDocument)
-            : publicGallery.map((url, index) => ({
-                id: `gallery-${index}`,
-                url,
-                album: tenant.name,
-              })),
-          songs: isDemo ? songs.map(stripDocument) : [],
-          letters: isDemo ? letters : [],
-          journey: isDemo ? journey : [],
+          photos: orderSelected(photos.map(stripDocument), photoIds),
+          songs: orderSelected(songs.map(stripDocument), songIds),
+          letters,
+          journey,
         };
       },
     );
@@ -112,7 +125,26 @@ export class PublicSiteService {
         .select({ _id: 1 })
         .lean()
         .exec();
-      return !!settings;
+      if (settings) return true;
+      const config = await this.siteConfigs.publishedForTenant(tenantId);
+      const directPaths = [
+        config.value.brand.logoPath,
+        config.value.brand.coverPath,
+        config.value.seo.socialImagePath,
+      ].filter(Boolean);
+      if (directPaths.includes(relativePath)) return true;
+      const photoIds = selectedIds(
+        new Map(
+          config.value.sections.map((section) => [section.key, section]),
+        ),
+        'gallery',
+      );
+      if (!photoIds.length) return false;
+      return !!(await this.photos
+        .findOne({ _id: { $in: photoIds }, url: relativePath })
+        .select({ _id: 1 })
+        .lean()
+        .exec());
     });
   }
 }
@@ -120,4 +152,26 @@ export class PublicSiteService {
 function stripDocument(document: Record<string, any>) {
   const { _id, tenantId: _tenantId, __v: _version, ...data } = document;
   return { id: String(_id), ...data };
+}
+
+function selectedIds(
+  sections: Map<
+    string,
+    { visible: boolean; selectedIds: string[] }
+  >,
+  key: string,
+): string[] {
+  const section = sections.get(key);
+  return section?.visible ? section.selectedIds : [];
+}
+
+function orderSelected<T extends { id: string }>(
+  items: T[],
+  ids: string[],
+): T[] {
+  const byId = new Map(items.map((item) => [item.id, item]));
+  return ids.flatMap((id) => {
+    const item = byId.get(id);
+    return item ? [item] : [];
+  });
 }

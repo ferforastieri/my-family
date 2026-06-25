@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:my_family/core/auth/auth_controller.dart';
 import 'package:my_family/core/auth/token_store.dart';
 import 'package:my_family/core/chat/chat_controller.dart';
+import 'package:my_family/core/i18n/app_localizations.dart';
 import 'package:my_family/core/notifications/notifications_controller.dart';
 import 'package:my_family/core/socket/socket_client.dart';
 import 'package:my_family/core/theme/theme_controller.dart';
@@ -20,6 +21,7 @@ void main() {
         notifications: NotificationsController(socket),
         chat: ChatController(socket, repository),
         theme: ThemeController(),
+        locale: LocaleController(),
         toast: ToastController(),
         repository: repository,
       ),

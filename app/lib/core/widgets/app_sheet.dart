@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import 'app_button.dart';
 
@@ -117,7 +118,7 @@ class AppSheetHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                title,
+                context.tr(title),
                 style: TextStyle(
                   color: palette.foreground,
                   fontSize: 24,
@@ -127,7 +128,7 @@ class AppSheetHeader extends StatelessWidget {
               if (subtitle != null) ...[
                 const SizedBox(height: 4),
                 Text(
-                  subtitle!,
+                  context.tr(subtitle!),
                   style: TextStyle(color: palette.muted, height: 1.35),
                 ),
               ],
@@ -160,14 +161,14 @@ class AppSheetActions extends StatelessWidget {
         Expanded(
           child: OutlinedButton(
             onPressed: loading ? null : onCancel,
-            child: const Text('Cancelar'),
+            child: Text(context.tr('Cancelar')),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: AppButton(
             onPressed: onSave,
-            label: saveLabel,
+            label: context.tr(saveLabel),
             icon: Icons.check,
             loading: loading,
           ),
@@ -201,8 +202,8 @@ class AppDateField extends StatelessWidget {
       firstDate: firstDate ?? DateTime(1900),
       lastDate: lastDate ?? DateTime(now.year + 20, 12, 31),
       helpText: label,
-      cancelText: 'Cancelar',
-      confirmText: 'Escolher',
+      cancelText: context.tr('Cancelar'),
+      confirmText: context.tr('Escolher'),
       builder: (context, child) {
         final theme = Theme.of(context);
         return Theme(
@@ -229,12 +230,12 @@ class AppDateField extends StatelessWidget {
         decoration: InputDecoration(
           labelText: label,
           suffixIcon: IconButton(
-            tooltip: 'Escolher data',
+            tooltip: context.tr('Escolher data'),
             icon: const Icon(Icons.calendar_month_outlined),
             onPressed: () => _pick(context),
           ),
         ),
-        child: Text(text.isEmpty ? 'Escolher data' : text),
+        child: Text(text.isEmpty ? context.tr('Escolher data') : text),
       ),
     );
   }

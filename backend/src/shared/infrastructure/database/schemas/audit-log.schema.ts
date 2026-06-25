@@ -22,7 +22,19 @@ export class AuditLogDocument {
   actorEmail?: string;
 
   @Prop({ index: true })
+  effectiveUserId?: string;
+
+  @Prop({ lowercase: true })
+  effectiveUserEmail?: string;
+
+  @Prop({ index: true })
   tenantId?: string;
+
+  @Prop()
+  membershipId?: string;
+
+  @Prop({ index: true })
+  supportSessionId?: string;
 
   @Prop()
   method?: string;

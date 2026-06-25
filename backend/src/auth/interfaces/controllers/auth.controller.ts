@@ -19,6 +19,7 @@ import {
   RefreshTokenDto,
   RegisterDto,
   ResetPasswordDto,
+  SelectTenantDto,
   UpdateProfileDto,
 } from '../dto/auth.dto';
 import { Public } from '../../decorators/public.decorator';
@@ -29,16 +30,15 @@ import {
   UploadContext,
 } from '@shared/infrastructure/upload';
 import { StreamableFile } from '@nestjs/common';
-import { TenantService } from '@tenancy/application/tenant.service';
 import { AuditService } from '../../../audit/application/audit.service';
 import type { Request } from 'express';
+import type { UserEntity } from '@auth/domain/entities/user.entity';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private auth: AuthService,
     private upload: UploadService,
-    private tenants: TenantService,
     private audit: AuditService,
   ) {}
 
@@ -61,10 +61,11 @@ export class AuthController {
       ...this.audit.requestActor(request),
       actorUserId: response.user.id,
       actorEmail: response.user.email,
-      tenantId: response.tenant.id,
       method: request.method,
       path: request.originalUrl,
-      metadata: { tenantSlug: response.tenant.slug },
+      metadata: {
+        tenantSlug: response.memberships[0]?.tenant.slug,
+      },
     });
     return { message: 'Cadastro realizado com sucesso.', ...response };
   }
@@ -87,12 +88,7 @@ export class AuthController {
       });
       throw new UnauthorizedException('Email ou senha inválidos.');
     }
-    const response = await this.auth.tokenResponse(
-      user,
-      undefined,
-      undefined,
-      body.tenantSlug,
-    );
+    const response = await this.auth.accountSession(user);
     await this.audit.record({
       action: 'auth.login',
       resource: 'auth',
@@ -101,11 +97,10 @@ export class AuthController {
       ...this.audit.requestActor(request),
       actorUserId: user.id,
       actorEmail: user.email,
-      tenantId: response.tenant.id,
       method: request.method,
       path: request.originalUrl,
       statusCode: 201,
-      metadata: { tenantSlug: response.tenant.slug },
+      metadata: { scope: response.scope },
     });
     return {
       message: 'Login realizado com sucesso.',
@@ -113,11 +108,30 @@ export class AuthController {
     };
   }
 
+  @Post('select-tenant')
+  async selectTenant(
+    @Req() request: Request & { user: { id: string } },
+    @Body() dto: SelectTenantDto,
+  ) {
+    return {
+      message: 'Família selecionada.',
+      ...(await this.auth.tenantSession(request.user.id, dto.tenantSlug)),
+    };
+  }
+
+  @Post('platform')
+  async platform(@Req() request: Request & { user: { id: string } }) {
+    return {
+      message: 'Sessão administrativa iniciada.',
+      ...(await this.auth.platformSession(request.user.id)),
+    };
+  }
+
   @Post('logout')
   async logout(
     @Req()
     request: Request & {
-      user: { id: string; email: string; tenantId: string };
+      user: { id: string; email: string; tenantId?: string | null };
     },
   ) {
     await this.audit.record({
@@ -127,7 +141,7 @@ export class AuthController {
       success: true,
       actorUserId: request.user.id,
       actorEmail: request.user.email,
-      tenantId: request.user.tenantId,
+      tenantId: request.user.tenantId ?? undefined,
       method: request.method,
       path: request.originalUrl,
       ...this.audit.requestActor(request),
@@ -143,37 +157,26 @@ export class AuthController {
     return { message: 'Sessão renovada.', ...response };
   }
 
-  @Get('me')
-  async me(
-    @Req()
-    req: {
-      user: {
-        id: string;
-        email: string;
-        name: string | null;
-        role: string;
-        access: string[];
-        avatarPath?: string | null;
-      };
-    },
-  ) {
-    return {
-      user: this.auth.publicUser(req.user as any),
-      tenant: await this.tenants.current(),
-    };
+  @Get('session')
+  session(@Req() req: { user: UserEntity }) {
+    return this.auth.sessionFor(req.user);
   }
 
   @Patch('me')
   async updateMe(
-    @Req() req: { user: { id: string; tenantId: string } },
+    @Req()
+    req: {
+      user: UserEntity;
+    },
     @Body() dto: UpdateProfileDto,
   ) {
     const user = await this.auth.updateProfile(req.user.id, {
       name: dto.name,
     });
-    const sessionUser = user
-      ? await this.auth.findAuthenticatedUser(user.id, req.user.tenantId)
-      : null;
+    const sessionUser =
+      user && req.user.tenantId
+        ? await this.auth.findAuthenticatedUser(user.id, req.user.tenantId)
+        : user;
     return {
       message: 'Perfil atualizado.',
       user: sessionUser ? this.auth.publicUser(sessionUser) : null,
@@ -187,18 +190,25 @@ export class AuthController {
     }),
   )
   async uploadAvatar(
-    @Req() req: { user: { id: string; tenantId: string } },
+    @Req()
+    req: {
+      user: UserEntity;
+    },
     @UploadedFile() file: Express.Multer.File,
   ) {
     if (!file) throw new BadRequestException('Nenhum arquivo enviado');
+    if (!req.user.tenantId) {
+      throw new BadRequestException('Selecione uma família para o avatar.');
+    }
     const { relativePath } = await this.upload.saveFile(
       file,
       UploadContext.Avatar,
     );
     const user = await this.auth.updateAvatar(req.user.id, relativePath);
-    const sessionUser = user
-      ? await this.auth.findAuthenticatedUser(user.id, req.user.tenantId)
-      : null;
+    const sessionUser =
+      user && req.user.tenantId
+        ? await this.auth.findAuthenticatedUser(user.id, req.user.tenantId)
+        : user;
     return {
       message: 'Foto do perfil atualizada.',
       user: sessionUser ? this.auth.publicUser(sessionUser) : null,

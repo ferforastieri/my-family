@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/app_localizations.dart';
+
 class AppButton extends StatelessWidget {
   const AppButton({
     super.key,
@@ -21,7 +23,7 @@ class AppButton extends StatelessWidget {
             width: 18,
             height: 18,
             child: CircularProgressIndicator(strokeWidth: 2))
-        : Text(label);
+        : Text(context.tr(label));
     if (icon == null) {
       return FilledButton(onPressed: loading ? null : onPressed, child: child);
     }

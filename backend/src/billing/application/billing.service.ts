@@ -10,6 +10,7 @@ import { TenantContext } from '@tenancy/application/tenant-context';
 import { TenantRepository } from '@tenancy/infrastructure/tenant.repository';
 import { BillingRepository } from '../infrastructure/billing.repository';
 import { JobsService, type PaymentJob } from '@shared/infrastructure/queue';
+import type { UserEntity } from '@auth/domain/entities/user.entity';
 
 @Injectable()
 export class BillingService {
@@ -29,7 +30,8 @@ export class BillingService {
     return { tenantStatus: tenant?.status ?? 'canceled', subscription };
   }
 
-  async createCheckout(user: { email: string; role: string }) {
+  async createCheckout(user: UserEntity) {
+    this.blockSupport(user);
     if (user.role !== 'owner') {
       throw new ForbiddenException(
         'Somente o proprietário pode contratar o plano.',
@@ -69,7 +71,8 @@ export class BillingService {
     return { checkoutUrl: session.url };
   }
 
-  async createPortal(user: { role: string }) {
+  async createPortal(user: UserEntity) {
+    this.blockSupport(user);
     if (user.role !== 'owner') {
       throw new ForbiddenException(
         'Somente o proprietário gerencia a assinatura.',
@@ -199,6 +202,14 @@ export class BillingService {
 
   private stripe() {
     return new Stripe(this.config().stripeSecretKey);
+  }
+
+  private blockSupport(user: UserEntity) {
+    if (user.sessionScope === 'support') {
+      throw new ForbiddenException(
+        'Assinaturas não podem ser alteradas durante suporte.',
+      );
+    }
   }
 }
 

@@ -30,6 +30,9 @@ export class AccessGuard implements CanActivate {
     const req = context.switchToHttp().getRequest<{ user?: UserEntity }>();
     const user = req.user;
     if (user && (isAdminRole(user.role) || user.access.includes(accessKey))) {
+      if (!user.tenantId) {
+        throw new ForbiddenException('Selecione uma família para continuar.');
+      }
       await this.tenants.assertEntitled(user.tenantId);
       return true;
     }

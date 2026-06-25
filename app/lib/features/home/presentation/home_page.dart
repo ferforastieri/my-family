@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_page_header.dart';
@@ -394,7 +395,7 @@ class _HomeTitle extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Nossa Família',
+            context.tr('Nossa Família'),
             textAlign: TextAlign.center,
             style: text.display.merge(
               TextStyle(
@@ -407,7 +408,7 @@ class _HomeTitle extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Amor, memórias e pequenos milagres do nosso caminho.',
+            context.tr('Amor, memórias e pequenos milagres do nosso caminho.'),
             textAlign: TextAlign.center,
             style: TextStyle(
               color: palette.muted,
@@ -603,7 +604,7 @@ class _HomePhotoCarouselState extends State<_HomePhotoCarousel> {
                             color: palette.primary, size: 18),
                         const SizedBox(width: 8),
                         Text(
-                          'Nossas fotos',
+                          context.tr('Nossas fotos'),
                           style: TextStyle(
                             color: palette.foreground,
                             fontSize: mobile ? 17 : 19,
@@ -866,7 +867,7 @@ class _HomeLoadError extends StatelessWidget {
           const Icon(Icons.error_outline, color: Colors.redAccent, size: 42),
           const SizedBox(height: 12),
           Text(
-            'Não foi possível carregar a Home.',
+            context.tr('Não foi possível carregar a Home.'),
             textAlign: TextAlign.center,
             style: TextStyle(
               color: palette.foreground,
@@ -903,9 +904,9 @@ class CounterCard extends StatelessWidget {
     final colors = [palette.primary, palette.primaryDark];
     final compact = MediaQuery.sizeOf(context).width < 760;
     final values = [
-      ('${info.elapsed.years}', 'Anos'),
-      ('${info.elapsed.months}', 'Meses'),
-      ('${info.elapsed.days}', 'Dias'),
+      ('${info.elapsed.years}', context.tr('Anos')),
+      ('${info.elapsed.months}', context.tr('Meses')),
+      ('${info.elapsed.days}', context.tr('Dias')),
     ];
     final content = Padding(
       padding: EdgeInsets.fromLTRB(
@@ -945,7 +946,7 @@ class CounterCard extends StatelessWidget {
                     ),
                     SizedBox(height: compact ? 2 : 4),
                     Text(
-                      _formatDate(info.date),
+                      _formatDate(context, info.date),
                       style: TextStyle(
                         color: palette.primary,
                         fontWeight: FontWeight.w700,
@@ -1023,7 +1024,10 @@ class CounterCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              '${_counterPrefix(info)} ${info.elapsed.totalDays} dias',
+              context.tr('{prefix} {days} dias', args: {
+                'prefix': context.tr(_counterPrefix(info)),
+                'days': info.elapsed.totalDays,
+              }),
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1065,20 +1069,10 @@ String _counterPrefix(CounterInfo info) {
       : 'Já se passaram';
 }
 
-String _formatDate(DateTime date) {
-  const months = [
-    'janeiro',
-    'fevereiro',
-    'março',
-    'abril',
-    'maio',
-    'junho',
-    'julho',
-    'agosto',
-    'setembro',
-    'outubro',
-    'novembro',
-    'dezembro'
-  ];
-  return '${date.day.toString().padLeft(2, '0')} de ${months[date.month - 1]} de ${date.year}';
+String _formatDate(BuildContext context, DateTime date) {
+  return context.tr('{day} de {month} de {year}', args: {
+    'day': date.day.toString().padLeft(2, '0'),
+    'month': context.l10n.monthName(date.month),
+    'year': date.year,
+  });
 }

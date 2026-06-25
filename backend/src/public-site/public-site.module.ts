@@ -3,9 +3,10 @@ import { MongoModelsModule } from '@shared/infrastructure/database/database.prov
 import { PublicSiteController } from './public-site.controller';
 import { PublicSiteService } from './public-site.service';
 import { CartasModule } from '@cartas/cartas.module';
+import { SiteConfigModule } from '../site-config/site-config.module';
 
 @Module({
-  imports: [MongoModelsModule, CartasModule],
+  imports: [MongoModelsModule, CartasModule, SiteConfigModule],
   controllers: [PublicSiteController],
   providers: [PublicSiteService],
   exports: [PublicSiteService],

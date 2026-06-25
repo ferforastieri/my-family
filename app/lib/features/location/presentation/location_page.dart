@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/api/query_keys.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
@@ -259,7 +260,7 @@ class _LocationMapPanel extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               _MapLabel(
-                                text: _shortName(location),
+                                text: _shortName(context, location),
                                 highlighted: true,
                               ),
                               Icon(Icons.location_on,
@@ -275,7 +276,7 @@ class _LocationMapPanel extends StatelessWidget {
           ),
           if (locations.isEmpty && places.isEmpty) ...[
             const SizedBox(height: 12),
-            const _MapHint(
+            _MapHint(
               text:
                   'Nenhuma localização recebida ainda. Crie um local pelo botão acima.',
             ),
@@ -283,7 +284,7 @@ class _LocationMapPanel extends StatelessWidget {
           if (places.isNotEmpty) ...[
             const SizedBox(height: 14),
             Text(
-              'Locais cadastrados',
+              context.tr('Locais cadastrados'),
               style: TextStyle(
                 color: palette.foreground,
                 fontWeight: FontWeight.w900,
@@ -352,7 +353,7 @@ class _MapLabel extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         child: Text(
-          text,
+          context.tr(text),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
@@ -403,13 +404,14 @@ class _LocationMapHeader extends StatelessWidget {
       title: 'Mapa',
       description: locationsCount == 0
           ? 'Aguardando localizações.'
-          : '$locationsCount pessoas no mapa.',
+          : context
+              .tr('{count} pessoas no mapa.', args: {'count': locationsCount}),
       icon: Icons.map_outlined,
     );
     final action = FilledButton.icon(
       onPressed: onCreatePlace,
       icon: const Icon(Icons.add_location_alt_outlined),
-      label: const Text('Novo local'),
+      label: Text(context.tr('Novo local')),
     );
 
     return LayoutBuilder(
@@ -453,15 +455,18 @@ class _LocationList extends StatelessWidget {
             title: 'Pessoas',
             description: locations.isEmpty
                 ? 'Aguardando atualizações.'
-                : '${locations.length} localizações recentes.',
+                : context.tr('{count} localizações recentes.',
+                    args: {'count': locations.length}),
             icon: Icons.people_alt_outlined,
           ),
           const SizedBox(height: 12),
           if (locations.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(18),
+            Padding(
+              padding: const EdgeInsets.all(18),
               child: Text(
-                  'Quando alguém abrir o app e permitir localização, aparece aqui.'),
+                context.tr(
+                    'Quando alguém abrir o app e permitir localização, aparece aqui.'),
+              ),
             )
           else
             for (final location in locations) _LocationTile(location: location),
@@ -497,10 +502,10 @@ class _LocationPanelTitle extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title,
+              Text(context.tr(title),
                   style: const TextStyle(
                       fontSize: 18, fontWeight: FontWeight.w900)),
-              Text(description,
+              Text(context.tr(description),
                   style: TextStyle(
                       color: palette.muted, fontWeight: FontWeight.w700)),
             ],
@@ -541,7 +546,7 @@ class _LocationTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_shortName(location),
+                Text(_shortName(context, location),
                     style: const TextStyle(fontWeight: FontWeight.w900)),
                 Text(
                   '${location.latitude.toStringAsFixed(5)}, ${location.longitude.toStringAsFixed(5)}',
@@ -637,13 +642,13 @@ class _LocationPlaceSheetState extends State<_LocationPlaceSheet> {
           TextField(
             controller: name,
             autofocus: true,
-            decoration: const InputDecoration(labelText: 'Nome'),
+            decoration: InputDecoration(labelText: context.tr('Nome')),
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: 12),
           TextField(
             controller: description,
-            decoration: const InputDecoration(labelText: 'Descrição'),
+            decoration: InputDecoration(labelText: context.tr('Descrição')),
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: 14),
@@ -698,7 +703,8 @@ class _LocationPlaceSheetState extends State<_LocationPlaceSheet> {
           const SizedBox(height: 12),
           TextField(
             controller: radius,
-            decoration: const InputDecoration(labelText: 'Raio em metros'),
+            decoration:
+                InputDecoration(labelText: context.tr('Raio em metros')),
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.done,
             onChanged: (_) => setState(() {}),
@@ -714,7 +720,7 @@ class _LocationPlaceSheetState extends State<_LocationPlaceSheet> {
                   child: OutlinedButton.icon(
                     onPressed: saving ? null : _delete,
                     icon: const Icon(Icons.delete_outline),
-                    label: const Text('Excluir'),
+                    label: Text(context.tr('Excluir')),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -761,8 +767,8 @@ class _LocationPlaceSheetState extends State<_LocationPlaceSheet> {
   }
 }
 
-String _shortName(LocationSnapshot location) {
+String _shortName(BuildContext context, LocationSnapshot location) {
   final raw = location.userName?.trim();
-  if (raw == null || raw.isEmpty) return 'Visitante';
+  if (raw == null || raw.isEmpty) return context.tr('Visitante');
   return raw.contains('@') ? raw.split('@').first : raw;
 }

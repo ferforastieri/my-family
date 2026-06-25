@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/auth/auth_controller.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_sheet.dart';
 
@@ -61,7 +62,7 @@ class _EditProfileSheetState extends State<EditProfileSheet> {
           TextField(
             controller: _name,
             textInputAction: TextInputAction.done,
-            decoration: const InputDecoration(labelText: 'Nome'),
+            decoration: InputDecoration(labelText: context.tr('Nome')),
             onSubmitted: (_) => _save(),
           ),
           const SizedBox(height: 10),

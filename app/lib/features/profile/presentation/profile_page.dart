@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/config/app_config.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_button.dart';
@@ -114,15 +115,16 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     final user = widget.auth.user!;
-    final displayName =
-        user.name?.trim().isNotEmpty == true ? user.name!.trim() : 'Sem nome';
+    final displayName = user.name?.trim().isNotEmpty == true
+        ? user.name!.trim()
+        : context.tr('Sem nome');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _ProfileHero(
           displayName: displayName,
           email: user.email,
-          role: _roleLabel(user.role),
+          role: context.tr(_roleLabel(user.role)),
           initial: _initialFor(user.name ?? user.email),
           avatarPath: user.avatarPath,
           uploadingAvatar: uploadingAvatar,
@@ -134,7 +136,7 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Conta',
+                context.tr('Conta'),
                 style: TextStyle(
                   color: palette.foreground,
                   fontSize: 18,
@@ -176,7 +178,7 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
               ],
               const SizedBox(height: 18),
               Text(
-                'Sessão',
+                context.tr('Sessão'),
                 style: TextStyle(
                   color: palette.foreground,
                   fontSize: 18,
@@ -239,7 +241,7 @@ class _GuestProfileCard extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Text(
-            'Seu espaço da família',
+            context.tr('Seu espaço da família'),
             textAlign: TextAlign.center,
             style: TextStyle(
               color: palette.primary,
@@ -249,7 +251,8 @@ class _GuestProfileCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'Entre para acessar memórias, perfil, administração e conversas privadas.',
+            context.tr(
+                'Entre para acessar memórias, perfil, administração e conversas privadas.'),
             textAlign: TextAlign.center,
             style: TextStyle(color: palette.muted, height: 1.45),
           ),

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/chat/chat_controller.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/notifications/notifications_controller.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../core/theme/app_theme.dart';
@@ -22,6 +23,7 @@ class AppShell extends StatelessWidget {
     required this.notifications,
     required this.chat,
     required this.theme,
+    required this.locale,
     required this.child,
     required this.currentLocation,
     required this.toast,
@@ -31,6 +33,7 @@ class AppShell extends StatelessWidget {
   final NotificationsController notifications;
   final ChatController chat;
   final ThemeController theme;
+  final LocaleController locale;
   final Widget child;
   final String currentLocation;
   final ToastController toast;
@@ -47,6 +50,7 @@ class AppShell extends StatelessWidget {
             body: AppHeaderActionsScope(
               onNotifications: () => _openNotificationsSheet(context),
               onTheme: () => _openThemeSheet(context),
+              onLanguage: () => _openLanguageSheet(context),
               notificationCount: notifications.badgeCount,
               child: child,
             ),
@@ -80,17 +84,22 @@ class AppShell extends StatelessWidget {
       ),
       actions: [
         IconButton(
+          onPressed: () => _openLanguageSheet(context),
+          icon: const Icon(Icons.translate_outlined),
+          tooltip: context.tr('Idioma'),
+        ),
+        IconButton(
           onPressed: () => _openNotificationsSheet(context),
           icon: _BadgeIcon(
             count: notifications.badgeCount,
             child: const Icon(Icons.notifications_outlined),
           ),
-          tooltip: 'Notificações',
+          tooltip: context.tr('Notificações'),
         ),
         IconButton(
           onPressed: () => _openThemeSheet(context),
           icon: const Icon(Icons.palette_outlined),
-          tooltip: 'Cor e tema',
+          tooltip: context.tr('Cor e tema'),
         ),
         const SizedBox(width: 14),
       ],
@@ -112,6 +121,13 @@ class AppShell extends StatelessWidget {
     showAppSheet<void>(
       context: context,
       builder: (_) => _ThemeSheet(theme: theme, toast: toast),
+    );
+  }
+
+  void _openLanguageSheet(BuildContext context) {
+    showAppSheet<void>(
+      context: context,
+      builder: (_) => _LanguageSheet(locale: locale),
     );
   }
 
@@ -157,14 +173,14 @@ class _DesktopMainNavigation extends StatelessWidget {
           _DesktopNavPill(
             icon: Icons.dashboard_outlined,
             selectedIcon: Icons.dashboard,
-            label: 'Painel',
+            label: context.tr('Painel'),
             selected: currentLocation == '/painel',
             onTap: () => context.openAppRoute('/painel'),
           ),
           _DesktopNavPill(
             icon: Icons.photo_library_outlined,
             selectedIcon: Icons.photo_library,
-            label: 'Memórias',
+            label: context.tr('Memórias'),
             selected: hasMemories &&
                 (_isSelected('/atalhos/memorias', currentLocation) ||
                     currentLocation == '/galeria' ||
@@ -225,7 +241,7 @@ class _DesktopMainNavigation extends StatelessWidget {
           _DesktopNavPill(
             icon: Icons.apps_outlined,
             selectedIcon: Icons.apps,
-            label: 'Mais',
+            label: context.tr('Mais'),
             selected: hasMore &&
                 (_isSelected('/atalhos/mais', currentLocation) ||
                     currentLocation == '/jogos' ||
@@ -243,7 +259,7 @@ class _DesktopMainNavigation extends StatelessWidget {
           _DesktopNavPill(
             icon: Icons.person_outline,
             selectedIcon: Icons.person,
-            label: 'Perfil',
+            label: context.tr('Perfil'),
             selected: _isSelected('/perfil', currentLocation) ||
                 _isSelected('/cliente/admin', currentLocation),
             onTap: () {
@@ -284,7 +300,7 @@ class _DesktopNavPill extends StatelessWidget {
       child: TextButton.icon(
         onPressed: onTap,
         icon: Icon(selected ? selectedIcon : icon, size: 20),
-        label: Text(label),
+        label: Text(context.tr(label)),
         style: TextButton.styleFrom(
           foregroundColor: color,
           backgroundColor:
@@ -319,7 +335,7 @@ class _ThemeSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
-            'Cor e tema',
+            context.tr('Cor e tema'),
             textAlign: TextAlign.center,
             style: TextStyle(
               color: palette.primary,
@@ -328,10 +344,10 @@ class _ThemeSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 18),
-          const Text(
-            'Cor',
+          Text(
+            context.tr('Cor'),
             textAlign: TextAlign.center,
-            style: TextStyle(fontWeight: FontWeight.w700),
+            style: const TextStyle(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 10),
           Row(
@@ -358,33 +374,84 @@ class _ThemeSheet extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          const Text(
-            'Modo',
+          Text(
+            context.tr('Modo'),
             textAlign: TextAlign.center,
-            style: TextStyle(fontWeight: FontWeight.w700),
+            style: const TextStyle(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 10),
           Center(
             child: SegmentedButton<ThemeMode>(
-              segments: const [
+              segments: [
                 ButtonSegment(
                     value: ThemeMode.light,
-                    icon: Icon(Icons.light_mode_outlined),
-                    label: Text('Claro')),
+                    icon: const Icon(Icons.light_mode_outlined),
+                    label: Text(context.tr('Claro'))),
                 ButtonSegment(
                     value: ThemeMode.dark,
-                    icon: Icon(Icons.dark_mode_outlined),
-                    label: Text('Escuro')),
+                    icon: const Icon(Icons.dark_mode_outlined),
+                    label: Text(context.tr('Escuro'))),
               ],
               selected: {theme.mode},
               onSelectionChanged: (value) {
                 theme.setMode(value.first);
                 toast.success(value.first == ThemeMode.dark
-                    ? 'Modo escuro ativado.'
-                    : 'Modo claro ativado.');
+                    ? context.tr('Modo escuro ativado.')
+                    : context.tr('Modo claro ativado.'));
               },
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LanguageSheet extends StatelessWidget {
+  const _LanguageSheet({required this.locale});
+
+  final LocaleController locale;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final selected = AppLocalizations.storageCode(locale.locale);
+    return SizedBox(
+      width: 420,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            context.tr('Idioma'),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: palette.primary,
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 14),
+          for (final option in AppLocalizations.options)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                onTap: () {
+                  locale.setLocale(option.locale);
+                  Navigator.of(context).pop();
+                },
+                title: Text(option.nativeLabel),
+                subtitle: Text(option.productName),
+                trailing:
+                    selected == AppLocalizations.storageCode(option.locale)
+                        ? Icon(Icons.check_circle, color: palette.primary)
+                        : null,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  side: BorderSide(color: palette.border),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -411,7 +478,7 @@ class _ColorChoice extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 5),
       child: Tooltip(
-        message: label,
+        message: context.tr(label),
         child: InkWell(
           borderRadius: BorderRadius.circular(999),
           onTap: () {
@@ -482,14 +549,14 @@ class _MobileBottomNavigation extends StatelessWidget {
               _MobileNavButton(
                 icon: Icons.dashboard_outlined,
                 selectedIcon: Icons.dashboard,
-                label: 'Painel',
+                label: context.tr('Painel'),
                 selected: currentLocation == '/painel',
                 onTap: () => context.openAppRoute('/painel'),
               ),
               _MobileNavButton(
                 icon: Icons.photo_library_outlined,
                 selectedIcon: Icons.photo_library,
-                label: 'Memórias',
+                label: context.tr('Memórias'),
                 selected: hasMemories &&
                     (_isSelected('/atalhos/memorias', currentLocation) ||
                         currentLocation == '/galeria' ||
@@ -551,7 +618,7 @@ class _MobileBottomNavigation extends StatelessWidget {
               _MobileNavButton(
                 icon: Icons.apps_outlined,
                 selectedIcon: Icons.apps,
-                label: 'Mais',
+                label: context.tr('Mais'),
                 selected: hasMore &&
                     (_isSelected('/atalhos/mais', currentLocation) ||
                         currentLocation == '/jogos' ||
@@ -569,7 +636,7 @@ class _MobileBottomNavigation extends StatelessWidget {
               _MobileNavButton(
                 icon: Icons.person_outline,
                 selectedIcon: Icons.person,
-                label: 'Perfil',
+                label: context.tr('Perfil'),
                 selected: _isSelected('/perfil', currentLocation) ||
                     _isSelected('/cliente/admin', currentLocation),
                 onTap: () {
@@ -618,7 +685,7 @@ class _MobileNavButton extends StatelessWidget {
               Icon(selected ? selectedIcon : icon, color: color, size: 23),
               const SizedBox(height: 4),
               Text(
-                label,
+                context.tr(label),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(

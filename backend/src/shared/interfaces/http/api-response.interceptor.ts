@@ -61,9 +61,13 @@ export class ApiResponseInterceptor<T> implements NestInterceptor<
         resource,
         source: 'websocket',
         success: true,
-        actorUserId: user?.id,
-        actorEmail: user?.email,
-        tenantId: user?.tenantId,
+        actorUserId: user?.actorUserId ?? user?.id,
+        actorEmail: user?.actorEmail ?? user?.email,
+        effectiveUserId: user?.actorUserId ? user.id : undefined,
+        effectiveUserEmail: user?.actorUserId ? user.email : undefined,
+        tenantId: user?.tenantId ?? undefined,
+        membershipId: user?.membershipId ?? undefined,
+        supportSessionId: user?.supportSessionId ?? undefined,
         metadata: { message },
       });
     }

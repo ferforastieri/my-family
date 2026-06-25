@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/chat/chat_controller.dart';
 import '../../../core/config/app_config.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_page_header.dart';
@@ -184,13 +185,14 @@ class _ChatPageState extends State<ChatPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Nova conversa',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+              Text(context.tr('Nova conversa'),
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.w900)),
               const SizedBox(height: 12),
               if (widget.chat.users.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text('Nenhuma pessoa encontrada.'),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(context.tr('Nenhuma pessoa encontrada.')),
                 ),
               for (final user in widget.chat.users)
                 ListTile(
@@ -435,7 +437,7 @@ class _EditMessageSheetState extends State<_EditMessageSheet> {
             autofocus: true,
             minLines: 2,
             maxLines: 6,
-            decoration: const InputDecoration(labelText: 'Mensagem'),
+            decoration: InputDecoration(labelText: context.tr('Mensagem')),
             textInputAction: TextInputAction.newline,
           ),
           const SizedBox(height: 18),
@@ -479,16 +481,16 @@ class _ConversationList extends StatelessWidget {
                 child: const Icon(Icons.chat_bubble_outline),
               ),
               const SizedBox(width: 12),
-              const Expanded(
-                child: Text('Conversas',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+              Expanded(
+                child: Text(context.tr('Conversas'),
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w900)),
               ),
               if (auth.user != null)
                 IconButton(
                   onPressed: onNewConversation,
                   icon: const Icon(Icons.add_comment_outlined),
-                  tooltip: 'Nova conversa',
+                  tooltip: context.tr('Nova conversa'),
                 ),
             ],
           ),
@@ -580,7 +582,7 @@ class _ConversationListItem extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        subtitle,
+                        context.tr(subtitle),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -659,7 +661,7 @@ class _MessagePane extends StatelessWidget {
                 AppHeaderIconButton(
                   onPressed: onBack,
                   icon: const Icon(Icons.arrow_back),
-                  tooltip: 'Voltar',
+                  tooltip: context.tr('Voltar'),
                 ),
                 const SizedBox(width: 10),
                 _ConversationAvatar(
@@ -681,8 +683,8 @@ class _MessagePane extends StatelessWidget {
                       if (!compact)
                         Text(
                           active?.type == 'global'
-                              ? 'Conversa aberta para todos'
-                              : 'Conversa entre pessoas logadas',
+                              ? context.tr('Conversa aberta para todos')
+                              : context.tr('Conversa entre pessoas logadas'),
                           style: TextStyle(color: palette.muted),
                         ),
                     ],
@@ -692,7 +694,7 @@ class _MessagePane extends StatelessWidget {
                   IconButton(
                     onPressed: onOpenConversations,
                     icon: const Icon(Icons.forum_outlined),
-                    tooltip: 'Conversas',
+                    tooltip: context.tr('Conversas'),
                   ),
               ],
             ),
@@ -704,9 +706,11 @@ class _MessagePane extends StatelessWidget {
           child: active == null
               ? ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  children: const [
-                    SizedBox(height: 180),
-                    Center(child: Text('Nenhuma conversa disponível.')),
+                  children: [
+                    const SizedBox(height: 180),
+                    Center(
+                        child:
+                            Text(context.tr('Nenhuma conversa disponível.'))),
                   ],
                 )
               : chat.loading
@@ -756,9 +760,9 @@ class _MessagePane extends StatelessWidget {
                 EdgeInsets.fromLTRB(compact ? 10 : 14, 8, compact ? 10 : 14, 0),
             child: TextField(
               controller: name,
-              decoration: const InputDecoration(
-                labelText: 'Seu nome',
-                prefixIcon: Icon(Icons.badge_outlined),
+              decoration: InputDecoration(
+                labelText: context.tr('Seu nome'),
+                prefixIcon: const Icon(Icons.badge_outlined),
               ),
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => onSendText(),
@@ -776,12 +780,12 @@ class _MessagePane extends StatelessWidget {
               IconButton(
                 onPressed: sending ? null : onOpenEmojiPanel,
                 icon: const Icon(Icons.sentiment_satisfied_alt_outlined),
-                tooltip: 'Emojis e figurinhas',
+                tooltip: context.tr('Emojis e figurinhas'),
               ),
               IconButton(
                 onPressed: sending ? null : onSendImage,
                 icon: const Icon(Icons.image_outlined),
-                tooltip: 'Enviar imagem',
+                tooltip: context.tr('Enviar imagem'),
               ),
               Expanded(
                 child: Column(
@@ -810,8 +814,8 @@ class _MessagePane extends StatelessWidget {
                         controller: text,
                         minLines: 1,
                         maxLines: 4,
-                        decoration: const InputDecoration(
-                          hintText: 'Escreva uma mensagem...',
+                        decoration: InputDecoration(
+                          hintText: context.tr('Escreva uma mensagem...'),
                           isDense: true,
                         ),
                         textInputAction: TextInputAction.newline,
@@ -933,14 +937,14 @@ class _ReplyComposerPreview extends StatelessWidget {
           Expanded(
             child: _ReplyText(
               senderName: message.senderName,
-              preview: _messagePreview(message),
+              preview: _messagePreview(context, message),
             ),
           ),
           IconButton(
             visualDensity: VisualDensity.compact,
             onPressed: onCancel,
             icon: const Icon(Icons.close),
-            tooltip: 'Cancelar resposta',
+            tooltip: context.tr('Cancelar resposta'),
           ),
         ],
       ),
@@ -1007,12 +1011,14 @@ class _ReplyText extends StatelessWidget {
   }
 }
 
-String _messagePreview(ChatMessage message) {
+String _messagePreview(BuildContext context, ChatMessage message) {
   final text = message.text?.trim();
   if (text?.isNotEmpty == true) return text!;
-  if (message.mediaType == 'sticker') return message.mediaUrl ?? 'Figurinha';
-  if (message.mediaUrl?.isNotEmpty == true) return 'Mídia';
-  return 'Mensagem';
+  if (message.mediaType == 'sticker') {
+    return message.mediaUrl ?? context.tr('Figurinha');
+  }
+  if (message.mediaUrl?.isNotEmpty == true) return context.tr('Mídia');
+  return context.tr('Mensagem');
 }
 
 class _MessageBubble extends StatefulWidget {
@@ -1308,7 +1314,7 @@ class _MessageBubbleContent extends StatelessWidget {
             ],
             if (isDeleted)
               Text(
-                'Mensagem apagada',
+                context.tr('Mensagem apagada'),
                 style: TextStyle(
                   color: palette.muted,
                   fontStyle: FontStyle.italic,
@@ -1460,7 +1466,8 @@ class _MessageMeta extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (edited) ...[
-          Text('editada', style: TextStyle(fontSize: 11, color: palette.muted)),
+          Text(context.tr('editada'),
+              style: TextStyle(fontSize: 11, color: palette.muted)),
           const SizedBox(width: 4),
         ],
         Text(time, style: TextStyle(fontSize: 11, color: palette.muted)),
@@ -1554,11 +1561,13 @@ class _EmojiStickerSheet extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             TabBar(
-              tabs: const [
-                Tab(icon: Icon(Icons.emoji_emotions_outlined), text: 'Emojis'),
+              tabs: [
                 Tab(
-                    icon: Icon(Icons.sticky_note_2_outlined),
-                    text: 'Figurinhas'),
+                    icon: const Icon(Icons.emoji_emotions_outlined),
+                    text: context.tr('Emojis')),
+                Tab(
+                    icon: const Icon(Icons.sticky_note_2_outlined),
+                    text: context.tr('Figurinhas')),
               ],
               labelColor: palette.primary,
               indicatorColor: palette.primary,
@@ -1856,7 +1865,7 @@ class _MessageActionTile extends StatelessWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
       leading: Icon(icon, color: color),
       title: Text(
-        label,
+        context.tr(label),
         style: TextStyle(color: color, fontWeight: FontWeight.w800),
       ),
     );
@@ -1946,7 +1955,7 @@ class _MessageInfoRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  label,
+                  context.tr(label),
                   style: TextStyle(
                     color: palette.muted,
                     fontSize: 12,
@@ -1955,7 +1964,7 @@ class _MessageInfoRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  value,
+                  context.tr(value),
                   style: TextStyle(
                     color: palette.foreground,
                     fontWeight: FontWeight.w800,

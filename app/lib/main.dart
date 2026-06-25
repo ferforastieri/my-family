@@ -3,10 +3,12 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/auth/auth_controller.dart';
 import 'core/chat/chat_controller.dart';
 import 'core/auth/token_store.dart';
+import 'core/i18n/app_localizations.dart';
 import 'core/location/location_controller.dart';
 import 'core/notifications/notifications_controller.dart';
 import 'core/query/app_query_provider.dart';
@@ -58,6 +60,7 @@ void main() {
   final notifications = NotificationsController(socket);
   final location = LocationController(socket, auth);
   final theme = ThemeController();
+  final locale = LocaleController();
   final toast = ToastController();
   final queryReset = ValueNotifier(0);
   String? lastUserId;
@@ -68,6 +71,7 @@ void main() {
         notifications: notifications,
         chat: chat,
         theme: theme,
+        locale: locale,
         toast: toast,
         repository: repository),
   ));
@@ -103,6 +107,7 @@ void main() {
     unawaited(startProtectedServices());
   }).catchError((_) {});
   theme.bootstrap();
+  locale.bootstrap();
 }
 
 class MyFamilyApp extends StatelessWidget {
@@ -112,6 +117,7 @@ class MyFamilyApp extends StatelessWidget {
     required this.notifications,
     required this.chat,
     required this.theme,
+    required this.locale,
     required this.toast,
     required this.repository,
   });
@@ -120,19 +126,29 @@ class MyFamilyApp extends StatelessWidget {
   final NotificationsController notifications;
   final ChatController chat;
   final ThemeController theme;
+  final LocaleController locale;
   final ToastController toast;
   final FamilyRepository repository;
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([auth, theme]),
+      listenable: Listenable.merge([auth, theme, locale]),
       builder: (context, _) {
+        final appTitle = AppLocalizations(locale.locale).tr('Nossa Família');
         if (auth.loading) {
           return MaterialApp(
-            title: 'Nossa Família',
+            title: appTitle,
             debugShowCheckedModeBanner: false,
             theme: buildAppTheme(color: theme.color, mode: theme.mode),
+            locale: locale.locale,
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
             builder: (context, child) => _AppTextScale(
               child: child ?? const SizedBox.shrink(),
             ),
@@ -143,11 +159,26 @@ class MyFamilyApp extends StatelessWidget {
           );
         }
         return MaterialApp.router(
-          title: 'Nossa Família',
+          title: appTitle,
           debugShowCheckedModeBanner: false,
           theme: buildAppTheme(color: theme.color, mode: theme.mode),
-          routerConfig:
-              buildRouter(auth, notifications, chat, theme, toast, repository),
+          locale: locale.locale,
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          routerConfig: buildRouter(
+            auth,
+            notifications,
+            chat,
+            theme,
+            locale,
+            toast,
+            repository,
+          ),
           builder: (context, child) => _AppTextScale(
             child: ToastOverlay(
               controller: toast,

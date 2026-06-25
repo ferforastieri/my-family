@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/api/query_keys.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
@@ -105,9 +106,9 @@ class _EditableTextCollectionPageState
                 items.isEmpty
                     ? LovePanel(
                         child: Text(
-                          canWrite
+                          context.tr(canWrite
                               ? 'Nenhum texto escrito ainda.'
-                              : 'Ainda não há textos publicados.',
+                              : 'Ainda não há textos publicados.'),
                           textAlign: TextAlign.center,
                           style: TextStyle(color: palette.muted),
                         ),
@@ -359,22 +360,24 @@ class _TextEntrySheetState extends State<_TextEntrySheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           AppSheetHeader(
-            title:
-                widget.item == null ? 'Escrever em ${widget.title}' : 'Editar',
+            title: widget.item == null
+                ? context
+                    .tr('Escrever em {title}', args: {'title': widget.title})
+                : 'Editar',
             subtitle: 'Registre um texto especial para aparecer no app.',
             icon: Icons.edit_note_outlined,
           ),
           const SizedBox(height: 16),
           TextField(
             controller: title,
-            decoration: const InputDecoration(labelText: 'Título'),
+            decoration: InputDecoration(labelText: context.tr('Título')),
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _save(),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: content,
-            decoration: const InputDecoration(labelText: 'Texto'),
+            decoration: InputDecoration(labelText: context.tr('Texto')),
             minLines: 5,
             maxLines: 10,
             textInputAction: TextInputAction.done,

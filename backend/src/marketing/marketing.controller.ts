@@ -62,10 +62,19 @@ export class MarketingController {
   }
 
   @Get('sitemap.xml')
-  sitemap(@Req() request: Request, @Res() response: Response) {
+  async sitemap(@Req() request: Request, @Res() response: Response) {
     const origin = requestOrigin(request);
-    const urls = ['pt', 'en', 'es']
-      .map((locale) => `<url><loc>${origin}/${locale}</loc></url>`)
+    const slugs = await this.publicSites.publishedSlugs();
+    const paths = [
+      ...['pt', 'en', 'es'],
+      ...slugs.flatMap((slug) =>
+        ['pt', 'en', 'es'].map(
+          (locale) => `${locale}/familia/${encodeURIComponent(slug)}`,
+        ),
+      ),
+    ];
+    const urls = paths
+      .map((path) => `<url><loc>${origin}/${path}</loc></url>`)
       .join('');
     return response
       .type('application/xml')

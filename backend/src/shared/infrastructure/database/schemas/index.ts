@@ -22,6 +22,8 @@ export * from './tenant.schema';
 export * from './membership.schema';
 export * from './subscription.schema';
 export * from './audit-log.schema';
+export * from './support-session.schema';
+export * from './site-config.schema';
 
 import {
   ChatConversationDocument,
@@ -91,6 +93,11 @@ import {
   SubscriptionSchema,
 } from './subscription.schema';
 import { AuditLogDocument, AuditLogSchema } from './audit-log.schema';
+import {
+  SupportSessionDocument,
+  SupportSessionSchema,
+} from './support-session.schema';
+import { SiteConfigDocument, SiteConfigSchema } from './site-config.schema';
 import { applyTenantScope } from '@tenancy/infrastructure/tenant-scope.plugin';
 
 [
@@ -111,6 +118,7 @@ import { applyTenantScope } from '@tenancy/infrastructure/tenant-scope.plugin';
   NotificationSchema,
   QuizQuestionSchema,
   ScheduledNotificationSchema,
+  SiteConfigSchema,
 ].forEach(applyTenantScope);
 
 export const mongoModels = [
@@ -119,6 +127,8 @@ export const mongoModels = [
   { name: SubscriptionDocument.name, schema: SubscriptionSchema },
   { name: BillingEventDocument.name, schema: BillingEventSchema },
   { name: AuditLogDocument.name, schema: AuditLogSchema },
+  { name: SupportSessionDocument.name, schema: SupportSessionSchema },
+  { name: SiteConfigDocument.name, schema: SiteConfigSchema },
   { name: UserDocument.name, schema: UserSchema },
   { name: PasswordResetDocument.name, schema: PasswordResetSchema },
   { name: ChatConversationDocument.name, schema: ChatConversationSchema },

@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/config/app_config.dart';
 import '../../../core/api/query_keys.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
@@ -142,7 +143,8 @@ class _ResourcePageState extends State<ResourcePage> {
                   items.isEmpty
                       ? _EmptyResourceState(
                           title: selectedAlbum == null
-                              ? '${widget.title} ainda está vazio.'
+                              ? context.tr('{title} ainda está vazio.',
+                                  args: {'title': widget.title})
                               : 'Nenhuma memória nesse álbum.',
                           actionLabel: _actionLabelFor(widget.resource),
                           onPressed: () => _openCreate(context),
@@ -228,9 +230,10 @@ class _ResourcePageState extends State<ResourcePage> {
   }
 
   Future<void> _deleteItem(FamilyItem item) async {
-    await widget.repository.delete(widget.resource, item.id);
-    widget.toast.success(
+    final message = context.tr(
         widget.resource == 'fotos' ? 'Memória removida.' : 'Item removido.');
+    await widget.repository.delete(widget.resource, item.id);
+    widget.toast.success(message);
     _reload();
   }
 
@@ -365,7 +368,7 @@ class _ResourceMetricCard extends StatelessWidget {
                 Text('${value.value}',
                     style: const TextStyle(
                         fontSize: 22, fontWeight: FontWeight.w900)),
-                Text(value.label,
+                Text(context.tr(value.label),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(color: palette.muted, fontSize: 12)),
@@ -395,7 +398,7 @@ class _AlbumFilter extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     final total = albums.fold<int>(0, (sum, album) => sum + album.count);
-    final selectedLabel = selectedAlbum ?? 'Todos os álbuns';
+    final selectedLabel = selectedAlbum ?? context.tr('Todos os álbuns');
     return LovePanel(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       child: Row(
@@ -429,7 +432,7 @@ class _AlbumFilter extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Filtrar por álbum',
+                          context.tr('Filtrar por álbum'),
                           style: TextStyle(
                             color: palette.muted,
                             fontSize: 12,
@@ -504,7 +507,7 @@ class _AlbumOptionsSheet extends StatelessWidget {
         _OptionTile(
           icon: Icons.photo_library_outlined,
           title: 'Todos os álbuns',
-          subtitle: '$total memórias',
+          subtitle: context.tr('{count} memórias', args: {'count': total}),
           selected: selectedAlbum == null,
           onTap: () => Navigator.pop(context, _AlbumFilter._allAlbumsValue),
         ),
@@ -512,7 +515,8 @@ class _AlbumOptionsSheet extends StatelessWidget {
           _OptionTile(
             icon: Icons.photo_album_outlined,
             title: album.album,
-            subtitle: '${album.count} memórias',
+            subtitle:
+                context.tr('{count} memórias', args: {'count': album.count}),
             selected: selectedAlbum == album.album,
             onTap: () => Navigator.pop(context, album.album),
           ),
@@ -542,8 +546,9 @@ class _OptionTile extends StatelessWidget {
     return ListTile(
       onTap: onTap,
       leading: Icon(icon, color: selected ? palette.primary : palette.muted),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
-      subtitle: Text(subtitle),
+      title: Text(context.tr(title),
+          style: const TextStyle(fontWeight: FontWeight.w900)),
+      subtitle: Text(context.tr(subtitle)),
       trailing:
           selected ? Icon(Icons.check_circle, color: palette.primary) : null,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -571,7 +576,7 @@ class _EmptyResourceState extends StatelessWidget {
         children: [
           Icon(Icons.favorite_border, color: palette.primary, size: 42),
           const SizedBox(height: 10),
-          Text(title,
+          Text(context.tr(title),
               textAlign: TextAlign.center,
               style:
                   const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
@@ -722,11 +727,11 @@ class _TextResourceCard extends StatelessWidget {
                 IconButton(
                     onPressed: () => onEdit(item),
                     icon: const Icon(Icons.edit_outlined),
-                    tooltip: 'Editar'),
+                    tooltip: context.tr('Editar')),
                 IconButton(
                     onPressed: () => onDelete(item),
                     icon: const Icon(Icons.delete_outline),
-                    tooltip: 'Excluir'),
+                    tooltip: context.tr('Excluir')),
               ],
             ),
           ),
@@ -812,7 +817,7 @@ class _MusicCard extends StatelessWidget {
                           const SizedBox(height: 6),
                           Text(
                             item.subtitle.isEmpty
-                                ? 'Artista não informado'
+                                ? context.tr('Artista não informado')
                                 : item.subtitle,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -863,7 +868,9 @@ class _MusicCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      hasLink ? 'Link do Spotify salvo' : 'Sem link do Spotify',
+                      context.tr(hasLink
+                          ? 'Link do Spotify salvo'
+                          : 'Sem link do Spotify'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -876,11 +883,11 @@ class _MusicCard extends StatelessWidget {
                   IconButton(
                       onPressed: () => onEdit(item),
                       icon: const Icon(Icons.edit_outlined),
-                      tooltip: 'Editar'),
+                      tooltip: context.tr('Editar')),
                   IconButton(
                       onPressed: () => onDelete(item),
                       icon: const Icon(Icons.delete_outline),
-                      tooltip: 'Excluir'),
+                      tooltip: context.tr('Excluir')),
                 ],
               ),
             ),
@@ -938,7 +945,7 @@ class _LetterCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'PARA MEU AMOR',
+                          context.tr('PARA MEU AMOR'),
                           style: TextStyle(
                             color: palette.primary,
                             fontSize: 11,
@@ -964,7 +971,8 @@ class _LetterCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             preview.isEmpty
-                                ? 'Uma carta esperando palavras de amor.'
+                                ? context
+                                    .tr('Uma carta esperando palavras de amor.')
                                 : preview,
                             maxLines: 4,
                             overflow: TextOverflow.ellipsis,
@@ -1002,7 +1010,7 @@ class _LetterCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      'Abrir carta',
+                      context.tr('Abrir carta'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -1015,12 +1023,12 @@ class _LetterCard extends StatelessWidget {
                   IconButton(
                     onPressed: () => onEdit(item),
                     icon: const Icon(Icons.edit_outlined),
-                    tooltip: 'Editar',
+                    tooltip: context.tr('Editar'),
                   ),
                   IconButton(
                     onPressed: () => onDelete(item),
                     icon: const Icon(Icons.delete_outline),
-                    tooltip: 'Excluir',
+                    tooltip: context.tr('Excluir'),
                   ),
                 ],
               ),
@@ -1095,7 +1103,9 @@ class _NoteCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   Expanded(
                     child: Text(
-                      preview.isEmpty ? 'Nota sem conteúdo.' : preview,
+                      preview.isEmpty
+                          ? context.tr('Nota sem conteúdo.')
+                          : preview,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -1110,7 +1120,7 @@ class _NoteCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          'Abrir nota',
+                          context.tr('Abrir nota'),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -1123,12 +1133,12 @@ class _NoteCard extends StatelessWidget {
                       IconButton(
                         onPressed: () => onEdit(item),
                         icon: const Icon(Icons.edit_outlined),
-                        tooltip: 'Editar',
+                        tooltip: context.tr('Editar'),
                       ),
                       IconButton(
                         onPressed: () => onDelete(item),
                         icon: const Icon(Icons.delete_outline),
-                        tooltip: 'Excluir',
+                        tooltip: context.tr('Excluir'),
                       ),
                     ],
                   ),
@@ -1220,7 +1230,7 @@ class _PhotoCard extends StatelessWidget {
                 children: [
                   Text(
                     item.subtitle.isEmpty
-                        ? 'Adicione uma descrição...'
+                        ? context.tr('Adicione uma descrição...')
                         : item.subtitle,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -1231,7 +1241,7 @@ class _PhotoCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          item.tipo == 'video' ? 'Vídeo' : 'Foto',
+                          context.tr(item.tipo == 'video' ? 'Vídeo' : 'Foto'),
                           style: TextStyle(
                               color: palette.primary,
                               fontWeight: FontWeight.w800,
@@ -1241,11 +1251,11 @@ class _PhotoCard extends StatelessWidget {
                       IconButton(
                           onPressed: () => onEdit(item),
                           icon: const Icon(Icons.edit_outlined),
-                          tooltip: 'Editar'),
+                          tooltip: context.tr('Editar')),
                       IconButton(
                           onPressed: () => onDelete(item),
                           icon: const Icon(Icons.delete_outline),
-                          tooltip: 'Excluir'),
+                          tooltip: context.tr('Excluir')),
                     ],
                   ),
                 ],
@@ -1303,8 +1313,9 @@ class _ResourceDialogState extends State<ResourceDialog> {
         children: [
           AppSheetHeader(
             title: widget.initial == null
-                ? 'Novo item em ${widget.title}'
-                : 'Editar ${widget.title}',
+                ? context
+                    .tr('Novo item em {title}', args: {'title': widget.title})
+                : context.tr('Editar {title}', args: {'title': widget.title}),
             subtitle: widget.resource == 'notas'
                 ? 'Preencha as informações e salve a nota.'
                 : 'Preencha as informações e salve a lembrança.',
@@ -1314,8 +1325,8 @@ class _ResourceDialogState extends State<ResourceDialog> {
           TextField(
               controller: title,
               decoration: InputDecoration(
-                  labelText:
-                      widget.resource == 'fotos' ? 'Título ou URL' : 'Título'),
+                  labelText: context.tr(
+                      widget.resource == 'fotos' ? 'Título ou URL' : 'Título')),
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _save()),
           const SizedBox(height: 10),
@@ -1324,8 +1335,8 @@ class _ResourceDialogState extends State<ResourceDialog> {
             decoration: InputDecoration(
               labelText:
                   widget.resource == 'cartas' || widget.resource == 'notas'
-                      ? 'Conteúdo'
-                      : 'Texto / artista',
+                      ? context.tr('Conteúdo')
+                      : context.tr('Texto / artista'),
             ),
             minLines: widget.resource == 'cartas' || widget.resource == 'notas'
                 ? 7
@@ -1346,7 +1357,7 @@ class _ResourceDialogState extends State<ResourceDialog> {
             const SizedBox(height: 10),
             TextField(
                 controller: extra,
-                decoration: const InputDecoration(labelText: 'Extra'),
+                decoration: InputDecoration(labelText: context.tr('Extra')),
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _save()),
           ],
@@ -1442,12 +1453,12 @@ class _PhotoMemorySheetState extends State<PhotoMemorySheet> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Foto da galeria'),
+              title: Text(context.tr('Foto da galeria')),
               onTap: () => Navigator.pop(context, _PickedMediaType.image),
             ),
             ListTile(
               leading: const Icon(Icons.video_library_outlined),
-              title: const Text('Vídeo da galeria'),
+              title: Text(context.tr('Vídeo da galeria')),
               onTap: () => Navigator.pop(context, _PickedMediaType.video),
             ),
           ],
@@ -1501,14 +1512,18 @@ class _PhotoMemorySheetState extends State<PhotoMemorySheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(widget.item == null ? 'Adicionar memória' : 'Editar memória',
+            Text(
+                context.tr(widget.item == null
+                    ? 'Adicionar memória'
+                    : 'Editar memória'),
                 style: TextStyle(
                     color: palette.primary,
                     fontWeight: FontWeight.w900,
                     fontSize: 22)),
             const SizedBox(height: 6),
             Text(
-              'Escolha a mídia, organize por álbum e marque a data pelo calendário.',
+              context.tr(
+                  'Escolha a mídia, organize por álbum e marque a data pelo calendário.'),
               style: TextStyle(
                 color: palette.muted,
                 height: 1.35,
@@ -1518,18 +1533,20 @@ class _PhotoMemorySheetState extends State<PhotoMemorySheet> {
             OutlinedButton.icon(
               onPressed: saving ? null : _pickFile,
               icon: const Icon(Icons.upload_file),
-              label: Text(file == null ? 'Escolher foto ou vídeo' : file!.name),
+              label: Text(file == null
+                  ? context.tr('Escolher foto ou vídeo')
+                  : file!.name),
             ),
             const SizedBox(height: 12),
             TextField(
                 controller: album,
-                decoration: const InputDecoration(labelText: 'Álbum'),
+                decoration: InputDecoration(labelText: context.tr('Álbum')),
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _save()),
             const SizedBox(height: 10),
             TextField(
                 controller: texto,
-                decoration: const InputDecoration(labelText: 'Descrição'),
+                decoration: InputDecoration(labelText: context.tr('Descrição')),
                 minLines: 2,
                 maxLines: 4,
                 textInputAction: TextInputAction.done,
@@ -1595,7 +1612,7 @@ class _LetterReader extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          'PARA MEU AMOR',
+                          context.tr('PARA MEU AMOR'),
                           style: TextStyle(
                             color: palette.primary,
                             fontSize: 11,
@@ -1648,7 +1665,7 @@ class _LetterReader extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          'Com todo o meu amor,',
+                          context.tr('Com todo o meu amor,'),
                           style: TextStyle(
                             color: palette.muted,
                             fontStyle: FontStyle.italic,
@@ -1701,7 +1718,7 @@ class _NoteReader extends StatelessWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Nota',
+                        context.tr('Nota'),
                         style: TextStyle(
                           color: palette.primary,
                           fontSize: 12,
@@ -1733,7 +1750,9 @@ class _NoteReader extends StatelessWidget {
                 Divider(color: palette.border),
                 const SizedBox(height: 14),
                 Text(
-                  item.subtitle.isEmpty ? 'Nota sem conteúdo.' : item.subtitle,
+                  item.subtitle.isEmpty
+                      ? context.tr('Nota sem conteúdo.')
+                      : item.subtitle,
                   style: TextStyle(
                     color: palette.foreground,
                     fontSize: 16,

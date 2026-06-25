@@ -6,7 +6,11 @@ export type AuditRecord = {
   source: AuditSource;
   actorUserId?: string;
   actorEmail?: string;
+  effectiveUserId?: string;
+  effectiveUserEmail?: string;
   tenantId?: string;
+  membershipId?: string;
+  supportSessionId?: string;
   method?: string;
   path?: string;
   statusCode?: number;

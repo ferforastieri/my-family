@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UserRepository } from '../../infrastructure/repositories/user.repository';
 import type {
@@ -80,6 +84,14 @@ export class UserService {
       id,
     );
     if (!membership) return null;
+    if (
+      this.context.current.sessionScope === 'support' &&
+      data.password?.trim()
+    ) {
+      throw new ForbiddenException(
+        'Credenciais não podem ser alteradas durante suporte.',
+      );
+    }
     if (membership.role === 'owner' && data.role && data.role !== 'owner') {
       throw new BadRequestException(
         'O proprietário não pode perder a propriedade.',
@@ -112,6 +124,11 @@ export class UserService {
   }
 
   async delete(id: string): Promise<boolean> {
+    if (this.context.current.sessionScope === 'support') {
+      throw new ForbiddenException(
+        'Usuários não podem ser removidos durante suporte.',
+      );
+    }
     const membership = await this.tenants.findMembership(
       this.context.tenantId,
       id,
@@ -130,6 +147,7 @@ export class UserService {
   ): UserEntity {
     return {
       ...account,
+      sessionScope: this.context.current.sessionScope ?? 'tenant',
       tenantId: tenant.id,
       tenantSlug: tenant.slug,
       membershipId: membership.id,

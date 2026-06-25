@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/auth/auth_controller.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/widgets/app_dashboard.dart';
 
 class ClientDashboardPage extends StatelessWidget {
@@ -12,6 +13,7 @@ class ClientDashboardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final tenant = auth.tenant;
     final user = auth.user;
+    final firstName = user?.name?.split(' ').first ?? context.tr('bem-vindo');
     return AppDashboardPage(
       title: tenant?.name ?? 'Painel da família',
       subtitle: 'Gerencie sua conta, publicação e conteúdo.',
@@ -22,13 +24,13 @@ class ClientDashboardPage extends StatelessWidget {
       ),
       children: [
         Text(
-          'Olá, ${user?.name?.split(' ').first ?? 'bem-vindo'}',
+          context.tr('Olá, {name}', args: {'name': firstName}),
           style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'Este é o centro de controle da sua família.',
-          style: TextStyle(fontSize: 16),
+        Text(
+          context.tr('Este é o centro de controle da sua família.'),
+          style: const TextStyle(fontSize: 16),
         ),
         const SizedBox(height: 24),
         AppMetricGrid(

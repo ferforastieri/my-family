@@ -40,9 +40,12 @@ export class LoginDto {
   @IsString()
   password: string;
 
+}
+
+export class SelectTenantDto {
   @IsString()
-  @IsOptional()
-  tenantSlug?: string;
+  @MinLength(3)
+  tenantSlug: string;
 }
 
 export class RefreshTokenDto {

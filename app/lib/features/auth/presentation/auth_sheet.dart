@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/auth/auth_controller.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_sheet.dart';
@@ -44,21 +45,22 @@ class _AuthSheetState extends State<AuthSheet> {
           if (register) ...[
             TextField(
               controller: name,
-              decoration: const InputDecoration(labelText: 'Nome'),
+              decoration: InputDecoration(labelText: context.tr('Nome')),
               textInputAction: TextInputAction.next,
               onSubmitted: (_) => _submit(),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: familyName,
-              decoration: const InputDecoration(labelText: 'Nome da família'),
+              decoration:
+                  InputDecoration(labelText: context.tr('Nome da família')),
               textInputAction: TextInputAction.next,
             ),
             const SizedBox(height: 10),
             TextField(
               controller: slug,
-              decoration: const InputDecoration(
-                labelText: 'Endereço desejado',
+              decoration: InputDecoration(
+                labelText: context.tr('Endereço desejado'),
                 hintText: 'familia-silva',
               ),
               textInputAction: TextInputAction.next,
@@ -67,7 +69,7 @@ class _AuthSheetState extends State<AuthSheet> {
           ],
           TextField(
             controller: email,
-            decoration: const InputDecoration(labelText: 'Email'),
+            decoration: InputDecoration(labelText: context.tr('Email')),
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
             onSubmitted: (_) => _submit(),
@@ -75,7 +77,7 @@ class _AuthSheetState extends State<AuthSheet> {
           const SizedBox(height: 10),
           TextField(
             controller: password,
-            decoration: const InputDecoration(labelText: 'Senha'),
+            decoration: InputDecoration(labelText: context.tr('Senha')),
             obscureText: true,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _submit(),
@@ -95,11 +97,12 @@ class _AuthSheetState extends State<AuthSheet> {
           const SizedBox(height: 14),
           TextButton(
               onPressed: () => setState(() => register = !register),
-              child: Text(register ? 'Já tenho conta' : 'Criar conta')),
+              child: Text(
+                  context.tr(register ? 'Já tenho conta' : 'Criar conta'))),
           const SizedBox(height: 8),
           TextButton(
               onPressed: loading ? null : _forgotPassword,
-              child: const Text('Esqueci minha senha')),
+              child: Text(context.tr('Esqueci minha senha'))),
         ],
       ),
     );
@@ -143,7 +146,8 @@ class _AuthSheetState extends State<AuthSheet> {
       await widget.auth.forgotPassword(email.text);
       widget.toast.backendInfo(widget.auth.takeMessage());
       if (mounted) {
-        setState(() => error = 'Se o email existir, você receberá instruções.');
+        setState(() => error =
+            context.tr('Se o email existir, você receberá instruções.'));
       }
     } catch (e) {
       final message = authErrorMessage(e);

@@ -9,6 +9,7 @@ import {
 import type { Request } from 'express';
 import { Public } from '@auth/decorators/public.decorator';
 import { BillingService } from '../application/billing.service';
+import type { UserEntity } from '@auth/domain/entities/user.entity';
 
 @Controller('billing')
 export class BillingController {
@@ -21,13 +22,13 @@ export class BillingController {
 
   @Post('checkout')
   checkout(
-    @Req() request: Request & { user: { email: string; role: string } },
+    @Req() request: Request & { user: UserEntity },
   ) {
     return this.billing.createCheckout(request.user);
   }
 
   @Post('portal')
-  portal(@Req() request: Request & { user: { role: string } }) {
+  portal(@Req() request: Request & { user: UserEntity }) {
     return this.billing.createPortal(request.user);
   }
 

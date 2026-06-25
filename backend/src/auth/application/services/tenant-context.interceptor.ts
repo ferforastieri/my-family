@@ -55,12 +55,15 @@ export class TenantContextInterceptor implements NestInterceptor {
 
   private fromUser(user: UserEntity): TenantContextValue {
     return {
-      tenantId: user.tenantId,
+      tenantId: user.tenantId!,
       tenantSlug: user.tenantSlug ?? undefined,
       userId: user.id,
-      membershipId: user.membershipId,
+      membershipId: user.membershipId ?? undefined,
       role: user.role,
       access: user.access,
+      sessionScope: user.sessionScope,
+      actorUserId: user.actorUserId ?? undefined,
+      supportSessionId: user.supportSessionId ?? undefined,
     };
   }
 }
