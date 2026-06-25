@@ -158,6 +158,8 @@ Variaveis principais:
 - Todas as requisições HTTP geram logs estruturados no console.
 - Login, falhas, alterações, operações administrativas e mutações WebSocket
   são persistidos em `audit_logs`.
+- O Flutter envia abertura do app, navegação autenticada e erros não tratados
+  para `POST /api/audit/client-event`.
 - Os registros incluem usuário, família, IP, user-agent, rota, resultado e
   duração, sem armazenar senhas, tokens, cookies ou secrets.
 - A retenção padrão dos registros persistidos é de 180 dias.

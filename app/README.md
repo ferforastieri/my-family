@@ -33,6 +33,9 @@ Os componentes reutilizáveis de layout, métricas, seções, botões, cabeçalh
 tema e feedback ficam em `lib/core/widgets` e `lib/core/theme`. As regras e
 telas específicas ficam isoladas por feature em `lib/features`.
 
+O app envia ao backend eventos autenticados de abertura, navegação e erros não
+tratados. Tokens, senhas e secrets não fazem parte desses eventos.
+
 ## Notificacoes Mobile
 
 No Android, o app inicializa Firebase pelo `google-services.json` nativo quando nao houver configuracao via `dart-define`.
