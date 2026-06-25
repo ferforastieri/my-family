@@ -7,16 +7,13 @@ export class Environment {
   http: { port: number };
   database: { mongo: { uri: string; dbName?: string } };
   jwt: { secret: string; expiresIn: string };
-  storage:
-    | { type: 'filesystem'; path: string }
-    | {
-        type: 's3';
-        bucket: string;
-        endpoint: string;
-        region: string;
-        accessKeyId: string;
-        secretAccessKey: string;
-      };
+  storage: {
+    bucket: string;
+    endpoint: string;
+    region: string;
+    accessKeyId: string;
+    secretAccessKey: string;
+  };
   cors: { origin: string };
   smtp?: { host: string; port: number; user: string; pass: string };
   emailFrom?: string;
@@ -173,34 +170,28 @@ function validateProductionEnvironment(
       'BILLING_SUCCESS_URL e BILLING_CANCEL_URL públicos são obrigatórios em produção',
     );
   }
+  if (
+    !environment.smtp ||
+    !environment.emailFrom ||
+    !environment.passwordResetUrl
+  ) {
+    throw new Error(
+      'SMTP, EMAIL_FROM e PASSWORD_RESET_URL são obrigatórios em produção',
+    );
+  }
+  if (!environment.passwordResetUrl.startsWith('https://')) {
+    throw new Error('PASSWORD_RESET_URL deve usar HTTPS em produção');
+  }
 }
 
 function storageConfig(config: ConfigService): Environment['storage'] {
-  const values = {
-    bucket: config.get<string>('BUCKET'),
-    endpoint: config.get<string>('ENDPOINT'),
-    region: config.get<string>('REGION'),
-    accessKeyId: config.get<string>('ACCESS_KEY_ID'),
-    secretAccessKey: config.get<string>('SECRET_ACCESS_KEY'),
+  return {
+    bucket: required(config, 'BUCKET'),
+    endpoint: required(config, 'ENDPOINT'),
+    region: required(config, 'REGION'),
+    accessKeyId: required(config, 'ACCESS_KEY_ID'),
+    secretAccessKey: required(config, 'SECRET_ACCESS_KEY'),
   };
-  const configured = Object.values(values).filter(Boolean).length;
-
-  if (configured > 0 && configured < Object.keys(values).length) {
-    throw new Error(
-      'BUCKET, ENDPOINT, REGION, ACCESS_KEY_ID e SECRET_ACCESS_KEY devem ser configuradas juntas',
-    );
-  }
-  if (configured === Object.keys(values).length) {
-    return {
-      type: 's3',
-      bucket: values.bucket!,
-      endpoint: values.endpoint!,
-      region: values.region!,
-      accessKeyId: values.accessKeyId!,
-      secretAccessKey: values.secretAccessKey!,
-    };
-  }
-  return { type: 'filesystem', path: required(config, 'UPLOAD_PATH') };
 }
 
 function required(config: ConfigService, name: string): string {

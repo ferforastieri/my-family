@@ -13,7 +13,6 @@ export class EmailService {
         port: this.env.smtp.port,
         secure: this.env.smtp.port === 465,
         auth: { user: this.env.smtp.user, pass: this.env.smtp.pass },
-        tls: { rejectUnauthorized: false },
       });
     }
   }

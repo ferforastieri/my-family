@@ -111,6 +111,21 @@ BILLING_CANCEL_URL=https://seu-dominio.com/app/billing
 PASSWORD_RESET_URL=https://seu-dominio.com/app/reset-password
 ```
 
+Para e-mail transacional, configure um remetente autenticado e as credenciais
+SMTP. Exemplo usando Brevo:
+
+```text
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=587
+SMTP_USER=seu-login-smtp
+SMTP_PASS=sua-chave-smtp
+EMAIL_FROM=noreply@seu-dominio.com
+EMAIL_FROM_NAME=Nossa Família
+```
+
+O domínio do remetente deve ter SPF, DKIM e DMARC configurados antes da abertura
+ao público.
+
 Configure no Stripe o webhook:
 
 ```text

@@ -130,9 +130,7 @@ Variaveis principais:
 - `MONGO_DB`
 - `JWT_SECRET`
 - `JWT_EXPIRES_IN`
-- `UPLOAD_PATH`
-- `BUCKET`, `ENDPOINT`, `REGION`, `ACCESS_KEY_ID`, `SECRET_ACCESS_KEY` em
-  produção com Railway Bucket
+- `BUCKET`, `ENDPOINT`, `REGION`, `ACCESS_KEY_ID`, `SECRET_ACCESS_KEY`
 - `CORS_ORIGIN`
 - `REDIS_URL`
 - `CSRF_SECRET`
@@ -157,7 +155,6 @@ Variaveis principais:
 
 ## Armazenamento
 
-No desenvolvimento, `UPLOAD_PATH` usa o disco local. Quando todas as variáveis
-do Bucket estão presentes, o backend usa armazenamento S3 compatível e não
-depende do filesystem efêmero do container. Fotos, avatares, miniaturas e
+O backend usa exclusivamente armazenamento S3 compatível. As cinco variáveis do
+Bucket são obrigatórias em todos os ambientes. Fotos, avatares, miniaturas e
 metadados continuam privados e são entregues pelos endpoints autorizados.

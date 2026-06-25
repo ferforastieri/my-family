@@ -11,11 +11,9 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { randomUUID } from 'node:crypto';
-import { createReadStream } from 'node:fs';
-import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import type { Readable } from 'node:stream';
-import sharp = require('sharp');
+import sharp from 'sharp';
 import { TenantContext } from '@tenancy/application/tenant-context';
 import { Environment } from '@shared/infrastructure/environment/environment.module';
 
@@ -44,22 +42,20 @@ export const MAX_UPLOAD_BYTES = 40 * 1024 * 1024;
 
 @Injectable()
 export class UploadService {
-  private readonly s3?: S3Client;
+  private readonly s3: S3Client;
 
   constructor(
     private env: Environment,
     private tenantContext: TenantContext,
   ) {
-    if (env.storage.type === 's3') {
-      this.s3 = new S3Client({
-        endpoint: env.storage.endpoint,
-        region: env.storage.region,
-        credentials: {
-          accessKeyId: env.storage.accessKeyId,
-          secretAccessKey: env.storage.secretAccessKey,
-        },
-      });
-    }
+    this.s3 = new S3Client({
+      endpoint: env.storage.endpoint,
+      region: env.storage.region,
+      credentials: {
+        accessKeyId: env.storage.accessKeyId,
+        secretAccessKey: env.storage.secretAccessKey,
+      },
+    });
   }
 
   async saveFile(
@@ -75,7 +71,10 @@ export class UploadService {
     const ext = shouldOptimizeImage ? '.webp' : inputExt.toLowerCase();
     const filename = `${randomUUID()}${ext}`;
     const relativePath = `tenants/${this.tenantContext.tenantId}/${context}/${filename}`;
-    const input = file.buffer ?? (await fs.readFile((file as any).path));
+    const input = file.buffer;
+    if (!input) {
+      throw new BadRequestException('Upload em memória não configurado.');
+    }
     if (input.length > MAX_UPLOAD_BYTES) {
       throw new PayloadTooLargeException('O arquivo deve ter no máximo 40 MB.');
     }
@@ -111,24 +110,14 @@ export class UploadService {
     relativePath: string,
   ): Promise<StoredFile> {
     const key = this.normalizeTenantPath(tenantId, relativePath);
-    if (this.env.storage.type === 's3') {
-      const response = await this.s3!.send(
-        new GetObjectCommand({ Bucket: this.env.storage.bucket, Key: key }),
-      );
-      if (!response.Body) throw new Error(`Arquivo sem conteúdo: ${key}`);
-      return {
-        stream: response.Body as Readable,
-        contentType: response.ContentType || mediaType(key),
-        contentLength: response.ContentLength,
-      };
-    }
-
-    const fullPath = this.filesystemPath(key);
-    const stat = await fs.stat(fullPath);
+    const response = await this.s3.send(
+      new GetObjectCommand({ Bucket: this.env.storage.bucket, Key: key }),
+    );
+    if (!response.Body) throw new Error(`Arquivo sem conteúdo: ${key}`);
     return {
-      stream: createReadStream(fullPath),
-      contentType: mediaType(key),
-      contentLength: stat.size,
+      stream: response.Body as Readable,
+      contentType: response.ContentType || mediaType(key),
+      contentLength: response.ContentLength,
     };
   }
 
@@ -215,10 +204,7 @@ export class UploadService {
   }
 
   private async read(key: string): Promise<Buffer> {
-    if (this.env.storage.type === 'filesystem') {
-      return fs.readFile(this.filesystemPath(key));
-    }
-    const response = await this.s3!.send(
+    const response = await this.s3.send(
       new GetObjectCommand({ Bucket: this.env.storage.bucket, Key: key }),
     );
     if (!response.Body) throw new Error(`Arquivo sem conteúdo: ${key}`);
@@ -226,43 +212,27 @@ export class UploadService {
   }
 
   private async write(key: string, data: Buffer, contentType: string) {
-    if (this.env.storage.type === 's3') {
-      await this.s3!.send(
-        new PutObjectCommand({
-          Bucket: this.env.storage.bucket,
-          Key: key,
-          Body: data,
-          ContentType: contentType,
-        }),
-      );
-      return;
-    }
-    const fullPath = this.filesystemPath(key);
-    await fs.mkdir(path.dirname(fullPath), { recursive: true });
-    await fs.writeFile(fullPath, data);
+    await this.s3.send(
+      new PutObjectCommand({
+        Bucket: this.env.storage.bucket,
+        Key: key,
+        Body: data,
+        ContentType: contentType,
+      }),
+    );
   }
 
   private async remove(key: string) {
-    if (this.env.storage.type === 's3') {
-      await this.s3!.send(
-        new DeleteObjectCommand({ Bucket: this.env.storage.bucket, Key: key }),
-      );
-      return;
-    }
-    try {
-      await fs.unlink(this.filesystemPath(key));
-    } catch {}
+    await this.s3.send(
+      new DeleteObjectCommand({ Bucket: this.env.storage.bucket, Key: key }),
+    );
   }
 
   private async list(prefix: string) {
-    if (this.env.storage.type === 'filesystem') {
-      return this.listFilesystemFiles(this.filesystemPath(prefix));
-    }
-
     const files: Array<{ key: string; modifiedAt: number }> = [];
     let continuationToken: string | undefined;
     do {
-      const page = await this.s3!.send(
+      const page = await this.s3.send(
         new ListObjectsV2Command({
           Bucket: this.env.storage.bucket,
           Prefix: prefix,
@@ -283,52 +253,9 @@ export class UploadService {
     return files;
   }
 
-  private async listFilesystemFiles(
-    dir: string,
-  ): Promise<Array<{ key: string; modifiedAt: number }>> {
-    let entries: Array<{ name: string; isDirectory(): boolean }>;
-    try {
-      entries = (await fs.readdir(dir, {
-        withFileTypes: true,
-      })) as unknown as Array<{ name: string; isDirectory(): boolean }>;
-    } catch {
-      return [];
-    }
-
-    const files: Array<{ key: string; modifiedAt: number }> = [];
-    for (const entry of entries) {
-      const entryPath = path.join(dir, String(entry.name));
-      if (entry.isDirectory()) {
-        files.push(...(await this.listFilesystemFiles(entryPath)));
-      } else {
-        const stat = await fs.stat(entryPath);
-        files.push({
-          key: path
-            .relative(this.filesystemBasePath, entryPath)
-            .replace(/\\/g, '/'),
-          modifiedAt: stat.mtimeMs,
-        });
-      }
-    }
-    return files;
-  }
-
   private thumbnailPath(relativePath: string) {
     const parsed = path.posix.parse(relativePath);
     return path.posix.join('thumbs', parsed.dir, `${parsed.name}.webp`);
-  }
-
-  private filesystemPath(key: string) {
-    return path.join(this.filesystemBasePath, key);
-  }
-
-  private get filesystemBasePath() {
-    if (this.env.storage.type !== 'filesystem') {
-      throw new Error('Armazenamento local não configurado.');
-    }
-    return path.isAbsolute(this.env.storage.path)
-      ? this.env.storage.path
-      : path.resolve(this.env.storage.path);
   }
 }
 

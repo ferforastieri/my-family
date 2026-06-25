@@ -43,7 +43,11 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
-      UPLOAD_PATH: /data/uploads
+      BUCKET: ${BUCKET:?BUCKET is required}
+      ENDPOINT: ${ENDPOINT:?ENDPOINT is required}
+      REGION: ${REGION:?REGION is required}
+      ACCESS_KEY_ID: ${ACCESS_KEY_ID:?ACCESS_KEY_ID is required}
+      SECRET_ACCESS_KEY: ${SECRET_ACCESS_KEY:?SECRET_ACCESS_KEY is required}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
@@ -61,8 +65,6 @@ services:
       STRIPE_PRICE_ID: ${STRIPE_PRICE_ID:?STRIPE_PRICE_ID is required}
       BILLING_SUCCESS_URL: ${BILLING_SUCCESS_URL:?BILLING_SUCCESS_URL is required}
       BILLING_CANCEL_URL: ${BILLING_CANCEL_URL:?BILLING_CANCEL_URL is required}
-    volumes:
-      - ${UPLOAD_HOST_PATH:?UPLOAD_HOST_PATH is required}:/data/uploads
     depends_on:
       mongo:
         condition: service_started

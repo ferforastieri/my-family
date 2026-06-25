@@ -1,12 +1,9 @@
 import 'dotenv/config';
 import { MongoClient, ObjectId, type Db } from 'mongodb';
-import { mkdir, readdir, rename } from 'node:fs/promises';
-import { join } from 'node:path';
 
 const apply = process.argv.includes('--apply');
 const mongoUri = process.env.MONGO_URI;
 const dbName = process.env.MONGO_DB || 'my-family';
-const uploadPath = process.env.UPLOAD_PATH;
 const allAccess = [
   'memorias',
   'playlist',
@@ -99,19 +96,17 @@ async function main() {
     }
     if (!tenant) throw new Error('Falha ao criar tenant inicial.');
     const tenantId = String(tenant._id);
-    await db
-      .collection('tenants')
-      .updateOne(
-        { _id: tenant._id },
-        {
-          $set: {
-            status: 'active',
-            isPublished: true,
-            ownerUserId: String(owner._id),
-            updatedAt: new Date(),
-          },
+    await db.collection('tenants').updateOne(
+      { _id: tenant._id },
+      {
+        $set: {
+          status: 'active',
+          isPublished: true,
+          ownerUserId: String(owner._id),
+          updatedAt: new Date(),
         },
-      );
+      },
+    );
 
     for (const user of users) {
       const isOwner = String(user._id) === String(owner._id);
@@ -138,7 +133,6 @@ async function main() {
     }
     await migrateStoredPaths(db, tenantId);
     await rebuildTenantIndexes(db);
-    if (uploadPath) await migrateUploadFolders(uploadPath, tenantId);
     await seedDemo(db, String(owner._id));
     report('resultado', `migração concluída para tenant ${tenantId}`);
   } finally {
@@ -241,22 +235,6 @@ async function replaceIndex(
   if (names.includes(oldName))
     await db.collection(collection).dropIndex(oldName);
   await db.collection(collection).createIndex(keys, options);
-}
-
-async function migrateUploadFolders(basePath: string, tenantId: string) {
-  for (const context of ['avatar', 'fotos', 'galeria']) {
-    const source = join(basePath, context);
-    const target = join(basePath, 'tenants', tenantId, context);
-    let entries: string[];
-    try {
-      entries = await readdir(source);
-    } catch {
-      continue;
-    }
-    await mkdir(target, { recursive: true });
-    for (const entry of entries)
-      await rename(join(source, entry), join(target, entry));
-  }
 }
 
 async function seedDemo(db: Db, ownerUserId: string) {
