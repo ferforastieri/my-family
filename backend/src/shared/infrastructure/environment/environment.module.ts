@@ -7,7 +7,16 @@ export class Environment {
   http: { port: number };
   database: { mongo: { uri: string; dbName?: string } };
   jwt: { secret: string; expiresIn: string };
-  uploadPath: string;
+  storage:
+    | { type: 'filesystem'; path: string }
+    | {
+        type: 's3';
+        bucket: string;
+        endpoint: string;
+        region: string;
+        accessKeyId: string;
+        secretAccessKey: string;
+      };
   cors: { origin: string };
   smtp?: { host: string; port: number; user: string; pass: string };
   emailFrom?: string;
@@ -50,11 +59,12 @@ export class Environment {
 
 class EnvironmentFactory {
   static create(config: ConfigService): Environment {
-    const uploadPath = required(config, 'UPLOAD_PATH');
-    const type = (config.get<string>('NODE_ENV') || 'development') as
-      | 'development'
-      | 'production'
-      | 'staging';
+    const storage = storageConfig(config);
+    const rawType = config.get<string>('NODE_ENV') || 'development';
+    if (!['development', 'production', 'staging'].includes(rawType)) {
+      throw new Error('NODE_ENV deve ser development, staging ou production');
+    }
+    const type = rawType as 'development' | 'production' | 'staging';
     const stripeSecretKey = config.get<string>('STRIPE_SECRET_KEY');
     const stripeWebhookSecret = config.get<string>('STRIPE_WEBHOOK_SECRET');
     const stripePriceId = config.get<string>('STRIPE_PRICE_ID');
@@ -65,7 +75,7 @@ class EnvironmentFactory {
     const firebaseJson = config.get<string>('FIREBASE_SERVICE_ACCOUNT_JSON');
     const redisUrl = config.get<string>('REDIS_URL');
 
-    return new Environment({
+    const environment = new Environment({
       type,
       http: { port: number(config, 'PORT', 3000) },
       database: {
@@ -80,7 +90,7 @@ class EnvironmentFactory {
         secret: config.get<string>('JWT_SECRET') || 'change-me',
         expiresIn: config.get<string>('JWT_EXPIRES_IN') || '7d',
       },
-      uploadPath,
+      storage,
       cors: { origin: config.get<string>('CORS_ORIGIN') || '*' },
       smtp:
         smtpHost && smtpUser && smtpPass
@@ -122,7 +132,75 @@ class EnvironmentFactory {
             }
           : undefined,
     });
+    validateProductionEnvironment(environment, config);
+    return environment;
   }
+}
+
+function validateProductionEnvironment(
+  environment: Environment,
+  config: ConfigService,
+): void {
+  if (!environment.isProduction()) return;
+  if (!config.get<string>('MONGO_URI')) {
+    throw new Error('MONGO_URI é obrigatório em produção');
+  }
+  if (
+    !config.get<string>('JWT_SECRET') ||
+    environment.jwt.secret === 'change-me' ||
+    environment.jwt.secret.length < 32
+  ) {
+    throw new Error('JWT_SECRET deve ter pelo menos 32 caracteres em produção');
+  }
+  if (!config.get<string>('CORS_ORIGIN') || environment.cors.origin === '*') {
+    throw new Error('CORS_ORIGIN explícito é obrigatório em produção');
+  }
+  if (environment.security.csrfSecret.length < 32) {
+    throw new Error(
+      'CSRF_SECRET deve ter pelo menos 32 caracteres em produção',
+    );
+  }
+  if (!environment.billing) {
+    throw new Error(
+      'STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET e STRIPE_PRICE_ID são obrigatórios em produção',
+    );
+  }
+  if (
+    environment.billing.successUrl.startsWith('http://localhost') ||
+    environment.billing.cancelUrl.startsWith('http://localhost')
+  ) {
+    throw new Error(
+      'BILLING_SUCCESS_URL e BILLING_CANCEL_URL públicos são obrigatórios em produção',
+    );
+  }
+}
+
+function storageConfig(config: ConfigService): Environment['storage'] {
+  const values = {
+    bucket: config.get<string>('BUCKET'),
+    endpoint: config.get<string>('ENDPOINT'),
+    region: config.get<string>('REGION'),
+    accessKeyId: config.get<string>('ACCESS_KEY_ID'),
+    secretAccessKey: config.get<string>('SECRET_ACCESS_KEY'),
+  };
+  const configured = Object.values(values).filter(Boolean).length;
+
+  if (configured > 0 && configured < Object.keys(values).length) {
+    throw new Error(
+      'BUCKET, ENDPOINT, REGION, ACCESS_KEY_ID e SECRET_ACCESS_KEY devem ser configuradas juntas',
+    );
+  }
+  if (configured === Object.keys(values).length) {
+    return {
+      type: 's3',
+      bucket: values.bucket!,
+      endpoint: values.endpoint!,
+      region: values.region!,
+      accessKeyId: values.accessKeyId!,
+      secretAccessKey: values.secretAccessKey!,
+    };
+  }
+  return { type: 'filesystem', path: required(config, 'UPLOAD_PATH') };
 }
 
 function required(config: ConfigService, name: string): string {

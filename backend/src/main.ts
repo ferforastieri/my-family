@@ -1,11 +1,12 @@
 import { EventEmitter } from 'node:events';
 import { NestFactory } from '@nestjs/core';
-import { RequestMethod, ValidationPipe } from '@nestjs/common';
+import { RequestMethod } from '@nestjs/common';
 import helmet from 'helmet';
 import * as cookieParser from 'cookie-parser';
 import { doubleCsrf } from 'csrf-csrf';
 import { AppModule } from './app.module';
 import { Environment } from '@shared/infrastructure/environment/environment.module';
+import { ConfiguredIoAdapter } from '@shared/infrastructure/websocket/configured-io.adapter';
 
 async function bootstrap() {
   EventEmitter.defaultMaxListeners = 50;
@@ -14,8 +15,11 @@ async function bootstrap() {
     rawBody: true,
   });
   const environment = app.get(Environment);
+  app.useWebSocketAdapter(new ConfiguredIoAdapter(app, environment));
 
-  app.getHttpAdapter().getInstance().disable('x-powered-by');
+  const httpServer = app.getHttpAdapter().getInstance();
+  httpServer.disable('x-powered-by');
+  httpServer.set('trust proxy', 1);
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
@@ -68,18 +72,10 @@ async function bootstrap() {
   app.enableCors({
     origin: parseCorsOrigin(environment.cors.origin),
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
+    credentials: environment.cors.origin !== '*',
   });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
-
-  await app.listen(environment.http.port);
+  await app.listen(environment.http.port, '0.0.0.0');
 }
 bootstrap();
 

@@ -8,11 +8,14 @@ import {
 import { Server, Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/services/ws-session.service';
 import { FotosService } from '../../application/services/fotos.service';
-import type { FotoWriteDto } from '../dto/foto.dto';
-import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
+import { FotoUpdateMessageDto, FotoWriteDto } from '../dto/foto.dto';
+import {
+  IdMessageDto,
+  PaginationMessageDto,
+} from '@shared/interfaces/websocket/websocket.dto';
 import { emitToTenant } from '@tenancy/application/tenant-context';
 
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway()
 export class FotosGateway {
   @WebSocketServer()
   server!: Server;
@@ -25,7 +28,7 @@ export class FotosGateway {
   @SubscribeMessage('fotos.list')
   async list(
     @ConnectedSocket() client: Socket,
-    @MessageBody() query?: PaginationQuery,
+    @MessageBody() query?: PaginationMessageDto,
   ) {
     await this.session.requireAccess(client, 'memorias');
     return this.fotos.findAll(query);
@@ -51,7 +54,7 @@ export class FotosGateway {
   @SubscribeMessage('fotos.update')
   async update(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string; data: Partial<FotoWriteDto> },
+    @MessageBody() body: FotoUpdateMessageDto,
   ) {
     await this.session.requireAccess(client, 'memorias');
     const row = await this.fotos.update(body.id, body.data);
@@ -62,7 +65,7 @@ export class FotosGateway {
   @SubscribeMessage('fotos.delete')
   async delete(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string },
+    @MessageBody() body: IdMessageDto,
   ) {
     await this.session.requireAccess(client, 'memorias');
     const ok = await this.fotos.delete(body.id);

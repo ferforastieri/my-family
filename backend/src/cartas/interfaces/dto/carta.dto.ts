@@ -1,4 +1,10 @@
-import { IsDateString, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsDateString,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 
 export class CartaWriteDto {
   @IsString()
@@ -10,6 +16,34 @@ export class CartaWriteDto {
   @IsOptional()
   @IsDateString()
   data?: string;
+}
+
+export class CartaUpdateDto {
+  @IsOptional()
+  @IsString()
+  titulo?: string;
+
+  @IsOptional()
+  @IsString()
+  conteudo?: string;
+
+  @IsOptional()
+  @IsDateString()
+  data?: string;
+}
+
+export class CartaUpdateMessageDto {
+  @IsString()
+  id: string;
+
+  @ValidateNested()
+  @Type(() => CartaUpdateDto)
+  data: CartaUpdateDto;
+}
+
+export class CartaDeleteMessageDto {
+  @IsString()
+  id: string;
 }
 
 export class CartaResponseDto {

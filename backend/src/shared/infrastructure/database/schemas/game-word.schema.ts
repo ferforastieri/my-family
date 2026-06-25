@@ -3,7 +3,7 @@ import { HydratedDocument } from 'mongoose';
 
 @Schema({ timestamps: true, collection: 'game_words' })
 export class GameWordDocument {
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true })
   word: string;
 
   @Prop({ default: true })
@@ -15,3 +15,4 @@ export class GameWordDocument {
 
 export type GameWordMongoDocument = HydratedDocument<GameWordDocument>;
 export const GameWordSchema = SchemaFactory.createForClass(GameWordDocument);
+GameWordSchema.index({ tenantId: 1, word: 1 }, { unique: true });

@@ -1,6 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { readFileSync } from 'node:fs';
-import * as admin from 'firebase-admin';
+import {
+  cert,
+  getApps,
+  initializeApp,
+  type ServiceAccount,
+} from 'firebase-admin/app';
+import { getMessaging } from 'firebase-admin/messaging';
 import { NotificationsRepository } from '../../infrastructure/repositories/notifications.repository';
 import { NotificationsRealtimeGateway } from '../../interfaces/gateways/notifications-realtime.gateway';
 import { Environment } from '@shared/infrastructure/environment/environment.module';
@@ -45,23 +51,23 @@ export class NotificationsService {
     private tenants: TenantRepository,
   ) {
     const serviceAccount = this.loadFirebaseServiceAccount();
-    if (serviceAccount && admin.apps.length === 0) {
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
+    if (serviceAccount && getApps().length === 0) {
+      initializeApp({
+        credential: cert(serviceAccount),
       });
       this.fcmEnabled = true;
-    } else if (admin.apps.length > 0) {
+    } else if (getApps().length > 0) {
       this.fcmEnabled = true;
     }
   }
 
-  private loadFirebaseServiceAccount(): admin.ServiceAccount | null {
+  private loadFirebaseServiceAccount(): ServiceAccount | null {
     const rawJson = this.env.firebase?.serviceAccountJson;
-    if (rawJson) return JSON.parse(rawJson) as admin.ServiceAccount;
+    if (rawJson) return JSON.parse(rawJson) as ServiceAccount;
 
     const path = this.env.firebase?.serviceAccountPath;
     if (!path) return null;
-    return JSON.parse(readFileSync(path, 'utf8')) as admin.ServiceAccount;
+    return JSON.parse(readFileSync(path, 'utf8')) as ServiceAccount;
   }
 
   async list(
@@ -138,8 +144,8 @@ export class NotificationsService {
     });
   }
 
-  async pushUnsubscribe(token: string) {
-    await this.repository.removeSubscriptionByFcmToken(token);
+  async pushUnsubscribe(token: string, user: UserEntity) {
+    await this.repository.removeSubscriptionByFcmToken(token, user.id);
   }
 
   async send(
@@ -180,14 +186,14 @@ export class NotificationsService {
     );
     const memberIds = memberships.map((membership) => membership.userId);
     const excluded = new Set(options.excludeUserIds ?? []);
-    const subs = (await this.repository.listSubscriptionsForUsers(memberIds)).filter(
-      (sub) => !sub.userId || !excluded.has(sub.userId),
-    );
+    const subs = (
+      await this.repository.listSubscriptionsForUsers(memberIds)
+    ).filter((sub) => !sub.userId || !excluded.has(sub.userId));
     let sent = 0;
     for (const sub of subs) {
       if (!sub.fcmToken) continue;
       try {
-        await admin.messaging().send({
+        await getMessaging().send({
           token: sub.fcmToken,
           notification: {
             title: title ?? 'Nossa Família',
@@ -236,8 +242,18 @@ export class NotificationsService {
   }
 
   async sendChatMessage(push: ChatPush): Promise<{ sent: number }> {
+    const memberships = await this.tenants.listMembershipsForTenant(
+      this.tenantContext.tenantId,
+    );
+    const memberIds = new Set(
+      memberships.map((membership) => membership.userId),
+    );
     const recipientIds = Array.from(
-      new Set(push.recipientUserIds.filter((id) => id !== push.senderId)),
+      new Set(
+        push.recipientUserIds.filter(
+          (id) => id !== push.senderId && memberIds.has(id),
+        ),
+      ),
     );
     if (!this.fcmEnabled || recipientIds.length === 0) return { sent: 0 };
 
@@ -253,7 +269,7 @@ export class NotificationsService {
     for (const subscription of subscriptions) {
       if (!subscription.fcmToken) continue;
       try {
-        await admin.messaging().send({
+        await getMessaging().send({
           token: subscription.fcmToken,
           data: {
             type: 'chat',

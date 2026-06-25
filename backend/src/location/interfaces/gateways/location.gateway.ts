@@ -8,11 +8,18 @@ import {
 import { Server, Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/services/ws-session.service';
 import { LocationService } from '../../application/services/location.service';
-import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
-import { LocationPlaceWriteDto, LocationUpdateDto } from '../dto/location.dto';
+import {
+  LocationPlaceUpdateMessageDto,
+  LocationPlaceWriteDto,
+  LocationUpdateDto,
+} from '../dto/location.dto';
 import { emitToTenant } from '@tenancy/application/tenant-context';
+import {
+  IdMessageDto,
+  PaginationMessageDto,
+} from '@shared/interfaces/websocket/websocket.dto';
 
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway()
 export class LocationGateway {
   @WebSocketServer()
   private server?: Server;
@@ -40,7 +47,7 @@ export class LocationGateway {
   @SubscribeMessage('location.latest')
   async latest(
     @ConnectedSocket() client: Socket,
-    @MessageBody() query?: PaginationQuery,
+    @MessageBody() query?: PaginationMessageDto,
   ) {
     await this.session.requireAccess(client, 'localizacao');
     return this.locations.latest(query);
@@ -66,7 +73,7 @@ export class LocationGateway {
   @SubscribeMessage('location.places.update')
   async updatePlace(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string; data: LocationPlaceWriteDto },
+    @MessageBody() body: LocationPlaceUpdateMessageDto,
   ) {
     await this.session.requireAccess(client, 'localizacao');
     const row = await this.locations.updatePlace(body.id, body.data);
@@ -77,11 +84,12 @@ export class LocationGateway {
   @SubscribeMessage('location.places.delete')
   async deletePlace(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string },
+    @MessageBody() body: IdMessageDto,
   ) {
     await this.session.requireAccess(client, 'localizacao');
     const ok = await this.locations.deletePlace(body.id);
-    if (ok) emitToTenant(this.server, 'location.places.changed', { id: body.id });
+    if (ok)
+      emitToTenant(this.server, 'location.places.changed', { id: body.id });
     return { ok, message: 'Local removido.' };
   }
 }

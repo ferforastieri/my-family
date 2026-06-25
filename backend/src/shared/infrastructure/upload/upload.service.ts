@@ -1,10 +1,23 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { Environment } from '@shared/infrastructure/environment/environment.module';
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { randomUUID } from 'crypto';
+import {
+  BadRequestException,
+  Injectable,
+  PayloadTooLargeException,
+} from '@nestjs/common';
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  ListObjectsV2Command,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
+import { randomUUID } from 'node:crypto';
+import { createReadStream } from 'node:fs';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import type { Readable } from 'node:stream';
 import sharp = require('sharp');
 import { TenantContext } from '@tenancy/application/tenant-context';
+import { Environment } from '@shared/infrastructure/environment/environment.module';
 
 export enum UploadContext {
   Avatar = 'avatar',
@@ -21,78 +34,124 @@ export interface UploadResult {
   filename: string;
 }
 
+export interface StoredFile {
+  stream: Readable;
+  contentType: string;
+  contentLength?: number;
+}
+
+export const MAX_UPLOAD_BYTES = 40 * 1024 * 1024;
+
 @Injectable()
 export class UploadService {
-  private get basePath(): string {
-    const p = this.env.uploadPath;
-    return path.isAbsolute(p) ? p : path.resolve(p);
-  }
+  private readonly s3?: S3Client;
 
   constructor(
     private env: Environment,
     private tenantContext: TenantContext,
-  ) {}
+  ) {
+    if (env.storage.type === 's3') {
+      this.s3 = new S3Client({
+        endpoint: env.storage.endpoint,
+        region: env.storage.region,
+        credentials: {
+          accessKeyId: env.storage.accessKeyId,
+          secretAccessKey: env.storage.secretAccessKey,
+        },
+      });
+    }
+  }
 
   async saveFile(
     file: Express.Multer.File,
     context: UploadContext,
   ): Promise<UploadResult> {
-    if (!file) {
-      throw new BadRequestException('Arquivo não enviado');
-    }
+    if (!file) throw new BadRequestException('Arquivo não enviado');
 
     const inputExt = path.extname(file.originalname || '') || '.bin';
     const shouldOptimizeImage =
       (context === UploadContext.Fotos || context === UploadContext.Avatar) &&
       isCompressibleImage(file, inputExt);
-    const ext = shouldOptimizeImage ? '.webp' : inputExt;
+    const ext = shouldOptimizeImage ? '.webp' : inputExt.toLowerCase();
     const filename = `${randomUUID()}${ext}`;
-    const tenantId = this.tenantContext.tenantId;
-    const dir = path.join(this.basePath, 'tenants', tenantId, context);
-
-    await fs.mkdir(dir, { recursive: true });
-    const filePath = path.join(dir, filename);
-
-    const data = file.buffer ?? (await fs.readFile((file as any).path));
-    if (shouldOptimizeImage) {
-      await sharp(data, { animated: false })
-        .rotate()
-        .resize({
-          width: 1600,
-          height: 1600,
-          fit: 'inside',
-          withoutEnlargement: true,
-        })
-        .webp({ quality: 82, effort: 5 })
-        .toFile(filePath);
-    } else {
-      await fs.writeFile(filePath, data);
+    const relativePath = `tenants/${this.tenantContext.tenantId}/${context}/${filename}`;
+    const input = file.buffer ?? (await fs.readFile((file as any).path));
+    if (input.length > MAX_UPLOAD_BYTES) {
+      throw new PayloadTooLargeException('O arquivo deve ter no máximo 40 MB.');
     }
+    const data = shouldOptimizeImage
+      ? await sharp(input, { animated: false })
+          .rotate()
+          .resize({
+            width: 1600,
+            height: 1600,
+            fit: 'inside',
+            withoutEnlargement: true,
+          })
+          .webp({ quality: 82, effort: 5 })
+          .toBuffer()
+      : input;
 
-    const relativePath = `tenants/${tenantId}/${context}/${filename}`;
+    await this.write(
+      relativePath,
+      data,
+      shouldOptimizeImage
+        ? 'image/webp'
+        : file.mimetype || mediaType(relativePath),
+    );
     return { relativePath, filename };
   }
 
-  async processMedia(relativePath: string) {
-    const fullPath = this.resolvePath(relativePath);
+  async openFile(relativePath: string): Promise<StoredFile> {
+    return this.openTenantFile(this.tenantContext.tenantId, relativePath);
+  }
+
+  async openTenantFile(
+    tenantId: string,
+    relativePath: string,
+  ): Promise<StoredFile> {
+    const key = this.normalizeTenantPath(tenantId, relativePath);
+    if (this.env.storage.type === 's3') {
+      const response = await this.s3!.send(
+        new GetObjectCommand({ Bucket: this.env.storage.bucket, Key: key }),
+      );
+      if (!response.Body) throw new Error(`Arquivo sem conteúdo: ${key}`);
+      return {
+        stream: response.Body as Readable,
+        contentType: response.ContentType || mediaType(key),
+        contentLength: response.ContentLength,
+      };
+    }
+
+    const fullPath = this.filesystemPath(key);
     const stat = await fs.stat(fullPath);
-    const metadataPath = `${fullPath}.meta.json`;
-    const result: Record<string, unknown> = {
+    return {
+      stream: createReadStream(fullPath),
+      contentType: mediaType(key),
+      contentLength: stat.size,
+    };
+  }
+
+  async processMedia(relativePath: string) {
+    const key = this.normalizeTenantPath(
+      this.tenantContext.tenantId,
       relativePath,
-      size: stat.size,
+    );
+    const data = await this.read(key);
+    const result: Record<string, unknown> = {
+      relativePath: key,
+      size: data.length,
       processedAt: new Date().toISOString(),
     };
 
-    if (isImagePath(relativePath)) {
-      const image = sharp(fullPath);
+    if (isImagePath(key)) {
+      const image = sharp(data);
       const metadata = await image.metadata();
       result.width = metadata.width ?? null;
       result.height = metadata.height ?? null;
       result.format = metadata.format ?? null;
 
-      const thumbnailPath = this.thumbnailPath(relativePath);
-      await fs.mkdir(path.dirname(thumbnailPath), { recursive: true });
-      await image
+      const thumbnail = await image
         .resize({
           width: 480,
           height: 480,
@@ -100,38 +159,30 @@ export class UploadService {
           withoutEnlargement: true,
         })
         .webp({ quality: 82 })
-        .toFile(thumbnailPath);
-      result.thumbnail = this.relativeFromBase(thumbnailPath);
+        .toBuffer();
+      const thumbnailPath = this.thumbnailPath(key);
+      await this.write(thumbnailPath, thumbnail, 'image/webp');
+      result.thumbnail = thumbnailPath;
     }
 
-    await fs.writeFile(metadataPath, JSON.stringify(result, null, 2));
+    await this.write(
+      `${key}.meta.json`,
+      Buffer.from(JSON.stringify(result, null, 2)),
+      'application/json',
+    );
     return result;
   }
 
-  resolvePath(relativePath: string): string {
-    return this.resolveTenantPath(this.tenantContext.tenantId, relativePath);
-  }
-
-  resolveTenantPath(tenantId: string, relativePath: string): string {
-    const normalized = relativePath.replace(/\\/g, '/').replace(/^\/+/, '');
-    const prefix = `tenants/${tenantId}/`;
-    if (!normalized.startsWith(prefix) || normalized.includes('../')) {
-      throw new BadRequestException('Caminho de mídia inválido.');
-    }
-    return path.join(this.basePath, normalized);
-  }
-
   async removeFile(relativePath: string): Promise<void> {
-    const fullPath = this.resolvePath(relativePath);
-    try {
-      await fs.unlink(fullPath);
-    } catch {}
-    try {
-      await fs.unlink(`${fullPath}.meta.json`);
-    } catch {}
-    try {
-      await fs.unlink(this.thumbnailPath(relativePath));
-    } catch {}
+    const key = this.normalizeTenantPath(
+      this.tenantContext.tenantId,
+      relativePath,
+    );
+    await Promise.all([
+      this.remove(key),
+      this.remove(`${key}.meta.json`),
+      this.remove(this.thumbnailPath(key)),
+    ]);
   }
 
   async removeOrphanFiles(
@@ -140,69 +191,156 @@ export class UploadService {
     olderThanMs: number,
   ) {
     const tenantId = this.tenantContext.tenantId;
-    const dir = path.join(this.basePath, 'tenants', tenantId, context);
+    const prefix = `tenants/${tenantId}/${context}/`;
     const removed: string[] = [];
     const cutoff = Date.now() - olderThanMs;
-    for (const relativePath of await this.listRelativeFiles(dir)) {
-      if (
-        relativePath.endsWith('.meta.json') ||
-        relativePath.startsWith('thumbs/')
-      )
-        continue;
-      if (referencedPaths.has(relativePath)) continue;
-      const fullPath = this.resolvePath(relativePath);
-      const stat = await fs.stat(fullPath);
-      if (stat.mtimeMs > cutoff) continue;
-      await this.removeFile(relativePath);
-      removed.push(relativePath);
+
+    for (const stored of await this.list(prefix)) {
+      if (stored.key.endsWith('.meta.json')) continue;
+      if (referencedPaths.has(stored.key)) continue;
+      if (stored.modifiedAt > cutoff) continue;
+      await this.removeFile(stored.key);
+      removed.push(stored.key);
     }
     return removed;
   }
 
-  private thumbnailPath(relativePath: string) {
-    const parsed = path.parse(relativePath);
-    return path.join(
-      this.basePath,
-      'thumbs',
-      parsed.dir,
-      `${parsed.name}.webp`,
+  private normalizeTenantPath(tenantId: string, relativePath: string): string {
+    const normalized = relativePath.replace(/\\/g, '/').replace(/^\/+/, '');
+    const prefix = `tenants/${tenantId}/`;
+    if (!normalized.startsWith(prefix) || normalized.includes('../')) {
+      throw new BadRequestException('Caminho de mídia inválido.');
+    }
+    return normalized;
+  }
+
+  private async read(key: string): Promise<Buffer> {
+    if (this.env.storage.type === 'filesystem') {
+      return fs.readFile(this.filesystemPath(key));
+    }
+    const response = await this.s3!.send(
+      new GetObjectCommand({ Bucket: this.env.storage.bucket, Key: key }),
     );
+    if (!response.Body) throw new Error(`Arquivo sem conteúdo: ${key}`);
+    return Buffer.from(await response.Body.transformToByteArray());
   }
 
-  private relativeFromBase(fullPath: string) {
-    return path.relative(this.basePath, fullPath).replace(/\\/g, '/');
+  private async write(key: string, data: Buffer, contentType: string) {
+    if (this.env.storage.type === 's3') {
+      await this.s3!.send(
+        new PutObjectCommand({
+          Bucket: this.env.storage.bucket,
+          Key: key,
+          Body: data,
+          ContentType: contentType,
+        }),
+      );
+      return;
+    }
+    const fullPath = this.filesystemPath(key);
+    await fs.mkdir(path.dirname(fullPath), { recursive: true });
+    await fs.writeFile(fullPath, data);
   }
 
-  private async listRelativeFiles(
+  private async remove(key: string) {
+    if (this.env.storage.type === 's3') {
+      await this.s3!.send(
+        new DeleteObjectCommand({ Bucket: this.env.storage.bucket, Key: key }),
+      );
+      return;
+    }
+    try {
+      await fs.unlink(this.filesystemPath(key));
+    } catch {}
+  }
+
+  private async list(prefix: string) {
+    if (this.env.storage.type === 'filesystem') {
+      return this.listFilesystemFiles(this.filesystemPath(prefix));
+    }
+
+    const files: Array<{ key: string; modifiedAt: number }> = [];
+    let continuationToken: string | undefined;
+    do {
+      const page = await this.s3!.send(
+        new ListObjectsV2Command({
+          Bucket: this.env.storage.bucket,
+          Prefix: prefix,
+          ContinuationToken: continuationToken,
+        }),
+      );
+      for (const item of page.Contents ?? []) {
+        if (!item.Key) continue;
+        files.push({
+          key: item.Key,
+          modifiedAt: item.LastModified?.getTime() ?? 0,
+        });
+      }
+      continuationToken = page.IsTruncated
+        ? page.NextContinuationToken
+        : undefined;
+    } while (continuationToken);
+    return files;
+  }
+
+  private async listFilesystemFiles(
     dir: string,
-  ): Promise<string[]> {
+  ): Promise<Array<{ key: string; modifiedAt: number }>> {
     let entries: Array<{ name: string; isDirectory(): boolean }>;
     try {
       entries = (await fs.readdir(dir, {
         withFileTypes: true,
-      })) as unknown as Array<{
-        name: string;
-        isDirectory(): boolean;
-      }>;
+      })) as unknown as Array<{ name: string; isDirectory(): boolean }>;
     } catch {
       return [];
     }
-    const files: string[] = [];
+
+    const files: Array<{ key: string; modifiedAt: number }> = [];
     for (const entry of entries) {
-      const entryName = String(entry.name);
-      const entryPath = path.join(dir, entryName);
+      const entryPath = path.join(dir, String(entry.name));
       if (entry.isDirectory()) {
-        files.push(...(await this.listRelativeFiles(entryPath)));
+        files.push(...(await this.listFilesystemFiles(entryPath)));
       } else {
-        files.push(
-          path
-            .relative(this.basePath, entryPath)
+        const stat = await fs.stat(entryPath);
+        files.push({
+          key: path
+            .relative(this.filesystemBasePath, entryPath)
             .replace(/\\/g, '/'),
-        );
+          modifiedAt: stat.mtimeMs,
+        });
       }
     }
     return files;
   }
+
+  private thumbnailPath(relativePath: string) {
+    const parsed = path.posix.parse(relativePath);
+    return path.posix.join('thumbs', parsed.dir, `${parsed.name}.webp`);
+  }
+
+  private filesystemPath(key: string) {
+    return path.join(this.filesystemBasePath, key);
+  }
+
+  private get filesystemBasePath() {
+    if (this.env.storage.type !== 'filesystem') {
+      throw new Error('Armazenamento local não configurado.');
+    }
+    return path.isAbsolute(this.env.storage.path)
+      ? this.env.storage.path
+      : path.resolve(this.env.storage.path);
+  }
+}
+
+export function mediaType(relativePath: string) {
+  const extension = path.extname(relativePath).toLowerCase();
+  if (extension === '.png') return 'image/png';
+  if (extension === '.gif') return 'image/gif';
+  if (extension === '.webp') return 'image/webp';
+  if (extension === '.mp4') return 'video/mp4';
+  if (extension === '.webm') return 'video/webm';
+  if (extension === '.json') return 'application/json';
+  return 'image/jpeg';
 }
 
 function isImagePath(relativePath: string) {
@@ -215,8 +353,6 @@ function isCompressibleImage(file: Express.Multer.File, ext: string) {
   if (mimetype === 'image/gif' || normalizedExt === '.gif') return false;
   return (
     mimetype.startsWith('image/') ||
-    ['.png', '.jpg', '.jpeg', '.webp', '.heic', '.heif'].includes(
-      normalizedExt,
-    )
+    ['.png', '.jpg', '.jpeg', '.webp', '.heic', '.heif'].includes(normalizedExt)
   );
 }

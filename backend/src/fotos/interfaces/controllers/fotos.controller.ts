@@ -14,12 +14,16 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { StreamableFile } from '@nestjs/common';
-import { createReadStream } from 'fs';
 import { FotosService } from '../../application/services/fotos.service';
 import { Access } from '@auth/decorators/access.decorator';
 import { AccessGuard } from '@auth/guards/access.guard';
-import { UploadService, UploadContext } from '@shared/infrastructure/upload';
-import type { FotoWriteDto } from '../dto/foto.dto';
+import {
+  mediaType,
+  MAX_UPLOAD_BYTES,
+  UploadService,
+  UploadContext,
+} from '@shared/infrastructure/upload';
+import { FotoUpdateDto, FotoWriteDto } from '../dto/foto.dto';
 
 @Controller('fotos')
 @UseGuards(AccessGuard)
@@ -36,32 +40,25 @@ export class FotosController {
   }
 
   @Get('file')
-  getFile(@Query('path') relativePath: string) {
+  async getFile(@Query('path') relativePath: string) {
     if (!relativePath || !relativePath.includes('/fotos/')) {
       throw new BadRequestException('Caminho inválido');
     }
-    const fullPath = this.upload.resolvePath(relativePath);
-    const file = createReadStream(fullPath);
-    const ext = relativePath.split('.').pop()?.toLowerCase();
-    const type =
-      ext === 'png'
-        ? 'image/png'
-        : ext === 'gif'
-          ? 'image/gif'
-          : ext === 'webp'
-            ? 'image/webp'
-            : ext === 'mp4'
-              ? 'video/mp4'
-              : ext === 'webm'
-                ? 'video/webm'
-                : 'image/jpeg';
-    return new StreamableFile(file, { type });
+    const file = await this.upload.openFile(relativePath);
+    return new StreamableFile(file.stream, {
+      type: file.contentType || mediaType(relativePath),
+      length: file.contentLength,
+    });
   }
 
   @Post('upload')
   @UseGuards(AccessGuard)
   @Access('memorias')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: MAX_UPLOAD_BYTES, files: 1, fields: 5 },
+    }),
+  )
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('Nenhum arquivo enviado');
     const { relativePath } = await this.upload.saveFile(
@@ -88,7 +85,7 @@ export class FotosController {
   @Put(':id')
   @UseGuards(AccessGuard)
   @Access('memorias')
-  async update(@Param('id') id: string, @Body() data: Partial<FotoWriteDto>) {
+  async update(@Param('id') id: string, @Body() data: FotoUpdateDto) {
     const row = await this.fotosService.update(id, data);
     return row ? { message: 'Memória atualizada.', ...row } : row;
   }

@@ -6,6 +6,9 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+import { PartialType } from '@nestjs/mapped-types';
+import { Type } from 'class-transformer';
+import { ValidateNested } from 'class-validator';
 
 export const miniGameTypes = [
   'memory_match',
@@ -75,6 +78,37 @@ export class MiniGameConfigWriteDto {
   @IsOptional()
   @IsBoolean()
   active?: boolean;
+}
+
+export class QuizQuestionUpdateDto extends PartialType(QuizQuestionWriteDto) {}
+export class GameWordUpdateDto extends PartialType(GameWordWriteDto) {}
+export class MiniGameConfigUpdateDto extends PartialType(
+  MiniGameConfigWriteDto,
+) {}
+
+abstract class UpdateMessageDto<T> {
+  @IsString()
+  id: string;
+
+  data: T;
+}
+
+export class QuizQuestionUpdateMessageDto extends UpdateMessageDto<QuizQuestionUpdateDto> {
+  @ValidateNested()
+  @Type(() => QuizQuestionUpdateDto)
+  declare data: QuizQuestionUpdateDto;
+}
+
+export class GameWordUpdateMessageDto extends UpdateMessageDto<GameWordUpdateDto> {
+  @ValidateNested()
+  @Type(() => GameWordUpdateDto)
+  declare data: GameWordUpdateDto;
+}
+
+export class MiniGameConfigUpdateMessageDto extends UpdateMessageDto<MiniGameConfigUpdateDto> {
+  @ValidateNested()
+  @Type(() => MiniGameConfigUpdateDto)
+  declare data: MiniGameConfigUpdateDto;
 }
 
 export class QuizQuestionResponseDto {

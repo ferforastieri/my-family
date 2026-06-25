@@ -8,11 +8,14 @@ import {
 import { Server, Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/services/ws-session.service';
 import { MusicasService } from '../../application/services/musicas.service';
-import type { MusicaWriteDto } from '../dto/musica.dto';
-import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
+import { MusicaUpdateMessageDto, MusicaWriteDto } from '../dto/musica.dto';
+import {
+  IdMessageDto,
+  PaginationMessageDto,
+} from '@shared/interfaces/websocket/websocket.dto';
 import { emitToTenant } from '@tenancy/application/tenant-context';
 
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway()
 export class MusicasGateway {
   @WebSocketServer()
   server!: Server;
@@ -25,7 +28,7 @@ export class MusicasGateway {
   @SubscribeMessage('musicas.list')
   async list(
     @ConnectedSocket() client: Socket,
-    @MessageBody() query?: PaginationQuery,
+    @MessageBody() query?: PaginationMessageDto,
   ) {
     await this.session.requireAccess(client, 'playlist');
     return this.musicas.findAll(query);
@@ -45,7 +48,7 @@ export class MusicasGateway {
   @SubscribeMessage('musicas.update')
   async update(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string; data: Partial<MusicaWriteDto> },
+    @MessageBody() body: MusicaUpdateMessageDto,
   ) {
     await this.session.requireAccess(client, 'playlist');
     const row = await this.musicas.update(body.id, body.data);
@@ -56,7 +59,7 @@ export class MusicasGateway {
   @SubscribeMessage('musicas.delete')
   async delete(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string },
+    @MessageBody() body: IdMessageDto,
   ) {
     await this.session.requireAccess(client, 'playlist');
     const ok = await this.musicas.delete(body.id);

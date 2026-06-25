@@ -7,7 +7,10 @@ import {
   TenantDocument,
   TenantMongoDocument,
 } from '@shared/infrastructure/database/schemas';
-import { cleanUndefined, toId } from '@shared/infrastructure/database/mongo.utils';
+import {
+  cleanUndefined,
+  toId,
+} from '@shared/infrastructure/database/mongo.utils';
 import { normalizeAccessKeys } from '@auth/domain/entities/user.entity';
 import type {
   MembershipEntity,
@@ -16,7 +19,7 @@ import type {
   TenantLocale,
   TenantStatus,
 } from '../domain/tenant.entity';
-import type { UserAccessKey } from '@auth/domain/entities/user.entity';
+import type { UserAccessKey } from '@shared/domain/access';
 
 @Injectable()
 export class TenantRepository {

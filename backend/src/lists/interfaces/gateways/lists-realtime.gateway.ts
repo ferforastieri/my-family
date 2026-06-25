@@ -2,7 +2,7 @@ import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server } from 'socket.io';
 import { emitToTenant } from '@tenancy/application/tenant-context';
 
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway()
 export class ListsRealtimeGateway {
   @WebSocketServer()
   private server?: Server;

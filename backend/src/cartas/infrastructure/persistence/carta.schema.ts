@@ -1,8 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { applyTenantScope } from '@tenancy/infrastructure/tenant-scope.plugin';
 
 @Schema({ timestamps: true, collection: 'cartas' })
 export class CartaDocument {
+  tenantId: string;
+
   @Prop({ required: true, enum: ['letter', 'journey'], index: true })
   tipo: 'letter' | 'journey';
 
@@ -21,3 +24,4 @@ export class CartaDocument {
 
 export type CartaMongoDocument = HydratedDocument<CartaDocument>;
 export const CartaSchema = SchemaFactory.createForClass(CartaDocument);
+applyTenantScope(CartaSchema);

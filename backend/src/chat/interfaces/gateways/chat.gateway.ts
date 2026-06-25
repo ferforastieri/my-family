@@ -8,18 +8,19 @@ import {
 import { Server, Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/services/ws-session.service';
 import { ChatService } from '../../application/services/chat.service';
-import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
-import type {
+import {
   ChatConversationCreateDto,
   ChatMessageActionDto,
   ChatMessageEditDto,
   ChatMessageSendDto,
   ChatMessagesReadDto,
+  ChatMessagesQueryDto,
   ChatTypingDto,
 } from '../dto/chat.dto';
 import { emitToTenant, tenantRoom } from '@tenancy/application/tenant-context';
+import { PaginationMessageDto } from '@shared/interfaces/websocket/websocket.dto';
 
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway()
 export class ChatGateway {
   @WebSocketServer()
   private server?: Server;
@@ -38,7 +39,7 @@ export class ChatGateway {
   @SubscribeMessage('chat.conversations')
   async conversations(
     @ConnectedSocket() client: Socket,
-    @MessageBody() query?: PaginationQuery,
+    @MessageBody() query?: PaginationMessageDto,
   ) {
     const user = await this.session.requireAccess(client, 'chat');
     return this.chat.listConversations(user, query);
@@ -58,7 +59,7 @@ export class ChatGateway {
   @SubscribeMessage('chat.messages')
   async messages(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { conversationId: string } & PaginationQuery,
+    @MessageBody() body: ChatMessagesQueryDto,
   ) {
     const user = await this.session.requireAccess(client, 'chat');
     return this.chat.listMessages(body.conversationId, user, body);

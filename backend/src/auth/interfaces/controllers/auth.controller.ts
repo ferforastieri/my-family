@@ -13,11 +13,22 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthService } from '../../application/services/auth.service';
-import { LoginDto, RefreshTokenDto, RegisterDto } from '../dto/auth.dto';
+import {
+  ForgotPasswordDto,
+  LoginDto,
+  RefreshTokenDto,
+  RegisterDto,
+  ResetPasswordDto,
+  UpdateProfileDto,
+} from '../dto/auth.dto';
 import { Public } from '../../decorators/public.decorator';
-import { UploadService, UploadContext } from '@shared/infrastructure/upload';
+import {
+  mediaType,
+  MAX_UPLOAD_BYTES,
+  UploadService,
+  UploadContext,
+} from '@shared/infrastructure/upload';
 import { StreamableFile } from '@nestjs/common';
-import { createReadStream } from 'fs';
 import { TenantService } from '@tenancy/application/tenant.service';
 
 @Controller('auth')
@@ -89,7 +100,7 @@ export class AuthController {
   @Patch('me')
   async updateMe(
     @Req() req: { user: { id: string; tenantId: string } },
-    @Body() dto: { name?: string },
+    @Body() dto: UpdateProfileDto,
   ) {
     const user = await this.auth.updateProfile(req.user.id, {
       name: dto.name,
@@ -104,7 +115,11 @@ export class AuthController {
   }
 
   @Post('avatar')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: MAX_UPLOAD_BYTES, files: 1, fields: 5 },
+    }),
+  )
   async uploadAvatar(
     @Req() req: { user: { id: string; tenantId: string } },
     @UploadedFile() file: Express.Multer.File,
@@ -126,9 +141,8 @@ export class AuthController {
 
   @Post('forgot-password')
   @Public()
-  async forgotPassword(@Body('email') email: string) {
-    if (!email) throw new BadRequestException('Email é obrigatório');
-    await this.auth.requestPasswordReset(email);
+  async forgotPassword(@Body() body: ForgotPasswordDto) {
+    await this.auth.requestPasswordReset(body.email);
     return {
       message:
         'Se o email existir, você receberá um token de recuperação por email.',
@@ -137,7 +151,7 @@ export class AuthController {
 
   @Post('reset-password')
   @Public()
-  async resetPassword(@Body() body: { token: string; newPassword: string }) {
+  async resetPassword(@Body() body: ResetPasswordDto) {
     const { token, newPassword } = body;
     if (!token || !newPassword)
       throw new BadRequestException('Token e nova senha são obrigatórios');
@@ -147,22 +161,15 @@ export class AuthController {
 
   @Get('avatar')
   @Public()
-  getAvatar(@Query('path') relativePath: string) {
+  async getAvatar(@Query('path') relativePath: string) {
     const match = relativePath?.match(/^tenants\/([^/]+)\/avatar\//);
     if (!match) {
       throw new BadRequestException('Caminho inválido');
     }
-    const fullPath = this.upload.resolveTenantPath(match[1], relativePath);
-    const file = createReadStream(fullPath);
-    const ext = relativePath.split('.').pop()?.toLowerCase();
-    const type =
-      ext === 'png'
-        ? 'image/png'
-        : ext === 'gif'
-          ? 'image/gif'
-          : ext === 'webp'
-            ? 'image/webp'
-            : 'image/jpeg';
-    return new StreamableFile(file, { type });
+    const file = await this.upload.openTenantFile(match[1], relativePath);
+    return new StreamableFile(file.stream, {
+      type: file.contentType || mediaType(relativePath),
+      length: file.contentLength,
+    });
   }
 }

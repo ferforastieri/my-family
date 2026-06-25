@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+import { PaginationMessageDto } from '@shared/interfaces/websocket/websocket.dto';
 
 export class ChatConversationCreateDto {
   @IsOptional()
@@ -55,6 +56,11 @@ export class ChatMessageActionDto {
 }
 
 export class ChatMessagesReadDto {
+  @IsString()
+  conversationId: string;
+}
+
+export class ChatMessagesQueryDto extends PaginationMessageDto {
   @IsString()
   conversationId: string;
 }

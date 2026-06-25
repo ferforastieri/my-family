@@ -8,11 +8,15 @@ import {
 import { Server, Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/services/ws-session.service';
 import { CartasService } from '../../application/services/cartas.service';
-import type { CartaWriteDto } from '../dto/carta.dto';
-import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
+import {
+  CartaDeleteMessageDto,
+  CartaUpdateMessageDto,
+  CartaWriteDto,
+} from '../dto/carta.dto';
 import { emitToTenant } from '@tenancy/application/tenant-context';
+import { PaginationMessageDto } from '@shared/interfaces/websocket/websocket.dto';
 
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway()
 export class CartasGateway {
   @WebSocketServer()
   server!: Server;
@@ -25,7 +29,7 @@ export class CartasGateway {
   @SubscribeMessage('cartas.list')
   async list(
     @ConnectedSocket() client: Socket,
-    @MessageBody() query?: PaginationQuery,
+    @MessageBody() query?: PaginationMessageDto,
   ) {
     await this.session.requireAccess(client, 'cartas');
     return this.cartas.findAll('letter', query);
@@ -45,7 +49,7 @@ export class CartasGateway {
   @SubscribeMessage('cartas.update')
   async update(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string; data: Partial<CartaWriteDto> },
+    @MessageBody() body: CartaUpdateMessageDto,
   ) {
     await this.session.requireAccess(client, 'cartas');
     const row = await this.cartas.update(body.id, 'letter', body.data);
@@ -56,7 +60,7 @@ export class CartasGateway {
   @SubscribeMessage('cartas.delete')
   async delete(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string },
+    @MessageBody() body: CartaDeleteMessageDto,
   ) {
     await this.session.requireAccess(client, 'cartas');
     const ok = await this.cartas.delete(body.id, 'letter');
@@ -67,7 +71,7 @@ export class CartasGateway {
   @SubscribeMessage('journey.list')
   async listJourney(
     @ConnectedSocket() client: Socket,
-    @MessageBody() query?: PaginationQuery,
+    @MessageBody() query?: PaginationMessageDto,
   ) {
     await this.session.requireAccess(client, 'nossaHistoria');
     return this.cartas.findAll('journey', query);
@@ -87,7 +91,7 @@ export class CartasGateway {
   @SubscribeMessage('journey.update')
   async updateJourney(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string; data: Partial<CartaWriteDto> },
+    @MessageBody() body: CartaUpdateMessageDto,
   ) {
     await this.session.requireAccess(client, 'nossaHistoria');
     const row = await this.cartas.update(body.id, 'journey', body.data);
@@ -98,7 +102,7 @@ export class CartasGateway {
   @SubscribeMessage('journey.delete')
   async deleteJourney(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string },
+    @MessageBody() body: CartaDeleteMessageDto,
   ) {
     await this.session.requireAccess(client, 'nossaHistoria');
     const ok = await this.cartas.delete(body.id, 'journey');

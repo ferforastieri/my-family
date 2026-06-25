@@ -7,6 +7,8 @@ import {
   Max,
   Min,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import { ValidateNested } from 'class-validator';
 
 export class LocationUpdateDto {
   @IsNumber()
@@ -93,6 +95,15 @@ export class LocationPlaceWriteDto {
   @IsBoolean()
   @IsOptional()
   active?: boolean;
+}
+
+export class LocationPlaceUpdateMessageDto {
+  @IsString()
+  id: string;
+
+  @ValidateNested()
+  @Type(() => LocationPlaceWriteDto)
+  data: LocationPlaceWriteDto;
 }
 
 export class LocationPlaceResponseDto {

@@ -41,6 +41,17 @@ docker compose up -d
 
 O endereço padrão é `http://localhost:3458`.
 
+## Produção: Cloudflare Pages + Railway
+
+- Cloudflare Pages: Flutter Web em `/app/` e proxy público para páginas SEO,
+  API, Stripe e Socket.IO.
+- Railway: NestJS, MongoDB, Redis/BullMQ e Bucket S3 privado.
+- GitHub Actions: compila o Flutter e publica os arquivos no Pages.
+
+Os arquivos necessários já estão em `railway.toml`, `deploy/cloudflare/` e
+`.github/workflows/deploy-cloudflare-pages.yml`. O procedimento completo está em
+[`docs/deploy-cloudflare-railway.md`](docs/deploy-cloudflare-railway.md).
+
 ## Configuração
 
 As variáveis sensíveis devem ficar somente no `.env` local ou no gerenciador de

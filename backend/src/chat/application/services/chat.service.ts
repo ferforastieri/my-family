@@ -95,6 +95,14 @@ export class ChatService {
     );
     if (ids.length < 2)
       throw new ForbiddenException('Escolha pelo menos uma pessoa.');
+    const participants = await Promise.all(
+      ids.map((id) => this.users.findOne(id)),
+    );
+    if (participants.some((participant) => !participant)) {
+      throw new ForbiddenException(
+        'Todos os participantes devem pertencer à família atual.',
+      );
+    }
     const conversation = await this.chat.createDirectConversation(
       chatConversationFactory.create({
         ...body,
@@ -187,7 +195,7 @@ export class ChatService {
           this.listsRealtime.emitItemCreated(item);
       }
     }
-    if (body.mediaUrl?.startsWith('fotos/')) {
+    if (body.mediaUrl?.startsWith(`tenants/${currentTenantId(user)}/fotos/`)) {
       await this.fotos.ensureFromChat({
         url: body.mediaUrl,
         tipo: body.mediaType === 'video' ? 'video' : 'imagem',
@@ -223,7 +231,9 @@ export class ChatService {
             message.senderId,
             message.replyToMessage?.senderId,
           ])
-          .filter((id): id is string => typeof id === 'string' && id.length > 0),
+          .filter(
+            (id): id is string => typeof id === 'string' && id.length > 0,
+          ),
       ),
     ];
     if (userIds.length === 0) return messages;
@@ -236,13 +246,13 @@ export class ChatService {
     return messages.map((message) => ({
       ...message,
       senderAvatarPath: message.senderId
-        ? avatars.get(message.senderId) ?? null
+        ? (avatars.get(message.senderId) ?? null)
         : null,
       replyToMessage: message.replyToMessage
         ? {
             ...message.replyToMessage,
             senderAvatarPath: message.replyToMessage.senderId
-              ? avatars.get(message.replyToMessage.senderId) ?? null
+              ? (avatars.get(message.replyToMessage.senderId) ?? null)
               : null,
           }
         : message.replyToMessage,
@@ -299,4 +309,11 @@ export class ChatService {
     await this.chat.markMessagesRead(conversationId, user.id);
     return { conversationId, userId: user.id };
   }
+}
+
+function currentTenantId(user?: UserEntity | null): string {
+  if (!user?.tenantId) {
+    throw new ForbiddenException('Contexto da família não selecionado.');
+  }
+  return user.tenantId;
 }

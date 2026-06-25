@@ -36,6 +36,11 @@ export class UpdateUserDto {
   password?: string;
 }
 
+export class UpdateUserMessageDto extends UpdateUserDto {
+  @IsString()
+  id: string;
+}
+
 export class UserResponseDto {
   id: string;
   email: string;

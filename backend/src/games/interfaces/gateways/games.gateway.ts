@@ -8,16 +8,22 @@ import {
 import { Server, Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/services/ws-session.service';
 import { GamesService } from '../../application/services/games.service';
-import type {
+import {
   GameCompletionWriteDto,
+  GameWordUpdateMessageDto,
   GameWordWriteDto,
+  MiniGameConfigUpdateMessageDto,
   MiniGameConfigWriteDto,
+  QuizQuestionUpdateMessageDto,
   QuizQuestionWriteDto,
 } from '../dto/game.dto';
-import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 import { emitToTenant } from '@tenancy/application/tenant-context';
+import {
+  IdMessageDto,
+  PaginationMessageDto,
+} from '@shared/interfaces/websocket/websocket.dto';
 
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway()
 export class GamesGateway {
   @WebSocketServer()
   server!: Server;
@@ -30,7 +36,7 @@ export class GamesGateway {
   @SubscribeMessage('games.quiz.list')
   async quizList(
     @ConnectedSocket() client: Socket,
-    @MessageBody() query?: PaginationQuery,
+    @MessageBody() query?: PaginationMessageDto,
   ) {
     await this.session.requireAccess(client, 'jogos');
     return this.games.quizPublic(query);
@@ -39,7 +45,7 @@ export class GamesGateway {
   @SubscribeMessage('games.quiz.admin.list')
   async quizAdminList(
     @ConnectedSocket() client: Socket,
-    @MessageBody() query?: PaginationQuery,
+    @MessageBody() query?: PaginationMessageDto,
   ) {
     await this.session.requireAdmin(client);
     return this.games.quizAdmin(query);
@@ -59,7 +65,7 @@ export class GamesGateway {
   @SubscribeMessage('games.quiz.update')
   async updateQuestion(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string; data: Partial<QuizQuestionWriteDto> },
+    @MessageBody() body: QuizQuestionUpdateMessageDto,
   ) {
     await this.session.requireAdmin(client);
     const row = await this.games.updateQuestion(body.id, body.data);
@@ -70,7 +76,7 @@ export class GamesGateway {
   @SubscribeMessage('games.quiz.delete')
   async deleteQuestion(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string },
+    @MessageBody() body: IdMessageDto,
   ) {
     await this.session.requireAdmin(client);
     const ok = await this.games.deleteQuestion(body.id);
@@ -81,7 +87,7 @@ export class GamesGateway {
   @SubscribeMessage('games.words.list')
   async wordsList(
     @ConnectedSocket() client: Socket,
-    @MessageBody() query?: PaginationQuery,
+    @MessageBody() query?: PaginationMessageDto,
   ) {
     await this.session.requireAccess(client, 'jogos');
     return this.games.wordsPublic(query);
@@ -90,7 +96,7 @@ export class GamesGateway {
   @SubscribeMessage('games.words.admin.list')
   async wordsAdminList(
     @ConnectedSocket() client: Socket,
-    @MessageBody() query?: PaginationQuery,
+    @MessageBody() query?: PaginationMessageDto,
   ) {
     await this.session.requireAdmin(client);
     return this.games.wordsAdmin(query);
@@ -110,7 +116,7 @@ export class GamesGateway {
   @SubscribeMessage('games.words.update')
   async updateWord(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string; data: Partial<GameWordWriteDto> },
+    @MessageBody() body: GameWordUpdateMessageDto,
   ) {
     await this.session.requireAdmin(client);
     const row = await this.games.updateWord(body.id, body.data);
@@ -121,7 +127,7 @@ export class GamesGateway {
   @SubscribeMessage('games.words.delete')
   async deleteWord(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string },
+    @MessageBody() body: IdMessageDto,
   ) {
     await this.session.requireAdmin(client);
     const ok = await this.games.deleteWord(body.id);
@@ -132,7 +138,7 @@ export class GamesGateway {
   @SubscribeMessage('games.mini.list')
   async miniGamesList(
     @ConnectedSocket() client: Socket,
-    @MessageBody() query?: PaginationQuery,
+    @MessageBody() query?: PaginationMessageDto,
   ) {
     await this.session.requireAccess(client, 'jogos');
     return this.games.miniGamesPublic(query);
@@ -141,7 +147,7 @@ export class GamesGateway {
   @SubscribeMessage('games.mini.admin.list')
   async miniGamesAdminList(
     @ConnectedSocket() client: Socket,
-    @MessageBody() query?: PaginationQuery,
+    @MessageBody() query?: PaginationMessageDto,
   ) {
     await this.session.requireAdmin(client);
     return this.games.miniGamesAdmin(query);
@@ -161,7 +167,7 @@ export class GamesGateway {
   @SubscribeMessage('games.mini.update')
   async updateMiniGame(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string; data: Partial<MiniGameConfigWriteDto> },
+    @MessageBody() body: MiniGameConfigUpdateMessageDto,
   ) {
     await this.session.requireAdmin(client);
     const row = await this.games.updateMiniGame(body.id, body.data);
@@ -172,7 +178,7 @@ export class GamesGateway {
   @SubscribeMessage('games.mini.delete')
   async deleteMiniGame(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string },
+    @MessageBody() body: IdMessageDto,
   ) {
     await this.session.requireAdmin(client);
     const ok = await this.games.deleteMiniGame(body.id);
@@ -194,7 +200,7 @@ export class GamesGateway {
   @SubscribeMessage('games.stats')
   async stats(
     @ConnectedSocket() client: Socket,
-    @MessageBody() query?: PaginationQuery,
+    @MessageBody() query?: PaginationMessageDto,
   ) {
     await this.session.requireAdmin(client);
     return this.games.stats(query);

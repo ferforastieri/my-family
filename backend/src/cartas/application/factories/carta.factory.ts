@@ -1,12 +1,13 @@
 import type { Factory } from '@shared/application/mapper';
-import type { CartaWrite } from '../../infrastructure/repositories/cartas.repository';
-import { CartaWriteDto } from '../../interfaces/dto/carta.dto';
+import type { CartaWrite, CartaWriteInput } from '../models/carta.models';
 
 export class CartaFactory implements Factory<
-  Partial<CartaWriteDto>,
+  Partial<CartaWriteInput>,
   Partial<CartaWrite>
 > {
-  create(input: Partial<CartaWriteDto>): Partial<CartaWrite> {
+  create(input: CartaWriteInput): Omit<CartaWrite, 'tipo'>;
+  create(input: Partial<CartaWriteInput>): Partial<CartaWrite>;
+  create(input: Partial<CartaWriteInput>): Partial<CartaWrite> {
     return {
       titulo: input.titulo?.trim(),
       conteudo: input.conteudo?.trim(),

@@ -12,7 +12,7 @@ import {
 import { Access } from '@auth/decorators/access.decorator';
 import { AccessGuard } from '@auth/guards/access.guard';
 import { CartasService } from '../../application/services/cartas.service';
-import type { CartaWriteDto } from '../dto/carta.dto';
+import { CartaUpdateDto, CartaWriteDto } from '../dto/carta.dto';
 import type { UserEntity } from '@auth/domain/entities/user.entity';
 
 @Controller('cartas')
@@ -41,7 +41,7 @@ export class CartasController {
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() data: Partial<CartaWriteDto>) {
+  async update(@Param('id') id: string, @Body() data: CartaUpdateDto) {
     const row = await this.cartasService.update(id, 'letter', data);
     return row ? { message: 'Texto atualizado.', ...row } : row;
   }

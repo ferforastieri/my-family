@@ -1,13 +1,22 @@
+import 'package:flutter/foundation.dart';
+
 class AppConfig {
   static const _apiBaseUrl = String.fromEnvironment('API_BASE_URL');
   static const _socketUrl = String.fromEnvironment('SOCKET_URL');
   static const _publicWebUrl = String.fromEnvironment('PUBLIC_WEB_URL');
 
-  static String get apiBaseUrl => _requiredEnv('API_BASE_URL', _apiBaseUrl);
-  static String get socketUrl => _requiredEnv('SOCKET_URL', _socketUrl);
+  static String get apiBaseUrl => _configuredUrl(
+        'API_BASE_URL',
+        _apiBaseUrl,
+        webPath: '/api',
+      );
+  static String get socketUrl => _configuredUrl(
+        'SOCKET_URL',
+        _socketUrl,
+      );
   static String get publicWebUrl {
     if (_publicWebUrl.trim().isNotEmpty) return _publicWebUrl;
-    return Uri.base.hasScheme ? Uri.base.origin : '';
+    return kIsWeb ? Uri.base.origin : '';
   }
 
   static const firebaseApiKey = String.fromEnvironment('FIREBASE_API_KEY');
@@ -44,5 +53,16 @@ class AppConfig {
       throw StateError('$name não foi configurada no build.');
     }
     return value;
+  }
+
+  static String _configuredUrl(
+    String name,
+    String value, {
+    String webPath = '',
+  }) {
+    final configured = value.trim().replaceAll(RegExp(r'/+$'), '');
+    if (configured.isNotEmpty) return configured;
+    if (kIsWeb) return '${Uri.base.origin}$webPath';
+    return _requiredEnv(name, configured);
   }
 }

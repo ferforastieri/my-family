@@ -11,7 +11,6 @@ Backend do projeto Nossa Familia. Ele foi criado como estudo pratico de arquitet
 - Redis e BullMQ
 - Firebase Admin SDK
 - JWT
-- Nest Schedule
 - Helmet, CORS, CSRF e rate limit
 
 ## Organizacao
@@ -22,6 +21,11 @@ Cada feature segue a separacao:
 - `application`: services, factories e mappers.
 - `infrastructure`: repositorios, filas, schemas e integracoes.
 - `interfaces`: gateways WebSocket, controllers REST e DTOs.
+
+A direção das dependências é `interfaces/infrastructure -> application -> domain`.
+Contratos de persistência e integrações ficam em `application/ports`; o módulo
+Nest associa esses contratos aos adapters concretos. O módulo `cartas` é a
+implementação de referência para a migração gradual das demais features.
 
 ## Modulos
 
@@ -42,15 +46,14 @@ Cada feature segue a separacao:
 
 Roles internas:
 
-- `husband`
-- `wife`
-- `children`
-- `friends`
+- `owner`
+- `admin`
+- `member`
 
 Admins:
 
-- `husband`
-- `wife`
+- `owner`
+- `admin`
 
 O painel administrativo gerencia os acessos por area para usuarios nao administradores.
 
@@ -99,6 +102,9 @@ O webhook valida a assinatura antes de responder e adiciona o evento à fila. A
 atualização da assinatura e do tenant é executada pelo worker, evitando timeout
 do webhook e perda de eventos em falhas temporárias.
 
+Notificações agendadas também usam jobs atrasados no BullMQ com identificador
+idempotente. Elas não dependem da memória de uma instância do backend.
+
 ## Desenvolvimento
 
 ```bash
@@ -125,6 +131,8 @@ Variaveis principais:
 - `JWT_SECRET`
 - `JWT_EXPIRES_IN`
 - `UPLOAD_PATH`
+- `BUCKET`, `ENDPOINT`, `REGION`, `ACCESS_KEY_ID`, `SECRET_ACCESS_KEY` em
+  produção com Railway Bucket
 - `CORS_ORIGIN`
 - `REDIS_URL`
 - `CSRF_SECRET`
@@ -146,3 +154,10 @@ Variaveis principais:
 - Helmet em HTTP.
 - Secrets somente por ambiente seguro.
 - Nenhum IP, senha, token ou chave deve aparecer na documentacao.
+
+## Armazenamento
+
+No desenvolvimento, `UPLOAD_PATH` usa o disco local. Quando todas as variáveis
+do Bucket estão presentes, o backend usa armazenamento S3 compatível e não
+depende do filesystem efêmero do container. Fotos, avatares, miniaturas e
+metadados continuam privados e são entregues pelos endpoints autorizados.

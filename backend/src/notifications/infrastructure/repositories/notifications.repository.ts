@@ -209,8 +209,8 @@ export class NotificationsRepository {
       .exec();
   }
 
-  async removeSubscriptionByFcmToken(fcmToken: string) {
-    await this.subscriptions.deleteOne({ fcmToken }).exec();
+  async removeSubscriptionByFcmToken(fcmToken: string, userId: string) {
+    await this.subscriptions.deleteOne({ fcmToken, userId }).exec();
   }
 
   async listSubscriptions() {

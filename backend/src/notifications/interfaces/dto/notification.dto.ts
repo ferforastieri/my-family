@@ -1,4 +1,13 @@
-import { IsIn, IsOptional, IsString } from 'class-validator';
+import { PartialType } from '@nestjs/mapped-types';
+import { Type } from 'class-transformer';
+import {
+  IsDateString,
+  IsIn,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
+import { PaginationMessageDto } from '@shared/interfaces/websocket/websocket.dto';
 
 export type NotificationType =
   | 'manual'
@@ -50,6 +59,49 @@ export class FcmSubscriptionDto {
   @IsString()
   @IsIn(['web', 'android', 'ios', 'unknown'])
   platform?: 'web' | 'android' | 'ios' | 'unknown';
+}
+
+export class NotificationUpdateDto extends PartialType(NotificationCreateDto) {}
+
+export class NotificationUpdateMessageDto {
+  @IsString()
+  id: string;
+
+  @ValidateNested()
+  @Type(() => NotificationUpdateDto)
+  data: NotificationUpdateDto;
+}
+
+export class NotificationScheduleDto extends NotificationSendDto {
+  @IsDateString()
+  scheduledAt: string;
+}
+
+export class FcmSubscribeRequestDto {
+  @ValidateNested()
+  @Type(() => FcmSubscriptionDto)
+  subscription: FcmSubscriptionDto;
+
+  @IsOptional()
+  @IsString()
+  userAgent?: string;
+}
+
+export class FcmUnsubscribeDto {
+  @IsString()
+  token: string;
+}
+
+export class NotificationListQueryDto extends PaginationMessageDto {
+  @IsOptional()
+  @IsIn(['manual', 'push', 'chat', 'location', 'letter', 'system'])
+  type?: NotificationType;
+}
+
+export class ScheduledNotificationListQueryDto extends PaginationMessageDto {
+  @IsOptional()
+  @IsIn(['pending', 'sent', 'failed', 'cancelled'])
+  status?: string;
 }
 
 export class NotificationResponseDto {

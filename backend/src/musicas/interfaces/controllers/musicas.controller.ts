@@ -11,7 +11,7 @@ import {
 import { Access } from '@auth/decorators/access.decorator';
 import { AccessGuard } from '@auth/guards/access.guard';
 import { MusicasService } from '../../application/services/musicas.service';
-import type { MusicaWriteDto } from '../dto/musica.dto';
+import { MusicaUpdateDto, MusicaWriteDto } from '../dto/musica.dto';
 
 @Controller('musicas')
 @UseGuards(AccessGuard)
@@ -36,7 +36,7 @@ export class MusicasController {
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() data: Partial<MusicaWriteDto>) {
+  async update(@Param('id') id: string, @Body() data: MusicaUpdateDto) {
     const row = await this.musicasService.update(id, data);
     return row ? { message: 'Música atualizada.', ...row } : row;
   }

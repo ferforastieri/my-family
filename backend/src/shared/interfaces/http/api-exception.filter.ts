@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { BaseWsExceptionFilter, WsException } from '@nestjs/websockets';
 import { Response } from 'express';
+import type { Socket } from 'socket.io';
 
 @Catch()
 export class ApiExceptionFilter
@@ -18,19 +19,21 @@ export class ApiExceptionFilter
 
   catch(exception: unknown, host: ArgumentsHost) {
     if (host.getType() === 'ws') {
-      const ack = host.getArgByIndex<unknown>(2);
       const payload = {
         ok: false,
         message: exceptionMessage(exception),
         error: exceptionName(exception),
         timestamp: new Date().toISOString(),
       };
+      const ack = host.getArgByIndex<
+        ((value: typeof payload) => void) | undefined
+      >(2);
       this.logException('ws', exception);
       if (typeof ack === 'function') {
         ack(payload);
         return;
       }
-      const client = host.switchToWs().getClient();
+      const client = host.switchToWs().getClient<Socket>();
       client.emit('exception', payload);
       return;
     }
@@ -72,12 +75,23 @@ function exceptionMessage(exception: unknown): string {
   if (exception instanceof HttpException) {
     return normalizeMessage(exception.getResponse());
   }
-  if (exception instanceof Error && exception.message) return exception.message;
+  if (mongoErrorCode(exception) === 11000) return 'Registro duplicado.';
+  if (mongoErrorName(exception) === 'CastError')
+    return 'Identificador inválido.';
+  if (mongoErrorName(exception) === 'ValidationError')
+    return 'Dados inválidos.';
   return 'Erro interno no servidor.';
 }
 
 function exceptionStatus(exception: unknown): number {
   if (exception instanceof HttpException) return exception.getStatus();
+  if (mongoErrorCode(exception) === 11000) return HttpStatus.CONFLICT;
+  if (
+    mongoErrorName(exception) === 'CastError' ||
+    mongoErrorName(exception) === 'ValidationError'
+  ) {
+    return HttpStatus.BAD_REQUEST;
+  }
   if (typeof exception === 'object' && exception !== null) {
     const statusCode = (exception as { statusCode?: unknown }).statusCode;
     if (typeof statusCode === 'number') return statusCode;
@@ -88,9 +102,33 @@ function exceptionStatus(exception: unknown): number {
 }
 
 function exceptionName(exception: unknown): string {
+  if (mongoErrorCode(exception) === 11000) return 'Conflict';
+  if (
+    mongoErrorName(exception) === 'CastError' ||
+    mongoErrorName(exception) === 'ValidationError'
+  ) {
+    return 'BadRequest';
+  }
+  if (
+    !(exception instanceof HttpException) &&
+    !(exception instanceof WsException)
+  ) {
+    return 'InternalServerError';
+  }
   if (exception instanceof Error) return exception.name;
-  if (exception instanceof HttpException) return exception.name;
-  return 'InternalServerError';
+  return 'WebSocketError';
+}
+
+function mongoErrorCode(exception: unknown): number | undefined {
+  if (typeof exception !== 'object' || exception === null) return undefined;
+  const code = (exception as { code?: unknown }).code;
+  return typeof code === 'number' ? code : undefined;
+}
+
+function mongoErrorName(exception: unknown): string | undefined {
+  if (typeof exception !== 'object' || exception === null) return undefined;
+  const name = (exception as { name?: unknown }).name;
+  return typeof name === 'string' ? name : undefined;
 }
 
 function normalizeMessage(value: unknown): string {

@@ -7,14 +7,18 @@ import {
 import { Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/services/ws-session.service';
 import { ListsService } from '../../application/services/lists.service';
-import type {
+import {
+  FamilyListItemUpdateMessageDto,
+  FamilyListItemsQueryDto,
   FamilyListItemWriteDto,
+  FamilyListUpdateMessageDto,
   FamilyListWriteDto,
 } from '../dto/list.dto';
 import { ListsRealtimeGateway } from './lists-realtime.gateway';
-import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
+import { PaginationMessageDto } from '@shared/interfaces/websocket/websocket.dto';
+import { IdMessageDto } from '@shared/interfaces/websocket/websocket.dto';
 
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway()
 export class ListsGateway {
   constructor(
     private lists: ListsService,
@@ -25,7 +29,7 @@ export class ListsGateway {
   @SubscribeMessage('lists.list')
   async listLists(
     @ConnectedSocket() client: Socket,
-    @MessageBody() query?: PaginationQuery,
+    @MessageBody() query?: PaginationMessageDto,
   ) {
     await this.session.requireAccess(client, 'listas');
     return this.lists.listLists(query);
@@ -45,7 +49,7 @@ export class ListsGateway {
   @SubscribeMessage('lists.update')
   async updateList(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string; data: Partial<FamilyListWriteDto> },
+    @MessageBody() body: FamilyListUpdateMessageDto,
   ) {
     await this.session.requireAccess(client, 'listas');
     const row = await this.lists.updateList(body.id, body.data);
@@ -56,7 +60,7 @@ export class ListsGateway {
   @SubscribeMessage('lists.delete')
   async deleteList(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string },
+    @MessageBody() body: IdMessageDto,
   ) {
     await this.session.requireAccess(client, 'listas');
     const ok = await this.lists.deleteList(body.id);
@@ -67,7 +71,7 @@ export class ListsGateway {
   @SubscribeMessage('lists.items')
   async listItems(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { listId: string } & PaginationQuery,
+    @MessageBody() body: FamilyListItemsQueryDto,
   ) {
     await this.session.requireAccess(client, 'listas');
     return this.lists.listItems(body.listId, body);
@@ -87,7 +91,7 @@ export class ListsGateway {
   @SubscribeMessage('lists.items.update')
   async updateItem(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string; data: Partial<FamilyListItemWriteDto> },
+    @MessageBody() body: FamilyListItemUpdateMessageDto,
   ) {
     await this.session.requireAccess(client, 'listas');
     const row = await this.lists.updateItem(body.id, body.data);
@@ -98,7 +102,7 @@ export class ListsGateway {
   @SubscribeMessage('lists.items.delete')
   async deleteItem(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string },
+    @MessageBody() body: IdMessageDto,
   ) {
     await this.session.requireAccess(client, 'listas');
     const result = await this.lists.deleteItem(body.id);

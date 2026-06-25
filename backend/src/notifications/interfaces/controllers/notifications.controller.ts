@@ -16,9 +16,12 @@ import type { UserEntity } from '@auth/domain/entities/user.entity';
 import { NotificationsService } from '../../application/services/notifications.service';
 import { NotificationSchedulerService } from '../../application/services/notification-scheduler.service';
 import {
-  FcmSubscriptionDto,
+  FcmSubscribeRequestDto,
+  FcmUnsubscribeDto,
   NotificationCreateDto,
+  NotificationScheduleDto,
   NotificationSendDto,
+  NotificationUpdateDto,
 } from '../dto/notification.dto';
 import { RolesGuard } from '@auth/guards/roles.guard';
 import { Roles } from '@auth/decorators/roles.decorator';
@@ -37,7 +40,7 @@ export class NotificationsController {
   @Post('subscribe')
   async subscribe(
     @Req() request: Request & { user: UserEntity },
-    @Body() body: { subscription: FcmSubscriptionDto; userAgent?: string },
+    @Body() body: FcmSubscribeRequestDto,
   ) {
     if (body.subscription?.token) {
       await this.notifications.pushSubscribe(
@@ -50,12 +53,19 @@ export class NotificationsController {
   }
 
   @Post('unsubscribe')
-  async unsubscribe(@Body() body: { token: string }) {
-    if (body.token) await this.notifications.pushUnsubscribe(body.token);
+  async unsubscribe(
+    @Req() request: Request & { user: UserEntity },
+    @Body() body: FcmUnsubscribeDto,
+  ) {
+    if (body.token) {
+      await this.notifications.pushUnsubscribe(body.token, request.user);
+    }
     return { ok: true, message: 'Notificações desativadas.' };
   }
 
   @Delete()
+  @UseGuards(RolesGuard)
+  @Roles('owner', 'admin')
   async clear() {
     await this.notifications.clearAll();
     return { ok: true, message: 'Notificações limpas.' };
@@ -88,10 +98,7 @@ export class NotificationsController {
   @Patch(':id')
   @UseGuards(RolesGuard)
   @Roles('owner', 'admin')
-  async update(
-    @Param('id') id: string,
-    @Body() dto: Partial<NotificationCreateDto>,
-  ) {
+  async update(@Param('id') id: string, @Body() dto: NotificationUpdateDto) {
     const n = await this.notifications.update(id, dto);
     if (!n) throw new NotFoundException('Notificação não encontrada');
     return { message: 'Notificação atualizada.', ...n };
@@ -118,15 +125,7 @@ export class NotificationsController {
   @Post('schedule')
   @UseGuards(RolesGuard)
   @Roles('owner', 'admin')
-  async schedule(
-    @Body()
-    body: {
-      title: string;
-      body?: string;
-      url?: string;
-      scheduledAt: string;
-    },
-  ) {
+  async schedule(@Body() body: NotificationScheduleDto) {
     if (!body?.title) throw new BadRequestException('title é obrigatório');
     if (!body?.scheduledAt)
       throw new BadRequestException('scheduledAt é obrigatório (ISO 8601)');

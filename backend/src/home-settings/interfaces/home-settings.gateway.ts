@@ -10,7 +10,7 @@ import { WsSessionService } from '@auth/application/services/ws-session.service'
 import { HomeSettingsService } from '../application/home-settings.service';
 import { emitToTenant } from '@tenancy/application/tenant-context';
 
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway()
 export class HomeSettingsGateway {
   @WebSocketServer()
   server!: Server;

@@ -9,13 +9,19 @@ import { Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/services/ws-session.service';
 import { NotificationsService } from '../../application/services/notifications.service';
 import { NotificationSchedulerService } from '../../application/services/notification-scheduler.service';
-import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 import {
+  FcmSubscribeRequestDto,
+  FcmUnsubscribeDto,
   NotificationCreateDto,
+  NotificationListQueryDto,
+  NotificationScheduleDto,
   NotificationSendDto,
+  NotificationUpdateMessageDto,
+  ScheduledNotificationListQueryDto,
 } from '../dto/notification.dto';
+import { IdMessageDto } from '@shared/interfaces/websocket/websocket.dto';
 
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway()
 export class NotificationsGateway {
   constructor(
     private notifications: NotificationsService,
@@ -26,7 +32,7 @@ export class NotificationsGateway {
   @SubscribeMessage('notifications.list')
   async list(
     @ConnectedSocket() client: Socket,
-    @MessageBody() query?: PaginationQuery & { type?: string },
+    @MessageBody() query?: NotificationListQueryDto,
   ) {
     const user = await this.session.requireUser(client);
     return this.notifications.list(query, user);
@@ -45,7 +51,7 @@ export class NotificationsGateway {
   @SubscribeMessage('notifications.update')
   async update(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string; data: Partial<NotificationCreateDto> },
+    @MessageBody() body: NotificationUpdateMessageDto,
   ) {
     await this.session.requireAdmin(client);
     const row = await this.notifications.update(body.id, body.data);
@@ -55,7 +61,7 @@ export class NotificationsGateway {
   @SubscribeMessage('notifications.delete')
   async delete(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string },
+    @MessageBody() body: IdMessageDto,
   ) {
     await this.session.requireAdmin(client);
     return {
@@ -66,7 +72,7 @@ export class NotificationsGateway {
 
   @SubscribeMessage('notifications.clear')
   async clear(@ConnectedSocket() client: Socket) {
-    await this.session.requireUser(client);
+    await this.session.requireAdmin(client);
     await this.notifications.clearAll();
     return { ok: true, message: 'Notificações limpas.' };
   }
@@ -74,7 +80,7 @@ export class NotificationsGateway {
   @SubscribeMessage('notifications.read')
   async read(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string },
+    @MessageBody() body: IdMessageDto,
   ) {
     const user = await this.session.requireUser(client);
     const row = await this.notifications.markRead(body.id, user);
@@ -102,8 +108,7 @@ export class NotificationsGateway {
   @SubscribeMessage('notifications.schedule')
   async schedule(
     @ConnectedSocket() client: Socket,
-    @MessageBody()
-    body: { title: string; body?: string; url?: string; scheduledAt: string },
+    @MessageBody() body: NotificationScheduleDto,
   ) {
     await this.session.requireAdmin(client);
     if (!body?.title) throw new BadRequestException('title é obrigatório');
@@ -117,7 +122,7 @@ export class NotificationsGateway {
   @SubscribeMessage('notifications.scheduled.list')
   async listScheduled(
     @ConnectedSocket() client: Socket,
-    @MessageBody() query?: PaginationQuery & { status?: string },
+    @MessageBody() query?: ScheduledNotificationListQueryDto,
   ) {
     await this.session.requireAdmin(client);
     return this.scheduler.list(query);
@@ -126,7 +131,7 @@ export class NotificationsGateway {
   @SubscribeMessage('notifications.scheduled.delete')
   async deleteScheduled(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string },
+    @MessageBody() body: IdMessageDto,
   ) {
     await this.session.requireAdmin(client);
     return {
@@ -138,14 +143,7 @@ export class NotificationsGateway {
   @SubscribeMessage('notifications.subscribe')
   async subscribe(
     @ConnectedSocket() client: Socket,
-    @MessageBody()
-    body: {
-      subscription: {
-        token: string;
-        platform?: 'web' | 'android' | 'ios' | 'unknown';
-      };
-      userAgent?: string;
-    },
+    @MessageBody() body: FcmSubscribeRequestDto,
   ) {
     const user = await this.session.requireUser(client);
     if (body.subscription?.token) {
@@ -167,8 +165,12 @@ export class NotificationsGateway {
   }
 
   @SubscribeMessage('notifications.unsubscribe')
-  async unsubscribe(@MessageBody() body: { token: string }) {
-    if (body.token) await this.notifications.pushUnsubscribe(body.token);
+  async unsubscribe(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: FcmUnsubscribeDto,
+  ) {
+    const user = await this.session.requireUser(client);
+    if (body.token) await this.notifications.pushUnsubscribe(body.token, user);
     return { ok: true, message: 'Notificações desativadas.' };
   }
 }

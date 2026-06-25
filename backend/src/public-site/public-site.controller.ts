@@ -7,8 +7,7 @@ import {
   StreamableFile,
   NotFoundException,
 } from '@nestjs/common';
-import { createReadStream } from 'node:fs';
-import { UploadService } from '@shared/infrastructure/upload';
+import { mediaType, UploadService } from '@shared/infrastructure/upload';
 import { TenantService } from '@tenancy/application/tenant.service';
 import { PublicSiteService } from './public-site.service';
 import { Public } from '@auth/decorators/public.decorator';
@@ -42,19 +41,10 @@ export class PublicSiteController {
     if (!(await this.sites.canReadPublicMedia(tenant.id, relativePath))) {
       throw new NotFoundException('Mídia não encontrada.');
     }
-    const fullPath = this.uploads.resolveTenantPath(tenant.id, relativePath);
-    return new StreamableFile(createReadStream(fullPath), {
-      type: mediaType(relativePath),
+    const file = await this.uploads.openTenantFile(tenant.id, relativePath);
+    return new StreamableFile(file.stream, {
+      type: file.contentType || mediaType(relativePath),
+      length: file.contentLength,
     });
   }
-}
-
-function mediaType(path: string) {
-  const extension = path.split('.').pop()?.toLowerCase();
-  if (extension === 'png') return 'image/png';
-  if (extension === 'gif') return 'image/gif';
-  if (extension === 'webp') return 'image/webp';
-  if (extension === 'mp4') return 'video/mp4';
-  if (extension === 'webm') return 'video/webm';
-  return 'image/jpeg';
 }

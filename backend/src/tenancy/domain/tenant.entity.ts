@@ -1,4 +1,4 @@
-import type { UserAccessKey } from '@auth/domain/entities/user.entity';
+import type { UserAccessKey } from '@shared/domain/access';
 
 export const tenantLocales = ['pt-BR', 'en', 'es'] as const;
 export type TenantLocale = (typeof tenantLocales)[number];
@@ -55,4 +55,3 @@ export interface TenantContextValue {
 export function isTenantAdmin(role?: string | null): boolean {
   return role === 'owner' || role === 'admin';
 }
-

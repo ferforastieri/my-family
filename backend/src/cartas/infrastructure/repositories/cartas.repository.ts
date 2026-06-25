@@ -1,10 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import {
-  CartaDocument,
-  CartaMongoDocument,
-} from '@shared/infrastructure/database/schemas';
+import { CartaDocument, CartaMongoDocument } from '../persistence/carta.schema';
 import {
   cleanUndefined,
   normalizePagination,
@@ -13,16 +10,17 @@ import {
   toId,
 } from '@shared/infrastructure/database/mongo.utils';
 import type { CartaEntity } from '@cartas/domain/entities/carta.entity';
-
-export type CartaWrite = Pick<CartaEntity, 'tipo' | 'titulo' | 'conteudo'> &
-  Partial<Pick<CartaEntity, 'data'>>;
+import type { CartaWrite } from '../../application/models/carta.models';
+import type { CartasRepositoryPort } from '../../application/ports/cartas.repository.port';
 
 @Injectable()
-export class CartasRepository {
+export class CartasRepository implements CartasRepositoryPort {
   constructor(
     @InjectModel(CartaDocument.name) private model: Model<CartaMongoDocument>,
   ) {}
 
+  private toEntity(doc: CartaMongoDocument): CartaEntity;
+  private toEntity(doc: null): null;
   private toEntity(doc: CartaMongoDocument | null): CartaEntity | null {
     if (!doc) return null;
     return {
@@ -44,7 +42,7 @@ export class CartasRepository {
       this.model.countDocuments(filter).exec(),
     ]);
     return paginated(
-      docs.map((doc) => this.toEntity(doc)!),
+      docs.map((doc) => this.toEntity(doc)),
       total,
       page,
       limit,
@@ -58,7 +56,7 @@ export class CartasRepository {
   }
 
   async create(data: CartaWrite) {
-    return this.toEntity(await this.model.create(data))!;
+    return this.toEntity(await this.model.create(data));
   }
 
   async update(
@@ -79,5 +77,18 @@ export class CartasRepository {
 
   async delete(id: string, tipo: CartaEntity['tipo']) {
     return !!(await this.model.findOneAndDelete({ _id: id, tipo }).exec());
+  }
+
+  async listForPublic(
+    tipo: CartaEntity['tipo'],
+    limit: number,
+    direction: 1 | -1,
+  ) {
+    const documents = await this.model
+      .find({ tipo })
+      .sort({ createdAt: direction })
+      .limit(Math.min(Math.max(limit, 1), 100))
+      .exec();
+    return documents.map((document) => this.toEntity(document));
   }
 }

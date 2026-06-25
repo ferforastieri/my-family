@@ -3,19 +3,6 @@ export type UserRole = (typeof userRoles)[number];
 
 export const adminRoles: UserRole[] = ['owner', 'admin'];
 
-export const userAccessKeys = [
-  'memorias',
-  'playlist',
-  'cartas',
-  'jogos',
-  'listas',
-  'notas',
-  'localizacao',
-  'chat',
-  'nossaHistoria',
-] as const;
-export type UserAccessKey = (typeof userAccessKeys)[number];
-
 export function isAdminRole(role?: string | null): role is UserRole {
   return role === 'owner' || role === 'admin';
 }
@@ -52,3 +39,5 @@ export interface PasswordResetEntity {
   used?: Date | null;
   createdAt: Date;
 }
+import { userAccessKeys, type UserAccessKey } from '@shared/domain/access';
+export { userAccessKeys, type UserAccessKey } from '@shared/domain/access';

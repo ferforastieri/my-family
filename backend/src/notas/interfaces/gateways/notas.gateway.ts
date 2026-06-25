@@ -8,11 +8,14 @@ import {
 import { Server, Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/services/ws-session.service';
 import { NotasService } from '../../application/services/notas.service';
-import type { NotaWriteDto } from '../dto/nota.dto';
-import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
+import { NotaUpdateMessageDto, NotaWriteDto } from '../dto/nota.dto';
+import {
+  IdMessageDto,
+  PaginationMessageDto,
+} from '@shared/interfaces/websocket/websocket.dto';
 import { emitToTenant } from '@tenancy/application/tenant-context';
 
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway()
 export class NotasGateway {
   @WebSocketServer()
   server!: Server;
@@ -25,7 +28,7 @@ export class NotasGateway {
   @SubscribeMessage('notas.list')
   async list(
     @ConnectedSocket() client: Socket,
-    @MessageBody() query?: PaginationQuery,
+    @MessageBody() query?: PaginationMessageDto,
   ) {
     await this.session.requireAccess(client, 'notas');
     return this.notas.findAll(query);
@@ -45,7 +48,7 @@ export class NotasGateway {
   @SubscribeMessage('notas.update')
   async update(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string; data: Partial<NotaWriteDto> },
+    @MessageBody() body: NotaUpdateMessageDto,
   ) {
     await this.session.requireAccess(client, 'notas');
     const row = await this.notas.update(body.id, body.data);
@@ -56,7 +59,7 @@ export class NotasGateway {
   @SubscribeMessage('notas.delete')
   async delete(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string },
+    @MessageBody() body: IdMessageDto,
   ) {
     await this.session.requireAccess(client, 'notas');
     const ok = await this.notas.delete(body.id);

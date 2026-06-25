@@ -1,4 +1,3 @@
-export * from './carta.schema';
 export * from './chat-conversation.schema';
 export * from './chat-message.schema';
 export * from './foto.schema';
@@ -23,7 +22,6 @@ export * from './tenant.schema';
 export * from './membership.schema';
 export * from './subscription.schema';
 
-import { CartaDocument, CartaSchema } from './carta.schema';
 import {
   ChatConversationDocument,
   ChatConversationSchema,
@@ -94,7 +92,6 @@ import {
 import { applyTenantScope } from '@tenancy/infrastructure/tenant-scope.plugin';
 
 [
-  CartaSchema,
   ChatConversationSchema,
   ChatMessageSchema,
   FotoSchema,
@@ -135,7 +132,6 @@ export const mongoModels = [
   { name: LocationPresenceDocument.name, schema: LocationPresenceSchema },
   { name: MusicaDocument.name, schema: MusicaSchema },
   { name: NotaDocument.name, schema: NotaSchema },
-  { name: CartaDocument.name, schema: CartaSchema },
   { name: NotificationDocument.name, schema: NotificationSchema },
   { name: PushSubscriptionDocument.name, schema: PushSubscriptionSchema },
   { name: QuizQuestionDocument.name, schema: QuizQuestionSchema },

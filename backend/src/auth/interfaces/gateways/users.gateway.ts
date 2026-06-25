@@ -9,11 +9,14 @@ import {
 import { Server, Socket } from 'socket.io';
 import { UserService } from '../../application/services/user.service';
 import { WsSessionService } from '../../application/services/ws-session.service';
-import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
-import { UpdateUserDto } from '../dto/user.dto';
+import { UpdateUserMessageDto } from '../dto/user.dto';
 import { emitToTenant } from '@tenancy/application/tenant-context';
+import {
+  IdMessageDto,
+  PaginationMessageDto,
+} from '@shared/interfaces/websocket/websocket.dto';
 
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway()
 @UsePipes(
   new ValidationPipe({
     whitelist: true,
@@ -33,7 +36,7 @@ export class UsersGateway {
   @SubscribeMessage('users.list')
   async listUsers(
     @ConnectedSocket() client: Socket,
-    @MessageBody() query?: PaginationQuery,
+    @MessageBody() query?: PaginationMessageDto,
   ) {
     await this.session.requireAdmin(client);
     return this.users.list(query);
@@ -42,7 +45,7 @@ export class UsersGateway {
   @SubscribeMessage('users.update')
   async updateUser(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string } & UpdateUserDto,
+    @MessageBody() body: UpdateUserMessageDto,
   ) {
     await this.session.requireAdmin(client);
     const row = await this.users.update(body.id, {
@@ -58,7 +61,7 @@ export class UsersGateway {
   @SubscribeMessage('users.delete')
   async deleteUser(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { id: string },
+    @MessageBody() body: IdMessageDto,
   ) {
     await this.session.requireAdmin(client);
     const ok = await this.users.delete(body.id);

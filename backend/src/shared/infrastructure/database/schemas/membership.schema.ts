@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
-import type { UserAccessKey } from '@auth/domain/entities/user.entity';
+import type { UserAccessKey } from '@shared/domain/access';
 import type { MembershipRole } from '@tenancy/domain/tenant.entity';
 
 @Schema({ timestamps: true, collection: 'memberships' })
@@ -25,5 +25,6 @@ export class MembershipDocument {
 }
 
 export type MembershipMongoDocument = HydratedDocument<MembershipDocument>;
-export const MembershipSchema = SchemaFactory.createForClass(MembershipDocument);
+export const MembershipSchema =
+  SchemaFactory.createForClass(MembershipDocument);
 MembershipSchema.index({ tenantId: 1, userId: 1 }, { unique: true });

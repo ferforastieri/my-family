@@ -77,6 +77,7 @@ export class MarketingController {
 
 function requestOrigin(request: Request) {
   const forwarded = request.get('x-forwarded-proto')?.split(',')[0]?.trim();
+  const forwardedHost = request.get('x-forwarded-host')?.split(',')[0]?.trim();
   const protocol = forwarded || request.protocol;
-  return `${protocol}://${request.get('host')}`;
+  return `${protocol}://${forwardedHost || request.get('host')}`;
 }

@@ -1,4 +1,7 @@
 import { IsDateString, IsOptional, IsString } from 'class-validator';
+import { PartialType } from '@nestjs/mapped-types';
+import { Type } from 'class-transformer';
+import { ValidateNested } from 'class-validator';
 
 export class NotaWriteDto {
   @IsString()
@@ -10,6 +13,17 @@ export class NotaWriteDto {
   @IsOptional()
   @IsDateString()
   data?: string;
+}
+
+export class NotaUpdateDto extends PartialType(NotaWriteDto) {}
+
+export class NotaUpdateMessageDto {
+  @IsString()
+  id: string;
+
+  @ValidateNested()
+  @Type(() => NotaUpdateDto)
+  data: NotaUpdateDto;
 }
 
 export class NotaResponseDto {

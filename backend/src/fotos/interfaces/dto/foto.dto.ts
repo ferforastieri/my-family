@@ -1,4 +1,7 @@
 import { IsDateString, IsIn, IsOptional, IsString } from 'class-validator';
+import { PartialType } from '@nestjs/mapped-types';
+import { Type } from 'class-transformer';
+import { ValidateNested } from 'class-validator';
 import type { FotoEntity } from '@fotos/domain/entities/foto.entity';
 
 export class FotoWriteDto {
@@ -19,6 +22,17 @@ export class FotoWriteDto {
   @IsOptional()
   @IsDateString()
   data?: string;
+}
+
+export class FotoUpdateDto extends PartialType(FotoWriteDto) {}
+
+export class FotoUpdateMessageDto {
+  @IsString()
+  id: string;
+
+  @ValidateNested()
+  @Type(() => FotoUpdateDto)
+  data: FotoUpdateDto;
 }
 
 export class FotoResponseDto {

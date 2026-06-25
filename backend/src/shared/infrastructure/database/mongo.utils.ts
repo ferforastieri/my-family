@@ -10,19 +10,14 @@ export function cleanUndefined<T extends Record<string, unknown>>(
   ) as Partial<T>;
 }
 
-export type PaginationQuery = {
-  page?: number | string;
-  limit?: number | string;
-  album?: string;
-};
-
-export type PaginatedResult<T> = {
-  items: T[];
-  page: number;
-  limit: number;
-  total: number;
-  pages: number;
-};
+import type {
+  PaginatedResult,
+  PaginationQuery,
+} from '@shared/application/pagination';
+export type {
+  PaginatedResult,
+  PaginationQuery,
+} from '@shared/application/pagination';
 
 export function normalizePagination(
   query?: PaginationQuery,

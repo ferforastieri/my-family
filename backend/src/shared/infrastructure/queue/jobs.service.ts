@@ -3,10 +3,10 @@ import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { QUEUE_NAMES } from './queue.constants';
 import { TenantContext } from '@tenancy/application/tenant-context';
-import { TenantRepository } from '@tenancy/infrastructure/tenant.repository';
 
 export type NotificationJob = {
   tenantId: string;
+  scheduledId?: string;
   title: string;
   body?: string;
   url?: string;
@@ -46,22 +46,27 @@ export class JobsService implements OnApplicationBootstrap {
     @InjectQueue(QUEUE_NAMES.payments)
     private payments: Queue<PaymentJob>,
     private tenantContext: TenantContext,
-    private tenants: TenantRepository,
   ) {}
 
   async onApplicationBootstrap() {
-    for (const tenant of await this.tenants.listAllTenants()) {
-      await this.cleanup.add(
-        'upload-orphans',
-        { tenantId: tenant.id },
-        {
-          jobId: `repeat-upload-orphans:${tenant.id}`,
-          repeat: { pattern: '0 */6 * * *' },
-          removeOnComplete: true,
-          removeOnFail: 20,
-        },
-      );
-    }
+    const obsoleteSchedulers = (await this.cleanup.getJobSchedulers()).filter(
+      (scheduler) => scheduler.name === 'upload-orphans',
+    );
+    await Promise.all(
+      obsoleteSchedulers.map((scheduler) =>
+        this.cleanup.removeJobScheduler(scheduler.key),
+      ),
+    );
+    await this.cleanup.add(
+      'upload-orphans-all-tenants',
+      {},
+      {
+        jobId: 'repeat-upload-orphans-all-tenants',
+        repeat: { pattern: '0 */6 * * *' },
+        removeOnComplete: true,
+        removeOnFail: 20,
+      },
+    );
   }
 
   enqueueNotification(data: Omit<NotificationJob, 'tenantId'>) {
@@ -71,6 +76,31 @@ export class JobsService implements OnApplicationBootstrap {
       removeOnComplete: true,
       removeOnFail: 50,
     });
+  }
+
+  enqueueScheduledNotification(
+    data: Omit<NotificationJob, 'tenantId'> & { scheduledId: string },
+    scheduledAt: Date,
+  ) {
+    const payload = this.withTenant(data);
+    return this.notifications.add('scheduled-send', payload, {
+      jobId: this.scheduledNotificationJobId(
+        payload.tenantId,
+        payload.scheduledId,
+      ),
+      delay: Math.max(0, scheduledAt.getTime() - Date.now()),
+      attempts: 5,
+      backoff: { type: 'exponential', delay: 30_000 },
+      removeOnComplete: true,
+      removeOnFail: 50,
+    });
+  }
+
+  async removeScheduledNotification(tenantId: string, scheduledId: string) {
+    const job = await this.notifications.getJob(
+      this.scheduledNotificationJobId(tenantId, scheduledId),
+    );
+    if (job) await job.remove();
   }
 
   enqueueMediaProcessing(data: Omit<MediaJob, 'tenantId'>) {
@@ -103,5 +133,12 @@ export class JobsService implements OnApplicationBootstrap {
 
   private withTenant<T extends object>(data: T): T & { tenantId: string } {
     return { ...data, tenantId: this.tenantContext.tenantId };
+  }
+
+  private scheduledNotificationJobId(tenantId: string, scheduledId: string) {
+    return `scheduled-notification-${tenantId}-${scheduledId}`.replace(
+      /[^a-zA-Z0-9_-]/g,
+      '-',
+    );
   }
 }

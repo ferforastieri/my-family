@@ -1,38 +1,28 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  OnModuleInit,
-} from '@nestjs/common';
-import { SchedulerRegistry } from '@nestjs/schedule';
-import { CronJob } from 'cron';
-import { NotificationsService } from './notifications.service';
-import { ScheduledNotificationsRepository } from '../../infrastructure/repositories/scheduled-notifications.repository';
-import { NotificationsRealtimeGateway } from '../../interfaces/gateways/notifications-realtime.gateway';
-import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
+import { BadRequestException, Injectable, OnModuleInit } from '@nestjs/common';
+import type { PaginationQuery } from '@shared/application/pagination';
+import { JobsService } from '@shared/infrastructure/queue';
 import { TenantContext } from '@tenancy/application/tenant-context';
 import { TenantRepository } from '@tenancy/infrastructure/tenant.repository';
+import { ScheduledNotificationsRepository } from '../../infrastructure/repositories/scheduled-notifications.repository';
+import { NotificationsRealtimeGateway } from '../../interfaces/gateways/notifications-realtime.gateway';
 
 @Injectable()
 export class NotificationSchedulerService implements OnModuleInit {
-  private readonly logger = new Logger(NotificationSchedulerService.name);
-
   constructor(
-    private scheduled: ScheduledNotificationsRepository,
-    private notifications: NotificationsService,
-    private schedulerRegistry: SchedulerRegistry,
-    private realtime: NotificationsRealtimeGateway,
-    private tenantContext: TenantContext,
-    private tenants: TenantRepository,
+    private readonly scheduled: ScheduledNotificationsRepository,
+    private readonly jobs: JobsService,
+    private readonly realtime: NotificationsRealtimeGateway,
+    private readonly tenantContext: TenantContext,
+    private readonly tenants: TenantRepository,
   ) {}
 
   async onModuleInit() {
     for (const tenant of await this.tenants.listAllTenants()) {
-      const pending = await this.tenantContext.run(
-        { tenantId: tenant.id },
-        () => this.scheduled.pending(),
-      );
-      for (const item of pending) this.registerJob(item);
+      await this.tenantContext.run({ tenantId: tenant.id }, async () => {
+        for (const item of await this.scheduled.pending()) {
+          await this.enqueue(item);
+        }
+      });
     }
   }
 
@@ -42,20 +32,28 @@ export class NotificationSchedulerService implements OnModuleInit {
     url?: string;
     scheduledAt: string | Date;
   }) {
-    if (!body?.title?.trim())
+    if (!body?.title?.trim()) {
       throw new BadRequestException('title é obrigatório');
+    }
     const scheduledAt = new Date(body.scheduledAt);
-    if (Number.isNaN(scheduledAt.getTime()))
+    if (Number.isNaN(scheduledAt.getTime())) {
       throw new BadRequestException('scheduledAt inválido');
-    if (scheduledAt.getTime() <= Date.now())
+    }
+    if (scheduledAt.getTime() <= Date.now()) {
       throw new BadRequestException('scheduledAt deve ser no futuro');
+    }
     const row = await this.scheduled.create({
       title: body.title.trim(),
       body: body.body?.trim() ?? '',
       url: body.url?.trim() || '/',
       scheduledAt,
     });
-    this.registerJob(row);
+    try {
+      await this.enqueue(row);
+    } catch (error) {
+      await this.scheduled.delete(row.id);
+      throw error;
+    }
     this.realtime.emitScheduledNotificationChanged(row);
     return {
       id: row.id,
@@ -69,84 +67,32 @@ export class NotificationSchedulerService implements OnModuleInit {
   }
 
   async delete(id: string) {
-    const name = this.jobName(this.tenantContext.tenantId, id);
-    if (this.schedulerRegistry.doesExist('cron', name)) {
-      this.schedulerRegistry.deleteCronJob(name);
-    }
+    await this.jobs.removeScheduledNotification(
+      this.tenantContext.tenantId,
+      id,
+    );
     const ok = await this.scheduled.delete(id);
-    if (ok)
+    if (ok) {
       this.realtime.emitScheduledNotificationChanged({ id, deleted: true });
+    }
     return ok;
   }
 
-  private registerJob(row: {
+  private enqueue(row: {
     id: string;
-    tenantId: string;
     title: string;
     body?: string;
     url?: string;
     scheduledAt: Date;
   }) {
-    const name = this.jobName(row.tenantId, row.id);
-    if (this.schedulerRegistry.doesExist('cron', name)) {
-      this.schedulerRegistry.deleteCronJob(name);
-    }
-    const scheduledAt = new Date(row.scheduledAt);
-    if (scheduledAt.getTime() <= Date.now()) {
-      void this.runJob(
-        row.tenantId,
-        row.id,
-        row.title,
-        row.body,
-        row.url,
-      );
-      return;
-    }
-    const job = new CronJob(scheduledAt, () => {
-      void this.runJob(
-        row.tenantId,
-        row.id,
-        row.title,
-        row.body,
-        row.url,
-      );
-    });
-    this.schedulerRegistry.addCronJob(name, job);
-    job.start();
-  }
-
-  private async runJob(
-    tenantId: string,
-    id: string,
-    title: string,
-    body?: string,
-    url?: string,
-  ) {
-    return this.tenantContext.run({ tenantId }, async () => {
-      const name = this.jobName(tenantId, id);
-      try {
-        await this.notifications.send(title, body, url);
-        const row = await this.scheduled.markSent(id);
-        if (row) this.realtime.emitScheduledNotificationChanged(row);
-      } catch (error) {
-        const row = await this.scheduled.markFailed(
-          id,
-          error instanceof Error ? error.message : String(error),
-        );
-        if (row) this.realtime.emitScheduledNotificationChanged(row);
-        this.logger.error(
-          `Falha ao enviar notificação agendada ${id}`,
-          error instanceof Error ? error.stack : undefined,
-        );
-      } finally {
-        if (this.schedulerRegistry.doesExist('cron', name)) {
-          this.schedulerRegistry.deleteCronJob(name);
-        }
-      }
-    });
-  }
-
-  private jobName(tenantId: string, id: string) {
-    return `notification:${tenantId}:${id}`;
+    return this.jobs.enqueueScheduledNotification(
+      {
+        scheduledId: row.id,
+        title: row.title,
+        body: row.body,
+        url: row.url,
+      },
+      row.scheduledAt,
+    );
   }
 }
