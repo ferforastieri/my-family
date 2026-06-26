@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import {
   FotoDocument,
   FotoMongoDocument,
-} from '@shared/infrastructure/database/schemas';
+} from '../persistence/foto.schema';
 import {
   cleanUndefined,
   normalizePagination,

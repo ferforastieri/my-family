@@ -1,12 +1,20 @@
 import { Global, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { MongoModelsModule } from '@shared/infrastructure/database/database.providers';
+import { MongooseModule } from '@nestjs/mongoose';
 import { AuditService } from './application/audit.service';
 import { AuditMiddleware } from './infrastructure/audit.middleware';
+import {
+  AuditLogDocument,
+  AuditLogSchema,
+} from './infrastructure/persistence/audit-log.schema';
 import { AuditController } from './interfaces/audit.controller';
 
 @Global()
 @Module({
-  imports: [MongoModelsModule],
+  imports: [
+    MongooseModule.forFeature([
+      { name: AuditLogDocument.name, schema: AuditLogSchema },
+    ]),
+  ],
   controllers: [AuditController],
   providers: [AuditService, AuditMiddleware],
   exports: [AuditService],

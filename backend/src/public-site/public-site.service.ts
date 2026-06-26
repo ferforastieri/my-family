@@ -4,11 +4,15 @@ import { Model } from 'mongoose';
 import {
   FotoDocument,
   FotoMongoDocument,
+} from '../fotos/infrastructure/persistence/foto.schema';
+import {
   HomeSettingsDocument,
   HomeSettingsMongoDocument,
+} from '../home-settings/infrastructure/persistence/home-settings.schema';
+import {
   MusicaDocument,
   MusicaMongoDocument,
-} from '@shared/infrastructure/database/schemas';
+} from '../musicas/infrastructure/persistence/musica.schema';
 import { CartasService } from '@cartas/application/services/cartas.service';
 import { TenantContext } from '@tenancy/application/tenant-context';
 import { TenantService } from '@tenancy/application/tenant.service';

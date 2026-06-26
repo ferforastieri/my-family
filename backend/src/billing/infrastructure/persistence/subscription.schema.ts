@@ -7,43 +7,43 @@ import {
 
 @Schema({ timestamps: true, collection: 'subscriptions' })
 export class SubscriptionDocument {
-  @Prop({ required: true, unique: true, index: true })
+  @Prop({ type: String, required: true, unique: true, index: true })
   tenantId: string;
 
-  @Prop({ required: true, default: 'stripe' })
+  @Prop({ type: String, required: true, default: 'stripe' })
   provider: 'stripe';
 
-  @Prop({ enum: subscriptionPlanIntervals })
+  @Prop({ type: String, enum: subscriptionPlanIntervals })
   planInterval?: SubscriptionPlanInterval;
 
-  @Prop()
+  @Prop({ type: String })
   planName?: string;
 
-  @Prop()
+  @Prop({ type: Number })
   priceCents?: number;
 
-  @Prop()
+  @Prop({ type: String })
   currency?: string;
 
-  @Prop({ index: true })
+  @Prop({ type: String, index: true })
   customerId?: string;
 
-  @Prop({ index: true })
+  @Prop({ type: String, index: true })
   subscriptionId?: string;
 
-  @Prop({ index: true })
+  @Prop({ type: String, index: true })
   checkoutSessionId?: string;
 
-  @Prop()
+  @Prop({ type: String })
   priceId?: string;
 
-  @Prop({ required: true, default: 'pending' })
+  @Prop({ type: String, required: true, default: 'pending' })
   status: string;
 
-  @Prop()
+  @Prop({ type: Date })
   currentPeriodEnd?: Date;
 
-  @Prop()
+  @Prop({ type: Boolean })
   cancelAtPeriodEnd?: boolean;
 
   createdAt: Date;
@@ -59,10 +59,10 @@ export const SubscriptionSchema =
   collection: 'billing_events',
 })
 export class BillingEventDocument {
-  @Prop({ required: true, unique: true })
+  @Prop({ type: String, required: true, unique: true })
   providerEventId: string;
 
-  @Prop({ required: true })
+  @Prop({ type: String, required: true })
   type: string;
 
   createdAt: Date;

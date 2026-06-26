@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import {
   MusicaDocument,
   MusicaMongoDocument,
-} from '@shared/infrastructure/database/schemas';
+} from '../persistence/musica.schema';
 import {
   cleanUndefined,
   normalizePagination,

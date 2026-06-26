@@ -2,14 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
+  SubscriptionDocument,
+  SubscriptionMongoDocument,
   BillingEventDocument,
   BillingEventMongoDocument,
+} from './persistence/subscription.schema';
+import {
   SubscriptionPlanDocument,
   SubscriptionPlanInterval,
   SubscriptionPlanMongoDocument,
-  SubscriptionDocument,
-  SubscriptionMongoDocument,
-} from '@shared/infrastructure/database/schemas';
+} from './persistence/subscription-plan.schema';
 import {
   cleanUndefined,
   toId,

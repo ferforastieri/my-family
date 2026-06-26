@@ -4,11 +4,15 @@ import { Model } from 'mongoose';
 import {
   LocationPlaceDocument,
   LocationPlaceMongoDocument,
+} from '../persistence/location-place.schema';
+import {
   LocationPresenceDocument,
   LocationPresenceMongoDocument,
+} from '../persistence/location-presence.schema';
+import {
   LocationUpdateDocument,
   LocationUpdateMongoDocument,
-} from '@shared/infrastructure/database/schemas';
+} from '../persistence/location-update.schema';
 import {
   cleanUndefined,
   normalizePagination,

@@ -10,7 +10,7 @@ import {
   SiteConfigMongoDocument,
   SiteConfigValue,
   SiteSectionKey,
-} from '@shared/infrastructure/database/schemas';
+} from '../infrastructure/persistence/site-config.schema';
 import { TenantContext } from '@tenancy/application/tenant-context';
 import { TenantService } from '@tenancy/application/tenant.service';
 

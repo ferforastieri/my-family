@@ -3,10 +3,12 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
   FamilyListDocument,
+  FamilyListMongoDocument,
+} from '../persistence/family-list.schema';
+import {
   FamilyListItemDocument,
   FamilyListItemMongoDocument,
-  FamilyListMongoDocument,
-} from '@shared/infrastructure/database/schemas';
+} from '../persistence/family-list-item.schema';
 import {
   cleanUndefined,
   normalizePagination,

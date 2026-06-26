@@ -4,13 +4,19 @@ import { Model } from 'mongoose';
 import {
   FotoDocument,
   FotoMongoDocument,
+} from '../fotos/infrastructure/persistence/foto.schema';
+import {
   MembershipDocument,
   MembershipMongoDocument,
+} from '../tenancy/infrastructure/persistence/membership.schema';
+import {
   MusicaDocument,
   MusicaMongoDocument,
+} from '../musicas/infrastructure/persistence/musica.schema';
+import {
   NotificationDocument,
   NotificationMongoDocument,
-} from '@shared/infrastructure/database/schemas';
+} from '../notifications/infrastructure/persistence/notification.schema';
 import { TenantService } from '@tenancy/application/tenant.service';
 import { TenantContext } from '@tenancy/application/tenant-context';
 

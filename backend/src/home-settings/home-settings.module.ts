@@ -1,13 +1,23 @@
 import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from '@auth/auth.module';
 import { DatabaseModule } from '@shared/infrastructure/database/database.module';
-import { MongoModelsModule } from '@shared/infrastructure/database/database.providers';
 import { HomeSettingsService } from './application/home-settings.service';
 import { HomeSettingsRepository } from './infrastructure/home-settings.repository';
 import { HomeSettingsGateway } from './interfaces/home-settings.gateway';
+import {
+  HomeSettingsDocument,
+  HomeSettingsSchema,
+} from './infrastructure/persistence/home-settings.schema';
 
 @Module({
-  imports: [DatabaseModule, MongoModelsModule, AuthModule],
+  imports: [
+    DatabaseModule,
+    MongooseModule.forFeature([
+      { name: HomeSettingsDocument.name, schema: HomeSettingsSchema },
+    ]),
+    AuthModule,
+  ],
   providers: [
     HomeSettingsService,
     HomeSettingsRepository,

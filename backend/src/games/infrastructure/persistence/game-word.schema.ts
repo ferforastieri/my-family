@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { applyTenantScope } from '@tenancy/infrastructure/tenant-scope.plugin';
 
 @Schema({ timestamps: true, collection: 'game_words' })
 export class GameWordDocument {
@@ -16,3 +17,4 @@ export class GameWordDocument {
 export type GameWordMongoDocument = HydratedDocument<GameWordDocument>;
 export const GameWordSchema = SchemaFactory.createForClass(GameWordDocument);
 GameWordSchema.index({ tenantId: 1, word: 1 }, { unique: true });
+applyTenantScope(GameWordSchema);

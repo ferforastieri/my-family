@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { applyTenantScope } from '@tenancy/infrastructure/tenant-scope.plugin';
 
 @Schema({ timestamps: true, collection: 'notas' })
 export class NotaDocument {
@@ -18,3 +19,4 @@ export class NotaDocument {
 
 export type NotaMongoDocument = HydratedDocument<NotaDocument>;
 export const NotaSchema = SchemaFactory.createForClass(NotaDocument);
+applyTenantScope(NotaSchema);

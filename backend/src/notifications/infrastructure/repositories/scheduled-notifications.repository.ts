@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import {
   ScheduledNotificationDocument,
   ScheduledNotificationMongoDocument,
-} from '@shared/infrastructure/database/schemas';
+} from '../persistence/scheduled-notification.schema';
 import {
   cleanUndefined,
   normalizePagination,

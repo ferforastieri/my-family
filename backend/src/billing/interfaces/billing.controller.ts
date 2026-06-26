@@ -12,7 +12,7 @@ import type { Request } from 'express';
 import { Public } from '@auth/decorators/public.decorator';
 import { BillingService } from '../application/billing.service';
 import type { UserEntity } from '@auth/domain/entities/user.entity';
-import { subscriptionPlanIntervals } from '@shared/infrastructure/database/schemas';
+import { subscriptionPlanIntervals } from '../infrastructure/persistence/subscription-plan.schema';
 
 class CheckoutDto {
   @IsOptional()

@@ -3,13 +3,17 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
   SubscriptionDocument,
-  SubscriptionPlanInterval,
   SubscriptionMongoDocument,
+} from '../billing/infrastructure/persistence/subscription.schema';
+import type { SubscriptionPlanInterval } from '../billing/infrastructure/persistence/subscription-plan.schema';
+import {
   TenantDocument,
   TenantMongoDocument,
+} from '../tenancy/infrastructure/persistence/tenant.schema';
+import {
   UserDocument,
   UserMongoDocument,
-} from '@shared/infrastructure/database/schemas';
+} from '../auth/infrastructure/persistence/user.schema';
 import { AuditService } from '../audit/application/audit.service';
 import {
   normalizePagination,

@@ -5,7 +5,7 @@ import { Model } from 'mongoose';
 import {
   AuditLogDocument,
   AuditLogMongoDocument,
-} from '@shared/infrastructure/database/schemas';
+} from '../infrastructure/persistence/audit-log.schema';
 import type { UserEntity } from '@auth/domain/entities/user.entity';
 import type { AuditRecord } from '../domain/audit-record';
 

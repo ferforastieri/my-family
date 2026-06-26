@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { applyTenantScope } from '@tenancy/infrastructure/tenant-scope.plugin';
 
 @Schema({ timestamps: true, collection: 'mini_game_configs' })
 export class MiniGameConfigDocument {
@@ -31,3 +32,4 @@ export const MiniGameConfigSchema = SchemaFactory.createForClass(
   MiniGameConfigDocument,
 );
 MiniGameConfigSchema.index({ tenantId: 1, type: 1 }, { unique: true });
+applyTenantScope(MiniGameConfigSchema);

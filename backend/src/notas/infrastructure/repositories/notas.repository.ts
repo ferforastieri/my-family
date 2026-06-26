@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import {
   NotaDocument,
   NotaMongoDocument,
-} from '@shared/infrastructure/database/schemas';
+} from '../persistence/nota.schema';
 import {
   cleanUndefined,
   normalizePagination,

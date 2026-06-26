@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { applyTenantScope } from '@tenancy/infrastructure/tenant-scope.plugin';
 
 @Schema({
   timestamps: true,
@@ -33,3 +34,4 @@ export type LocationPlaceMongoDocument =
 export const LocationPlaceSchema = SchemaFactory.createForClass(
   LocationPlaceDocument,
 );
+applyTenantScope(LocationPlaceSchema);

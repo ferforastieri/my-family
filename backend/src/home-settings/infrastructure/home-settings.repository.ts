@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import {
   HomeSettingsDocument,
   HomeSettingsMongoDocument,
-} from '@shared/infrastructure/database/schemas';
+} from './persistence/home-settings.schema';
 
 export type HomeEventWrite = {
   title: string;

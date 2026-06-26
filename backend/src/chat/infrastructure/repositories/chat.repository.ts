@@ -4,9 +4,11 @@ import { Model } from 'mongoose';
 import {
   ChatConversationDocument,
   ChatConversationMongoDocument,
+} from '../persistence/chat-conversation.schema';
+import {
   ChatMessageDocument,
   ChatMessageMongoDocument,
-} from '@shared/infrastructure/database/schemas';
+} from '../persistence/chat-message.schema';
 import {
   normalizePagination,
   paginated,

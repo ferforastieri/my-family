@@ -11,7 +11,7 @@ import { TenantRepository } from '@tenancy/infrastructure/tenant.repository';
 import { BillingRepository } from '../infrastructure/billing.repository';
 import { JobsService, type PaymentJob } from '@shared/infrastructure/queue';
 import type { UserEntity } from '@auth/domain/entities/user.entity';
-import type { SubscriptionPlanInterval } from '@shared/infrastructure/database/schemas';
+import type { SubscriptionPlanInterval } from '../infrastructure/persistence/subscription-plan.schema';
 
 @Injectable()
 export class BillingService {

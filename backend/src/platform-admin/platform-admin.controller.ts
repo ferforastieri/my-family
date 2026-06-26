@@ -25,7 +25,7 @@ import { PlatformAdminService } from './platform-admin.service';
 import {
   SubscriptionPlanInterval,
   subscriptionPlanIntervals,
-} from '@shared/infrastructure/database/schemas';
+} from '../billing/infrastructure/persistence/subscription-plan.schema';
 
 class UpdateSubscriptionPlanDto {
   @IsOptional()

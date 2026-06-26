@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { applyTenantScope } from '@tenancy/infrastructure/tenant-scope.plugin';
 
 @Schema({ timestamps: true, collection: 'musicas' })
 export class MusicaDocument {
@@ -27,3 +28,4 @@ export class MusicaDocument {
 
 export type MusicaMongoDocument = HydratedDocument<MusicaDocument>;
 export const MusicaSchema = SchemaFactory.createForClass(MusicaDocument);
+applyTenantScope(MusicaSchema);

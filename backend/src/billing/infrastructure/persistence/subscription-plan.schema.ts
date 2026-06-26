@@ -14,6 +14,7 @@ export type SubscriptionPlanInterval =
 @Schema({ timestamps: true, collection: 'subscription_plans' })
 export class SubscriptionPlanDocument {
   @Prop({
+    type: String,
     required: true,
     unique: true,
     index: true,
@@ -21,28 +22,28 @@ export class SubscriptionPlanDocument {
   })
   interval: SubscriptionPlanInterval;
 
-  @Prop({ required: true })
+  @Prop({ type: String, required: true })
   name: string;
 
-  @Prop({ required: true })
+  @Prop({ type: String, required: true })
   description: string;
 
-  @Prop({ required: true, min: 0 })
+  @Prop({ type: Number, required: true, min: 0 })
   priceCents: number;
 
-  @Prop({ required: true, default: 'BRL' })
+  @Prop({ type: String, required: true, default: 'BRL' })
   currency: string;
 
-  @Prop()
+  @Prop({ type: String })
   stripePriceId?: string;
 
-  @Prop({ required: true, default: true })
+  @Prop({ type: Boolean, required: true, default: true })
   active: boolean;
 
-  @Prop({ required: true, default: false })
+  @Prop({ type: Boolean, required: true, default: false })
   highlighted: boolean;
 
-  @Prop({ required: true, default: 0 })
+  @Prop({ type: Number, required: true, default: 0 })
   sortOrder: number;
 
   createdAt: Date;

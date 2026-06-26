@@ -4,9 +4,11 @@ import { Model } from 'mongoose';
 import {
   NotificationDocument,
   NotificationMongoDocument,
+} from '../persistence/notification.schema';
+import {
   PushSubscriptionDocument,
   PushSubscriptionMongoDocument,
-} from '@shared/infrastructure/database/schemas';
+} from '../persistence/push-subscription.schema';
 import {
   cleanUndefined,
   normalizePagination,

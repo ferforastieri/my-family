@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { applyTenantScope } from '@tenancy/infrastructure/tenant-scope.plugin';
 
 @Schema({
   timestamps: { createdAt: true, updatedAt: false },
@@ -38,3 +39,4 @@ NotificationSchema.index(
   { tenantId: 1, title: 1, body: 1, url: 1, type: 1 },
   { unique: true },
 );
+applyTenantScope(NotificationSchema);

@@ -4,13 +4,19 @@ import { Model } from 'mongoose';
 import {
   GameCompletionDocument,
   GameCompletionMongoDocument,
+} from '../persistence/game-completion.schema';
+import {
   MiniGameConfigDocument,
   MiniGameConfigMongoDocument,
+} from '../persistence/mini-game-config.schema';
+import {
   GameWordDocument,
   GameWordMongoDocument,
+} from '../persistence/game-word.schema';
+import {
   QuizQuestionDocument,
   QuizQuestionMongoDocument,
-} from '@shared/infrastructure/database/schemas';
+} from '../persistence/quiz-question.schema';
 import {
   normalizePagination,
   paginated,

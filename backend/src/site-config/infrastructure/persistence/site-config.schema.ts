@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { applyTenantScope } from '@tenancy/infrastructure/tenant-scope.plugin';
 
 export type SiteSectionKey =
   | 'events'
@@ -50,3 +51,4 @@ export class SiteConfigDocument {
 export type SiteConfigMongoDocument = HydratedDocument<SiteConfigDocument>;
 export const SiteConfigSchema = SchemaFactory.createForClass(SiteConfigDocument);
 SiteConfigSchema.index({ tenantId: 1, key: 1 }, { unique: true });
+applyTenantScope(SiteConfigSchema);

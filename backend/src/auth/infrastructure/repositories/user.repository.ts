@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import {
   UserDocument,
   UserMongoDocument,
-} from '@shared/infrastructure/database/schemas';
+} from '../persistence/user.schema';
 import {
   cleanUndefined,
   normalizePagination,

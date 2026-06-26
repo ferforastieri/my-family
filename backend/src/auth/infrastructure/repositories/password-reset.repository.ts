@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import {
   PasswordResetDocument,
   PasswordResetMongoDocument,
-} from '@shared/infrastructure/database/schemas';
+} from '../persistence/password-reset.schema';
 import { toId } from '@shared/infrastructure/database/mongo.utils';
 import type { PasswordResetEntity } from '@auth/domain/entities/user.entity';
 

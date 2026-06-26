@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { applyTenantScope } from '@tenancy/infrastructure/tenant-scope.plugin';
 
 @Schema({ timestamps: true, collection: 'scheduled_notifications' })
 export class ScheduledNotificationDocument {
@@ -39,3 +40,4 @@ export type ScheduledNotificationMongoDocument =
 export const ScheduledNotificationSchema = SchemaFactory.createForClass(
   ScheduledNotificationDocument,
 );
+applyTenantScope(ScheduledNotificationSchema);

@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { applyTenantScope } from '@tenancy/infrastructure/tenant-scope.plugin';
 
 @Schema({
   timestamps: { createdAt: true, updatedAt: false },
@@ -29,3 +30,4 @@ export type GameCompletionMongoDocument =
 export const GameCompletionSchema = SchemaFactory.createForClass(
   GameCompletionDocument,
 );
+applyTenantScope(GameCompletionSchema);

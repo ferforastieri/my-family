@@ -17,7 +17,7 @@ import {
 import type {
   SiteConfigValue,
   SiteSectionKey,
-} from '@shared/infrastructure/database/schemas';
+} from '../infrastructure/persistence/site-config.schema';
 
 const sectionKeys: SiteSectionKey[] = [
   'events',

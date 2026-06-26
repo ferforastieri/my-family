@@ -5,7 +5,7 @@ import { Model } from 'mongoose';
 import {
   SupportSessionDocument,
   SupportSessionMongoDocument,
-} from '@shared/infrastructure/database/schemas';
+} from '../../infrastructure/persistence/support-session.schema';
 
 @Injectable()
 export class SupportSessionService {

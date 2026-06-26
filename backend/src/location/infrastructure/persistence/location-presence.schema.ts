@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { applyTenantScope } from '@tenancy/infrastructure/tenant-scope.plugin';
 
 @Schema({
   timestamps: true,
@@ -34,3 +35,4 @@ LocationPresenceSchema.index(
   { tenantId: 1, userId: 1, placeId: 1 },
   { unique: true },
 );
+applyTenantScope(LocationPresenceSchema);

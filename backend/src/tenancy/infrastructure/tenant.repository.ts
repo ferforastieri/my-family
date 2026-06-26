@@ -4,9 +4,11 @@ import { Model } from 'mongoose';
 import {
   MembershipDocument,
   MembershipMongoDocument,
+} from './persistence/membership.schema';
+import {
   TenantDocument,
   TenantMongoDocument,
-} from '@shared/infrastructure/database/schemas';
+} from './persistence/tenant.schema';
 import {
   cleanUndefined,
   toId,

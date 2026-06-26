@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { applyTenantScope } from '@tenancy/infrastructure/tenant-scope.plugin';
 
 @Schema({ timestamps: true, collection: 'family_list_items' })
 export class FamilyListItemDocument {
@@ -24,3 +25,4 @@ export type FamilyListItemMongoDocument =
 export const FamilyListItemSchema = SchemaFactory.createForClass(
   FamilyListItemDocument,
 );
+applyTenantScope(FamilyListItemSchema);
