@@ -329,6 +329,10 @@ class _PublicAuthPageState extends State<PublicAuthPage> {
         );
       } else {
         await widget.auth.signIn(email.text.trim(), password.text);
+        if (widget.entry == PublicAuthEntry.panel &&
+            widget.afterLoginPath == '/admin/plataforma') {
+          await widget.auth.startPlatformSession();
+        }
         final tenantSlug = widget.tenantSlug?.trim();
         if (tenantSlug?.isNotEmpty == true) {
           await widget.auth.selectTenant(tenantSlug!);

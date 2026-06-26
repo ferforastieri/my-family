@@ -56,22 +56,37 @@ GoRouter buildRouter(
       const platformAdminPaths = {
         '/admin/plataforma',
       };
-      const familyAdminPaths = {
+      const panelPaths = {
         '/painel',
         '/admin/familia',
+        '/billing',
       };
+      final platformAdminPath = platformAdminPaths.contains(path);
+      final panelPath = panelPaths.contains(path) ||
+          RegExp(r'^/cliente/[^/]+/assinatura$').hasMatch(path);
       final publicPath =
           publicPaths.contains(path) || _isFamilySiteLoginPath(path);
       if (auth.user == null) {
+        if (platformAdminPath) {
+          return Uri(
+            path: '/login/painel',
+            queryParameters: {'next': path},
+          ).toString();
+        }
+        if (panelPath) return '/login/painel';
         return publicPath ? null : '/login/cliente';
       }
       if (publicPath) return null;
+      if (platformAdminPath) {
+        return auth.user?.isPlatformSession == true
+            ? null
+            : Uri(
+                path: '/login/painel',
+                queryParameters: {'next': path},
+              ).toString();
+      }
       if (auth.tenant == null) {
         if (familySelectionPaths.contains(path)) return null;
-        if (platformAdminPaths.contains(path) &&
-            auth.user?.isPlatformAdmin == true) {
-          return null;
-        }
         return '/familias';
       }
       if (familySelectionPaths.contains(path)) {
@@ -85,14 +100,10 @@ GoRouter buildRouter(
           auth.tenant?.isActive != true &&
           path != '/billing' &&
           path != '/perfil' &&
-          !platformAdminPaths.contains(path)) {
+          !platformAdminPath) {
         return '/billing';
       }
-      if (platformAdminPaths.contains(path) &&
-          auth.user?.isPlatformAdmin != true) {
-        return '/';
-      }
-      if (familyAdminPaths.contains(path) && auth.user?.isAdmin != true) {
+      if (panelPath && auth.user?.isAdmin != true) {
         return '/';
       }
       if (accessKey != null && auth.user?.canAccess(accessKey) != true) {
@@ -136,7 +147,8 @@ GoRouter buildRouter(
           locale: MarketingLocale.resolve(state.uri.queryParameters['locale']),
           register: false,
           entry: PublicAuthEntry.panel,
-          afterLoginPath: _familySelectionNext('/painel'),
+          afterLoginPath: _safeNextPath(state.uri.queryParameters['next']) ??
+              _familySelectionNext('/painel'),
         )),
       ),
       GoRoute(
@@ -168,6 +180,22 @@ GoRouter buildRouter(
         pageBuilder: (context, state) => _page(ClientDashboardPage(auth: auth)),
       ),
       GoRoute(
+        path: '/billing',
+        pageBuilder: (context, state) => _page(BillingPage(
+          auth: auth,
+          toast: toast,
+          initialPlanInterval: state.uri.queryParameters['plan'],
+        )),
+      ),
+      GoRoute(
+        path: '/cliente/:tenantSlug/assinatura',
+        pageBuilder: (context, state) => _page(BillingPage(
+          auth: auth,
+          toast: toast,
+          initialPlanInterval: state.uri.queryParameters['plan'],
+        )),
+      ),
+      GoRoute(
         path: '/admin/familia',
         pageBuilder: (context, state) =>
             _page(AdminPage(auth: auth, repository: repository, toast: toast)),
@@ -187,22 +215,6 @@ GoRouter buildRouter(
           );
         },
         routes: [
-          GoRoute(
-            path: '/billing',
-            pageBuilder: (context, state) => _page(BillingPage(
-              auth: auth,
-              toast: toast,
-              initialPlanInterval: state.uri.queryParameters['plan'],
-            )),
-          ),
-          GoRoute(
-            path: '/cliente/:tenantSlug/assinatura',
-            pageBuilder: (context, state) => _page(BillingPage(
-              auth: auth,
-              toast: toast,
-              initialPlanInterval: state.uri.queryParameters['plan'],
-            )),
-          ),
           GoRoute(
             path: '/atalhos/memorias',
             pageBuilder: (context, state) => _page(MobileOptionsPage(

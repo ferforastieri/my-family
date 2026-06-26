@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -163,7 +165,12 @@ class _AdminPageState extends State<AdminPage> {
     List<String> errors,
   ) async {
     try {
-      await loader();
+      await loader().timeout(
+        const Duration(seconds: 12),
+        onTimeout: () => throw TimeoutException(
+          'Tempo esgotado carregando $label.',
+        ),
+      );
     } catch (error) {
       errors.add('$label: ${_friendlyError(error)}');
     }

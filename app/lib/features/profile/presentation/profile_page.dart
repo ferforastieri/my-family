@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../core/navigation/app_navigation.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/auth/auth_controller.dart';
@@ -53,9 +51,6 @@ class ProfilePage extends StatelessWidget {
                     context: context,
                     builder: (_) => EditProfileSheet(auth: auth, toast: toast),
                   ),
-                  onAdmin: () => context.go('/admin/familia'),
-                  onPlatformAdmin: () => context.go('/admin/plataforma'),
-                  onBilling: () => context.openAppRoute('/billing'),
                   onSignOut: () async {
                     await auth.signOut();
                     if (context.mounted) context.go('/');
@@ -72,18 +67,12 @@ class _SignedProfileCard extends StatefulWidget {
     required this.auth,
     required this.toast,
     required this.onEditProfile,
-    required this.onAdmin,
-    required this.onPlatformAdmin,
-    required this.onBilling,
     required this.onSignOut,
   });
 
   final AuthController auth;
   final ToastController toast;
   final VoidCallback onEditProfile;
-  final VoidCallback onAdmin;
-  final VoidCallback onPlatformAdmin;
-  final VoidCallback onBilling;
   final VoidCallback onSignOut;
 
   @override
@@ -150,32 +139,6 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
                 description: 'Atualize seu nome e suas informações.',
                 onTap: widget.onEditProfile,
               ),
-              const SizedBox(height: 10),
-              _ProfileActionTile(
-                icon: Icons.workspace_premium_outlined,
-                label: 'Assinatura e publicação',
-                description: 'Gerencie o plano e o endereço do seu site.',
-                onTap: widget.onBilling,
-              ),
-              if (user.isAdmin) ...[
-                const SizedBox(height: 10),
-                _ProfileActionTile(
-                  icon: Icons.admin_panel_settings_outlined,
-                  label: 'Administração da família',
-                  description: 'Gerencie usuários, notificações e jogos.',
-                  onTap: widget.onAdmin,
-                ),
-              ],
-              if (user.isPlatformAdmin) ...[
-                const SizedBox(height: 10),
-                _ProfileActionTile(
-                  icon: Icons.shield_outlined,
-                  label: 'Administração da plataforma',
-                  description:
-                      'Estatísticas, famílias, assinaturas e auditoria.',
-                  onTap: widget.onPlatformAdmin,
-                ),
-              ],
               const SizedBox(height: 18),
               Text(
                 context.tr('Sessão'),

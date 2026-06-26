@@ -10,6 +10,7 @@ class AppUser {
     this.createdAt,
     this.tenantId,
     this.tenantSlug,
+    this.sessionScope = 'account',
   });
 
   final String id;
@@ -22,6 +23,7 @@ class AppUser {
   final DateTime? createdAt;
   final String? tenantId;
   final String? tenantSlug;
+  final String sessionScope;
 
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
         id: json['id'].toString(),
@@ -39,10 +41,11 @@ class AppUser {
             : DateTime.tryParse(json['createdAt'].toString()),
         tenantId: json['tenantId']?.toString(),
         tenantSlug: json['tenantSlug']?.toString(),
+        sessionScope: json['sessionScope']?.toString() ?? 'account',
       );
 
   bool get isAdmin => role == 'owner' || role == 'admin';
-  bool get isPlatformAdmin => platformRole == 'admin';
+  bool get isPlatformSession => sessionScope == 'platform';
 
   bool canAccess(String key) => isAdmin || access.contains(key);
 }

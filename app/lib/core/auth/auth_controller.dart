@@ -142,6 +142,11 @@ class AuthController extends ChangeNotifier {
     await _acceptAuth(response);
   }
 
+  Future<void> startPlatformSession() async {
+    final response = await _httpPostMap('/auth/platform', const {});
+    await _acceptAuth(response);
+  }
+
   Future<void> register(
     String email,
     String password,
