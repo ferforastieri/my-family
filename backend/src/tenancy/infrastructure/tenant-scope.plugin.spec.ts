@@ -11,11 +11,8 @@ describe('tenant scope plugin', () => {
 
   function runPre(value: Schema, operation: string, target: object) {
     return new Promise<void>((resolve, reject) => {
-      (value as any).s.hooks.execPre(
-        operation,
-        target,
-        [],
-        (error?: Error) => (error ? reject(error) : resolve()),
+      (value as any).s.hooks.execPre(operation, target, [], (error?: Error) =>
+        error ? reject(error) : resolve(),
       );
     });
   }
@@ -24,9 +21,15 @@ describe('tenant scope plugin', () => {
     const value = schema();
     const query = {
       filter: { title: 'hello' } as Record<string, unknown>,
-      getQuery() { return this.filter; },
-      setQuery(next: Record<string, unknown>) { this.filter = next; },
-      getOptions() { return {}; },
+      getQuery() {
+        return this.filter;
+      },
+      setQuery(next: Record<string, unknown>) {
+        this.filter = next;
+      },
+      getOptions() {
+        return {};
+      },
     };
     await tenantStorage.run({ tenantId: 'tenant-a' }, () =>
       runPre(value, 'find', query),
@@ -69,4 +72,3 @@ describe('tenant scope plugin', () => {
     expect(pipeline[0]).toEqual({ $match: { tenantId: 'tenant-a' } });
   });
 });
-

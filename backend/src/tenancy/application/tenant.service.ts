@@ -29,7 +29,9 @@ export class TenantService {
   }) {
     const slug = normalizeSlug(data.slug || data.name);
     if (slug.length < 3) {
-      throw new BadRequestException('Escolha um endereço com ao menos 3 caracteres.');
+      throw new BadRequestException(
+        'Escolha um endereço com ao menos 3 caracteres.',
+      );
     }
     if (await this.repository.findTenantBySlug(slug)) {
       throw new ConflictException('Este endereço já está sendo utilizado.');

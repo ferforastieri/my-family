@@ -91,7 +91,8 @@ export class HomeSettingsService {
           .filter((image): image is string => !!image)
       : [];
     const galleryOrder =
-      typeof input.galleryOrder === 'number' && Number.isFinite(input.galleryOrder)
+      typeof input.galleryOrder === 'number' &&
+      Number.isFinite(input.galleryOrder)
         ? Math.max(0, Math.min(events.length, Math.floor(input.galleryOrder)))
         : events.length;
     const saved = await this.repository.save({

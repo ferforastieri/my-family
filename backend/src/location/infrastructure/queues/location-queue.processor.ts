@@ -15,18 +15,16 @@ export class LocationQueueProcessor extends WorkerHost {
 
   async process(job: Job<LowBatteryJob>) {
     if (job.name !== 'low-battery') return null;
-    return this.tenantContext.run(
-      { tenantId: job.data.tenantId },
-      () =>
-        this.notifications.send(
-          'Bateria baixa',
-          `${job.data.name} está com ${job.data.batteryLevel}% de bateria.`,
-          '/localizacao',
-          {
-            type: 'location',
-            excludeUserIds: job.data.userId ? [job.data.userId] : [],
-          },
-        ),
+    return this.tenantContext.run({ tenantId: job.data.tenantId }, () =>
+      this.notifications.send(
+        'Bateria baixa',
+        `${job.data.name} está com ${job.data.batteryLevel}% de bateria.`,
+        '/localizacao',
+        {
+          type: 'location',
+          excludeUserIds: job.data.userId ? [job.data.userId] : [],
+        },
+      ),
     );
   }
 }

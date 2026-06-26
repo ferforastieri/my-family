@@ -1,10 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import {
-  FotoDocument,
-  FotoMongoDocument,
-} from '../persistence/foto.schema';
+import { FotoDocument, FotoMongoDocument } from '../persistence/foto.schema';
 import {
   cleanUndefined,
   normalizePagination,

@@ -74,22 +74,19 @@ export class SiteConfigService {
   }
 
   async publishedForTenant(tenantId: string) {
-    return this.context.run(
-      { tenantId, isPublic: true },
-      async () => {
-        const document = await this.configs
-          .findOne({ key: 'main' })
-          .lean()
-          .exec();
-        if (!document?.published) {
-          throw new NotFoundException('Site ainda não foi publicado.');
-        }
-        return {
-          value: document.published,
-          publishedAt: document.publishedAt ?? null,
-        };
-      },
-    );
+    return this.context.run({ tenantId, isPublic: true }, async () => {
+      const document = await this.configs
+        .findOne({ key: 'main' })
+        .lean()
+        .exec();
+      if (!document?.published) {
+        throw new NotFoundException('Site ainda não foi publicado.');
+      }
+      return {
+        value: document.published,
+        publishedAt: document.publishedAt ?? null,
+      };
+    });
   }
 }
 
@@ -113,9 +110,14 @@ function defaultConfig(name: string): SiteConfigValue {
   };
 }
 
-function normalizeConfig(value: SiteConfigValue, name: string): SiteConfigValue {
+function normalizeConfig(
+  value: SiteConfigValue,
+  name: string,
+): SiteConfigValue {
   const defaults = defaultConfig(name);
-  const sectionMap = new Map(value.sections.map((section) => [section.key, section]));
+  const sectionMap = new Map(
+    value.sections.map((section) => [section.key, section]),
+  );
   return {
     brand: {
       primaryColor: value.brand.primaryColor,
@@ -136,7 +138,11 @@ function normalizeConfig(value: SiteConfigValue, name: string): SiteConfigValue 
         : {}),
     },
     sections: sectionKeys
-      .map((key) => sectionMap.get(key) ?? defaults.sections.find((row) => row.key === key)!)
+      .map(
+        (key) =>
+          sectionMap.get(key) ??
+          defaults.sections.find((row) => row.key === key)!,
+      )
       .map((section, index) => ({
         key: section.key,
         visible: section.visible,

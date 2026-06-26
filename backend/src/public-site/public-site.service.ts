@@ -77,23 +77,27 @@ export class PublicSiteService {
         const songIds = selectedIds(sections, 'songs');
         const letterIds = selectedIds(sections, 'letters');
         const journeyIds = selectedIds(sections, 'journey');
-        const [home, photos, songs, allLetters, allJourney] = await Promise.all([
-          this.homeSettings.findOne({ key: 'home' }).lean().exec(),
-          this.photos
-            .find(photoIds.length ? { _id: { $in: photoIds } } : { _id: null })
-            .sort({ data: -1, createdAt: -1 })
-            .limit(100)
-            .lean()
-            .exec(),
-          this.songs
-            .find(songIds.length ? { _id: { $in: songIds } } : { _id: null })
-            .sort({ data: -1, createdAt: -1 })
-            .limit(100)
-            .lean()
-            .exec(),
-          this.cartas.listForPublic('letter', 100, -1),
-          this.cartas.listForPublic('journey', 100, 1),
-        ]);
+        const [home, photos, songs, allLetters, allJourney] = await Promise.all(
+          [
+            this.homeSettings.findOne({ key: 'home' }).lean().exec(),
+            this.photos
+              .find(
+                photoIds.length ? { _id: { $in: photoIds } } : { _id: null },
+              )
+              .sort({ data: -1, createdAt: -1 })
+              .limit(100)
+              .lean()
+              .exec(),
+            this.songs
+              .find(songIds.length ? { _id: { $in: songIds } } : { _id: null })
+              .sort({ data: -1, createdAt: -1 })
+              .limit(100)
+              .lean()
+              .exec(),
+            this.cartas.listForPublic('letter', 100, -1),
+            this.cartas.listForPublic('journey', 100, 1),
+          ],
+        );
         const letters = orderSelected(allLetters, letterIds);
         const journey = orderSelected(allJourney, journeyIds);
         return {
@@ -138,9 +142,7 @@ export class PublicSiteService {
       ].filter(Boolean);
       if (directPaths.includes(relativePath)) return true;
       const photoIds = selectedIds(
-        new Map(
-          config.value.sections.map((section) => [section.key, section]),
-        ),
+        new Map(config.value.sections.map((section) => [section.key, section])),
         'gallery',
       );
       if (!photoIds.length) return false;
@@ -159,10 +161,7 @@ function stripDocument(document: Record<string, any>) {
 }
 
 function selectedIds(
-  sections: Map<
-    string,
-    { visible: boolean; selectedIds: string[] }
-  >,
+  sections: Map<string, { visible: boolean; selectedIds: string[] }>,
   key: string,
 ): string[] {
   const section = sections.get(key);

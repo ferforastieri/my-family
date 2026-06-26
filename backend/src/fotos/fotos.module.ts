@@ -9,7 +9,10 @@ import { FotosRepository } from './infrastructure/repositories/fotos.repository'
 import { FotosGateway } from './interfaces/gateways/fotos.gateway';
 import { MediaQueueProcessor } from './infrastructure/queues/media-queue.processor';
 import { CleanupQueueProcessor } from './infrastructure/queues/cleanup-queue.processor';
-import { FotoDocument, FotoSchema } from './infrastructure/persistence/foto.schema';
+import {
+  FotoDocument,
+  FotoSchema,
+} from './infrastructure/persistence/foto.schema';
 
 @Module({
   imports: [

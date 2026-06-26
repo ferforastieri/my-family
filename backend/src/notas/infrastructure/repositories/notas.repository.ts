@@ -1,10 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import {
-  NotaDocument,
-  NotaMongoDocument,
-} from '../persistence/nota.schema';
+import { NotaDocument, NotaMongoDocument } from '../persistence/nota.schema';
 import {
   cleanUndefined,
   normalizePagination,
