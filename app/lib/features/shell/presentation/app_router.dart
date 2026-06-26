@@ -16,6 +16,7 @@ import '../../billing/presentation/billing_page.dart';
 import '../../client_dashboard/presentation/client_dashboard_page.dart';
 import '../../chat/presentation/chat_page.dart';
 import '../../content/presentation/editable_text_collection_page.dart';
+import '../../family_selection/presentation/family_selection_page.dart';
 import '../../games/presentation/games_page.dart';
 import '../../home/presentation/home_page.dart';
 import '../../lists/presentation/lists_page.dart';
@@ -53,11 +54,30 @@ GoRouter buildRouter(
         '/app/signup',
         '/app/login',
       };
+      const familySelectionPaths = {
+        '/familias',
+        '/app/familias',
+      };
       if (auth.user == null) {
         return publicPaths.contains(path) ? null : '/app/login';
       }
       if (publicPaths.contains(path)) {
-        return auth.tenant?.isActive == true
+        return auth.tenant == null
+            ? '/app/familias'
+            : auth.tenant!.isActive
+                ? _clientDashboardPath(auth)
+                : '/app/billing';
+      }
+      if (auth.tenant == null) {
+        if (familySelectionPaths.contains(path)) return null;
+        if ((path == '/plataforma' || path == '/app/admin/dashboard') &&
+            auth.user?.isPlatformAdmin == true) {
+          return null;
+        }
+        return '/app/familias';
+      }
+      if (familySelectionPaths.contains(path)) {
+        return auth.tenant!.isActive
             ? _clientDashboardPath(auth)
             : '/app/billing';
       }
@@ -141,6 +161,20 @@ GoRouter buildRouter(
           toast: toast,
           locale: MarketingLocale.resolve(state.uri.queryParameters['locale']),
           register: state.uri.queryParameters['mode'] == 'register',
+        )),
+      ),
+      GoRoute(
+        path: '/familias',
+        pageBuilder: (context, state) => _page(FamilySelectionPage(
+          auth: auth,
+          toast: toast,
+        )),
+      ),
+      GoRoute(
+        path: '/app/familias',
+        pageBuilder: (context, state) => _page(FamilySelectionPage(
+          auth: auth,
+          toast: toast,
         )),
       ),
       GoRoute(

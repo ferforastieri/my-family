@@ -81,6 +81,37 @@ class TenantInfo {
       );
 }
 
+class TenantMembershipOption {
+  const TenantMembershipOption({
+    required this.tenant,
+    required this.role,
+    required this.access,
+    this.relationLabel,
+  });
+
+  final TenantInfo tenant;
+  final String role;
+  final List<String> access;
+  final String? relationLabel;
+
+  factory TenantMembershipOption.fromJson(Map<String, dynamic> json) {
+    final rawTenant = json['tenant'];
+    final rawMembership = json['membership'];
+    final membership = rawMembership is Map
+        ? Map<String, dynamic>.from(rawMembership)
+        : const <String, dynamic>{};
+    return TenantMembershipOption(
+      tenant: TenantInfo.fromJson(Map<String, dynamic>.from(rawTenant as Map)),
+      role: membership['role']?.toString() ?? 'member',
+      access: ((membership['access'] as List?) ?? const [])
+          .map((key) => key.toString())
+          .where(appAccessKeys.contains)
+          .toList(),
+      relationLabel: membership['relationLabel']?.toString(),
+    );
+  }
+}
+
 const appAccessKeys = [
   'memorias',
   'playlist',

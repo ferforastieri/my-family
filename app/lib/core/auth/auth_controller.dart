@@ -55,6 +55,7 @@ class AuthController extends ChangeNotifier {
 
   AppUser? user;
   TenantInfo? tenant;
+  List<TenantMembershipOption> memberships = const [];
   bool loading = true;
   String? token;
   String? refreshToken;
@@ -114,10 +115,11 @@ class AuthController extends ChangeNotifier {
 
   Future<void> _loadCurrentUser({required bool clearInvalidToken}) async {
     try {
-      final response = await _httpGetMap('/auth/me');
+      final response = await _httpGetMap('/auth/session');
       user =
           AppUser.fromJson(Map<String, dynamic>.from(response['user'] as Map));
-      _acceptTenant(response['tenant']);
+      _acceptTenant(response['tenant'], clearWhenNull: true);
+      _acceptMemberships(response['memberships']);
       notifyListeners();
     } catch (error) {
       if (clearInvalidToken && _looksLikeAuthError(error)) {
@@ -185,10 +187,12 @@ class AuthController extends ChangeNotifier {
   Future<void> refreshMe() async {
     if (token == null) return;
     try {
-      final response = await _httpGetMap('/auth/me');
+      final response = await _httpGetMap('/auth/session');
       final rawUser = response['user'];
       if (rawUser is Map) {
         user = AppUser.fromJson(Map<String, dynamic>.from(rawUser));
+        _acceptTenant(response['tenant'], clearWhenNull: true);
+        _acceptMemberships(response['memberships']);
         notifyListeners();
       }
     } catch (error) {
@@ -278,6 +282,7 @@ class AuthController extends ChangeNotifier {
   Future<void> _clearAuth({bool notify = true}) async {
     user = null;
     tenant = null;
+    memberships = const [];
     token = null;
     refreshToken = null;
     await _fresh.clearToken();
@@ -330,7 +335,8 @@ class AuthController extends ChangeNotifier {
       refreshToken = nextRefreshToken;
     }
     user = AppUser.fromJson(Map<String, dynamic>.from(response['user'] as Map));
-    _acceptTenant(response['tenant']);
+    _acceptTenant(response['tenant'], clearWhenNull: true);
+    _acceptMemberships(response['memberships']);
     await _fresh.setToken(oauthTokenFromJwt(
       accessToken: token!,
       refreshToken: refreshToken,
@@ -364,7 +370,8 @@ class AuthController extends ChangeNotifier {
       if (rawUser is Map) {
         user = AppUser.fromJson(Map<String, dynamic>.from(rawUser));
       }
-      _acceptTenant(data['tenant']);
+      _acceptTenant(data['tenant'], clearWhenNull: true);
+      _acceptMemberships(data['memberships']);
       return oauthTokenFromJwt(
         accessToken: nextToken,
         refreshToken: refreshToken,
@@ -396,6 +403,13 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> selectTenant(String tenantSlug) async {
+    final response = await _httpPostMap('/auth/select-tenant', {
+      'tenantSlug': tenantSlug,
+    });
+    await _acceptAuth(response);
+  }
+
   Future<void> updateTenant({
     required String name,
     required String slug,
@@ -419,10 +433,21 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _acceptTenant(Object? rawTenant) {
+  void _acceptTenant(Object? rawTenant, {bool clearWhenNull = false}) {
     if (rawTenant is Map) {
       tenant = TenantInfo.fromJson(Map<String, dynamic>.from(rawTenant));
+    } else if (clearWhenNull) {
+      tenant = null;
     }
+  }
+
+  void _acceptMemberships(Object? rawMemberships) {
+    if (rawMemberships is! List) return;
+    memberships = rawMemberships
+        .whereType<Map>()
+        .map((item) =>
+            TenantMembershipOption.fromJson(Map<String, dynamic>.from(item)))
+        .toList(growable: false);
   }
 
   Future<Map<String, dynamic>> _httpGetMap(
