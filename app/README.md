@@ -17,10 +17,13 @@ Railway é usado.
 
 ## Areas Do App
 
-- Demonstração, login e cadastro em `/app/demo`, `/app/login` e `/app/signup`
-- Painel do cliente em `/app/cliente/:tenantSlug/dashboard`
-- Administração da família dentro da área autenticada do cliente
-- Administração global da plataforma em `/app/admin/dashboard`
+- Demonstração e cadastro em `/app/demo` e `/app/signup`
+- Login do cliente em `/app/login/cliente`
+- Login do painel em `/app/login/painel`
+- Login direto de uma família em `/app/familia/:tenantSlug/login`
+- Painel da família em `/app/painel`
+- Administração da família em `/app/admin/familia`
+- Administração global da plataforma em `/app/admin/plataforma`
 - Home
 - Memorias/fotos
 - Playlist

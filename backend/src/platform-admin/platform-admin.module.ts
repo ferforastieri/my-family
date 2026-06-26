@@ -6,14 +6,11 @@ import { PlatformAdminGuard } from './platform-admin.guard';
 import { PlatformAdminService } from './platform-admin.service';
 import { PlatformAdminGateway } from './platform-admin.gateway';
 import { AuthModule } from '@auth/auth.module';
+import { BillingModule } from '../billing/billing.module';
 
 @Module({
-  imports: [MongoModelsModule, AuditModule, AuthModule],
+  imports: [MongoModelsModule, AuditModule, AuthModule, BillingModule],
   controllers: [PlatformAdminController],
-  providers: [
-    PlatformAdminService,
-    PlatformAdminGuard,
-    PlatformAdminGateway,
-  ],
+  providers: [PlatformAdminService, PlatformAdminGuard, PlatformAdminGateway],
 })
 export class PlatformAdminModule {}

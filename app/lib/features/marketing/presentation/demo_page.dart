@@ -36,7 +36,7 @@ class _DemoPageState extends State<DemoPage> {
               surfaceTintColor: Colors.transparent,
               leading: IconButton(
                 onPressed: () =>
-                    context.go('/welcome?locale=${widget.locale.code}'),
+                    context.go('/login/cliente?locale=${widget.locale.code}'),
                 icon: const Icon(Icons.arrow_back),
                 tooltip: t.back,
               ),

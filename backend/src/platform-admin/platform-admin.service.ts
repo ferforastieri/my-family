@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
   SubscriptionDocument,
+  SubscriptionPlanInterval,
   SubscriptionMongoDocument,
   TenantDocument,
   TenantMongoDocument,
@@ -15,6 +16,7 @@ import {
   paginated,
   type PaginationQuery,
 } from '@shared/infrastructure/database/mongo.utils';
+import { BillingRepository } from '../billing/infrastructure/billing.repository';
 
 @Injectable()
 export class PlatformAdminService {
@@ -25,6 +27,7 @@ export class PlatformAdminService {
     private readonly tenants: Model<TenantMongoDocument>,
     @InjectModel(SubscriptionDocument.name)
     private readonly subscriptions: Model<SubscriptionMongoDocument>,
+    private readonly billing: BillingRepository,
     private readonly audit: AuditService,
   ) {}
 
@@ -44,6 +47,7 @@ export class PlatformAdminService {
       recentTenants,
       recentAudit,
       auditEvents24h,
+      plans,
     ] = await Promise.all([
       this.users.countDocuments().exec(),
       this.tenants.countDocuments().exec(),
@@ -58,7 +62,10 @@ export class PlatformAdminService {
         .aggregate<{
           _id: string;
           count: number;
-        }>([{ $group: { _id: '$status', count: { $sum: 1 } } }, { $sort: { count: -1 } }])
+        }>([
+          { $group: { _id: '$status', count: { $sum: 1 } } },
+          { $sort: { count: -1 } },
+        ])
         .exec(),
       this.tenants
         .find()
@@ -69,6 +76,7 @@ export class PlatformAdminService {
         .exec(),
       this.audit.list(1, 10),
       this.audit.countSince(last24Hours),
+      this.listPlans(),
     ]);
 
     return {
@@ -82,6 +90,7 @@ export class PlatformAdminService {
         newTenants30d,
         auditEvents24h,
       },
+      plans,
       tenantStatuses: Object.fromEntries(
         tenantStatuses.map((item) => [item._id, item.count]),
       ),
@@ -99,6 +108,30 @@ export class PlatformAdminService {
 
   auditLogs(page: number, limit: number) {
     return this.audit.list(page, limit);
+  }
+
+  async listPlans() {
+    return this.billing.listPlans({ activeOnly: false });
+  }
+
+  async updatePlan(
+    interval: SubscriptionPlanInterval,
+    data: Partial<{
+      name: string;
+      description: string;
+      priceCents: number;
+      currency: string;
+      stripePriceId: string | null;
+      active: boolean;
+      highlighted: boolean;
+      sortOrder: number;
+    }>,
+  ) {
+    return this.billing.updatePlan(interval, {
+      ...data,
+      currency: data.currency?.toUpperCase(),
+      stripePriceId: data.stripePriceId === '' ? null : data.stripePriceId,
+    });
   }
 
   async listTenants(query?: PaginationQuery) {

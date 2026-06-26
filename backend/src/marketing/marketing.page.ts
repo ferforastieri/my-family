@@ -1,5 +1,14 @@
 export type MarketingLocale = 'pt' | 'en' | 'es';
 
+export type LandingPlan = {
+  interval: 'monthly' | 'semiannual' | 'annual' | 'lifetime';
+  name: string;
+  description: string;
+  priceCents: number;
+  currency: string;
+  highlighted: boolean;
+};
+
 type Copy = {
   brand: string;
   title: string;
@@ -23,6 +32,8 @@ type Copy = {
   journey: string;
   letters: string;
   privateSite: string;
+  bestValue: string;
+  period: Record<LandingPlan['interval'], string>;
 };
 
 const copy: Record<MarketingLocale, Copy> = {
@@ -79,6 +90,13 @@ const copy: Record<MarketingLocale, Copy> = {
     journey: 'Nossa jornada',
     letters: 'Cartas',
     privateSite: 'Espaço familiar compartilhado por link.',
+    bestValue: 'Mais escolhido',
+    period: {
+      monthly: 'por mês',
+      semiannual: 'a cada 6 meses',
+      annual: 'por ano',
+      lifetime: 'pagamento único',
+    },
   },
   en: {
     brand: 'Our Family',
@@ -128,6 +146,13 @@ const copy: Record<MarketingLocale, Copy> = {
     journey: 'Our journey',
     letters: 'Letters',
     privateSite: 'A family space shared by link.',
+    bestValue: 'Most chosen',
+    period: {
+      monthly: 'per month',
+      semiannual: 'every 6 months',
+      annual: 'per year',
+      lifetime: 'one-time payment',
+    },
   },
   es: {
     brand: 'Nuestra Familia',
@@ -193,6 +218,13 @@ const copy: Record<MarketingLocale, Copy> = {
     journey: 'Nuestro camino',
     letters: 'Cartas',
     privateSite: 'Un espacio familiar compartido por enlace.',
+    bestValue: 'Más elegido',
+    period: {
+      monthly: 'por mes',
+      semiannual: 'cada 6 meses',
+      annual: 'por año',
+      lifetime: 'pago único',
+    },
   },
 };
 
@@ -200,7 +232,11 @@ export function isMarketingLocale(value: string): value is MarketingLocale {
   return value === 'pt' || value === 'en' || value === 'es';
 }
 
-export function renderLanding(locale: MarketingLocale, origin: string): string {
+export function renderLanding(
+  locale: MarketingLocale,
+  origin: string,
+  plans: LandingPlan[] = [],
+): string {
   const t = copy[locale];
   const canonical = `${origin}/${locale}`;
   const featureCards = t.features
@@ -213,6 +249,12 @@ export function renderLanding(locale: MarketingLocale, origin: string): string {
     .map(
       ([title, body], index) =>
         `<article class="card"><div class="step-number">${index + 1}</div><h3>${escapeHtml(title)}</h3><p>${escapeHtml(body)}</p></article>`,
+    )
+    .join('');
+  const planCards = plans
+    .map(
+      (plan) =>
+        `<article class="price-card${plan.highlighted ? ' highlighted' : ''}">${plan.highlighted ? `<span class="plan-badge">${escapeHtml(t.bestValue)}</span>` : ''}<h3>${escapeHtml(plan.name)}</h3><p>${escapeHtml(plan.description)}</p><div class="plan-price"><strong>${escapeHtml(formatMoney(plan.priceCents, plan.currency, locale))}</strong><span>${escapeHtml(t.period[plan.interval])}</span></div><a class="button ${plan.highlighted ? 'primary' : 'ghost'}" href="/app/signup?locale=${locale}&plan=${plan.interval}">${escapeHtml(t.primary)}</a></article>`,
     )
     .join('');
 
@@ -239,7 +281,7 @@ export function renderLanding(locale: MarketingLocale, origin: string): string {
         </div><div class="flower-field"></div></section>
         <section class="section"><div class="shell"><div class="section-heading"><h2>${escapeHtml(t.sectionTitle)}</h2><p>${escapeHtml(t.sectionBody)}</p></div><div class="features">${featureCards}</div></div></section>
         <section class="section soft"><div class="shell"><div class="section-heading"><h2>${escapeHtml(t.howTitle)}</h2></div><div class="steps">${steps}</div></div></section>
-        <section class="section"><div class="shell"><div class="price"><div><h2>${escapeHtml(t.priceTitle)}</h2><p>${escapeHtml(t.priceBody)}</p></div><a class="button" href="/app/signup?locale=${locale}">${escapeHtml(t.primary)} →</a></div></div></section>
+        <section class="section"><div class="shell"><div class="section-heading"><h2>${escapeHtml(t.priceTitle)}</h2><p>${escapeHtml(t.priceBody)}</p></div>${planCards ? `<div class="price-grid">${planCards}</div>` : `<div class="price"><div><h2>${escapeHtml(t.priceTitle)}</h2><p>${escapeHtml(t.priceBody)}</p></div><a class="button" href="/app/signup?locale=${locale}">${escapeHtml(t.primary)} →</a></div>`}</div></section>
         <section class="final-cta"><div class="shell"><h2>${escapeHtml(t.finalTitle)}</h2><p>${escapeHtml(t.finalBody)}</p><a class="button primary" href="/app/signup?locale=${locale}">${escapeHtml(t.primary)}</a></div></section>
       </main>
       <footer class="footer"><div class="shell footer-inner"><span>🌸 ${escapeHtml(t.brand)}</span><span>${escapeHtml(t.footer)}</span></div></footer>`,
@@ -340,6 +382,7 @@ export function renderFamilySite(
   const logo = brand.logoPath
     ? `<img class="site-logo" src="${escapeHtml(mediaUrl(origin, slug, brand.logoPath))}" alt="${escapeHtml(name)}">`
     : '🌸';
+  const familyLoginPath = `/app/familia/${encodeURIComponent(slug)}/login?locale=${locale}`;
 
   return document({
     locale,
@@ -351,7 +394,7 @@ export function renderFamilySite(
     socialImage,
     body: `
       <style>:root{--pink:${primaryColor};--pink-dark:${secondaryColor}}</style>
-      <header class="nav"><div class="shell nav-inner"><a class="brand" href="/${locale}"><span class="brand-mark">${logo}</span><span>${escapeHtml(name)}</span></a><a class="button ghost" href="/${locale}">← ${escapeHtml(t.brand)}</a></div></header>
+      <header class="nav"><div class="shell nav-inner"><a class="brand" href="/${locale}"><span class="brand-mark">${logo}</span><span>${escapeHtml(name)}</span></a><div class="nav-actions"><a class="button ghost" href="${familyLoginPath}">${escapeHtml(t.login)}</a><a class="button ghost" href="/${locale}">← ${escapeHtml(t.brand)}</a></div></div></header>
       <main>
         <section class="site-hero shell"${cover}><span class="eyebrow">♥ ${escapeHtml(t.eyebrow)}</span><h1>${escapeHtml(name)}</h1><p>${escapeHtml(String(seo.description || t.privateSite))}</p></section>
         ${visibleSections}
@@ -369,7 +412,7 @@ function nav(locale: MarketingLocale, t: Copy, origin: string) {
     )
     .join(
       '',
-    )}</div><a class="button ghost" href="/app/login">${escapeHtml(t.login)}</a><a class="button primary hide-mobile" href="/app/login?mode=register">${escapeHtml(t.primary)}</a></div></div></header>`;
+    )}</div><a class="button ghost" href="/app/login/cliente">${escapeHtml(t.login)}</a><a class="button primary hide-mobile" href="/app/signup?locale=${locale}">${escapeHtml(t.primary)}</a></div></div></header>`;
 }
 
 function document(data: {
@@ -423,6 +466,17 @@ function formatDate(value: unknown, locale: MarketingLocale) {
   }).format(date);
 }
 
+function formatMoney(
+  valueCents: number,
+  currency: string,
+  locale: MarketingLocale,
+) {
+  return new Intl.NumberFormat(locale === 'pt' ? 'pt-BR' : locale, {
+    style: 'currency',
+    currency: currency || 'BRL',
+  }).format(valueCents / 100);
+}
+
 function safeJson(value: Record<string, unknown>) {
   return JSON.stringify(value).replace(/</g, '\\u003c');
 }
@@ -436,12 +490,12 @@ function escapeHtml(value: unknown) {
     .replace(/'/g, '&#039;');
 }
 
-function safeColor(value: unknown, fallback: string) {
+function safeColor(value: unknown, defaultColor: string) {
   const color = String(value ?? '');
-  return /^#[0-9a-fA-F]{6}$/.test(color) ? color : fallback;
+  return /^#[0-9a-fA-F]{6}$/.test(color) ? color : defaultColor;
 }
 
 export const marketingCss = `
 .site-logo{width:100%;height:100%;object-fit:cover;border-radius:50%}
-:root{--pink:#ff69b4;--pink-dark:#d4488e;--ink:#26131d;--muted:#775b6b;--line:#ffdce9;--bg:#fff8fa;--bg-end:#fff0f5}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--ink);background:linear-gradient(180deg,var(--bg),var(--bg-end));font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}a{color:inherit;text-decoration:none}.shell{width:min(1180px,calc(100% - 36px));margin:0 auto}.nav{position:sticky;top:0;z-index:20;backdrop-filter:blur(18px);background:rgba(255,248,250,.88);border-bottom:1px solid rgba(255,105,180,.13)}.nav-inner{height:76px;display:flex;align-items:center;justify-content:space-between;gap:22px}.brand{display:flex;align-items:center;gap:11px;font-family:Georgia,serif;font-weight:800;font-size:1.22rem}.brand-mark{display:grid;place-items:center;width:42px;height:42px;border:1px solid var(--line);border-radius:50%;background:#fff;box-shadow:0 8px 25px rgba(212,72,142,.13)}.nav-actions,.hero-actions{display:flex;gap:10px;align-items:center}.locale-switch{display:flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:rgba(255,255,255,.7)}.locale-switch a{padding:6px 9px;border-radius:999px;font-size:.78rem;font-weight:800;text-transform:uppercase;color:var(--muted)}.locale-switch a.active{background:#fff;color:var(--pink-dark);box-shadow:0 2px 8px rgba(212,72,142,.12)}.button{border:0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 19px;border-radius:14px;font-weight:850;transition:.2s ease}.button:hover{transform:translateY(-2px)}.button.primary{color:#fff;background:linear-gradient(135deg,var(--pink),var(--pink-dark));box-shadow:0 12px 28px rgba(212,72,142,.23)}.button.ghost{color:var(--pink-dark);background:rgba(255,255,255,.72);border:1px solid var(--line)}.hero{position:relative;min-height:690px;display:grid;place-items:center;overflow:hidden;padding:84px 0 120px}.hero-grid{position:relative;z-index:2;display:grid;grid-template-columns:1.05fr .95fr;align-items:center;gap:70px}.eyebrow{display:inline-flex;color:var(--pink-dark);background:rgba(255,255,255,.78);border:1px solid var(--line);border-radius:999px;padding:8px 13px;font-weight:850;font-size:.82rem;text-transform:uppercase;letter-spacing:.08em}h1,h2,h3{font-family:Georgia,"Times New Roman",serif;margin:0}h1{margin-top:22px;font-size:clamp(2.8rem,6vw,5.25rem);line-height:.98;letter-spacing:-.045em;max-width:760px}.lead{max-width:670px;color:var(--muted);line-height:1.75;font-size:1.12rem;margin:25px 0 31px}.hero-actions{flex-wrap:wrap}.preview{background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:28px;padding:18px;box-shadow:0 30px 80px rgba(148,48,100,.18);transform:rotate(1.5deg)}.preview-head{border-radius:18px;padding:24px;color:#fff;background:linear-gradient(135deg,#ff8bc5,#cf3b83)}.preview-head h3{font-size:2rem;margin-top:6px}.preview-cards{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:12px}.mini-card,.card{background:rgba(255,255,255,.91);border:1px solid var(--line);border-radius:17px;box-shadow:0 8px 25px rgba(212,72,142,.08)}.mini-card{padding:18px;min-height:110px}.mini-card span{font-size:1.65rem}.mini-card strong{display:block;margin-top:13px;font-size:.9rem}.flower-field{position:absolute;inset:auto 0 0;height:170px;background:radial-gradient(circle at 10% 95%,#ff87bd 0 7px,transparent 8px),radial-gradient(circle at 28% 82%,#ffd15c 0 6px,transparent 7px),radial-gradient(circle at 52% 93%,#ff6fae 0 8px,transparent 9px),radial-gradient(circle at 76% 84%,#b88cff 0 7px,transparent 8px),linear-gradient(transparent 40%,rgba(105,180,95,.15))}.section{padding:105px 0}.section.soft{background:rgba(255,255,255,.35)}.section-heading{max-width:720px;margin:0 auto 45px;text-align:center}.section-heading h2{font-size:clamp(2.2rem,4vw,3.7rem)}.section-heading p,.card p,.site-hero p{color:var(--muted);line-height:1.7}.features{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.card{padding:24px}.feature-icon{display:grid;place-items:center;width:52px;height:52px;border-radius:15px;color:var(--pink-dark);background:rgba(255,105,180,.12);font-size:1.5rem}.card h3{margin-top:18px;font-size:1.25rem}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:17px}.step-number{color:#fff;background:var(--pink);width:42px;height:42px;display:grid;place-items:center;border-radius:50%;font-weight:900}.price{display:grid;grid-template-columns:1fr auto;align-items:center;gap:35px;padding:38px;border-radius:25px;color:#fff;background:linear-gradient(135deg,#b82c73,#ff69b4);box-shadow:0 25px 60px rgba(184,44,115,.25)}.price h2{font-size:clamp(2rem,4vw,3.25rem)}.price p{color:rgba(255,255,255,.86)}.price .button{background:#fff;color:var(--pink-dark)}.final-cta{text-align:center;padding:120px 0}.final-cta h2{font-size:clamp(2.3rem,5vw,4.2rem);max-width:820px;margin:auto}.final-cta p{color:var(--muted);font-size:1.1rem}.footer{padding:30px 0 50px;color:var(--muted);border-top:1px solid var(--line)}.footer-inner{display:flex;justify-content:space-between;gap:20px}.site-hero{text-align:center;padding:70px 0 45px}.site-hero h1{margin:14px auto 0}.memory-grid,.event-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}.content-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px}.memory{overflow:hidden;padding:0}.memory img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#ffe6f0}.memory-body{padding:18px}.event-date{color:var(--pink-dark);font-size:1.4rem;font-weight:900;margin-top:12px}@media(max-width:900px){.hero-grid{grid-template-columns:1fr}.preview{max-width:570px;margin:auto}.features,.steps,.memory-grid,.event-grid{grid-template-columns:1fr 1fr}.hide-mobile{display:none}}@media(max-width:620px){.shell{width:min(100% - 26px,1180px)}.nav-inner{height:68px}.brand span:last-child,.locale-switch{display:none}.hero{padding-top:55px}.features,.steps,.memory-grid,.event-grid,.content-grid{grid-template-columns:1fr}.price{grid-template-columns:1fr;padding:28px}.section{padding:76px 0}.footer-inner{flex-direction:column}.nav-actions{gap:6px}.button{padding:0 14px}}
+:root{--pink:#ff69b4;--pink-dark:#d4488e;--ink:#26131d;--muted:#775b6b;--line:#ffdce9;--bg:#fff8fa;--bg-end:#fff0f5}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--ink);background:linear-gradient(180deg,var(--bg),var(--bg-end));font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}a{color:inherit;text-decoration:none}.shell{width:min(1180px,calc(100% - 36px));margin:0 auto}.nav{position:sticky;top:0;z-index:20;backdrop-filter:blur(18px);background:rgba(255,248,250,.88);border-bottom:1px solid rgba(255,105,180,.13)}.nav-inner{height:76px;display:flex;align-items:center;justify-content:space-between;gap:22px}.brand{display:flex;align-items:center;gap:11px;font-family:Georgia,serif;font-weight:800;font-size:1.22rem}.brand-mark{display:grid;place-items:center;width:42px;height:42px;border:1px solid var(--line);border-radius:50%;background:#fff;box-shadow:0 8px 25px rgba(212,72,142,.13)}.nav-actions,.hero-actions{display:flex;gap:10px;align-items:center}.locale-switch{display:flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:rgba(255,255,255,.7)}.locale-switch a{padding:6px 9px;border-radius:999px;font-size:.78rem;font-weight:800;text-transform:uppercase;color:var(--muted)}.locale-switch a.active{background:#fff;color:var(--pink-dark);box-shadow:0 2px 8px rgba(212,72,142,.12)}.button{border:0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 19px;border-radius:14px;font-weight:850;transition:.2s ease}.button:hover{transform:translateY(-2px)}.button.primary{color:#fff;background:linear-gradient(135deg,var(--pink),var(--pink-dark));box-shadow:0 12px 28px rgba(212,72,142,.23)}.button.ghost{color:var(--pink-dark);background:rgba(255,255,255,.72);border:1px solid var(--line)}.hero{position:relative;min-height:690px;display:grid;place-items:center;overflow:hidden;padding:84px 0 120px}.hero-grid{position:relative;z-index:2;display:grid;grid-template-columns:1.05fr .95fr;align-items:center;gap:70px}.eyebrow{display:inline-flex;color:var(--pink-dark);background:rgba(255,255,255,.78);border:1px solid var(--line);border-radius:999px;padding:8px 13px;font-weight:850;font-size:.82rem;text-transform:uppercase;letter-spacing:.08em}h1,h2,h3{font-family:Georgia,"Times New Roman",serif;margin:0}h1{margin-top:22px;font-size:clamp(2.8rem,6vw,5.25rem);line-height:.98;letter-spacing:-.045em;max-width:760px}.lead{max-width:670px;color:var(--muted);line-height:1.75;font-size:1.12rem;margin:25px 0 31px}.hero-actions{flex-wrap:wrap}.preview{background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:28px;padding:18px;box-shadow:0 30px 80px rgba(148,48,100,.18);transform:rotate(1.5deg)}.preview-head{border-radius:18px;padding:24px;color:#fff;background:linear-gradient(135deg,#ff8bc5,#cf3b83)}.preview-head h3{font-size:2rem;margin-top:6px}.preview-cards{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:12px}.mini-card,.card{background:rgba(255,255,255,.91);border:1px solid var(--line);border-radius:17px;box-shadow:0 8px 25px rgba(212,72,142,.08)}.mini-card{padding:18px;min-height:110px}.mini-card span{font-size:1.65rem}.mini-card strong{display:block;margin-top:13px;font-size:.9rem}.flower-field{position:absolute;inset:auto 0 0;height:170px;background:radial-gradient(circle at 10% 95%,#ff87bd 0 7px,transparent 8px),radial-gradient(circle at 28% 82%,#ffd15c 0 6px,transparent 7px),radial-gradient(circle at 52% 93%,#ff6fae 0 8px,transparent 9px),radial-gradient(circle at 76% 84%,#b88cff 0 7px,transparent 8px),linear-gradient(transparent 40%,rgba(105,180,95,.15))}.section{padding:105px 0}.section.soft{background:rgba(255,255,255,.35)}.section-heading{max-width:720px;margin:0 auto 45px;text-align:center}.section-heading h2{font-size:clamp(2.2rem,4vw,3.7rem)}.section-heading p,.card p,.site-hero p,.price-card p{color:var(--muted);line-height:1.7}.features{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.card{padding:24px}.feature-icon{display:grid;place-items:center;width:52px;height:52px;border-radius:15px;color:var(--pink-dark);background:rgba(255,105,180,.12);font-size:1.5rem}.card h3{margin-top:18px;font-size:1.25rem}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:17px}.step-number{color:#fff;background:var(--pink);width:42px;height:42px;display:grid;place-items:center;border-radius:50%;font-weight:900}.price{display:grid;grid-template-columns:1fr auto;align-items:center;gap:35px;padding:38px;border-radius:25px;color:#fff;background:linear-gradient(135deg,#b82c73,#ff69b4);box-shadow:0 25px 60px rgba(184,44,115,.25)}.price h2{font-size:clamp(2rem,4vw,3.25rem)}.price p{color:rgba(255,255,255,.86)}.price .button{background:#fff;color:var(--pink-dark)}.price-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.price-card{position:relative;display:flex;flex-direction:column;gap:14px;min-height:330px;padding:26px;border-radius:22px;background:rgba(255,255,255,.94);border:1px solid var(--line);box-shadow:0 18px 45px rgba(212,72,142,.1)}.price-card.highlighted{border-color:var(--pink);box-shadow:0 24px 60px rgba(212,72,142,.19);transform:translateY(-8px)}.plan-badge{align-self:flex-start;border-radius:999px;background:rgba(255,105,180,.13);color:var(--pink-dark);font-size:.78rem;font-weight:900;padding:7px 10px}.plan-price{margin-top:auto}.plan-price strong{display:block;font-size:2rem;font-weight:950;color:var(--ink)}.plan-price span{display:block;margin-top:5px;color:var(--muted);font-weight:800}.price-card .button{margin-top:4px;width:100%}.final-cta{text-align:center;padding:120px 0}.final-cta h2{font-size:clamp(2.3rem,5vw,4.2rem);max-width:820px;margin:auto}.final-cta p{color:var(--muted);font-size:1.1rem}.footer{padding:30px 0 50px;color:var(--muted);border-top:1px solid var(--line)}.footer-inner{display:flex;justify-content:space-between;gap:20px}.site-hero{text-align:center;padding:70px 0 45px}.site-hero h1{margin:14px auto 0}.memory-grid,.event-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}.content-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px}.memory{overflow:hidden;padding:0}.memory img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#ffe6f0}.memory-body{padding:18px}.event-date{color:var(--pink-dark);font-size:1.4rem;font-weight:900;margin-top:12px}@media(max-width:1050px){.price-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:900px){.hero-grid{grid-template-columns:1fr}.preview{max-width:570px;margin:auto}.features,.steps,.memory-grid,.event-grid{grid-template-columns:1fr 1fr}.hide-mobile{display:none}}@media(max-width:620px){.shell{width:min(100% - 26px,1180px)}.nav-inner{height:68px}.brand span:last-child,.locale-switch{display:none}.hero{padding-top:55px}.features,.steps,.memory-grid,.event-grid,.content-grid,.price-grid{grid-template-columns:1fr}.price-card.highlighted{transform:none}.price{grid-template-columns:1fr;padding:28px}.section{padding:76px 0}.footer-inner{flex-direction:column}.nav-actions{gap:6px}.button{padding:0 14px}}
 `;

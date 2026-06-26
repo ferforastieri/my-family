@@ -1905,13 +1905,13 @@ class _PhotoViewer extends StatelessWidget {
   }
 }
 
-String _titleFor(String resource, String fallback) {
+String _titleFor(String resource, String defaultTitle) {
   return switch (resource) {
     'musicas' => 'Playlist do Nosso Amor',
     'cartas' => 'Cartas de Amor',
     'notas' => 'Notas',
     'fotos' => 'Nossa Galeria de Memórias',
-    _ => fallback,
+    _ => defaultTitle,
   };
 }
 

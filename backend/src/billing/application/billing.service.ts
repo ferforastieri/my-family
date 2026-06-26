@@ -11,6 +11,7 @@ import { TenantRepository } from '@tenancy/infrastructure/tenant.repository';
 import { BillingRepository } from '../infrastructure/billing.repository';
 import { JobsService, type PaymentJob } from '@shared/infrastructure/queue';
 import type { UserEntity } from '@auth/domain/entities/user.entity';
+import type { SubscriptionPlanInterval } from '@shared/infrastructure/database/schemas';
 
 @Injectable()
 export class BillingService {
@@ -27,10 +28,18 @@ export class BillingService {
     const subscription = await this.repository.findByTenant(
       this.context.tenantId,
     );
-    return { tenantStatus: tenant?.status ?? 'canceled', subscription };
+    const plans = await this.listPlans();
+    return { tenantStatus: tenant?.status ?? 'canceled', subscription, plans };
   }
 
-  async createCheckout(user: UserEntity) {
+  listPlans(options: { activeOnly?: boolean } = { activeOnly: true }) {
+    return this.repository.listPlans(options);
+  }
+
+  async createCheckout(
+    user: UserEntity,
+    interval: SubscriptionPlanInterval = 'monthly',
+  ) {
     this.blockSupport(user);
     if (user.role !== 'owner') {
       throw new ForbiddenException(
@@ -39,6 +48,12 @@ export class BillingService {
     }
     const stripe = this.stripe();
     const config = this.config();
+    const plan = await this.repository.findPlanByInterval(interval, {
+      activeOnly: true,
+    });
+    if (!plan) {
+      throw new BadRequestException('Plano indisponível.');
+    }
     const tenant = await this.tenants.findTenantById(this.context.tenantId);
     if (!tenant) throw new BadRequestException('Família não encontrada.');
     const existing = await this.repository.findByTenant(tenant.id);
@@ -51,21 +66,27 @@ export class BillingService {
       });
       customerId = customer.id;
     }
+    const mode = plan.interval === 'lifetime' ? 'payment' : 'subscription';
+    const metadata = { tenantId: tenant.id, planInterval: plan.interval };
     const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
+      mode,
       customer: customerId,
       client_reference_id: tenant.id,
-      line_items: [{ price: config.stripePriceId, quantity: 1 }],
+      line_items: [this.checkoutLineItem(plan)],
       success_url: config.successUrl,
       cancel_url: config.cancelUrl,
       allow_promotion_codes: true,
-      metadata: { tenantId: tenant.id },
-      subscription_data: { metadata: { tenantId: tenant.id } },
+      metadata,
+      ...(mode === 'subscription' ? { subscription_data: { metadata } } : {}),
     });
     await this.repository.upsert(tenant.id, {
       customerId,
       checkoutSessionId: session.id,
-      priceId: config.stripePriceId,
+      priceId: plan.stripePriceId,
+      planInterval: plan.interval,
+      planName: plan.name,
+      priceCents: plan.priceCents,
+      currency: plan.currency,
       status: 'checkout_created',
     });
     return { checkoutUrl: session.url };
@@ -131,6 +152,37 @@ export class BillingService {
       const session = event.data.object as Stripe.Checkout.Session;
       const tenantId =
         session.metadata?.tenantId || session.client_reference_id;
+      const planInterval = session.metadata?.planInterval as
+        | SubscriptionPlanInterval
+        | undefined;
+      if (
+        session.mode === 'payment' ||
+        (session.mode !== 'subscription' && !session.subscription)
+      ) {
+        if (!tenantId || session.payment_status !== 'paid') return;
+        const plan = planInterval
+          ? await this.repository.findPlanByInterval(planInterval)
+          : null;
+        await Promise.all([
+          this.repository.upsert(tenantId, {
+            customerId:
+              typeof session.customer === 'string'
+                ? session.customer
+                : session.customer?.id,
+            checkoutSessionId: session.id,
+            priceId: plan?.stripePriceId,
+            planInterval: plan?.interval ?? planInterval,
+            planName: plan?.name,
+            priceCents: plan?.priceCents,
+            currency: plan?.currency,
+            status: 'active',
+            currentPeriodEnd: null,
+            cancelAtPeriodEnd: false,
+          }),
+          this.tenants.updateTenant(tenantId, { status: 'active' }),
+        ]);
+        return;
+      }
       const subscriptionId =
         typeof session.subscription === 'string'
           ? session.subscription
@@ -171,6 +223,12 @@ export class BillingService {
       current_period_end?: number;
       cancel_at_period_end?: boolean;
     };
+    const planInterval = subscription.metadata?.planInterval as
+      | SubscriptionPlanInterval
+      | undefined;
+    const plan = planInterval
+      ? await this.repository.findPlanByInterval(planInterval)
+      : null;
     const tenantStatus = mapTenantStatus(subscription.status);
     await Promise.all([
       this.repository.upsert(tenantId, {
@@ -180,6 +238,11 @@ export class BillingService {
           (typeof subscription.customer === 'string'
             ? subscription.customer
             : subscription.customer.id),
+        priceId: subscription.items.data[0]?.price?.id ?? plan?.stripePriceId,
+        planInterval: plan?.interval ?? planInterval,
+        planName: plan?.name,
+        priceCents: plan?.priceCents,
+        currency: plan?.currency,
         checkoutSessionId: extra.checkoutSessionId,
         status: subscription.status,
         currentPeriodEnd: raw.current_period_end
@@ -191,10 +254,30 @@ export class BillingService {
     ]);
   }
 
+  private checkoutLineItem(
+    plan: CheckoutPlan,
+  ): Stripe.Checkout.SessionCreateParams.LineItem {
+    if (plan.stripePriceId) return { price: plan.stripePriceId, quantity: 1 };
+    const recurring = recurringFor(plan.interval);
+    return {
+      quantity: 1,
+      price_data: {
+        currency: plan.currency.toLowerCase(),
+        unit_amount: plan.priceCents,
+        product_data: {
+          name: plan.name,
+          description: plan.description,
+          metadata: { planInterval: plan.interval },
+        },
+        ...(recurring ? { recurring } : {}),
+      },
+    };
+  }
+
   private config() {
     if (!this.environment.billing) {
       throw new ServiceUnavailableException(
-        'Stripe não configurado. Defina STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET e STRIPE_PRICE_ID.',
+        'Stripe não configurado. Defina STRIPE_SECRET_KEY e STRIPE_WEBHOOK_SECRET.',
       );
     }
     return this.environment.billing;
@@ -211,6 +294,17 @@ export class BillingService {
       );
     }
   }
+}
+
+type CheckoutPlan = Awaited<ReturnType<BillingRepository['listPlans']>>[number];
+
+function recurringFor(interval: SubscriptionPlanInterval) {
+  if (interval === 'monthly') return { interval: 'month' as const };
+  if (interval === 'semiannual') {
+    return { interval: 'month' as const, interval_count: 6 };
+  }
+  if (interval === 'annual') return { interval: 'year' as const };
+  return undefined;
 }
 
 function mapTenantStatus(status: string) {

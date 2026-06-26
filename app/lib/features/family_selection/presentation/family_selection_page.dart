@@ -17,10 +17,12 @@ class FamilySelectionPage extends StatefulWidget {
     super.key,
     required this.auth,
     required this.toast,
+    this.nextPath,
   });
 
   final AuthController auth;
   final ToastController toast;
+  final String? nextPath;
 
   @override
   State<FamilySelectionPage> createState() => _FamilySelectionPageState();
@@ -38,9 +40,7 @@ class _FamilySelectionPageState extends State<FamilySelectionPage> {
       if (!mounted) return;
       final tenant = widget.auth.tenant;
       context.go(
-        tenant?.isActive == true
-            ? '/app/cliente/${tenant!.slug}/dashboard'
-            : '/app/billing',
+        tenant?.isActive == true ? widget.nextPath ?? '/' : '/billing',
       );
     } catch (error) {
       widget.toast.error(authErrorMessage(error));

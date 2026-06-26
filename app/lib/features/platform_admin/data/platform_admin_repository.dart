@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/config/app_config.dart';
+import '../../../data/models.dart';
 
 class PlatformAdminRepository {
   const PlatformAdminRepository(this.auth);
@@ -24,6 +25,45 @@ class PlatformAdminRepository {
     return PlatformAuditPage.fromJson(_unwrap(response));
   }
 
+  Future<List<SubscriptionPlan>> plans() async {
+    final response = await auth.dio.getUri<Map<String, dynamic>>(
+      AppConfig.apiUri('/platform/admin/plans'),
+    );
+    final data = _unwrap(response);
+    return ((data['plans'] as List?) ?? const [])
+        .whereType<Map>()
+        .map((item) =>
+            SubscriptionPlan.fromJson(Map<String, dynamic>.from(item)))
+        .toList(growable: false);
+  }
+
+  Future<SubscriptionPlan> updatePlan(
+    String interval, {
+    required String name,
+    required String description,
+    required int priceCents,
+    required String currency,
+    required String? stripePriceId,
+    required bool active,
+    required bool highlighted,
+    required int sortOrder,
+  }) async {
+    final response = await auth.dio.patchUri<Map<String, dynamic>>(
+      AppConfig.apiUri('/platform/admin/plans/$interval'),
+      data: {
+        'name': name,
+        'description': description,
+        'priceCents': priceCents,
+        'currency': currency,
+        'stripePriceId': stripePriceId,
+        'active': active,
+        'highlighted': highlighted,
+        'sortOrder': sortOrder,
+      },
+    );
+    return SubscriptionPlan.fromJson(_unwrap(response));
+  }
+
   Map<String, dynamic> _unwrap(Response<Map<String, dynamic>> response) {
     final body = response.data ?? const {};
     final data = body['data'];
@@ -37,12 +77,14 @@ class PlatformOverview {
   const PlatformOverview({
     required this.metrics,
     required this.tenantStatuses,
+    required this.plans,
     required this.recentTenants,
     required this.recentAudit,
   });
 
   final PlatformMetrics metrics;
   final Map<String, int> tenantStatuses;
+  final List<SubscriptionPlan> plans;
   final List<PlatformTenantSummary> recentTenants;
   final List<PlatformAuditEntry> recentAudit;
 
@@ -57,6 +99,11 @@ class PlatformOverview {
       tenantStatuses: statuses.map(
         (key, value) => MapEntry(key, (value as num?)?.toInt() ?? 0),
       ),
+      plans: ((json['plans'] as List?) ?? const [])
+          .whereType<Map>()
+          .map((item) =>
+              SubscriptionPlan.fromJson(Map<String, dynamic>.from(item)))
+          .toList(growable: false),
       recentTenants: ((json['recentTenants'] as List?) ?? const [])
           .map((item) => PlatformTenantSummary.fromJson(
                 Map<String, dynamic>.from(item as Map),

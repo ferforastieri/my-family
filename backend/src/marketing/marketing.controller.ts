@@ -1,6 +1,7 @@
 import { Controller, Get, Param, Req, Res } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { PublicSiteService } from '../public-site/public-site.service';
+import { BillingService } from '../billing/application/billing.service';
 import { Public } from '@auth/decorators/public.decorator';
 import {
   isMarketingLocale,
@@ -12,7 +13,10 @@ import {
 @Controller()
 @Public()
 export class MarketingController {
-  constructor(private readonly publicSites: PublicSiteService) {}
+  constructor(
+    private readonly publicSites: PublicSiteService,
+    private readonly billing: BillingService,
+  ) {}
 
   @Get()
   root(@Res() response: Response) {
@@ -20,13 +24,14 @@ export class MarketingController {
   }
 
   @Get(['pt', 'en', 'es'])
-  landing(@Req() request: Request, @Res() response: Response) {
+  async landing(@Req() request: Request, @Res() response: Response) {
     const locale = request.path.replace(/^\//, '');
     if (!isMarketingLocale(locale)) return response.redirect(308, '/pt');
+    const plans = await this.billing.listPlans();
     return response
       .type('html')
       .set('Cache-Control', 'public, max-age=300, stale-while-revalidate=86400')
-      .send(renderLanding(locale, requestOrigin(request)));
+      .send(renderLanding(locale, requestOrigin(request), plans));
   }
 
   @Get(['pt/familia/:slug', 'en/familia/:slug', 'es/familia/:slug'])

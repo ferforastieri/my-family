@@ -124,6 +124,46 @@ const appAccessKeys = [
   'nossaHistoria',
 ];
 
+class SubscriptionPlan {
+  const SubscriptionPlan({
+    required this.id,
+    required this.interval,
+    required this.name,
+    required this.description,
+    required this.priceCents,
+    required this.currency,
+    required this.active,
+    required this.highlighted,
+    required this.sortOrder,
+    this.stripePriceId,
+  });
+
+  final String id;
+  final String interval;
+  final String name;
+  final String description;
+  final int priceCents;
+  final String currency;
+  final bool active;
+  final bool highlighted;
+  final int sortOrder;
+  final String? stripePriceId;
+
+  factory SubscriptionPlan.fromJson(Map<String, dynamic> json) =>
+      SubscriptionPlan(
+        id: json['id']?.toString() ?? json['interval']?.toString() ?? '',
+        interval: json['interval']?.toString() ?? 'monthly',
+        name: json['name']?.toString() ?? '',
+        description: json['description']?.toString() ?? '',
+        priceCents: (json['priceCents'] as num?)?.toInt() ?? 0,
+        currency: json['currency']?.toString() ?? 'BRL',
+        active: json['active'] != false,
+        highlighted: json['highlighted'] == true,
+        sortOrder: (json['sortOrder'] as num?)?.toInt() ?? 0,
+        stripePriceId: json['stripePriceId']?.toString(),
+      );
+}
+
 class PaginatedResult<T> {
   const PaginatedResult({
     required this.items,

@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   Headers,
@@ -6,14 +7,28 @@ import {
   RawBodyRequest,
   Req,
 } from '@nestjs/common';
+import { IsIn, IsOptional } from 'class-validator';
 import type { Request } from 'express';
 import { Public } from '@auth/decorators/public.decorator';
 import { BillingService } from '../application/billing.service';
 import type { UserEntity } from '@auth/domain/entities/user.entity';
+import { subscriptionPlanIntervals } from '@shared/infrastructure/database/schemas';
+
+class CheckoutDto {
+  @IsOptional()
+  @IsIn(subscriptionPlanIntervals)
+  planInterval?: (typeof subscriptionPlanIntervals)[number];
+}
 
 @Controller('billing')
 export class BillingController {
   constructor(private billing: BillingService) {}
+
+  @Get('plans')
+  @Public()
+  async plans() {
+    return { plans: await this.billing.listPlans() };
+  }
 
   @Get('status')
   status() {
@@ -23,8 +38,9 @@ export class BillingController {
   @Post('checkout')
   checkout(
     @Req() request: Request & { user: UserEntity },
+    @Body() body: CheckoutDto = {},
   ) {
-    return this.billing.createCheckout(request.user);
+    return this.billing.createCheckout(request.user, body.planInterval);
   }
 
   @Post('portal')

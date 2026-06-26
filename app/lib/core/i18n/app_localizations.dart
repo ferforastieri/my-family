@@ -491,12 +491,20 @@ const _translations = <String, Map<String, String>>{
     'Editar perfil': 'Edit profile',
     'Atualize seu nome e suas informações.':
         'Update your name and your information.',
+    'Configurações da família': 'Family settings',
+    'Família selecionada': 'Selected family',
+    'Trocar família': 'Switch family',
     'Assinatura e publicação': 'Subscription and publishing',
     'Gerencie o plano e o endereço do seu site.':
         'Manage your plan and site address.',
+    'Plano, endereço público e disponibilidade do site.':
+        'Plan, public address and site availability.',
+    'Nome, foto e segurança da sua conta.': 'Name, photo and account security.',
     'Administração da família': 'Family administration',
     'Gerencie usuários, notificações e jogos.':
         'Manage users, notifications and games.',
+    'Usuários, jogos, notificações e Home.':
+        'Users, games, notifications and Home.',
     'Administração da plataforma': 'Platform administration',
     'Estatísticas, famílias, assinaturas e auditoria.':
         'Stats, families, subscriptions and audit.',
@@ -959,12 +967,21 @@ const _translations = <String, Map<String, String>>{
     'Editar perfil': 'Editar perfil',
     'Atualize seu nome e suas informações.':
         'Actualiza tu nombre y tu información.',
+    'Configurações da família': 'Configuración familiar',
+    'Família selecionada': 'Familia seleccionada',
+    'Trocar família': 'Cambiar familia',
     'Assinatura e publicação': 'Suscripción y publicación',
     'Gerencie o plano e o endereço do seu site.':
         'Gestiona el plan y la dirección de tu sitio.',
+    'Plano, endereço público e disponibilidade do site.':
+        'Plan, dirección pública y disponibilidad del sitio.',
+    'Nome, foto e segurança da sua conta.':
+        'Nombre, foto y seguridad de tu cuenta.',
     'Administração da família': 'Administración familiar',
     'Gerencie usuários, notificações e jogos.':
         'Gestiona usuarios, notificaciones y juegos.',
+    'Usuários, jogos, notificações e Home.':
+        'Usuarios, juegos, notificaciones y Home.',
     'Administração da plataforma': 'Administración de la plataforma',
     'Estatísticas, famílias, assinaturas e auditoria.':
         'Estadísticas, familias, suscripciones y auditoría.',

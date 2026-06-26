@@ -127,11 +127,11 @@ class _LocationPageState extends State<LocationPage> {
     List<LocationSnapshot> locations, {
     LocationPlace? place,
   }) {
-    final fallback = locations.isNotEmpty
+    final firstKnownCenter = locations.isNotEmpty
         ? LatLng(locations.first.latitude, locations.first.longitude)
         : const LatLng(0, 0);
     final initial = place == null
-        ? mapCenter ?? fallback
+        ? mapCenter ?? firstKnownCenter
         : LatLng(place.latitude, place.longitude);
 
     showAppSheet<void>(

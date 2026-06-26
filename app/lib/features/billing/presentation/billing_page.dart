@@ -11,16 +11,19 @@ import '../../../core/widgets/app_fixed_header_scroll_view.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/love_action_card.dart';
 import '../../../core/widgets/love_background.dart';
+import '../../../data/models.dart';
 
 class BillingPage extends StatefulWidget {
   const BillingPage({
     super.key,
     required this.auth,
     required this.toast,
+    this.initialPlanInterval,
   });
 
   final AuthController auth;
   final ToastController toast;
+  final String? initialPlanInterval;
 
   @override
   State<BillingPage> createState() => _BillingPageState();
@@ -29,13 +32,17 @@ class BillingPage extends StatefulWidget {
 class _BillingPageState extends State<BillingPage> {
   late final name = TextEditingController(text: widget.auth.tenant?.name);
   late final slug = TextEditingController(text: widget.auth.tenant?.slug);
+  late Future<List<SubscriptionPlan>> plansFuture;
   String locale = 'pt-BR';
+  String? selectedPlanInterval;
   bool loading = false;
 
   @override
   void initState() {
     super.initState();
     locale = widget.auth.tenant?.defaultLocale ?? 'pt-BR';
+    selectedPlanInterval = widget.initialPlanInterval;
+    plansFuture = _loadPlans();
   }
 
   @override
@@ -57,9 +64,29 @@ class _BillingPageState extends State<BillingPage> {
     }
   }
 
+  Future<List<SubscriptionPlan>> _loadPlans() async {
+    final plans = await widget.auth.subscriptionPlans();
+    if (selectedPlanInterval == null) {
+      for (final plan in plans) {
+        if (plan.highlighted) {
+          selectedPlanInterval = plan.interval;
+          break;
+        }
+      }
+      selectedPlanInterval ??= plans.isEmpty ? null : plans.first.interval;
+    }
+    return plans;
+  }
+
   Future<void> _checkout() => _run(() async {
         final errorMessage = context.tr('Não foi possível abrir o pagamento.');
-        final url = await widget.auth.createCheckout();
+        final planInterval = selectedPlanInterval;
+        if (planInterval == null) {
+          throw StateError(context.tr('Escolha um plano para continuar.'));
+        }
+        final url = await widget.auth.createCheckout(
+          planInterval: planInterval,
+        );
         if (url.isEmpty ||
             !await launchUrl(Uri.parse(url),
                 mode: LaunchMode.externalApplication)) {
@@ -138,13 +165,64 @@ class _BillingPageState extends State<BillingPage> {
                   )),
                 ]),
                 const SizedBox(height: 18),
-                if (tenant?.isActive != true)
+                if (tenant?.isActive != true) ...[
+                  Text(
+                    context.tr('Escolha sua assinatura'),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  FutureBuilder<List<SubscriptionPlan>>(
+                    future: plansFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState != ConnectionState.done) {
+                        return const SizedBox(
+                          height: 120,
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      final plans = snapshot.data ?? const [];
+                      if (plans.isEmpty) {
+                        return Text(
+                          context.tr('Nenhum plano disponível no momento.'),
+                          style: TextStyle(color: palette.muted),
+                        );
+                      }
+                      return LayoutBuilder(
+                        builder: (context, constraints) {
+                          final wide = constraints.maxWidth >= 720;
+                          return Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: [
+                              for (final plan in plans)
+                                SizedBox(
+                                  width: wide
+                                      ? (constraints.maxWidth - 12) / 2
+                                      : constraints.maxWidth,
+                                  child: _PlanChoice(
+                                    plan: plan,
+                                    selected:
+                                        selectedPlanInterval == plan.interval,
+                                    onTap: () => setState(() =>
+                                        selectedPlanInterval = plan.interval),
+                                  ),
+                                ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 18),
                   AppButton(
                       onPressed: loading ? null : _checkout,
                       loading: loading,
                       label: 'Ativar assinatura',
-                      icon: Icons.credit_card)
-                else
+                      icon: Icons.credit_card),
+                ] else
                   AppButton(
                       onPressed: loading ? null : _portal,
                       loading: loading,
@@ -228,4 +306,98 @@ class _BillingPageState extends State<BillingPage> {
       ),
     );
   }
+}
+
+class _PlanChoice extends StatelessWidget {
+  const _PlanChoice({
+    required this.plan,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final SubscriptionPlan plan;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        constraints: const BoxConstraints(minHeight: 150),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: selected
+              ? palette.primary.withValues(alpha: .11)
+              : palette.card.withValues(alpha: .82),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: selected ? palette.primary : palette.border,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    plan.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                Icon(
+                  selected
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_off,
+                  color: selected ? palette.primary : palette.muted,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              plan.description,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: palette.muted, height: 1.35),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '${_money(plan.priceCents, plan.currency)} ${_periodLabel(plan.interval)}',
+              style: TextStyle(
+                color: palette.primaryDark,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _money(int priceCents, String currency) {
+  final value = (priceCents / 100).toStringAsFixed(2).replaceAll('.', ',');
+  if (currency.toUpperCase() == 'BRL') return 'R\$ $value';
+  return '${currency.toUpperCase()} $value';
+}
+
+String _periodLabel(String interval) {
+  return switch (interval) {
+    'monthly' => '/ mês',
+    'semiannual' => '/ semestre',
+    'annual' => '/ ano',
+    'lifetime' => 'único',
+    _ => '',
+  };
 }

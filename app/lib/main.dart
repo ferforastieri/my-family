@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 
 import 'core/auth/auth_controller.dart';
 import 'core/chat/chat_controller.dart';
@@ -23,6 +24,7 @@ import 'features/shell/presentation/app_router.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  usePathUrlStrategy();
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,

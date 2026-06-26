@@ -20,7 +20,9 @@ HTML renderizado pelo NestJS; a experiência interativa completa fica no Flutter
 - `/app/`: cliente Flutter Web.
 - `/app/demo`: demonstração no Flutter.
 - `/app/signup`: cadastro e início da assinatura.
-- `/app/login`: autenticação.
+- `/app/login/cliente`: login do cliente.
+- `/app/login/painel`: login para o painel da família.
+- `/app/familia/{slug}/login`: login direto em uma família.
 - `/{idioma}/familia/{slug}`: site compartilhado da família, com Open Graph e
   `noindex` para não expor conteúdo familiar nos buscadores.
 - `/robots.txt` e `/sitemap.xml`: gerados pelo NestJS.
@@ -48,7 +50,7 @@ O endereço padrão é `http://localhost:3458`.
 - O serviço Railway expõe o backend, as páginas SEO, `/api`, `/socket.io` e o
   Flutter Web em `/app/`.
 - MongoDB, Redis/BullMQ e Bucket S3 ficam no Railway ou em serviços externos
-  compatíveis apontados por variáveis.
+  apontados por variáveis.
 - Cloudflare fica como DNS, proxy, SSL, WAF e camada de segurança do domínio.
 - Android é build de aplicativo, não serviço Railway. O APK/AAB é gerado a
   partir de `app/` com Flutter, apontando para o domínio público do backend.
@@ -73,9 +75,10 @@ PASSWORD_RESET_URL=https://seu-dominio.com/app/reset-password
 ```
 
 Stripe e URLs de billing são opcionais. Configure
-`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID`,
-`BILLING_SUCCESS_URL` e `BILLING_CANCEL_URL` somente quando for ativar
-checkout/assinaturas.
+`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `BILLING_SUCCESS_URL` e
+`BILLING_CANCEL_URL` somente quando for ativar checkout/assinaturas. Os Price
+IDs do Stripe, quando usados, ficam nos planos gerenciados pelo painel da
+plataforma.
 
 Mudanças de dados e schema do MongoDB devem ser feitas com operações explícitas
 do próprio MongoDB, como `updateMany`, pipelines de atualização, criação de

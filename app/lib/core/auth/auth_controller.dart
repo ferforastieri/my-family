@@ -387,8 +387,21 @@ class AuthController extends ChangeNotifier {
     socket.connect(token: this.token, force: true);
   }
 
-  Future<String> createCheckout() async {
-    final response = await _httpPostMap('/billing/checkout', const {});
+  Future<List<SubscriptionPlan>> subscriptionPlans() async {
+    final response = await _httpGetMap('/billing/plans');
+    final rawPlans = response['plans'] ?? response['items'] ?? response;
+    if (rawPlans is! List) return const [];
+    return rawPlans
+        .whereType<Map>()
+        .map((item) =>
+            SubscriptionPlan.fromJson(Map<String, dynamic>.from(item)))
+        .toList(growable: false);
+  }
+
+  Future<String> createCheckout({String? planInterval}) async {
+    final response = await _httpPostMap('/billing/checkout', {
+      if (planInterval?.isNotEmpty == true) 'planInterval': planInterval,
+    });
     return response['checkoutUrl']?.toString() ?? '';
   }
 

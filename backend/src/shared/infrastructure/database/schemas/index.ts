@@ -21,6 +21,7 @@ export * from './scheduled-notification.schema';
 export * from './tenant.schema';
 export * from './membership.schema';
 export * from './subscription.schema';
+export * from './subscription-plan.schema';
 export * from './audit-log.schema';
 export * from './support-session.schema';
 export * from './site-config.schema';
@@ -92,6 +93,10 @@ import {
   SubscriptionDocument,
   SubscriptionSchema,
 } from './subscription.schema';
+import {
+  SubscriptionPlanDocument,
+  SubscriptionPlanSchema,
+} from './subscription-plan.schema';
 import { AuditLogDocument, AuditLogSchema } from './audit-log.schema';
 import {
   SupportSessionDocument,
@@ -125,6 +130,7 @@ export const mongoModels = [
   { name: TenantDocument.name, schema: TenantSchema },
   { name: MembershipDocument.name, schema: MembershipSchema },
   { name: SubscriptionDocument.name, schema: SubscriptionSchema },
+  { name: SubscriptionPlanDocument.name, schema: SubscriptionPlanSchema },
   { name: BillingEventDocument.name, schema: BillingEventSchema },
   { name: AuditLogDocument.name, schema: AuditLogSchema },
   { name: SupportSessionDocument.name, schema: SupportSessionSchema },

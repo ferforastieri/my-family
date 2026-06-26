@@ -23,7 +23,6 @@ import '../../lists/presentation/lists_page.dart';
 import '../../location/presentation/location_page.dart';
 import '../../marketing/domain/marketing_copy.dart';
 import '../../marketing/presentation/demo_page.dart';
-import '../../marketing/presentation/marketing_page.dart';
 import '../../marketing/presentation/public_auth_page.dart';
 import '../../profile/presentation/profile_page.dart';
 import '../../platform_admin/presentation/platform_admin_page.dart';
@@ -41,80 +40,67 @@ GoRouter buildRouter(
 ) {
   return GoRouter(
     navigatorKey: notifications.navigatorKey,
-    initialLocation: '/app/cliente',
+    initialLocation: '/',
     refreshListenable: auth,
     redirect: (context, state) {
       final path = state.uri.path;
       const publicPaths = {
-        '/welcome',
         '/demo',
         '/signup',
-        '/login',
-        '/app/demo',
-        '/app/signup',
-        '/app/login',
+        '/login/cliente',
+        '/login/painel',
       };
       const familySelectionPaths = {
         '/familias',
-        '/app/familias',
       };
+      const platformAdminPaths = {
+        '/admin/plataforma',
+      };
+      const familyAdminPaths = {
+        '/painel',
+        '/admin/familia',
+      };
+      final publicPath =
+          publicPaths.contains(path) || _isFamilySiteLoginPath(path);
       if (auth.user == null) {
-        return publicPaths.contains(path) ? null : '/app/login';
+        return publicPath ? null : '/login/cliente';
       }
-      if (publicPaths.contains(path)) {
-        return auth.tenant == null
-            ? '/app/familias'
-            : auth.tenant!.isActive
-                ? _clientDashboardPath(auth)
-                : '/app/billing';
-      }
+      if (publicPath) return null;
       if (auth.tenant == null) {
         if (familySelectionPaths.contains(path)) return null;
-        if ((path == '/plataforma' || path == '/app/admin/dashboard') &&
+        if (platformAdminPaths.contains(path) &&
             auth.user?.isPlatformAdmin == true) {
           return null;
         }
-        return '/app/familias';
+        return '/familias';
       }
       if (familySelectionPaths.contains(path)) {
-        return auth.tenant!.isActive
-            ? _clientDashboardPath(auth)
-            : '/app/billing';
-      }
-      if (path == '/app/cliente') {
-        return _clientDashboardPath(auth);
+        if (_safeNextPath(state.uri.queryParameters['next']) != null) {
+          return null;
+        }
+        return auth.tenant!.isActive ? '/' : '/billing';
       }
       final accessKey = _accessForPath(path);
       if (auth.user != null &&
           auth.tenant?.isActive != true &&
           path != '/billing' &&
-          path != '/app/billing' &&
           path != '/perfil' &&
-          path != '/app/perfil' &&
-          path != '/plataforma' &&
-          path != '/app/admin/dashboard') {
-        return '/app/billing';
+          !platformAdminPaths.contains(path)) {
+        return '/billing';
       }
-      if ((path == '/plataforma' || path == '/app/admin/dashboard') &&
+      if (platformAdminPaths.contains(path) &&
           auth.user?.isPlatformAdmin != true) {
-        return _clientDashboardPath(auth);
+        return '/';
       }
-      if (path == '/cliente/admin' && auth.user?.isAdmin != true) {
-        return _clientDashboardPath(auth);
+      if (familyAdminPaths.contains(path) && auth.user?.isAdmin != true) {
+        return '/';
       }
       if (accessKey != null && auth.user?.canAccess(accessKey) != true) {
-        return _clientDashboardPath(auth);
+        return '/';
       }
       return null;
     },
     routes: [
-      GoRoute(
-        path: '/welcome',
-        pageBuilder: (context, state) => _page(MarketingPage(
-          initialLocale:
-              MarketingLocale.resolve(state.uri.queryParameters['locale']),
-        )),
-      ),
       GoRoute(
         path: '/demo',
         pageBuilder: (context, state) => _page(DemoPage(
@@ -128,39 +114,41 @@ GoRouter buildRouter(
           toast: toast,
           locale: MarketingLocale.resolve(state.uri.queryParameters['locale']),
           register: true,
+          initialPlanInterval: state.uri.queryParameters['plan'],
         )),
       ),
       GoRoute(
-        path: '/login',
+        path: '/login/cliente',
         pageBuilder: (context, state) => _page(PublicAuthPage(
           auth: auth,
           toast: toast,
           locale: MarketingLocale.resolve(state.uri.queryParameters['locale']),
           register: false,
+          entry: PublicAuthEntry.client,
+          initialPlanInterval: state.uri.queryParameters['plan'],
         )),
       ),
       GoRoute(
-        path: '/app/demo',
-        pageBuilder: (context, state) => _page(DemoPage(
-          locale: MarketingLocale.resolve(state.uri.queryParameters['locale']),
-        )),
-      ),
-      GoRoute(
-        path: '/app/signup',
+        path: '/login/painel',
         pageBuilder: (context, state) => _page(PublicAuthPage(
           auth: auth,
           toast: toast,
           locale: MarketingLocale.resolve(state.uri.queryParameters['locale']),
-          register: true,
+          register: false,
+          entry: PublicAuthEntry.panel,
+          afterLoginPath: _familySelectionNext('/painel'),
         )),
       ),
       GoRoute(
-        path: '/app/login',
+        path: '/familia/:tenantSlug/login',
         pageBuilder: (context, state) => _page(PublicAuthPage(
           auth: auth,
           toast: toast,
           locale: MarketingLocale.resolve(state.uri.queryParameters['locale']),
-          register: state.uri.queryParameters['mode'] == 'register',
+          register: false,
+          entry: PublicAuthEntry.familySite,
+          tenantSlug: state.pathParameters['tenantSlug'],
+          afterLoginPath: '/',
         )),
       ),
       GoRoute(
@@ -168,22 +156,21 @@ GoRouter buildRouter(
         pageBuilder: (context, state) => _page(FamilySelectionPage(
           auth: auth,
           toast: toast,
+          nextPath: _safeNextPath(state.uri.queryParameters['next']),
         )),
       ),
       GoRoute(
-        path: '/app/familias',
-        pageBuilder: (context, state) => _page(FamilySelectionPage(
-          auth: auth,
-          toast: toast,
-        )),
-      ),
-      GoRoute(
-        path: '/plataforma',
+        path: '/admin/plataforma',
         pageBuilder: (context, state) => _page(PlatformAdminPage(auth: auth)),
       ),
       GoRoute(
-        path: '/app/admin/dashboard',
-        pageBuilder: (context, state) => _page(PlatformAdminPage(auth: auth)),
+        path: '/painel',
+        pageBuilder: (context, state) => _page(ClientDashboardPage(auth: auth)),
+      ),
+      GoRoute(
+        path: '/admin/familia',
+        pageBuilder: (context, state) =>
+            _page(AdminPage(auth: auth, repository: repository, toast: toast)),
       ),
       ShellRoute(
         builder: (context, state, child) {
@@ -201,39 +188,19 @@ GoRouter buildRouter(
         },
         routes: [
           GoRoute(
-            path: '/painel',
-            pageBuilder: (context, state) =>
-                _page(ClientDashboardPage(auth: auth)),
-          ),
-          GoRoute(
-            path: '/app/cliente/:tenantSlug/dashboard',
-            pageBuilder: (context, state) =>
-                _page(ClientDashboardPage(auth: auth)),
-          ),
-          GoRoute(
-            path: '/app/cliente/dashboard',
-            pageBuilder: (context, state) =>
-                _page(ClientDashboardPage(auth: auth)),
-          ),
-          GoRoute(
             path: '/billing',
             pageBuilder: (context, state) => _page(BillingPage(
               auth: auth,
               toast: toast,
+              initialPlanInterval: state.uri.queryParameters['plan'],
             )),
           ),
           GoRoute(
-            path: '/app/billing',
+            path: '/cliente/:tenantSlug/assinatura',
             pageBuilder: (context, state) => _page(BillingPage(
               auth: auth,
               toast: toast,
-            )),
-          ),
-          GoRoute(
-            path: '/app/cliente/:tenantSlug/assinatura',
-            pageBuilder: (context, state) => _page(BillingPage(
-              auth: auth,
-              toast: toast,
+              initialPlanInterval: state.uri.queryParameters['plan'],
             )),
           ),
           GoRoute(
@@ -398,15 +365,36 @@ GoRouter buildRouter(
               toast: toast,
             )),
           ),
-          GoRoute(
-            path: '/cliente/admin',
-            pageBuilder: (context, state) => _page(
-                AdminPage(auth: auth, repository: repository, toast: toast)),
-          ),
         ],
       ),
     ],
   );
+}
+
+bool _isFamilySiteLoginPath(String path) {
+  return RegExp(r'^/familia/[^/]+/login$').hasMatch(path);
+}
+
+String _familySelectionNext(String nextPath) {
+  return Uri(
+    path: '/familias',
+    queryParameters: {'next': nextPath},
+  ).toString();
+}
+
+String? _safeNextPath(String? value) {
+  if (value == null || value.trim().isEmpty) return null;
+  final uri = Uri.tryParse(value.trim());
+  if (uri == null || uri.hasScheme || uri.host.isNotEmpty) return null;
+  if (!value.startsWith('/') || value.startsWith('//')) return null;
+  final path = uri.path;
+  if (path.startsWith('/login') ||
+      path == '/signup' ||
+      path == '/demo' ||
+      path == '/familias') {
+    return null;
+  }
+  return uri.replace(path: path).toString();
 }
 
 String? _accessForPath(String path) {
@@ -422,12 +410,6 @@ String? _accessForPath(String path) {
     '/nossa-historia' => 'nossaHistoria',
     _ => null,
   };
-}
-
-String _clientDashboardPath(AuthController auth) {
-  final slug = auth.tenant?.slug ?? auth.user?.tenantSlug;
-  if (slug == null || slug.isEmpty) return '/app/cliente/dashboard';
-  return '/app/cliente/$slug/dashboard';
 }
 
 Page<void> _page(Widget child) {

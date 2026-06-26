@@ -31,7 +31,6 @@ export class Environment {
   billing?: {
     stripeSecretKey: string;
     stripeWebhookSecret: string;
-    stripePriceId: string;
     successUrl: string;
     cancelUrl: string;
   };
@@ -63,7 +62,6 @@ class EnvironmentFactory {
     const type = rawType as 'development' | 'production' | 'staging';
     const stripeSecretKey = config.get<string>('STRIPE_SECRET_KEY');
     const stripeWebhookSecret = config.get<string>('STRIPE_WEBHOOK_SECRET');
-    const stripePriceId = config.get<string>('STRIPE_PRICE_ID');
     const smtpHost = config.get<string>('SMTP_HOST');
     const smtpUser = config.get<string>('SMTP_USER');
     const smtpPass = config.get<string>('SMTP_PASS');
@@ -106,11 +104,10 @@ class EnvironmentFactory {
         csrfSecret: required(config, 'CSRF_SECRET'),
       },
       billing:
-        stripeSecretKey && stripeWebhookSecret && stripePriceId
+        stripeSecretKey && stripeWebhookSecret
           ? {
               stripeSecretKey,
               stripeWebhookSecret,
-              stripePriceId,
               successUrl:
                 config.get<string>('BILLING_SUCCESS_URL') ||
                 'http://localhost:3458/app/billing',
@@ -195,9 +192,13 @@ function positive(config: ConfigService, name: string): number {
   return value;
 }
 
-function number(config: ConfigService, name: string, fallback: number): number {
+function number(
+  config: ConfigService,
+  name: string,
+  defaultValue: number,
+): number {
   const raw = config.get<string>(name);
-  if (!raw) return fallback;
+  if (!raw) return defaultValue;
   const value = Number(raw);
   if (!Number.isFinite(value) || value <= 0) {
     throw new Error(`${name} deve ser um número positivo`);

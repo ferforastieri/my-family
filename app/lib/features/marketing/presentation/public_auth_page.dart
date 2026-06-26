@@ -8,6 +8,8 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/love_background.dart';
 import '../domain/marketing_copy.dart';
 
+enum PublicAuthEntry { client, panel, familySite }
+
 class PublicAuthPage extends StatefulWidget {
   const PublicAuthPage({
     super.key,
@@ -15,12 +17,20 @@ class PublicAuthPage extends StatefulWidget {
     required this.toast,
     required this.locale,
     required this.register,
+    this.entry = PublicAuthEntry.client,
+    this.tenantSlug,
+    this.afterLoginPath,
+    this.initialPlanInterval,
   });
 
   final AuthController auth;
   final ToastController toast;
   final MarketingLocale locale;
   final bool register;
+  final PublicAuthEntry entry;
+  final String? tenantSlug;
+  final String? afterLoginPath;
+  final String? initialPlanInterval;
 
   @override
   State<PublicAuthPage> createState() => _PublicAuthPageState();
@@ -59,12 +69,7 @@ class _PublicAuthPageState extends State<PublicAuthPage> {
               pinned: true,
               backgroundColor: palette.bgStart.withValues(alpha: .94),
               surfaceTintColor: Colors.transparent,
-              leading: IconButton(
-                onPressed: () =>
-                    context.go('/welcome?locale=${widget.locale.code}'),
-                icon: const Icon(Icons.arrow_back),
-                tooltip: t.back,
-              ),
+              automaticallyImplyLeading: false,
               title: Text(t.brand,
                   style: const TextStyle(fontWeight: FontWeight.w900)),
             ),
@@ -95,7 +100,7 @@ class _PublicAuthPageState extends State<PublicAuthPage> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               Text(
-                                widget.register ? t.signupTitle : t.loginTitle,
+                                _title(t),
                                 style: const TextStyle(
                                   fontSize: 32,
                                   height: 1.08,
@@ -104,7 +109,7 @@ class _PublicAuthPageState extends State<PublicAuthPage> {
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                widget.register ? t.signupBody : t.loginBody,
+                                _body(t),
                                 style: TextStyle(
                                     color: palette.muted, height: 1.5),
                               ),
@@ -182,19 +187,14 @@ class _PublicAuthPageState extends State<PublicAuthPage> {
                                 loading: loading,
                                 icon: widget.register
                                     ? Icons.favorite_outline
-                                    : Icons.login,
-                                label:
-                                    widget.register ? t.signupButton : t.login,
+                                    : _buttonIcon(),
+                                label: _buttonLabel(t),
                               ),
                               const SizedBox(height: 12),
                               TextButton(
                                 onPressed: loading
                                     ? null
-                                    : () => context.go(
-                                          widget.register
-                                              ? '/login?locale=${widget.locale.code}'
-                                              : '/signup?locale=${widget.locale.code}',
-                                        ),
+                                    : () => context.go(_alternateAuthPath()),
                                 child: Text(widget.register
                                     ? t.hasAccount
                                     : t.noAccount),
@@ -219,6 +219,98 @@ class _PublicAuthPageState extends State<PublicAuthPage> {
     return null;
   }
 
+  String _title(MarketingCopy t) {
+    if (widget.register) return t.signupTitle;
+    return switch (widget.entry) {
+      PublicAuthEntry.client => t.loginTitle,
+      PublicAuthEntry.panel => switch (widget.locale) {
+          MarketingLocale.en => 'Sign in to the panel',
+          MarketingLocale.es => 'Entrar al panel',
+          MarketingLocale.pt => 'Entrar no painel',
+        },
+      PublicAuthEntry.familySite => switch (widget.locale) {
+          MarketingLocale.en => 'Sign in to this family site',
+          MarketingLocale.es => 'Entrar al sitio de la familia',
+          MarketingLocale.pt => 'Entrar no site da família',
+        },
+    };
+  }
+
+  String _body(MarketingCopy t) {
+    if (widget.register) return t.signupBody;
+    final slug = widget.tenantSlug?.trim();
+    return switch (widget.entry) {
+      PublicAuthEntry.client => t.loginBody,
+      PublicAuthEntry.panel => switch (widget.locale) {
+          MarketingLocale.en =>
+            'Use an administrator account to access family settings.',
+          MarketingLocale.es =>
+            'Usa una cuenta administradora para acceder a la configuración.',
+          MarketingLocale.pt =>
+            'Use uma conta administradora para acessar as configurações da família.',
+        },
+      PublicAuthEntry.familySite => switch (widget.locale) {
+          MarketingLocale.en =>
+            'Use your account to enter ${slug?.isNotEmpty == true ? slug : 'this family'} directly.',
+          MarketingLocale.es =>
+            'Usa tu cuenta para entrar directamente en ${slug?.isNotEmpty == true ? slug : 'esta familia'}.',
+          MarketingLocale.pt =>
+            'Use sua conta para entrar diretamente em ${slug?.isNotEmpty == true ? slug : 'esta família'}.',
+        },
+    };
+  }
+
+  IconData _buttonIcon() {
+    return switch (widget.entry) {
+      PublicAuthEntry.client => Icons.login,
+      PublicAuthEntry.panel => Icons.admin_panel_settings_outlined,
+      PublicAuthEntry.familySite => Icons.family_restroom_outlined,
+    };
+  }
+
+  String _buttonLabel(MarketingCopy t) {
+    if (widget.register) return t.signupButton;
+    return switch (widget.entry) {
+      PublicAuthEntry.client => t.login,
+      PublicAuthEntry.panel => switch (widget.locale) {
+          MarketingLocale.en => 'Open panel',
+          MarketingLocale.es => 'Abrir panel',
+          MarketingLocale.pt => 'Abrir painel',
+        },
+      PublicAuthEntry.familySite => switch (widget.locale) {
+          MarketingLocale.en => 'Enter family site',
+          MarketingLocale.es => 'Entrar al sitio',
+          MarketingLocale.pt => 'Entrar no site',
+        },
+    };
+  }
+
+  String _alternateAuthPath() {
+    final locale = Uri.encodeQueryComponent(widget.locale.code);
+    final plan = widget.initialPlanInterval;
+    final planQuery = plan?.isNotEmpty == true
+        ? '&plan=${Uri.encodeQueryComponent(plan!)}'
+        : '';
+    if (widget.register) return '/login/cliente?locale=$locale$planQuery';
+    return '/signup?locale=$locale$planQuery';
+  }
+
+  String _billingPathAfterSignup() {
+    final plan = widget.initialPlanInterval;
+    if (plan?.isNotEmpty != true) return '/billing';
+    return Uri(
+      path: '/billing',
+      queryParameters: {'plan': plan!},
+    ).toString();
+  }
+
+  String _destinationAfterLogin() {
+    final tenant = widget.auth.tenant;
+    if (tenant == null) return widget.afterLoginPath ?? '/familias';
+    if (!tenant.isActive) return '/billing';
+    return widget.afterLoginPath ?? '/';
+  }
+
   Future<void> _submit() async {
     if (loading || formKey.currentState?.validate() != true) return;
     setState(() {
@@ -237,9 +329,19 @@ class _PublicAuthPageState extends State<PublicAuthPage> {
         );
       } else {
         await widget.auth.signIn(email.text.trim(), password.text);
+        final tenantSlug = widget.tenantSlug?.trim();
+        if (tenantSlug?.isNotEmpty == true) {
+          await widget.auth.selectTenant(tenantSlug!);
+        }
       }
       widget.toast.backendSuccess(widget.auth.takeMessage());
-      if (mounted) context.go(widget.register ? '/billing' : '/');
+      if (mounted) {
+        context.go(
+          widget.register
+              ? _billingPathAfterSignup()
+              : _destinationAfterLogin(),
+        );
+      }
     } catch (reason) {
       final message = authErrorMessage(reason);
       widget.toast.error(message);

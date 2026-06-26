@@ -53,8 +53,8 @@ class ProfilePage extends StatelessWidget {
                     context: context,
                     builder: (_) => EditProfileSheet(auth: auth, toast: toast),
                   ),
-                  onAdmin: () => context.openAppRoute('/cliente/admin'),
-                  onPlatformAdmin: () => context.go('/plataforma'),
+                  onAdmin: () => context.go('/admin/familia'),
+                  onPlatformAdmin: () => context.go('/admin/plataforma'),
                   onBilling: () => context.openAppRoute('/billing'),
                   onSignOut: () async {
                     await auth.signOut();

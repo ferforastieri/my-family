@@ -139,7 +139,7 @@ Variaveis principais:
 - `REDIS_URL`
 - `CSRF_SECRET`
 - `FIREBASE_SERVICE_ACCOUNT_JSON`
-- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID` quando checkout estiver ativo
+- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` quando checkout estiver ativo
 - `BILLING_SUCCESS_URL`, `BILLING_CANCEL_URL` quando checkout estiver ativo
 
 ## Seguranca

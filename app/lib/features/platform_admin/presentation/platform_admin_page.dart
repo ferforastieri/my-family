@@ -1,12 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/i18n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_dashboard.dart';
+import '../../../data/models.dart';
 import '../data/platform_admin_repository.dart';
 
 class PlatformAdminPage extends StatefulWidget {
@@ -41,11 +40,6 @@ class _PlatformAdminPageState extends State<PlatformAdminPage> {
           icon: const Icon(Icons.refresh),
           tooltip: context.tr('Atualizar'),
         ),
-        IconButton(
-          onPressed: () => context.go('/painel'),
-          icon: const Icon(Icons.family_restroom_outlined),
-          tooltip: context.tr('Painel da família'),
-        ),
       ],
       children: [
         FutureBuilder<PlatformOverview>(
@@ -63,7 +57,10 @@ class _PlatformAdminPageState extends State<PlatformAdminPage> {
                 onRetry: _reload,
               );
             }
-            return _Overview(data: snapshot.data!);
+            return _Overview(
+              data: snapshot.data!,
+              onEditPlan: _editPlan,
+            );
           },
         ),
       ],
@@ -73,12 +70,31 @@ class _PlatformAdminPageState extends State<PlatformAdminPage> {
   void _reload() {
     setState(() => future = repository.overview());
   }
+
+  Future<void> _editPlan(SubscriptionPlan plan) async {
+    final updated = await showDialog<SubscriptionPlan>(
+      context: context,
+      builder: (context) => _PlanEditorDialog(
+        plan: plan,
+        repository: repository,
+      ),
+    );
+    if (updated == null || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.tr('Plano atualizado.'))),
+    );
+    _reload();
+  }
 }
 
 class _Overview extends StatelessWidget {
-  const _Overview({required this.data});
+  const _Overview({
+    required this.data,
+    required this.onEditPlan,
+  });
 
   final PlatformOverview data;
+  final ValueChanged<SubscriptionPlan> onEditPlan;
 
   @override
   Widget build(BuildContext context) {
@@ -118,6 +134,15 @@ class _Overview extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 20),
+        AppDashboardSection(
+          title: 'Planos de assinatura',
+          subtitle: 'Nome, descrição e valor exibidos na landing page.',
+          child: _PlansList(
+            items: data.plans,
+            onEdit: onEditPlan,
+          ),
+        ),
+        const SizedBox(height: 20),
         LayoutBuilder(
           builder: (context, constraints) {
             final wide = constraints.maxWidth >= 840;
@@ -146,6 +171,34 @@ class _Overview extends StatelessWidget {
             );
           },
         ),
+      ],
+    );
+  }
+}
+
+class _PlansList extends StatelessWidget {
+  const _PlansList({
+    required this.items,
+    required this.onEdit,
+  });
+
+  final List<SubscriptionPlan> items;
+  final ValueChanged<SubscriptionPlan> onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) return Text(context.tr('Nenhum plano cadastrado.'));
+    return Column(
+      children: [
+        for (final item in items)
+          _ListRow(
+            icon: _planIcon(item.interval),
+            title: item.name,
+            subtitle:
+                '${_money(item.priceCents, item.currency)} ${_periodLabel(item.interval)} · ${item.active ? context.tr('Ativo') : context.tr('Inativo')}',
+            trailing: item.highlighted ? context.tr('Destaque') : '',
+            onTap: () => onEdit(item),
+          ),
       ],
     );
   }
@@ -205,6 +258,7 @@ class _ListRow extends StatelessWidget {
     required this.subtitle,
     required this.trailing,
     this.success = true,
+    this.onTap,
   });
 
   final IconData icon;
@@ -212,36 +266,245 @@ class _ListRow extends StatelessWidget {
   final String subtitle;
   final String trailing;
   final bool success;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 9),
-      child: Row(
-        children: [
-          Icon(icon, color: success ? palette.primary : Colors.redAccent),
-          const SizedBox(width: 11),
-          Expanded(
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 4),
+        child: Row(
+          children: [
+            Icon(icon, color: success ? palette.primary : Colors.redAccent),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: const TextStyle(fontWeight: FontWeight.w800)),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: palette.muted, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(trailing,
+                style: TextStyle(color: palette.muted, fontSize: 11)),
+            if (onTap != null) ...[
+              const SizedBox(width: 6),
+              Icon(Icons.edit_outlined, size: 18, color: palette.muted),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PlanEditorDialog extends StatefulWidget {
+  const _PlanEditorDialog({
+    required this.plan,
+    required this.repository,
+  });
+
+  final SubscriptionPlan plan;
+  final PlatformAdminRepository repository;
+
+  @override
+  State<_PlanEditorDialog> createState() => _PlanEditorDialogState();
+}
+
+class _PlanEditorDialogState extends State<_PlanEditorDialog> {
+  final formKey = GlobalKey<FormState>();
+  late final name = TextEditingController(text: widget.plan.name);
+  late final description = TextEditingController(text: widget.plan.description);
+  late final price = TextEditingController(
+    text:
+        (widget.plan.priceCents / 100).toStringAsFixed(2).replaceAll('.', ','),
+  );
+  late final currency = TextEditingController(text: widget.plan.currency);
+  late final stripePriceId = TextEditingController(
+    text: widget.plan.stripePriceId ?? '',
+  );
+  late final sortOrder = TextEditingController(
+    text: widget.plan.sortOrder.toString(),
+  );
+  late bool active = widget.plan.active;
+  late bool highlighted = widget.plan.highlighted;
+  bool saving = false;
+
+  @override
+  void dispose() {
+    name.dispose();
+    description.dispose();
+    price.dispose();
+    currency.dispose();
+    stripePriceId.dispose();
+    sortOrder.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(context.tr('Editar plano')),
+      content: SizedBox(
+        width: 560,
+        child: Form(
+          key: formKey,
+          child: SingleChildScrollView(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(title,
-                    style: const TextStyle(fontWeight: FontWeight.w800)),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: palette.muted, fontSize: 12),
+                TextFormField(
+                  controller: name,
+                  decoration: InputDecoration(labelText: context.tr('Nome')),
+                  validator: _required,
+                  textInputAction: TextInputAction.next,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: description,
+                  decoration:
+                      InputDecoration(labelText: context.tr('Descrição')),
+                  minLines: 2,
+                  maxLines: 4,
+                  validator: _required,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: TextFormField(
+                        controller: price,
+                        decoration:
+                            InputDecoration(labelText: context.tr('Valor')),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        validator: (value) => _priceCents(value) == null
+                            ? 'Valor inválido'
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: currency,
+                        decoration:
+                            InputDecoration(labelText: context.tr('Moeda')),
+                        validator: _required,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: stripePriceId,
+                  decoration: const InputDecoration(
+                    labelText: 'Stripe Price ID',
+                    hintText: 'price_...',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: sortOrder,
+                  decoration: InputDecoration(labelText: context.tr('Ordem')),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 8),
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(context.tr('Ativo')),
+                  value: active,
+                  onChanged:
+                      saving ? null : (value) => setState(() => active = value),
+                ),
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(context.tr('Destaque na landing')),
+                  value: highlighted,
+                  onChanged: saving
+                      ? null
+                      : (value) => setState(() => highlighted = value),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          Text(trailing, style: TextStyle(color: palette.muted, fontSize: 11)),
-        ],
+        ),
       ),
+      actions: [
+        TextButton(
+          onPressed: saving ? null : () => Navigator.of(context).pop(),
+          child: Text(context.tr('Cancelar')),
+        ),
+        FilledButton.icon(
+          onPressed: saving ? null : _save,
+          icon: saving
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.save_outlined),
+          label: Text(context.tr('Salvar')),
+        ),
+      ],
     );
+  }
+
+  String? _required(String? value) {
+    return value?.trim().isNotEmpty == true ? null : 'Campo obrigatório';
+  }
+
+  int? _priceCents(String? value) {
+    if (value == null) return null;
+    var normalized = value.trim().replaceAll(RegExp(r'[^0-9,.-]'), '').trim();
+    if (normalized.contains(',')) {
+      normalized = normalized.replaceAll('.', '').replaceAll(',', '.');
+    }
+    final parsed = double.tryParse(normalized);
+    if (parsed == null || parsed < 0) return null;
+    return (parsed * 100).round();
+  }
+
+  Future<void> _save() async {
+    if (formKey.currentState?.validate() != true) return;
+    final priceCents = _priceCents(price.text);
+    if (priceCents == null) return;
+    setState(() => saving = true);
+    try {
+      final updated = await widget.repository.updatePlan(
+        widget.plan.interval,
+        name: name.text.trim(),
+        description: description.text.trim(),
+        priceCents: priceCents,
+        currency: currency.text.trim().toUpperCase(),
+        stripePriceId: stripePriceId.text.trim().isEmpty
+            ? null
+            : stripePriceId.text.trim(),
+        active: active,
+        highlighted: highlighted,
+        sortOrder: int.tryParse(sortOrder.text.trim()) ?? widget.plan.sortOrder,
+      );
+      if (mounted) Navigator.of(context).pop(updated);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(authErrorMessage(error))),
+      );
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
   }
 }
 
@@ -280,6 +543,32 @@ String _tenantStatus(String status) {
     'suspended' => 'Suspensa',
     'canceled' => 'Cancelada',
     _ => 'Rascunho',
+  };
+}
+
+IconData _planIcon(String interval) {
+  return switch (interval) {
+    'monthly' => Icons.calendar_month_outlined,
+    'semiannual' => Icons.event_repeat_outlined,
+    'annual' => Icons.workspace_premium_outlined,
+    'lifetime' => Icons.all_inclusive,
+    _ => Icons.sell_outlined,
+  };
+}
+
+String _money(int priceCents, String currency) {
+  final value = (priceCents / 100).toStringAsFixed(2).replaceAll('.', ',');
+  if (currency.toUpperCase() == 'BRL') return 'R\$ $value';
+  return '${currency.toUpperCase()} $value';
+}
+
+String _periodLabel(String interval) {
+  return switch (interval) {
+    'monthly' => '/ mês',
+    'semiannual' => '/ semestre',
+    'annual' => '/ ano',
+    'lifetime' => 'único',
+    _ => '',
   };
 }
 
