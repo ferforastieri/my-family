@@ -65,20 +65,12 @@ class _PublicAuthPageState extends State<PublicAuthPage> {
       body: LoveBackground(
         child: CustomScrollView(
           slivers: [
-            SliverAppBar(
-              pinned: true,
-              backgroundColor: palette.bgStart.withValues(alpha: .94),
-              surfaceTintColor: Colors.transparent,
-              automaticallyImplyLeading: false,
-              title: Text(t.brand,
-                  style: const TextStyle(fontWeight: FontWeight.w900)),
-            ),
             SliverToBoxAdapter(
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 610),
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 46, 18, 80),
+                    padding: const EdgeInsets.fromLTRB(18, 52, 18, 80),
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         color: palette.card.withValues(alpha: .94),

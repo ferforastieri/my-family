@@ -16,6 +16,8 @@ import '../../../core/widgets/love_action_card.dart';
 import '../../auth/presentation/auth_sheet.dart';
 import '../../notifications/presentation/notifications_sheet.dart';
 
+enum AppShellSection { family, panel, platform }
+
 class AppShell extends StatelessWidget {
   const AppShell({
     super.key,
@@ -27,6 +29,7 @@ class AppShell extends StatelessWidget {
     required this.child,
     required this.currentLocation,
     required this.toast,
+    this.section = AppShellSection.family,
   });
 
   final AuthController auth;
@@ -37,6 +40,7 @@ class AppShell extends StatelessWidget {
   final Widget child;
   final String currentLocation;
   final ToastController toast;
+  final AppShellSection section;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +62,7 @@ class AppShell extends StatelessWidget {
                 ? null
                 : _MobileBottomNavigation(
                     auth: auth,
+                    section: section,
                     chatUnreadCount: chat.unreadCount,
                     currentLocation: currentLocation,
                     onLogin: () => _openLogin(context),
@@ -77,6 +82,7 @@ class AppShell extends StatelessWidget {
       title: Center(
         child: _DesktopMainNavigation(
           auth: auth,
+          section: section,
           chatUnreadCount: chat.unreadCount,
           currentLocation: currentLocation,
           onLogin: () => _openLogin(context),
@@ -143,12 +149,14 @@ class AppShell extends StatelessWidget {
 class _DesktopMainNavigation extends StatelessWidget {
   const _DesktopMainNavigation({
     required this.auth,
+    required this.section,
     required this.chatUnreadCount,
     required this.currentLocation,
     required this.onLogin,
   });
 
   final AuthController auth;
+  final AppShellSection section;
   final int chatUnreadCount;
   final String currentLocation;
   final VoidCallback onLogin;
@@ -156,117 +164,234 @@ class _DesktopMainNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    final user = auth.user;
-    final hasMemories = user?.canAccess('memorias') == true ||
-        user?.canAccess('playlist') == true ||
-        user?.canAccess('cartas') == true ||
-        user?.canAccess('nossaHistoria') == true;
-    final hasMore = user?.canAccess('jogos') == true ||
-        user?.canAccess('listas') == true ||
-        user?.canAccess('notas') == true ||
-        user?.canAccess('localizacao') == true;
+    final items = _navigationItems(section, auth, currentLocation, onLogin);
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 760),
+      constraints: const BoxConstraints(maxWidth: 960),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _DesktopNavPill(
-            icon: Icons.photo_library_outlined,
-            selectedIcon: Icons.photo_library,
-            label: context.tr('Memórias'),
-            selected: hasMemories &&
-                (_isSelected('/atalhos/memorias', currentLocation) ||
-                    currentLocation == '/galeria' ||
-                    currentLocation == '/playlist' ||
-                    currentLocation == '/carta-de-amor' ||
-                    currentLocation == '/nossa-historia'),
-            onTap: () {
-              if (user == null) {
-                onLogin();
-              } else if (hasMemories) {
-                context.openAppRoute('/atalhos/memorias');
-              }
-            },
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: InkWell(
-              onTap: () {
-                if (user == null) {
-                  onLogin();
-                } else if (user.canAccess('chat')) {
-                  context.openAppRoute('/chat');
-                }
-              },
-              customBorder: const CircleBorder(),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                width: 72,
-                height: 72,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: palette.card,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: _isSelected('/chat', currentLocation)
-                        ? palette.primary
-                        : palette.border,
-                    width: 2,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: palette.primary.withValues(alpha: .16),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
+          for (final item in items)
+            if (item.logo)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: InkWell(
+                  onTap: () => _openNavItem(context, item),
+                  customBorder: const CircleBorder(),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    width: 72,
+                    height: 72,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: palette.card,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: item.selected ? palette.primary : palette.border,
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: palette.primary.withValues(alpha: .16),
+                          blurRadius: 18,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: _BadgeIcon(
-                  count: chatUnreadCount,
-                  child: Image.asset(
-                    'assets/brand/family-logo.png',
-                    fit: BoxFit.contain,
+                    child: _BadgeIcon(
+                      count: section == AppShellSection.family
+                          ? chatUnreadCount
+                          : 0,
+                      child: Image.asset(
+                        'assets/brand/family-logo.png',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
                   ),
                 ),
+              )
+            else
+              _DesktopNavPill(
+                icon: item.icon,
+                selectedIcon: item.selectedIcon,
+                label: item.label,
+                selected: item.selected,
+                onTap: () => _openNavItem(context, item),
               ),
-            ),
-          ),
-          _DesktopNavPill(
-            icon: Icons.apps_outlined,
-            selectedIcon: Icons.apps,
-            label: context.tr('Mais'),
-            selected: hasMore &&
-                (_isSelected('/atalhos/mais', currentLocation) ||
-                    currentLocation == '/jogos' ||
-                    currentLocation == '/listas' ||
-                    currentLocation == '/notas' ||
-                    currentLocation == '/localizacao'),
-            onTap: () {
-              if (user == null) {
-                onLogin();
-              } else if (hasMore) {
-                context.openAppRoute('/atalhos/mais');
-              }
-            },
-          ),
-          _DesktopNavPill(
-            icon: Icons.person_outline,
-            selectedIcon: Icons.person,
-            label: context.tr('Perfil'),
-            selected: _isSelected('/perfil', currentLocation) ||
-                _isSelected('/cliente/admin', currentLocation),
-            onTap: () {
-              if (auth.user == null) {
-                onLogin();
-              } else {
-                context.openAppRoute('/perfil');
-              }
-            },
-          ),
         ],
       ),
     );
   }
+}
+
+class _NavigationItem {
+  const _NavigationItem({
+    required this.label,
+    required this.path,
+    required this.icon,
+    required this.selectedIcon,
+    required this.selected,
+    this.logo = false,
+    this.enabled = true,
+    this.onDisabled,
+  });
+
+  final String label;
+  final String path;
+  final IconData icon;
+  final IconData selectedIcon;
+  final bool selected;
+  final bool logo;
+  final bool enabled;
+  final VoidCallback? onDisabled;
+}
+
+List<_NavigationItem> _navigationItems(
+  AppShellSection section,
+  AuthController auth,
+  String currentLocation,
+  VoidCallback onLogin,
+) {
+  return switch (section) {
+    AppShellSection.family => _familyNavigation(auth, currentLocation, onLogin),
+    AppShellSection.panel => _panelNavigation(currentLocation),
+    AppShellSection.platform => _platformNavigation(currentLocation),
+  };
+}
+
+List<_NavigationItem> _familyNavigation(
+  AuthController auth,
+  String currentLocation,
+  VoidCallback onLogin,
+) {
+  final user = auth.user;
+  final hasMemories = user?.canAccess('memorias') == true ||
+      user?.canAccess('playlist') == true ||
+      user?.canAccess('cartas') == true ||
+      user?.canAccess('nossaHistoria') == true;
+  final hasMore = user?.canAccess('jogos') == true ||
+      user?.canAccess('listas') == true ||
+      user?.canAccess('notas') == true ||
+      user?.canAccess('localizacao') == true;
+  return [
+    _NavigationItem(
+      label: 'Início',
+      path: '/',
+      icon: Icons.home_outlined,
+      selectedIcon: Icons.home,
+      selected: currentLocation == '/',
+      enabled: user != null,
+      onDisabled: onLogin,
+    ),
+    _NavigationItem(
+      label: 'Memórias',
+      path: '/atalhos/memorias',
+      icon: Icons.photo_library_outlined,
+      selectedIcon: Icons.photo_library,
+      selected: hasMemories &&
+          (_isSelected('/atalhos/memorias', currentLocation) ||
+              currentLocation == '/galeria' ||
+              currentLocation == '/playlist' ||
+              currentLocation == '/carta-de-amor' ||
+              currentLocation == '/nossa-historia'),
+      enabled: user != null && hasMemories,
+      onDisabled: onLogin,
+    ),
+    _NavigationItem(
+      label: 'Chat',
+      path: '/chat',
+      icon: Icons.chat_bubble_outline,
+      selectedIcon: Icons.chat_bubble,
+      selected: _isSelected('/chat', currentLocation),
+      logo: true,
+      enabled: user != null && user.canAccess('chat'),
+      onDisabled: onLogin,
+    ),
+    _NavigationItem(
+      label: 'Mais',
+      path: '/atalhos/mais',
+      icon: Icons.apps_outlined,
+      selectedIcon: Icons.apps,
+      selected: hasMore &&
+          (_isSelected('/atalhos/mais', currentLocation) ||
+              currentLocation == '/jogos' ||
+              currentLocation == '/listas' ||
+              currentLocation == '/notas' ||
+              currentLocation == '/localizacao'),
+      enabled: user != null && hasMore,
+      onDisabled: onLogin,
+    ),
+    _NavigationItem(
+      label: 'Perfil',
+      path: '/perfil',
+      icon: Icons.person_outline,
+      selectedIcon: Icons.person,
+      selected: _isSelected('/perfil', currentLocation),
+      enabled: user != null,
+      onDisabled: onLogin,
+    ),
+  ];
+}
+
+List<_NavigationItem> _panelNavigation(String currentLocation) {
+  return [
+    _NavigationItem(
+      label: 'Painel',
+      path: '/painel',
+      icon: Icons.tune_outlined,
+      selectedIcon: Icons.tune,
+      selected: _isSelected('/painel', currentLocation),
+    ),
+    _NavigationItem(
+      label: 'Assinatura',
+      path: '/billing',
+      icon: Icons.workspace_premium_outlined,
+      selectedIcon: Icons.workspace_premium,
+      selected: _isSelected('/billing', currentLocation) ||
+          currentLocation.contains('/assinatura'),
+    ),
+    _NavigationItem(
+      label: 'Site',
+      path: '/',
+      icon: Icons.family_restroom_outlined,
+      selectedIcon: Icons.family_restroom,
+      selected: currentLocation == '/',
+      logo: true,
+    ),
+    _NavigationItem(
+      label: 'Administrar',
+      path: '/admin/familia',
+      icon: Icons.admin_panel_settings_outlined,
+      selectedIcon: Icons.admin_panel_settings,
+      selected: _isSelected('/admin/familia', currentLocation),
+    ),
+    _NavigationItem(
+      label: 'Perfil',
+      path: '/painel/perfil',
+      icon: Icons.person_outline,
+      selectedIcon: Icons.person,
+      selected: _isSelected('/painel/perfil', currentLocation),
+    ),
+  ];
+}
+
+List<_NavigationItem> _platformNavigation(String currentLocation) {
+  return [
+    _NavigationItem(
+      label: 'Plataforma',
+      path: '/admin/plataforma',
+      icon: Icons.shield_outlined,
+      selectedIcon: Icons.shield,
+      selected: _isSelected('/admin/plataforma', currentLocation),
+    ),
+  ];
+}
+
+void _openNavItem(BuildContext context, _NavigationItem item) {
+  if (!item.enabled) {
+    item.onDisabled?.call();
+    return;
+  }
+  context.openAppRoute(item.path);
 }
 
 class _DesktopNavPill extends StatelessWidget {
@@ -499,12 +624,14 @@ class _ColorChoice extends StatelessWidget {
 class _MobileBottomNavigation extends StatelessWidget {
   const _MobileBottomNavigation({
     required this.auth,
+    required this.section,
     required this.chatUnreadCount,
     required this.currentLocation,
     required this.onLogin,
   });
 
   final AuthController auth;
+  final AppShellSection section;
   final int chatUnreadCount;
   final String currentLocation;
   final VoidCallback onLogin;
@@ -512,15 +639,7 @@ class _MobileBottomNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    final user = auth.user;
-    final hasMemories = user?.canAccess('memorias') == true ||
-        user?.canAccess('playlist') == true ||
-        user?.canAccess('cartas') == true ||
-        user?.canAccess('nossaHistoria') == true;
-    final hasMore = user?.canAccess('jogos') == true ||
-        user?.canAccess('listas') == true ||
-        user?.canAccess('notas') == true ||
-        user?.canAccess('localizacao') == true;
+    final items = _navigationItems(section, auth, currentLocation, onLogin);
     return SafeArea(
       top: false,
       child: DecoratedBox(
@@ -539,100 +658,56 @@ class _MobileBottomNavigation extends StatelessWidget {
           height: 76,
           child: Row(
             children: [
-              _MobileNavButton(
-                icon: Icons.photo_library_outlined,
-                selectedIcon: Icons.photo_library,
-                label: context.tr('Memórias'),
-                selected: hasMemories &&
-                    (_isSelected('/atalhos/memorias', currentLocation) ||
-                        currentLocation == '/galeria' ||
-                        currentLocation == '/playlist' ||
-                        currentLocation == '/carta-de-amor' ||
-                        currentLocation == '/nossa-historia'),
-                onTap: () {
-                  if (user == null) {
-                    onLogin();
-                  } else if (hasMemories) {
-                    context.openAppRoute('/atalhos/memorias');
-                  }
-                },
-              ),
-              Expanded(
-                child: Center(
-                  child: InkWell(
-                    onTap: () {
-                      if (user == null) {
-                        onLogin();
-                      } else if (user.canAccess('chat')) {
-                        context.openAppRoute('/chat');
-                      }
-                    },
-                    customBorder: const CircleBorder(),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      width: 66,
-                      height: 66,
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: palette.card,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: _isSelected('/chat', currentLocation)
-                              ? palette.primary
-                              : palette.border,
-                          width: 2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: palette.primary.withValues(alpha: .14),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
+              for (final item in items)
+                if (item.logo)
+                  Expanded(
+                    child: Center(
+                      child: InkWell(
+                        onTap: () => _openNavItem(context, item),
+                        customBorder: const CircleBorder(),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          width: 58,
+                          height: 58,
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: palette.card,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: item.selected
+                                  ? palette.primary
+                                  : palette.border,
+                              width: 2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: palette.primary.withValues(alpha: .14),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: _BadgeIcon(
-                        count: chatUnreadCount,
-                        child: Image.asset(
-                          'assets/brand/family-logo.png',
-                          fit: BoxFit.contain,
+                          child: _BadgeIcon(
+                            count: section == AppShellSection.family
+                                ? chatUnreadCount
+                                : 0,
+                            child: Image.asset(
+                              'assets/brand/family-logo.png',
+                              fit: BoxFit.contain,
+                            ),
+                          ),
                         ),
                       ),
                     ),
+                  )
+                else
+                  _MobileNavButton(
+                    icon: item.icon,
+                    selectedIcon: item.selectedIcon,
+                    label: item.label,
+                    selected: item.selected,
+                    onTap: () => _openNavItem(context, item),
                   ),
-                ),
-              ),
-              _MobileNavButton(
-                icon: Icons.apps_outlined,
-                selectedIcon: Icons.apps,
-                label: context.tr('Mais'),
-                selected: hasMore &&
-                    (_isSelected('/atalhos/mais', currentLocation) ||
-                        currentLocation == '/jogos' ||
-                        currentLocation == '/listas' ||
-                        currentLocation == '/notas' ||
-                        currentLocation == '/localizacao'),
-                onTap: () {
-                  if (user == null) {
-                    onLogin();
-                  } else if (hasMore) {
-                    context.openAppRoute('/atalhos/mais');
-                  }
-                },
-              ),
-              _MobileNavButton(
-                icon: Icons.person_outline,
-                selectedIcon: Icons.person,
-                label: context.tr('Perfil'),
-                selected: _isSelected('/perfil', currentLocation) ||
-                    _isSelected('/cliente/admin', currentLocation),
-                onTap: () {
-                  if (auth.user == null) {
-                    onLogin();
-                  } else {
-                    context.openAppRoute('/perfil');
-                  }
-                },
-              ),
             ],
           ),
         ),

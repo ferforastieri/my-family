@@ -48,14 +48,8 @@ export class AuditService {
   ) {}
 
   async record(record: AuditRecord): Promise<void> {
-    const normalized = {
-      ...record,
-      actorEmail: record.actorEmail?.trim().toLowerCase(),
-      userAgent: record.userAgent?.slice(0, 500),
-      ip: record.ip?.slice(0, 100),
-      metadata: sanitizeMetadata(record.metadata),
-    };
-    this.logger.log(JSON.stringify({ event: 'audit', ...normalized }));
+    const normalized = this.normalize(record);
+    this.logAudit(normalized);
     try {
       await this.audits.create(normalized);
     } catch (error) {
@@ -65,6 +59,22 @@ export class AuditService {
         }`,
       );
     }
+  }
+
+  logAudit(record: AuditRecord): void {
+    this.logger.log(
+      JSON.stringify({ event: 'audit', ...this.normalize(record) }),
+    );
+  }
+
+  private normalize(record: AuditRecord): AuditRecord {
+    return {
+      ...record,
+      actorEmail: record.actorEmail?.trim().toLowerCase(),
+      userAgent: record.userAgent?.slice(0, 500),
+      ip: record.ip?.slice(0, 100),
+      metadata: sanitizeMetadata(record.metadata),
+    };
   }
 
   logRequest(record: AuditRecord): void {

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/i18n/app_localizations.dart';
@@ -21,12 +19,6 @@ class _PlatformAdminPageState extends State<PlatformAdminPage> {
   late final PlatformAdminRepository repository =
       PlatformAdminRepository(widget.auth);
   late Future<PlatformOverview> future = repository.overview();
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(widget.auth.trackEvent('navigation', path: '/plataforma'));
-  }
 
   @override
   Widget build(BuildContext context) {

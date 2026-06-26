@@ -21,10 +21,12 @@ class ProfilePage extends StatelessWidget {
     super.key,
     required this.auth,
     required this.toast,
+    this.signOutPath = '/login/cliente',
   });
 
   final AuthController auth;
   final ToastController toast;
+  final String signOutPath;
 
   @override
   Widget build(BuildContext context) {
@@ -51,9 +53,12 @@ class ProfilePage extends StatelessWidget {
                     context: context,
                     builder: (_) => EditProfileSheet(auth: auth, toast: toast),
                   ),
+                  onFamilyPanel: () => context.go('/painel'),
+                  onBilling: () => context.go('/billing'),
+                  onAdmin: () => context.go('/admin/familia'),
                   onSignOut: () async {
                     await auth.signOut();
-                    if (context.mounted) context.go('/');
+                    if (context.mounted) context.go(signOutPath);
                   },
                 ),
         ],
@@ -67,12 +72,18 @@ class _SignedProfileCard extends StatefulWidget {
     required this.auth,
     required this.toast,
     required this.onEditProfile,
+    required this.onFamilyPanel,
+    required this.onBilling,
+    required this.onAdmin,
     required this.onSignOut,
   });
 
   final AuthController auth;
   final ToastController toast;
   final VoidCallback onEditProfile;
+  final VoidCallback onFamilyPanel;
+  final VoidCallback onBilling;
+  final VoidCallback onAdmin;
   final VoidCallback onSignOut;
 
   @override
@@ -139,6 +150,38 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
                 description: 'Atualize seu nome e suas informações.',
                 onTap: widget.onEditProfile,
               ),
+              if (user.isAdmin) ...[
+                const SizedBox(height: 18),
+                Text(
+                  context.tr('Família'),
+                  style: TextStyle(
+                    color: palette.foreground,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _ProfileActionTile(
+                  icon: Icons.tune_outlined,
+                  label: 'Configurações da família',
+                  description: 'Painel, publicação e ajustes principais.',
+                  onTap: widget.onFamilyPanel,
+                ),
+                const SizedBox(height: 10),
+                _ProfileActionTile(
+                  icon: Icons.workspace_premium_outlined,
+                  label: 'Assinatura e publicação',
+                  description: 'Gerencie plano e disponibilidade do site.',
+                  onTap: widget.onBilling,
+                ),
+                const SizedBox(height: 10),
+                _ProfileActionTile(
+                  icon: Icons.admin_panel_settings_outlined,
+                  label: 'Administração da família',
+                  description: 'Usuários, notificações, jogos e Home.',
+                  onTap: widget.onAdmin,
+                ),
+              ],
               const SizedBox(height: 18),
               Text(
                 context.tr('Sessão'),

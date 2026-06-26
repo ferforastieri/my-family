@@ -13,7 +13,7 @@ export class AuditController {
     @Req() request: Request & { user: UserEntity },
     @Body() dto: ClientAuditDto,
   ) {
-    await this.audit.record({
+    const record = {
       action: `client.${dto.action}`,
       resource: 'client',
       source: 'system',
@@ -24,7 +24,26 @@ export class AuditController {
       tenantId: request.user.tenantId,
       path: dto.path,
       metadata: dto.metadata,
-    });
+    } as const;
+    if (shouldPersistClientEvent(dto.action)) {
+      await this.audit.record(record);
+    } else {
+      this.audit.logAudit(record);
+    }
     return { message: 'Evento monitorado.' };
   }
+}
+
+function shouldPersistClientEvent(action: string): boolean {
+  const normalized = action.trim().toLowerCase();
+  if (
+    !normalized ||
+    normalized === 'navigation' ||
+    normalized === 'app.opened'
+  ) {
+    return false;
+  }
+  return /(^|[._-])(admin|billing|checkout|clear|cleared|create|created|delete|deleted|edit|edited|error|failed|failure|login|logout|payment|password|remove|removed|schedule|scheduled|security|send|sent|subscription|update|updated)([._-]|$)/.test(
+    normalized,
+  );
 }

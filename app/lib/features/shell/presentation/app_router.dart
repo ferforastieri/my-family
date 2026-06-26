@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -58,22 +56,29 @@ GoRouter buildRouter(
       };
       const panelPaths = {
         '/painel',
+        '/painel/perfil',
         '/admin/familia',
         '/billing',
       };
       final platformAdminPath = platformAdminPaths.contains(path);
       final panelPath = panelPaths.contains(path) ||
           RegExp(r'^/cliente/[^/]+/assinatura$').hasMatch(path);
+      final nextTarget = state.uri.toString();
       final publicPath =
           publicPaths.contains(path) || _isFamilySiteLoginPath(path);
       if (auth.user == null) {
         if (platformAdminPath) {
           return Uri(
             path: '/login/painel',
-            queryParameters: {'next': path},
+            queryParameters: {'next': nextTarget},
           ).toString();
         }
-        if (panelPath) return '/login/painel';
+        if (panelPath) {
+          return Uri(
+            path: '/login/painel',
+            queryParameters: {'next': nextTarget},
+          ).toString();
+        }
         return publicPath ? null : '/login/cliente';
       }
       if (publicPath) return null;
@@ -82,11 +87,12 @@ GoRouter buildRouter(
             ? null
             : Uri(
                 path: '/login/painel',
-                queryParameters: {'next': path},
+                queryParameters: {'next': nextTarget},
               ).toString();
       }
       if (auth.tenant == null) {
         if (familySelectionPaths.contains(path)) return null;
+        if (panelPath) return _familySelectionNext(nextTarget);
         return '/familias';
       }
       if (familySelectionPaths.contains(path)) {
@@ -100,6 +106,7 @@ GoRouter buildRouter(
           auth.tenant?.isActive != true &&
           path != '/billing' &&
           path != '/perfil' &&
+          path != '/painel/perfil' &&
           !platformAdminPath) {
         return '/billing';
       }
@@ -171,38 +178,77 @@ GoRouter buildRouter(
           nextPath: _safeNextPath(state.uri.queryParameters['next']),
         )),
       ),
-      GoRoute(
-        path: '/admin/plataforma',
-        pageBuilder: (context, state) => _page(PlatformAdminPage(auth: auth)),
-      ),
-      GoRoute(
-        path: '/painel',
-        pageBuilder: (context, state) => _page(ClientDashboardPage(auth: auth)),
-      ),
-      GoRoute(
-        path: '/billing',
-        pageBuilder: (context, state) => _page(BillingPage(
+      ShellRoute(
+        builder: (context, state, child) => AppShell(
           auth: auth,
+          notifications: notifications,
+          chat: chat,
+          theme: theme,
+          locale: locale,
           toast: toast,
-          initialPlanInterval: state.uri.queryParameters['plan'],
-        )),
+          currentLocation: state.uri.path,
+          section: AppShellSection.platform,
+          child: child,
+        ),
+        routes: [
+          GoRoute(
+            path: '/admin/plataforma',
+            pageBuilder: (context, state) =>
+                _page(PlatformAdminPage(auth: auth)),
+          ),
+        ],
       ),
-      GoRoute(
-        path: '/cliente/:tenantSlug/assinatura',
-        pageBuilder: (context, state) => _page(BillingPage(
+      ShellRoute(
+        builder: (context, state, child) => AppShell(
           auth: auth,
+          notifications: notifications,
+          chat: chat,
+          theme: theme,
+          locale: locale,
           toast: toast,
-          initialPlanInterval: state.uri.queryParameters['plan'],
-        )),
-      ),
-      GoRoute(
-        path: '/admin/familia',
-        pageBuilder: (context, state) =>
-            _page(AdminPage(auth: auth, repository: repository, toast: toast)),
+          currentLocation: state.uri.path,
+          section: AppShellSection.panel,
+          child: child,
+        ),
+        routes: [
+          GoRoute(
+            path: '/painel',
+            pageBuilder: (context, state) =>
+                _page(ClientDashboardPage(auth: auth)),
+          ),
+          GoRoute(
+            path: '/painel/perfil',
+            pageBuilder: (context, state) => _page(ProfilePage(
+              auth: auth,
+              toast: toast,
+              signOutPath: '/login/painel',
+            )),
+          ),
+          GoRoute(
+            path: '/billing',
+            pageBuilder: (context, state) => _page(BillingPage(
+              auth: auth,
+              toast: toast,
+              initialPlanInterval: state.uri.queryParameters['plan'],
+            )),
+          ),
+          GoRoute(
+            path: '/cliente/:tenantSlug/assinatura',
+            pageBuilder: (context, state) => _page(BillingPage(
+              auth: auth,
+              toast: toast,
+              initialPlanInterval: state.uri.queryParameters['plan'],
+            )),
+          ),
+          GoRoute(
+            path: '/admin/familia',
+            pageBuilder: (context, state) => _page(
+                AdminPage(auth: auth, repository: repository, toast: toast)),
+          ),
+        ],
       ),
       ShellRoute(
         builder: (context, state, child) {
-          unawaited(auth.trackEvent('navigation', path: state.uri.path));
           return AppShell(
             auth: auth,
             notifications: notifications,
@@ -211,6 +257,7 @@ GoRouter buildRouter(
             locale: locale,
             toast: toast,
             currentLocation: state.uri.path,
+            section: AppShellSection.family,
             child: child,
           );
         },

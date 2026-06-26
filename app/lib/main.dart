@@ -65,7 +65,7 @@ void main() {
   final locale = LocaleController();
   final toast = ToastController();
   final queryReset = ValueNotifier(0);
-  String? lastUserId;
+  String? lastSessionKey;
   runApp(AppQueryProvider(
     resetListenable: queryReset,
     child: MyFamilyApp(
@@ -78,27 +78,40 @@ void main() {
         repository: repository),
   ));
 
-  var protectedServicesStarted = false;
+  String? protectedServicesKey;
   Future<void> startProtectedServices() async {
-    if (auth.user == null) return;
-    if (protectedServicesStarted) {
+    final user = auth.user;
+    final tenant = auth.tenant;
+    final key = user != null && tenant != null && !user.isPlatformSession
+        ? '${user.id}:${tenant.id}'
+        : null;
+    if (key == null) {
+      protectedServicesKey = null;
+      location.stop();
+      return;
+    }
+    if (protectedServicesKey == key) {
       unawaited(notifications.ensureDeviceRegistered());
       return;
     }
-    protectedServicesStarted = true;
-    unawaited(auth.trackEvent('app.opened'));
+    protectedServicesKey = key;
     unawaited(notifications.requestStartupPermissions().catchError((_) {}));
     unawaited(location.requestStartupPermissions().catchError((_) {}));
     unawaited(notifications.bootstrap().catchError((_) {}));
+    unawaited(notifications.refresh().catchError((_) {}));
     unawaited(location.bootstrap().catchError((_) {}));
     unawaited(chat.bootstrap().catchError((_) {}));
+    unawaited(chat.refreshConversations(silent: true).catchError((_) {}));
   }
 
   auth.addListener(() {
     final userId = auth.user?.id;
-    if (userId != lastUserId) {
-      lastUserId = userId;
-      if (userId == null) protectedServicesStarted = false;
+    final sessionKey = auth.user != null && auth.tenant != null
+        ? '${auth.user!.id}:${auth.tenant!.id}:${auth.user!.sessionScope}'
+        : userId;
+    if (sessionKey != lastSessionKey) {
+      lastSessionKey = sessionKey;
+      protectedServicesKey = null;
       queryReset.value++;
     }
     unawaited(startProtectedServices());

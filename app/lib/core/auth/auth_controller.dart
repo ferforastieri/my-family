@@ -61,8 +61,6 @@ class AuthController extends ChangeNotifier {
   String? refreshToken;
   bool _connectListenerBound = false;
   Completer<bool>? _refreshCompleter;
-  String? _lastTrackedPath;
-  DateTime? _lastTrackedAt;
   String? takeMessage() => socket.takeLastMessage();
 
   Future<void> bootstrap() async {
@@ -309,18 +307,8 @@ class AuthController extends ChangeNotifier {
     String? path,
     Map<String, dynamic>? metadata,
   }) async {
+    if (action == 'navigation' || action == 'app.opened') return;
     if (token == null || user == null) return;
-    final now = DateTime.now();
-    if (action == 'navigation' &&
-        path == _lastTrackedPath &&
-        _lastTrackedAt != null &&
-        now.difference(_lastTrackedAt!) < const Duration(seconds: 2)) {
-      return;
-    }
-    if (action == 'navigation') {
-      _lastTrackedPath = path;
-      _lastTrackedAt = now;
-    }
     try {
       await _httpPostMap('/audit/client-event', {
         'action': action,

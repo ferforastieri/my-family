@@ -48,7 +48,7 @@ class LocationController with WidgetsBindingObserver {
       return;
     }
     final currentToken = socket.token;
-    if (auth.user == null || currentToken == null) return;
+    if (!_hasTenantSession || currentToken == null) return;
     if (_started) {
       if (defaultTargetPlatform == TargetPlatform.android &&
           _activeAndroidToken != currentToken) {
@@ -106,7 +106,7 @@ class LocationController with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed &&
-        auth.user != null &&
+        _hasTenantSession &&
         socket.token != null &&
         !_started) {
       unawaited(bootstrap());
@@ -118,7 +118,7 @@ class LocationController with WidgetsBindingObserver {
       stop();
       return;
     }
-    if (auth.user != null && socket.token != null) {
+    if (_hasTenantSession && socket.token != null) {
       unawaited(bootstrap());
     } else {
       stop();
@@ -185,7 +185,7 @@ class LocationController with WidgetsBindingObserver {
 
   Future<void> _sendCurrentPosition() async {
     if (kIsWeb) return;
-    if (auth.user == null || socket.token == null) return;
+    if (!_hasTenantSession || socket.token == null) return;
     try {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
@@ -200,7 +200,7 @@ class LocationController with WidgetsBindingObserver {
 
   Future<void> _sendPosition(Position position) async {
     if (kIsWeb) return;
-    if (auth.user == null || socket.token == null) return;
+    if (!_hasTenantSession || socket.token == null) return;
     try {
       final batteryLevel = await _safeBatteryLevel();
       final batteryState = await _safeBatteryState();
@@ -244,6 +244,11 @@ class LocationController with WidgetsBindingObserver {
     if (defaultTargetPlatform == TargetPlatform.iOS) return 'ios';
     return 'unknown';
   }
+
+  bool get _hasTenantSession =>
+      auth.user != null &&
+      auth.tenant != null &&
+      auth.user?.isPlatformSession != true;
 
   void stop() {
     _timer?.cancel();

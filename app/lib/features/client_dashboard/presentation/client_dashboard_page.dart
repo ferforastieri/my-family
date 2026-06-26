@@ -72,7 +72,7 @@ class ClientDashboardPage extends StatelessWidget {
             title: 'Perfil',
             description: 'Nome, foto e segurança da sua conta.',
             icon: Icons.person_outline,
-            onTap: () => context.go('/perfil'),
+            onTap: () => context.go('/painel/perfil'),
           ),
           if (user?.isAdmin == true) ...[
             const SizedBox(height: 12),

@@ -249,6 +249,10 @@ const _translations = <String, Map<String, String>>{
     'Se o email existir, você receberá instruções.':
         'If the email exists, you will receive instructions.',
     'Painel': 'Dashboard',
+    'Início': 'Home',
+    'Site': 'Site',
+    'Administrar': 'Admin',
+    'Plataforma': 'Platform',
     'Memórias': 'Memories',
     'Mais': 'More',
     'Perfil': 'Profile',
@@ -724,6 +728,10 @@ const _translations = <String, Map<String, String>>{
     'Se o email existir, você receberá instruções.':
         'Si el email existe, recibirás instrucciones.',
     'Painel': 'Panel',
+    'Início': 'Inicio',
+    'Site': 'Sitio',
+    'Administrar': 'Administrar',
+    'Plataforma': 'Plataforma',
     'Memórias': 'Recuerdos',
     'Mais': 'Más',
     'Perfil': 'Perfil',
