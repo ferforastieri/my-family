@@ -72,7 +72,6 @@ Fluxo mobile:
 
 O backend aceita credencial Firebase por:
 
-- `FIREBASE_SERVICE_ACCOUNT_PATH`
 - `FIREBASE_SERVICE_ACCOUNT_JSON`
 
 Esses valores devem vir de secrets ou ambiente seguro. Nunca versionar service account.
@@ -139,13 +138,9 @@ Variaveis principais:
 - `CORS_ORIGIN`
 - `REDIS_URL`
 - `CSRF_SECRET`
-- `FIREBASE_SERVICE_ACCOUNT_PATH`
 - `FIREBASE_SERVICE_ACCOUNT_JSON`
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
-- `STRIPE_PRICE_ID`
-- `BILLING_SUCCESS_URL`
-- `BILLING_CANCEL_URL`
+- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID` quando checkout estiver ativo
+- `BILLING_SUCCESS_URL`, `BILLING_CANCEL_URL` quando checkout estiver ativo
 
 ## Seguranca
 

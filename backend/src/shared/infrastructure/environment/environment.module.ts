@@ -20,7 +20,6 @@ export class Environment {
   emailFromName?: string;
   passwordResetUrl?: string;
   firebase?: {
-    serviceAccountPath?: string;
     serviceAccountJson?: string;
   };
   redis?: { url: string };
@@ -68,7 +67,6 @@ class EnvironmentFactory {
     const smtpHost = config.get<string>('SMTP_HOST');
     const smtpUser = config.get<string>('SMTP_USER');
     const smtpPass = config.get<string>('SMTP_PASS');
-    const firebasePath = config.get<string>('FIREBASE_SERVICE_ACCOUNT_PATH');
     const firebaseJson = config.get<string>('FIREBASE_SERVICE_ACCOUNT_JSON');
     const redisUrl = config.get<string>('REDIS_URL');
 
@@ -100,13 +98,7 @@ class EnvironmentFactory {
       emailFrom: config.get<string>('EMAIL_FROM'),
       emailFromName: config.get<string>('EMAIL_FROM_NAME') || 'Nossa Família',
       passwordResetUrl: config.get<string>('PASSWORD_RESET_URL') || '',
-      firebase:
-        firebasePath || firebaseJson
-          ? {
-              serviceAccountPath: firebasePath,
-              serviceAccountJson: firebaseJson,
-            }
-          : undefined,
+      firebase: firebaseJson ? { serviceAccountJson: firebaseJson } : undefined,
       redis: redisUrl ? { url: redisUrl } : undefined,
       security: {
         throttleTtlMs: positive(config, 'THROTTLE_TTL_MS'),
@@ -156,14 +148,10 @@ function validateProductionEnvironment(
       'CSRF_SECRET deve ter pelo menos 32 caracteres em produção',
     );
   }
-  if (!environment.billing) {
-    throw new Error(
-      'STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET e STRIPE_PRICE_ID são obrigatórios em produção',
-    );
-  }
   if (
-    environment.billing.successUrl.startsWith('http://localhost') ||
-    environment.billing.cancelUrl.startsWith('http://localhost')
+    environment.billing &&
+    (environment.billing.successUrl.startsWith('http://localhost') ||
+      environment.billing.cancelUrl.startsWith('http://localhost'))
   ) {
     throw new Error(
       'BILLING_SUCCESS_URL e BILLING_CANCEL_URL públicos são obrigatórios em produção',

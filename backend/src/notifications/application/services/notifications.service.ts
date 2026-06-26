@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { readFileSync } from 'node:fs';
 import {
   cert,
   getApps,
@@ -64,10 +63,7 @@ export class NotificationsService {
   private loadFirebaseServiceAccount(): ServiceAccount | null {
     const rawJson = this.env.firebase?.serviceAccountJson;
     if (rawJson) return JSON.parse(rawJson) as ServiceAccount;
-
-    const path = this.env.firebase?.serviceAccountPath;
-    if (!path) return null;
-    return JSON.parse(readFileSync(path, 'utf8')) as ServiceAccount;
+    return null;
   }
 
   async list(
@@ -176,7 +172,7 @@ export class NotificationsService {
   ): Promise<{ sent: number }> {
     if (!this.fcmEnabled) {
       this.logger.warn(
-        'FCM desativado. Configure FIREBASE_SERVICE_ACCOUNT_PATH ou FIREBASE_SERVICE_ACCOUNT_JSON.',
+        'FCM desativado. Configure FIREBASE_SERVICE_ACCOUNT_JSON.',
       );
       return { sent: 0 };
     }

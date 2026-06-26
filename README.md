@@ -69,13 +69,13 @@ ENDPOINT=<endpoint-s3>
 REGION=<regiao>
 ACCESS_KEY_ID=<access-key>
 SECRET_ACCESS_KEY=<secret-key>
-STRIPE_SECRET_KEY=<stripe-secret>
-STRIPE_WEBHOOK_SECRET=<stripe-webhook-secret>
-STRIPE_PRICE_ID=<stripe-price>
-BILLING_SUCCESS_URL=https://seu-dominio.com/app/billing
-BILLING_CANCEL_URL=https://seu-dominio.com/app/billing
 PASSWORD_RESET_URL=https://seu-dominio.com/app/reset-password
 ```
+
+Stripe e URLs de billing são opcionais. Configure
+`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID`,
+`BILLING_SUCCESS_URL` e `BILLING_CANCEL_URL` somente quando for ativar
+checkout/assinaturas.
 
 Mudanças de dados e schema do MongoDB devem ser feitas com operações explícitas
 do próprio MongoDB, como `updateMany`, pipelines de atualização, criação de
@@ -93,9 +93,8 @@ Variáveis principais:
 - `JWT_SECRET`, `CSRF_SECRET`
 - `REDIS_URL`
 - `BUCKET`, `ENDPOINT`, `REGION`, `ACCESS_KEY_ID`, `SECRET_ACCESS_KEY`
-- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID`
-- `BILLING_SUCCESS_URL`, `BILLING_CANCEL_URL`
 - variáveis Firebase usadas no Web, Android e backend
+- Stripe/billing quando checkout estiver ativo
 
 ## Desenvolvimento
 
