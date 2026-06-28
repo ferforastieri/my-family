@@ -26,6 +26,11 @@ export class PublicSiteController {
     return this.sites.demo();
   }
 
+  @Get('published-slugs')
+  async publishedSlugs() {
+    return { slugs: await this.sites.publishedSlugs() };
+  }
+
   @Get(':slug')
   bySlug(@Param('slug') slug: string) {
     return this.sites.bySlug(slug);

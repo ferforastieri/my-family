@@ -76,12 +76,36 @@ services:
       BILLING_SUCCESS_URL: ${BILLING_SUCCESS_URL:?BILLING_SUCCESS_URL is required}
       BILLING_CANCEL_URL: ${BILLING_CANCEL_URL:?BILLING_CANCEL_URL is required}
     ports:
-      - "${APP_PORT:-3458}:3000"
+      - "${BACKEND_PORT:-3000}:3000"
     depends_on:
       mongo:
         condition: service_started
       redis:
         condition: service_healthy
+    networks:
+      - my-family-network
+
+  landing-page:
+    build:
+      context: .
+      dockerfile: Dockerfile.landing-page
+      args:
+        BACKEND_ORIGIN: ${BACKEND_ORIGIN:-http://backend:3000}
+        NEXT_PUBLIC_SITE_ORIGIN: ${NEXT_PUBLIC_SITE_ORIGIN:-http://localhost:3458}
+        NEXT_PUBLIC_APP_ORIGIN: ${NEXT_PUBLIC_APP_ORIGIN:-http://localhost:3000/app}
+    container_name: my-family-landing-page
+    restart: unless-stopped
+    environment:
+      BACKEND_ORIGIN: ${BACKEND_ORIGIN:-http://backend:3000}
+      NEXT_PUBLIC_SITE_ORIGIN: ${NEXT_PUBLIC_SITE_ORIGIN:-http://localhost:3458}
+      NEXT_PUBLIC_APP_ORIGIN: ${NEXT_PUBLIC_APP_ORIGIN:-http://localhost:3000/app}
+      PORT: 3000
+      NODE_ENV: production
+    ports:
+      - "${APP_PORT:-3458}:3000"
+    depends_on:
+      backend:
+        condition: service_started
     networks:
       - my-family-network
 

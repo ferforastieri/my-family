@@ -110,10 +110,10 @@ class EnvironmentFactory {
               stripeWebhookSecret,
               successUrl:
                 config.get<string>('BILLING_SUCCESS_URL') ||
-                'http://localhost:3458/app/billing',
+                'http://localhost:3000/app/billing',
               cancelUrl:
                 config.get<string>('BILLING_CANCEL_URL') ||
-                'http://localhost:3458/app/billing',
+                'http://localhost:3000/app/billing',
             }
           : undefined,
     });

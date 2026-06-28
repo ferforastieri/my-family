@@ -137,7 +137,7 @@ Map<String, dynamic> _decodeNotificationPayload(String? payload) {
 
 String _notificationPayload(RemoteMessage message) {
   return jsonEncode({
-    'url': message.data['url'] ?? '/',
+    'url': message.data['url'] ?? '/home',
     if (message.data['conversationId'] != null)
       'conversationId': message.data['conversationId'],
   });

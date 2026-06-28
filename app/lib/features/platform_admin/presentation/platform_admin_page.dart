@@ -52,6 +52,7 @@ class _PlatformAdminPageState extends State<PlatformAdminPage> {
             return _Overview(
               data: snapshot.data!,
               onEditPlan: _editPlan,
+              onEditPolicy: _editPolicy,
             );
           },
         ),
@@ -77,16 +78,38 @@ class _PlatformAdminPageState extends State<PlatformAdminPage> {
     );
     _reload();
   }
+
+  Future<void> _editPolicy(
+    String locale,
+    PlatformLegalDocument? document,
+  ) async {
+    final updated = await showDialog<PlatformLegalDocument>(
+      context: context,
+      builder: (context) => _PrivacyPolicyEditorDialog(
+        locale: locale,
+        document: document,
+        repository: repository,
+      ),
+    );
+    if (updated == null || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.tr('Política atualizada.'))),
+    );
+    _reload();
+  }
 }
 
 class _Overview extends StatelessWidget {
   const _Overview({
     required this.data,
     required this.onEditPlan,
+    required this.onEditPolicy,
   });
 
   final PlatformOverview data;
   final ValueChanged<SubscriptionPlan> onEditPlan;
+  final void Function(String locale, PlatformLegalDocument? document)
+      onEditPolicy;
 
   @override
   Widget build(BuildContext context) {
@@ -135,6 +158,15 @@ class _Overview extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
+        AppDashboardSection(
+          title: 'Política de privacidade',
+          subtitle: 'Documento público usado pela landing web.',
+          child: _LegalDocumentsList(
+            items: data.legalDocuments,
+            onEdit: onEditPolicy,
+          ),
+        ),
+        const SizedBox(height: 20),
         LayoutBuilder(
           builder: (context, constraints) {
             final wide = constraints.maxWidth >= 840;
@@ -163,6 +195,41 @@ class _Overview extends StatelessWidget {
             );
           },
         ),
+      ],
+    );
+  }
+}
+
+class _LegalDocumentsList extends StatelessWidget {
+  const _LegalDocumentsList({
+    required this.items,
+    required this.onEdit,
+  });
+
+  final List<PlatformLegalDocument> items;
+  final void Function(String locale, PlatformLegalDocument? document) onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final byLocale = {
+      for (final item in items) item.locale: item,
+    };
+    return Column(
+      children: [
+        for (final locale in const ['pt', 'en', 'es'])
+          _ListRow(
+            icon: byLocale[locale]?.published == true
+                ? Icons.policy_outlined
+                : Icons.description_outlined,
+            title: _localeLabel(locale),
+            subtitle: byLocale[locale]?.title ??
+                context.tr('Não configurada no backend.'),
+            trailing: byLocale[locale] == null
+                ? context.tr('Pendente')
+                : _date(byLocale[locale]!.updatedAt),
+            success: byLocale[locale]?.published != false,
+            onTap: () => onEdit(locale, byLocale[locale]),
+          ),
       ],
     );
   }
@@ -312,6 +379,175 @@ class _PlanEditorDialog extends StatefulWidget {
 
   @override
   State<_PlanEditorDialog> createState() => _PlanEditorDialogState();
+}
+
+class _PrivacyPolicyEditorDialog extends StatefulWidget {
+  const _PrivacyPolicyEditorDialog({
+    required this.locale,
+    required this.document,
+    required this.repository,
+  });
+
+  final String locale;
+  final PlatformLegalDocument? document;
+  final PlatformAdminRepository repository;
+
+  @override
+  State<_PrivacyPolicyEditorDialog> createState() =>
+      _PrivacyPolicyEditorDialogState();
+}
+
+class _PrivacyPolicyEditorDialogState
+    extends State<_PrivacyPolicyEditorDialog> {
+  final formKey = GlobalKey<FormState>();
+  late final title = TextEditingController(
+    text: widget.document?.title ?? 'Política de privacidade',
+  );
+  late final body = TextEditingController(text: widget.document?.body ?? '');
+  late final effectiveDate = TextEditingController(
+    text: widget.document?.effectiveDate?.toIso8601String().split('T').first ??
+        '',
+  );
+  late String format = widget.document?.format ?? 'markdown';
+  late bool published = widget.document?.published ?? true;
+  bool saving = false;
+
+  @override
+  void dispose() {
+    title.dispose();
+    body.dispose();
+    effectiveDate.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('${context.tr('Política de privacidade')} · ${_localeLabel(widget.locale)}'),
+      content: SizedBox(
+        width: 720,
+        child: Form(
+          key: formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: title,
+                  decoration: InputDecoration(labelText: context.tr('Título')),
+                  validator: _required,
+                  textInputAction: TextInputAction.next,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: body,
+                  decoration:
+                      InputDecoration(labelText: context.tr('Conteúdo')),
+                  minLines: 12,
+                  maxLines: 22,
+                  validator: (value) =>
+                      (value?.trim().length ?? 0) >= 20
+                          ? null
+                          : 'Informe o conteúdo da política.',
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: format,
+                        decoration:
+                            InputDecoration(labelText: context.tr('Formato')),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'markdown',
+                            child: Text('Markdown'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'plain',
+                            child: Text('Texto simples'),
+                          ),
+                        ],
+                        onChanged: saving
+                            ? null
+                            : (value) =>
+                                setState(() => format = value ?? 'markdown'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: effectiveDate,
+                        decoration: const InputDecoration(
+                          labelText: 'Data efetiva',
+                          hintText: '2026-06-28',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(context.tr('Publicado')),
+                  value: published,
+                  onChanged: saving
+                      ? null
+                      : (value) => setState(() => published = value),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: saving ? null : () => Navigator.of(context).pop(),
+          child: Text(context.tr('Cancelar')),
+        ),
+        FilledButton.icon(
+          onPressed: saving ? null : _save,
+          icon: saving
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.save_outlined),
+          label: Text(context.tr('Salvar')),
+        ),
+      ],
+    );
+  }
+
+  String? _required(String? value) {
+    return value?.trim().isNotEmpty == true ? null : 'Campo obrigatório';
+  }
+
+  Future<void> _save() async {
+    if (formKey.currentState?.validate() != true) return;
+    setState(() => saving = true);
+    try {
+      final updated = await widget.repository.updatePrivacyPolicy(
+        widget.locale,
+        title: title.text.trim(),
+        body: body.text.trim(),
+        format: format,
+        published: published,
+        effectiveDate: effectiveDate.text.trim().isEmpty
+            ? null
+            : effectiveDate.text.trim(),
+      );
+      if (mounted) Navigator.of(context).pop(updated);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(authErrorMessage(error))),
+      );
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
+  }
 }
 
 class _PlanEditorDialogState extends State<_PlanEditorDialog> {
@@ -561,6 +797,15 @@ String _periodLabel(String interval) {
     'annual' => '/ ano',
     'lifetime' => 'único',
     _ => '',
+  };
+}
+
+String _localeLabel(String locale) {
+  return switch (locale) {
+    'pt' => 'Português',
+    'en' => 'English',
+    'es' => 'Español',
+    _ => locale,
   };
 }
 

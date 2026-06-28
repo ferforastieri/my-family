@@ -29,7 +29,7 @@ import { NotasModule } from './notas/notas.module';
 import { TenancyModule } from './tenancy/tenancy.module';
 import { BillingModule } from './billing/billing.module';
 import { PublicSiteModule } from './public-site/public-site.module';
-import { MarketingModule } from './marketing/marketing.module';
+import { LandingModule } from './landing/landing.module';
 import { TenantContextInterceptor } from './auth/application/services/tenant-context.interceptor';
 import { AuditModule } from './audit/audit.module';
 import { PlatformAdminModule } from './platform-admin/platform-admin.module';
@@ -60,7 +60,7 @@ import { ClientPanelModule } from './client-panel/client-panel.module';
     TenancyModule,
     BillingModule,
     PublicSiteModule,
-    MarketingModule,
+    LandingModule,
     PlatformAdminModule,
     SiteConfigModule,
     ClientPanelModule,

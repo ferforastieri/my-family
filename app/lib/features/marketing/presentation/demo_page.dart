@@ -35,8 +35,7 @@ class _DemoPageState extends State<DemoPage> {
               backgroundColor: palette.bgStart.withValues(alpha: .94),
               surfaceTintColor: Colors.transparent,
               leading: IconButton(
-                onPressed: () =>
-                    context.go('/login/cliente?locale=${widget.locale.code}'),
+                onPressed: () => context.go('/?locale=${widget.locale.code}'),
                 icon: const Icon(Icons.arrow_back),
                 tooltip: t.back,
               ),

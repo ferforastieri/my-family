@@ -153,7 +153,7 @@ export class NotificationsService {
     const row = await this.repository.upsertByContent({
       title,
       body: body ?? '',
-      url: url ?? '/',
+      url: url ?? '/home',
       icon: '/favicon-192.png',
       type: options.type ?? 'push',
     });
@@ -196,14 +196,14 @@ export class NotificationsService {
             body: body ?? '',
           },
           data: {
-            url: url ?? '/',
+            url: url ?? '/home',
           },
           webpush: {
             notification: {
               icon: '/icons/Icon-192.png',
             },
             fcmOptions: {
-              link: url ?? '/',
+              link: url ?? '/home',
             },
           },
           android: {

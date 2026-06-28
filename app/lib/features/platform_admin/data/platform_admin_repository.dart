@@ -64,9 +64,50 @@ class PlatformAdminRepository {
     return SubscriptionPlan.fromJson(_unwrap(response));
   }
 
+  Future<PlatformLegalDocument?> privacyPolicy(String locale) async {
+    final response = await auth.dio.getUri<Map<String, dynamic>>(
+      AppConfig.apiUri('/platform/admin/legal/privacy-policy/$locale'),
+    );
+    final data = _unwrapNullable(response);
+    return data == null ? null : PlatformLegalDocument.fromJson(data);
+  }
+
+  Future<PlatformLegalDocument> updatePrivacyPolicy(
+    String locale, {
+    required String title,
+    required String body,
+    required String format,
+    required bool published,
+    String? effectiveDate,
+  }) async {
+    final response = await auth.dio.patchUri<Map<String, dynamic>>(
+      AppConfig.apiUri('/platform/admin/legal/privacy-policy/$locale'),
+      data: {
+        'title': title,
+        'body': body,
+        'format': format,
+        'published': published,
+        if (effectiveDate?.trim().isNotEmpty == true)
+          'effectiveDate': effectiveDate!.trim(),
+      },
+    );
+    return PlatformLegalDocument.fromJson(_unwrap(response));
+  }
+
   Map<String, dynamic> _unwrap(Response<Map<String, dynamic>> response) {
     final body = response.data ?? const {};
     final data = body['data'];
+    return data is Map
+        ? Map<String, dynamic>.from(data)
+        : Map<String, dynamic>.from(body);
+  }
+
+  Map<String, dynamic>? _unwrapNullable(
+    Response<Map<String, dynamic>> response,
+  ) {
+    final body = response.data ?? const {};
+    final data = body['data'];
+    if (data == null) return null;
     return data is Map
         ? Map<String, dynamic>.from(data)
         : Map<String, dynamic>.from(body);
@@ -78,6 +119,7 @@ class PlatformOverview {
     required this.metrics,
     required this.tenantStatuses,
     required this.plans,
+    required this.legalDocuments,
     required this.recentTenants,
     required this.recentAudit,
   });
@@ -85,6 +127,7 @@ class PlatformOverview {
   final PlatformMetrics metrics;
   final Map<String, int> tenantStatuses;
   final List<SubscriptionPlan> plans;
+  final List<PlatformLegalDocument> legalDocuments;
   final List<PlatformTenantSummary> recentTenants;
   final List<PlatformAuditEntry> recentAudit;
 
@@ -104,6 +147,11 @@ class PlatformOverview {
           .map((item) =>
               SubscriptionPlan.fromJson(Map<String, dynamic>.from(item)))
           .toList(growable: false),
+      legalDocuments: ((json['legalDocuments'] as List?) ?? const [])
+          .whereType<Map>()
+          .map((item) =>
+              PlatformLegalDocument.fromJson(Map<String, dynamic>.from(item)))
+          .toList(growable: false),
       recentTenants: ((json['recentTenants'] as List?) ?? const [])
           .map((item) => PlatformTenantSummary.fromJson(
                 Map<String, dynamic>.from(item as Map),
@@ -116,6 +164,46 @@ class PlatformOverview {
           .toList(),
     );
   }
+}
+
+class PlatformLegalDocument {
+  const PlatformLegalDocument({
+    required this.id,
+    required this.kind,
+    required this.locale,
+    required this.title,
+    required this.body,
+    required this.format,
+    required this.updatedAt,
+    this.effectiveDate,
+    this.published = true,
+  });
+
+  final String id;
+  final String kind;
+  final String locale;
+  final String title;
+  final String body;
+  final String format;
+  final bool published;
+  final DateTime? effectiveDate;
+  final DateTime updatedAt;
+
+  factory PlatformLegalDocument.fromJson(Map<String, dynamic> json) =>
+      PlatformLegalDocument(
+        id: json['id']?.toString() ?? '',
+        kind: json['kind']?.toString() ?? 'privacy-policy',
+        locale: json['locale']?.toString() ?? 'pt',
+        title: json['title']?.toString() ?? '',
+        body: json['body']?.toString() ?? '',
+        format: json['format']?.toString() ?? 'markdown',
+        published: json['published'] != false,
+        effectiveDate: DateTime.tryParse(
+          json['effectiveDate']?.toString() ?? '',
+        ),
+        updatedAt: DateTime.tryParse(json['updatedAt']?.toString() ?? '') ??
+            DateTime.now(),
+      );
 }
 
 class PlatformMetrics {

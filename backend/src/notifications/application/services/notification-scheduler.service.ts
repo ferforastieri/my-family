@@ -45,7 +45,7 @@ export class NotificationSchedulerService implements OnModuleInit {
     const row = await this.scheduled.create({
       title: body.title.trim(),
       body: body.body?.trim() ?? '',
-      url: body.url?.trim() || '/',
+      url: body.url?.trim() || '/home',
       scheduledAt,
     });
     try {

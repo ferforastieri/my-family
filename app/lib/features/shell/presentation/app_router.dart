@@ -21,6 +21,7 @@ import '../../lists/presentation/lists_page.dart';
 import '../../location/presentation/location_page.dart';
 import '../../marketing/domain/marketing_copy.dart';
 import '../../marketing/presentation/demo_page.dart';
+import '../../marketing/presentation/mobile_landing_page.dart';
 import '../../marketing/presentation/public_auth_page.dart';
 import '../../profile/presentation/profile_page.dart';
 import '../../platform_admin/presentation/platform_admin_page.dart';
@@ -43,6 +44,7 @@ GoRouter buildRouter(
     redirect: (context, state) {
       final path = state.uri.path;
       const publicPaths = {
+        '/',
         '/demo',
         '/signup',
         '/login/cliente',
@@ -99,7 +101,7 @@ GoRouter buildRouter(
         if (_safeNextPath(state.uri.queryParameters['next']) != null) {
           return null;
         }
-        return auth.tenant!.isActive ? '/' : '/billing';
+        return auth.tenant!.isActive ? '/home' : '/billing';
       }
       final accessKey = _accessForPath(path);
       if (auth.user != null &&
@@ -111,14 +113,21 @@ GoRouter buildRouter(
         return '/billing';
       }
       if (panelPath && auth.user?.isAdmin != true) {
-        return '/';
+        return '/home';
       }
       if (accessKey != null && auth.user?.canAccess(accessKey) != true) {
-        return '/';
+        return '/home';
       }
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/',
+        pageBuilder: (context, state) => _page(MobileLandingPage(
+          auth: auth,
+          locale: MarketingLocale.resolve(state.uri.queryParameters['locale']),
+        )),
+      ),
       GoRoute(
         path: '/demo',
         pageBuilder: (context, state) => _page(DemoPage(
@@ -167,7 +176,7 @@ GoRouter buildRouter(
           register: false,
           entry: PublicAuthEntry.familySite,
           tenantSlug: state.pathParameters['tenantSlug'],
-          afterLoginPath: '/',
+          afterLoginPath: '/home',
         )),
       ),
       GoRoute(
@@ -336,7 +345,7 @@ GoRouter buildRouter(
             )),
           ),
           GoRoute(
-            path: '/',
+            path: '/home',
             pageBuilder: (context, state) => _page(HomePage(
               repository: repository,
               onNavigate: (path) {
@@ -448,6 +457,7 @@ String? _safeNextPath(String? value) {
   if (!value.startsWith('/') || value.startsWith('//')) return null;
   final path = uri.path;
   if (path.startsWith('/login') ||
+      path == '/' ||
       path == '/signup' ||
       path == '/demo' ||
       path == '/familias') {

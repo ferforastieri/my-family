@@ -6,7 +6,7 @@ describe('NotificationFactory', () => {
       notificationFactory.create({
         title: 'Lembrete',
         body: 'Mensagem',
-        url: '/',
+        url: '/home',
       }).type,
     ).toBe('manual');
   });
@@ -16,7 +16,7 @@ describe('NotificationFactory', () => {
       notificationFactory.createPush({
         title: 'Lembrete',
         body: 'Mensagem',
-        url: '/',
+        url: '/home',
       }).type,
     ).toBe('push');
   });

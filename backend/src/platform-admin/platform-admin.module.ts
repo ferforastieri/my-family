@@ -19,6 +19,10 @@ import {
   UserDocument,
   UserSchema,
 } from '../auth/infrastructure/persistence/user.schema';
+import {
+  LegalDocument,
+  LegalDocumentSchema,
+} from '../landing/persistence/legal-document.schema';
 
 @Module({
   imports: [
@@ -26,6 +30,7 @@ import {
       { name: UserDocument.name, schema: UserSchema },
       { name: TenantDocument.name, schema: TenantSchema },
       { name: SubscriptionDocument.name, schema: SubscriptionSchema },
+      { name: LegalDocument.name, schema: LegalDocumentSchema },
     ]),
     AuditModule,
     AuthModule,

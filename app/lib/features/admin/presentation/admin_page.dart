@@ -3135,7 +3135,7 @@ class _NotificationSheetState extends State<_NotificationSheet> {
     final current = widget.notification;
     title = TextEditingController(text: current?.title ?? '');
     body = TextEditingController(text: current?.body ?? '');
-    url = TextEditingController(text: current?.url ?? '/');
+    url = TextEditingController(text: current?.url ?? '/home');
   }
 
   @override
@@ -3157,7 +3157,7 @@ class _NotificationSheetState extends State<_NotificationSheet> {
       await widget.onSave({
         'title': titleText,
         'body': body.text,
-        'url': url.text.trim().isEmpty ? '/' : url.text.trim(),
+        'url': url.text.trim().isEmpty ? '/home' : url.text.trim(),
       });
       if (mounted) Navigator.pop(context);
     } catch (error) {
@@ -3264,7 +3264,7 @@ class _ScheduleNotificationSheetState
     final notification = widget.notification;
     title = TextEditingController(text: notification?.title ?? '');
     body = TextEditingController(text: notification?.body ?? '');
-    url = TextEditingController(text: notification?.url ?? '/');
+    url = TextEditingController(text: notification?.url ?? '/home');
     _setDateTime(DateTime.now().add(const Duration(minutes: 10)));
   }
 
@@ -3343,7 +3343,7 @@ class _ScheduleNotificationSheetState
       await widget.onSchedule(
         title: titleText,
         body: body.text.trim(),
-        url: url.text.trim().isEmpty ? '/' : url.text.trim(),
+        url: url.text.trim().isEmpty ? '/home' : url.text.trim(),
         scheduledAt: scheduledAt,
       );
       if (mounted) Navigator.pop(context);

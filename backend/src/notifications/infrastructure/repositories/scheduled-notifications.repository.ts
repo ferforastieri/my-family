@@ -34,7 +34,7 @@ export class ScheduledNotificationsRepository {
       tenantId: doc.tenantId,
       title: doc.title,
       body: doc.body ?? '',
-      url: doc.url ?? '/',
+      url: doc.url ?? '/home',
       scheduledAt: doc.scheduledAt,
       status: doc.status,
       sentAt: doc.sentAt ?? null,

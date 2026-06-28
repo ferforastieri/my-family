@@ -47,7 +47,7 @@ export class NotificationsRepository {
       id: toId(doc),
       title: doc.title,
       body: doc.body ?? '',
-      url: doc.url ?? '/',
+      url: doc.url ?? '/home',
       icon: doc.icon ?? null,
       type: doc.type ?? 'manual',
       readBy: doc.readBy ?? [],
@@ -131,7 +131,7 @@ export class NotificationsRepository {
       await this.notifications.create({
         title: data.title,
         body: data.body ?? '',
-        url: data.url ?? '/',
+        url: data.url ?? '/home',
         icon: data.icon ?? null,
         type: data.type ?? 'manual',
       }),
@@ -142,7 +142,7 @@ export class NotificationsRepository {
     const normalized = {
       title: data.title,
       body: data.body ?? '',
-      url: data.url ?? '/',
+      url: data.url ?? '/home',
       icon: data.icon ?? null,
       type: data.type ?? 'push',
     };

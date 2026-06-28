@@ -23,7 +23,7 @@ export class NotificationFactory implements Factory<
     return {
       title: input.title ?? 'Nossa Família',
       body: input.body ?? '',
-      url: input.url ?? '/',
+      url: input.url ?? '/home',
       icon: 'icon' in input ? input.icon : undefined,
       type: 'type' in input ? (input.type ?? 'manual') : 'manual',
     };

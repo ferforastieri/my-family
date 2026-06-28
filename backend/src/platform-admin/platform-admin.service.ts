@@ -16,11 +16,20 @@ import {
 } from '../auth/infrastructure/persistence/user.schema';
 import { AuditService } from '../audit/application/audit.service';
 import {
+  cleanUndefined,
   normalizePagination,
   paginated,
   type PaginationQuery,
 } from '@shared/infrastructure/database/mongo.utils';
 import { BillingRepository } from '../billing/infrastructure/billing.repository';
+import {
+  LandingLocale,
+  LegalDocument,
+  LegalDocumentFormat,
+  LegalDocumentMongoDocument,
+  landingLocales,
+} from '../landing/persistence/legal-document.schema';
+import { toPublicLegalDocument } from '../landing/landing.service';
 
 @Injectable()
 export class PlatformAdminService {
@@ -31,6 +40,8 @@ export class PlatformAdminService {
     private readonly tenants: Model<TenantMongoDocument>,
     @InjectModel(SubscriptionDocument.name)
     private readonly subscriptions: Model<SubscriptionMongoDocument>,
+    @InjectModel(LegalDocument.name)
+    private readonly legalDocuments: Model<LegalDocumentMongoDocument>,
     private readonly billing: BillingRepository,
     private readonly audit: AuditService,
   ) {}
@@ -52,6 +63,7 @@ export class PlatformAdminService {
       recentAudit,
       auditEvents24h,
       plans,
+      legalDocuments,
     ] = await Promise.all([
       this.users.countDocuments().exec(),
       this.tenants.countDocuments().exec(),
@@ -81,6 +93,7 @@ export class PlatformAdminService {
       this.audit.list(1, 10),
       this.audit.countSince(last24Hours),
       this.listPlans(),
+      this.privacyPolicies(),
     ]);
 
     return {
@@ -95,6 +108,7 @@ export class PlatformAdminService {
         auditEvents24h,
       },
       plans,
+      legalDocuments,
       tenantStatuses: Object.fromEntries(
         tenantStatuses.map((item) => [item._id, item.count]),
       ),
@@ -136,6 +150,62 @@ export class PlatformAdminService {
       currency: data.currency?.toUpperCase(),
       stripePriceId: data.stripePriceId === '' ? null : data.stripePriceId,
     });
+  }
+
+  privacyPolicies() {
+    return Promise.all(
+      landingLocales.map((locale) => this.privacyPolicy(locale)),
+    );
+  }
+
+  async privacyPolicy(locale: LandingLocale) {
+    return toPublicLegalDocument(
+      await this.legalDocuments
+        .findOne({ kind: 'privacy-policy', locale })
+        .sort({ updatedAt: -1 })
+        .exec(),
+    );
+  }
+
+  async updatePrivacyPolicy(
+    locale: LandingLocale,
+    data: {
+      title: string;
+      body: string;
+      format?: LegalDocumentFormat;
+      published?: boolean;
+      effectiveDate?: string | null;
+    },
+  ) {
+    const effectiveDate =
+      data.effectiveDate === null || data.effectiveDate === ''
+        ? null
+        : data.effectiveDate
+          ? new Date(data.effectiveDate)
+          : undefined;
+    return toPublicLegalDocument(
+      await this.legalDocuments
+        .findOneAndUpdate(
+          { kind: 'privacy-policy', locale },
+          {
+            $set: cleanUndefined({
+              title: data.title,
+              body: data.body,
+              format: data.format ?? 'markdown',
+              published: data.published ?? true,
+              effectiveDate,
+            }),
+            $setOnInsert: { kind: 'privacy-policy', locale },
+          },
+          {
+            upsert: true,
+            new: true,
+            runValidators: true,
+            setDefaultsOnInsert: true,
+          },
+        )
+        .exec(),
+    );
   }
 
   async listTenants(query?: PaginationQuery) {

@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import {
   IsBoolean,
+  IsDateString,
   IsIn,
   IsInt,
   IsOptional,
@@ -26,6 +27,12 @@ import {
   SubscriptionPlanInterval,
   subscriptionPlanIntervals,
 } from '../billing/infrastructure/persistence/subscription-plan.schema';
+import {
+  LandingLocale,
+  LegalDocumentFormat,
+  landingLocales,
+  legalDocumentFormats,
+} from '../landing/persistence/legal-document.schema';
 
 class UpdateSubscriptionPlanDto {
   @IsOptional()
@@ -72,6 +79,29 @@ class UpdateSubscriptionPlanDto {
   sortOrder?: number;
 }
 
+class UpdatePrivacyPolicyDto {
+  @IsString()
+  @MinLength(2)
+  @MaxLength(160)
+  title: string;
+
+  @IsString()
+  @MinLength(20)
+  body: string;
+
+  @IsOptional()
+  @IsIn(legalDocumentFormats)
+  format?: LegalDocumentFormat;
+
+  @IsOptional()
+  @IsBoolean()
+  published?: boolean;
+
+  @IsOptional()
+  @IsDateString()
+  effectiveDate?: string | null;
+}
+
 @Controller('platform/admin')
 @UseGuards(PlatformAdminGuard)
 export class PlatformAdminController {
@@ -104,5 +134,29 @@ export class PlatformAdminController {
       throw new BadRequestException('Tipo de assinatura inválido.');
     }
     return this.platform.updatePlan(interval, body);
+  }
+
+  @Get('legal/privacy-policy')
+  privacyPolicies() {
+    return this.platform.privacyPolicies();
+  }
+
+  @Get('legal/privacy-policy/:locale')
+  privacyPolicy(@Param('locale') locale: LandingLocale) {
+    if (!landingLocales.includes(locale)) {
+      throw new BadRequestException('Locale inválido.');
+    }
+    return this.platform.privacyPolicy(locale);
+  }
+
+  @Patch('legal/privacy-policy/:locale')
+  updatePrivacyPolicy(
+    @Param('locale') locale: LandingLocale,
+    @Body() body: UpdatePrivacyPolicyDto,
+  ) {
+    if (!landingLocales.includes(locale)) {
+      throw new BadRequestException('Locale inválido.');
+    }
+    return this.platform.updatePrivacyPolicy(locale, body);
   }
 }

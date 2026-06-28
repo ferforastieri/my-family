@@ -2,7 +2,6 @@ import { EventEmitter } from 'node:events';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { NestFactory } from '@nestjs/core';
-import { RequestMethod } from '@nestjs/common';
 import * as express from 'express';
 import helmet from 'helmet';
 import * as cookieParser from 'cookie-parser';
@@ -80,20 +79,7 @@ async function bootstrap() {
       request.path.startsWith('/socket.io'),
   });
   app.use(doubleCsrfProtection);
-  app.setGlobalPrefix('api', {
-    exclude: [
-      { path: '', method: RequestMethod.GET },
-      { path: 'pt', method: RequestMethod.GET },
-      { path: 'en', method: RequestMethod.GET },
-      { path: 'es', method: RequestMethod.GET },
-      { path: 'pt/familia/:slug', method: RequestMethod.GET },
-      { path: 'en/familia/:slug', method: RequestMethod.GET },
-      { path: 'es/familia/:slug', method: RequestMethod.GET },
-      { path: 'marketing.css', method: RequestMethod.GET },
-      { path: 'robots.txt', method: RequestMethod.GET },
-      { path: 'sitemap.xml', method: RequestMethod.GET },
-    ],
-  });
+  app.setGlobalPrefix('api');
   app.enableCors({
     origin: parseCorsOrigin(environment.cors.origin),
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
@@ -159,5 +145,4 @@ function isAuthHttpEndpoint(path: string): boolean {
     normalized === '/auth/reset-password'
   );
 }
-
 
