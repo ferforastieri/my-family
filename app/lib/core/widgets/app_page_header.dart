@@ -46,6 +46,7 @@ class AppPageHeader extends StatelessWidget {
     this.inlineAction = false,
     this.showBackButton = true,
     this.leading,
+    this.titleWidget,
   });
 
   final String title;
@@ -58,6 +59,7 @@ class AppPageHeader extends StatelessWidget {
   final bool inlineAction;
   final bool showBackButton;
   final Widget? leading;
+  final Widget? titleWidget;
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +87,7 @@ class AppPageHeader extends StatelessWidget {
         final titleRow = Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            if (!desktop && showBackButton) ...[
+            if (!desktop && showBackButton && titleWidget == null) ...[
               AppHeaderIconButton(
                 onPressed: onBack ?? () => _defaultBack(context),
                 icon: const Icon(Icons.arrow_back),
@@ -96,7 +98,7 @@ class AppPageHeader extends StatelessWidget {
                 leading!,
                 const SizedBox(width: 12),
               ],
-            ] else if (!desktop) ...[
+            ] else if (!desktop && titleWidget == null) ...[
               leading ??
                   Container(
                     width: 42,
@@ -120,16 +122,17 @@ class AppPageHeader extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Flexible(
-                        child: Text(
-                          context.tr(title),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: palette.foreground,
-                            fontSize: desktop ? 24 : 20,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
+                        child: titleWidget ??
+                            Text(
+                              context.tr(title),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: palette.foreground,
+                                fontSize: desktop ? 24 : 20,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
                       ),
                       if (!desktop && showBackButton && leading == null) ...[
                         const SizedBox(width: 8),

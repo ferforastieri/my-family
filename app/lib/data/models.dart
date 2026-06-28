@@ -258,7 +258,7 @@ class AppNotification {
   factory AppNotification.fromJson(Map<String, dynamic> json) =>
       AppNotification(
         id: json['id'].toString(),
-        title: (json['title'] ?? 'Nossa Família').toString(),
+        title: (json['title'] ?? 'Sua Família').toString(),
         body: (json['body'] ?? '').toString(),
         url: (json['url'] ?? '/home').toString(),
         read: json['read'] == true,
@@ -299,7 +299,7 @@ class ScheduledNotification {
 
     return ScheduledNotification(
       id: json['id'].toString(),
-      title: (json['title'] ?? 'Nossa Família').toString(),
+      title: (json['title'] ?? 'Sua Família').toString(),
       body: (json['body'] ?? '').toString(),
       url: (json['url'] ?? '/home').toString(),
       scheduledAt: parseDate(json['scheduledAt']),

@@ -31,9 +31,14 @@ class MobileLandingPage extends StatelessWidget {
               pinned: true,
               backgroundColor: palette.bgStart.withValues(alpha: .94),
               surfaceTintColor: Colors.transparent,
-              title: Text(
-                t.brand,
-                style: const TextStyle(fontWeight: FontWeight.w900),
+              title: Semantics(
+                label: t.brand,
+                image: true,
+                child: Image.asset(
+                  'assets/brand/family-logo.png',
+                  height: 38,
+                  alignment: Alignment.centerLeft,
+                ),
               ),
               actions: [
                 TextButton(

@@ -1,16 +1,16 @@
 :root {
   color-scheme: light;
-  --ink: #17202a;
-  --muted: #5a6675;
-  --line: #d9e0e8;
+  --ink: #26131d;
+  --muted: #775b6b;
+  --line: #ffdce9;
   --surface: #ffffff;
-  --surface-soft: #f7fafc;
-  --surface-strong: #eef4f8;
-  --teal: #12b886;
-  --teal-dark: #0a7d63;
-  --rose: #f43f5e;
-  --amber: #f59e0b;
-  --shadow: 0 18px 55px rgba(23, 32, 42, 0.12);
+  --surface-soft: #fff8fa;
+  --surface-strong: #fff0f5;
+  --primary: #ff69b4;
+  --primary-dark: #d4488e;
+  --gold: #e8a94b;
+  --rose-deep: #8f2f4b;
+  --shadow: 0 18px 46px rgba(255, 105, 180, 0.14);
 }
 
 * {
@@ -24,7 +24,9 @@ html {
 body {
   margin: 0;
   color: var(--ink);
-  background: var(--surface-soft);
+  background:
+    linear-gradient(180deg, var(--surface-soft), var(--surface-strong)),
+    var(--surface-soft);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
@@ -41,9 +43,9 @@ a {
   min-height: 84svh;
   overflow: hidden;
   background:
-    linear-gradient(90deg, rgba(247, 250, 252, 0.98), rgba(247, 250, 252, 0.72)),
-    radial-gradient(circle at 72% 48%, rgba(18, 184, 134, 0.22), transparent 36%),
-    radial-gradient(circle at 82% 22%, rgba(244, 63, 94, 0.16), transparent 28%),
+    linear-gradient(180deg, rgba(255, 248, 250, 0.98), rgba(255, 240, 245, 0.86)),
+    radial-gradient(circle at 72% 48%, rgba(255, 105, 180, 0.18), transparent 36%),
+    radial-gradient(circle at 82% 22%, rgba(232, 169, 75, 0.16), transparent 28%),
     var(--surface-soft);
 }
 
@@ -59,8 +61,8 @@ a {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(23, 32, 42, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(23, 32, 42, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(212, 72, 142, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 72, 142, 0.06) 1px, transparent 1px);
   background-size: 44px 44px;
   mask-image: linear-gradient(90deg, #000 0%, transparent 82%);
   opacity: 0.46;
@@ -69,15 +71,35 @@ a {
 
 .site-header,
 .legal-header {
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 2;
   width: min(1160px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 22px 0;
+  padding: 12px 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
+  backdrop-filter: blur(18px);
+}
+
+.site-header::before,
+.legal-header::before {
+  content: "";
+  position: absolute;
+  inset: 6px -14px;
+  z-index: -1;
+  border: 1px solid rgba(255, 220, 233, 0.86);
+  border-radius: 18px;
+  background: rgba(255, 248, 250, 0.88);
+  box-shadow: 0 12px 32px rgba(255, 105, 180, 0.10);
+}
+
+.site-header.light::before {
+  border-color: rgba(255, 255, 255, 0.30);
+  background: rgba(38, 19, 29, 0.28);
+  box-shadow: none;
 }
 
 .brand {
@@ -93,15 +115,12 @@ a {
   color: #ffffff;
 }
 
-.brand-mark {
-  display: inline-grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  color: #ffffff;
-  background: linear-gradient(135deg, var(--teal), var(--rose));
-  font-size: 0.78rem;
+.brand-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 8px 18px rgba(212, 72, 142, 0.16);
 }
 
 .top-nav {
@@ -111,6 +130,10 @@ a {
   color: var(--muted);
   font-size: 0.93rem;
   font-weight: 760;
+}
+
+.site-header.light .top-nav {
+  color: rgba(255, 255, 255, 0.86);
 }
 
 .top-nav a {
@@ -132,7 +155,14 @@ a {
 .top-nav .nav-action,
 .button.primary {
   color: #ffffff;
-  background: var(--ink);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  box-shadow: 0 12px 24px rgba(255, 105, 180, 0.22);
+}
+
+.site-header.light .nav-action {
+  border-color: rgba(255, 255, 255, 0.44);
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: none;
 }
 
 .button.secondary {
@@ -157,7 +187,7 @@ a {
 
 .eyebrow {
   margin: 0 0 12px;
-  color: var(--teal-dark);
+  color: var(--primary-dark);
   font-size: 0.78rem;
   font-weight: 900;
   text-transform: uppercase;
@@ -174,7 +204,7 @@ h1 {
   max-width: 780px;
   margin: 0;
   color: var(--ink);
-  font-size: 4.5rem;
+  font-size: 4.3rem;
   line-height: 0.98;
 }
 
@@ -199,7 +229,7 @@ h1 {
 }
 
 .proof-band {
-  background: var(--ink);
+  background: linear-gradient(135deg, var(--primary-dark), var(--rose-deep));
   color: #ffffff;
 }
 
@@ -225,7 +255,7 @@ h1 {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--teal);
+  background: var(--gold);
 }
 
 .section {
@@ -263,8 +293,8 @@ h1 {
 .plan-card,
 .family-card {
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
   box-shadow: var(--shadow);
 }
 
@@ -289,7 +319,9 @@ h1 {
   width: 100%;
   max-width: none;
   padding: 86px max(16px, calc((100% - 1160px) / 2));
-  background: var(--surface-strong);
+  background:
+    linear-gradient(180deg, rgba(255, 240, 245, 0.92), rgba(255, 248, 250, 0.96)),
+    var(--surface-strong);
 }
 
 .plans-grid {
@@ -302,16 +334,16 @@ h1 {
 }
 
 .plan-card.highlighted {
-  border-color: rgba(18, 184, 134, 0.58);
+  border-color: rgba(255, 105, 180, 0.58);
 }
 
 .plan-badge {
   display: inline-flex;
   margin-bottom: 14px;
-  border-radius: 8px;
+  border-radius: 999px;
   padding: 5px 8px;
-  color: var(--teal-dark);
-  background: rgba(18, 184, 134, 0.12);
+  color: var(--primary-dark);
+  background: rgba(255, 105, 180, 0.12);
   font-size: 0.75rem;
   font-weight: 900;
 }
@@ -343,15 +375,15 @@ h1 {
 
 .highlighted .plan-button {
   color: #ffffff;
-  background: var(--teal-dark);
-  border-color: var(--teal-dark);
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
 }
 
 .empty-state {
   width: min(760px, 100%);
   margin: 28px 0 0;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 18px;
   padding: 18px;
   color: var(--muted);
   background: var(--surface);
@@ -376,7 +408,7 @@ h1 {
 .legal-page {
   min-height: 100svh;
   background:
-    linear-gradient(180deg, #ffffff 0%, var(--surface-soft) 48%),
+    linear-gradient(180deg, var(--surface-soft) 0%, var(--surface-strong) 100%),
     var(--surface-soft);
 }
 
@@ -389,7 +421,7 @@ h1 {
 .legal-back {
   display: inline-flex;
   margin-bottom: 32px;
-  color: var(--teal-dark);
+  color: var(--primary-dark);
   font-weight: 850;
 }
 
@@ -445,17 +477,17 @@ h1 {
 
 .family-cover.generated {
   background:
-    radial-gradient(circle at 20% 20%, rgba(18, 184, 134, 0.42), transparent 34%),
-    radial-gradient(circle at 78% 40%, rgba(244, 63, 94, 0.36), transparent 30%),
-    linear-gradient(135deg, #17202a, #304052);
+    radial-gradient(circle at 20% 20%, rgba(255, 105, 180, 0.38), transparent 34%),
+    radial-gradient(circle at 78% 40%, rgba(232, 169, 75, 0.28), transparent 30%),
+    linear-gradient(135deg, #26131d, #5d2a42);
 }
 
 .family-overlay {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, rgba(23, 32, 42, 0.88), rgba(23, 32, 42, 0.38)),
-    linear-gradient(0deg, rgba(23, 32, 42, 0.62), transparent);
+    linear-gradient(90deg, rgba(38, 19, 29, 0.88), rgba(38, 19, 29, 0.38)),
+    linear-gradient(0deg, rgba(38, 19, 29, 0.62), transparent);
 }
 
 .family-header {
@@ -511,6 +543,66 @@ h1 {
   padding: 18px;
 }
 
+.site-footer {
+  border-top: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(255, 240, 245, 0.96)),
+    var(--surface-strong);
+}
+
+.footer-inner {
+  width: min(1160px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 34px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.footer-logo {
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  object-fit: cover;
+  box-shadow: 0 12px 24px rgba(255, 105, 180, 0.16);
+}
+
+.footer-brand strong {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.footer-brand p {
+  max-width: 420px;
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px 18px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.footer-bottom {
+  width: min(1160px, calc(100% - 32px));
+  margin: 0 auto;
+  border-top: 1px solid rgba(255, 220, 233, 0.72);
+  padding: 16px 0 22px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
 @media (max-width: 860px) {
   .site-header {
     align-items: flex-start;
@@ -559,6 +651,15 @@ h1 {
   .privacy-section {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .footer-inner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .footer-links {
+    justify-content: flex-start;
   }
 }
 

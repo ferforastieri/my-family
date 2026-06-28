@@ -94,7 +94,7 @@ class EnvironmentFactory {
             }
           : undefined,
       emailFrom: config.get<string>('EMAIL_FROM'),
-      emailFromName: config.get<string>('EMAIL_FROM_NAME') || 'Nossa Família',
+      emailFromName: config.get<string>('EMAIL_FROM_NAME') || 'Sua Família',
       passwordResetUrl: config.get<string>('PASSWORD_RESET_URL') || '',
       firebase: firebaseJson ? { serviceAccountJson: firebaseJson } : undefined,
       redis: redisUrl ? { url: redisUrl } : undefined,

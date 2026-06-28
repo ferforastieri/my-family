@@ -39,7 +39,7 @@ export class EmailService {
     await this.transporter.sendMail({
       from,
       to,
-      subject: 'Recuperação de senha - Nossa Família',
+      subject: 'Recuperação de senha - Sua Família',
       html,
       text: html.replace(/<[^>]*>/g, ''),
     });

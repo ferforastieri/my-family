@@ -2,8 +2,12 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
+  icons: {
+    icon: '/favicon.png',
+    apple: '/icon-192.png',
+  },
   title: {
-    default: 'Nossa Família',
+    default: 'Sua Família',
     template: '%s',
   },
 };

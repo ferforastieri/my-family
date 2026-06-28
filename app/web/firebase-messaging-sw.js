@@ -10,7 +10,7 @@ if (self.firebaseConfig) {
     const notification = payload.notification || {};
     const data = payload.data || {};
     self.registration.showNotification(
-      notification.title || data.title || 'Nossa Família',
+      notification.title || data.title || 'Sua Família',
       {
         body: notification.body || data.body || '',
         icon: '/icons/Icon-192.png',

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { getPrivacyPolicy, getSiteOrigin } from '@/lib/api';
+import { SiteFooter } from '@/components/SiteFooter';
+import { SiteHeader } from '@/components/SiteHeader';
+import { getAppOrigin, getPrivacyPolicy, getSiteOrigin } from '@/lib/api';
 import { copy, localePath, locales, resolveLocale } from '@/lib/i18n';
 
 type PageProps = {
@@ -44,15 +46,15 @@ export default async function PrivacyPage({ params }: PageProps) {
   const locale = resolveLocale((await params).locale);
   const t = copy[locale];
   const policy = await getPrivacyPolicy(locale);
+  const appOrigin = getAppOrigin();
 
   return (
     <main className="legal-page">
-      <header className="legal-header">
-        <Link href={localePath(locale)} className="brand">
-          <span className="brand-mark">NF</span>
-          <span>{t.brand}</span>
-        </Link>
-      </header>
+      <SiteHeader
+        locale={locale}
+        loginHref={`${appOrigin}/login/cliente?locale=${locale}`}
+        primaryHref={`${appOrigin}/signup?locale=${locale}`}
+      />
       <article className="legal-document">
         <Link className="legal-back" href={localePath(locale)}>
           {t.privacyPage.back}
@@ -73,6 +75,11 @@ export default async function PrivacyPage({ params }: PageProps) {
           </>
         )}
       </article>
+      <SiteFooter
+        locale={locale}
+        appHref={`${appOrigin}/`}
+        loginHref={`${appOrigin}/login/cliente?locale=${locale}`}
+      />
     </main>
   );
 }

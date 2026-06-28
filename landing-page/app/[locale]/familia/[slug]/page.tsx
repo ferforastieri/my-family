@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { SiteFooter } from '@/components/SiteFooter';
+import { SiteHeader } from '@/components/SiteHeader';
 import { getAppOrigin, getFamilySite, getSiteOrigin, mediaUrl } from '@/lib/api';
 import { copy, localePath, resolveLocale } from '@/lib/i18n';
 
@@ -78,15 +79,13 @@ export default async function FamilyPage({ params }: PageProps) {
           <div className="family-cover generated" />
         )}
         <div className="family-overlay" />
-        <header className="site-header family-header" aria-label="Principal">
-          <Link href={localePath(locale)} className="brand light">
-            <span className="brand-mark">NF</span>
-            <span>{t.brand}</span>
-          </Link>
-          <a className="button light-button" href={loginUrl}>
-            {t.familyPage.login}
-          </a>
-        </header>
+        <SiteHeader
+          locale={locale}
+          tone="light"
+          sectionLinks={false}
+          primaryHref={loginUrl}
+          primaryLabel={t.familyPage.login}
+        />
         <div className="family-hero-content">
           <p className="eyebrow light-text">{site.tenant.name}</p>
           <h1>{headline}</h1>
@@ -107,6 +106,7 @@ export default async function FamilyPage({ params }: PageProps) {
           <p className="empty-state">{t.familyPage.empty}</p>
         </section>
       )}
+      <SiteFooter locale={locale} appHref={`${appOrigin}/`} loginHref={loginUrl} />
     </main>
   );
 }

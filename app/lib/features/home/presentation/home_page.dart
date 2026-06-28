@@ -198,14 +198,22 @@ class _HomePageState extends State<HomePage> {
                 if (mobile)
                   Column(
                     children: [
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.fromLTRB(18, 10, 18, 0),
                         child: AppPageHeader(
-                          title: 'Nossa Família',
+                          title: 'Sua Família',
+                          titleWidget: Semantics(
+                            label: 'Sua Família',
+                            image: true,
+                            child: Image(
+                              image: AssetImage('assets/brand/family-logo.png'),
+                              height: 42,
+                              alignment: Alignment.centerLeft,
+                            ),
+                          ),
                           subtitle:
                               'Amor, memórias e pequenos milagres do caminho.',
                           icon: Icons.favorite_outline,
-                          leading: _HomeLogoMark(),
                           showBackButton: false,
                         ),
                       ),
@@ -231,38 +239,6 @@ class _HomePageState extends State<HomePage> {
               ],
             );
           },
-        ),
-      ),
-    );
-  }
-}
-
-class _HomeLogoMark extends StatelessWidget {
-  const _HomeLogoMark();
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
-    return Container(
-      width: 42,
-      height: 42,
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: palette.card.withValues(alpha: .92),
-        shape: BoxShape.circle,
-        border: Border.all(color: palette.primary.withValues(alpha: .22)),
-        boxShadow: [
-          BoxShadow(
-            color: palette.primary.withValues(alpha: .14),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: ClipOval(
-        child: Image.asset(
-          'assets/brand/family-logo.png',
-          fit: BoxFit.cover,
         ),
       ),
     );
@@ -389,21 +365,16 @@ class _HomeTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    final text = Theme.of(context).extension<AppTextThemes>()!;
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
       child: Column(
         children: [
-          Text(
-            context.tr('Nossa Família'),
-            textAlign: TextAlign.center,
-            style: text.display.merge(
-              TextStyle(
-                color: palette.primary,
-                fontSize: 34,
-                fontWeight: FontWeight.w900,
-                height: 1.05,
-              ),
+          Semantics(
+            label: context.tr('Sua Família'),
+            image: true,
+            child: Image.asset(
+              'assets/brand/family-logo.png',
+              height: 96,
             ),
           ),
           const SizedBox(height: 6),

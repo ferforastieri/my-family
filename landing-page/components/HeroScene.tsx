@@ -32,9 +32,9 @@ export function HeroScene() {
       thickness: 0.7,
     });
     const accentMaterials = [
-      new THREE.MeshStandardMaterial({ color: '#12b886', roughness: 0.42 }),
-      new THREE.MeshStandardMaterial({ color: '#f43f5e', roughness: 0.44 }),
-      new THREE.MeshStandardMaterial({ color: '#f59e0b', roughness: 0.48 }),
+      new THREE.MeshStandardMaterial({ color: '#ff69b4', roughness: 0.42 }),
+      new THREE.MeshStandardMaterial({ color: '#d4488e', roughness: 0.44 }),
+      new THREE.MeshStandardMaterial({ color: '#e8a94b', roughness: 0.48 }),
     ];
     const ringMaterial = new THREE.MeshBasicMaterial({
       color: '#ffffff',

@@ -1,6 +1,6 @@
 # App Flutter
 
-Cliente Flutter do SaaS Nossa Família. Android e iOS usam uma landing nativa em
+Cliente Flutter do SaaS Sua Família. Android e iOS usam uma landing nativa em
 Dart. A landing web com SEO fica separada em `landing-page/`.
 
 ## Tecnologias

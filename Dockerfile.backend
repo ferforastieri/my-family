@@ -70,6 +70,7 @@ COPY --from=web_build /web/build/web ./backend/public/app
 COPY --from=landing_build /landing-page/package*.json ./landing-page/
 COPY --from=landing_build /landing-page/node_modules ./landing-page/node_modules
 COPY --from=landing_build /landing-page/.next ./landing-page/.next
+COPY --from=landing_build /landing-page/public ./landing-page/public
 COPY --from=landing_build /landing-page/next.config.mjs ./landing-page/next.config.mjs
 COPY deploy/railway-single-service.js ./deploy/railway-single-service.js
 

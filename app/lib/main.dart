@@ -150,7 +150,7 @@ class MyFamilyApp extends StatelessWidget {
     return ListenableBuilder(
       listenable: Listenable.merge([auth, theme, locale]),
       builder: (context, _) {
-        final appTitle = AppLocalizations(locale.locale).tr('Nossa Família');
+        final appTitle = AppLocalizations(locale.locale).tr('Sua Família');
         if (auth.loading) {
           return MaterialApp(
             title: appTitle,

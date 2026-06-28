@@ -48,6 +48,9 @@ type Copy = {
     events: string;
     empty: string;
   };
+  footerTagline: string;
+  footerApp: string;
+  footerRights: string;
   seo: {
     title: string;
     description: string;
@@ -57,7 +60,7 @@ type Copy = {
 export const copy: Record<Locale, Copy> = {
   pt: {
     htmlLang: 'pt-BR',
-    brand: 'Nossa Família',
+    brand: 'Sua Família',
     navProduct: 'Produto',
     navPlans: 'Planos',
     navPrivacy: 'Privacidade',
@@ -88,19 +91,19 @@ export const copy: Record<Locale, Copy> = {
         body: 'Cada família pode publicar um site próprio quando fizer sentido.',
       },
     ],
-    plansEyebrow: 'Planos dinâmicos',
-    plansTitle: 'Planos publicados pelo backend.',
+    plansEyebrow: 'Planos',
+    plansTitle: 'Escolha o plano da sua família.',
     plansDescription:
-      'Os valores abaixo vêm da API pública. Nada fica travado no Next.',
-    plansEmpty: 'Nenhum plano ativo foi retornado pelo backend neste momento.',
+      'Comece com uma assinatura simples e evolua conforme sua família precisar.',
+    plansEmpty: 'Nenhum plano está disponível neste momento.',
     highlighted: 'Mais escolhido',
     choosePlan: 'Selecionar plano',
-    privacyEyebrow: 'Documento público',
-    privacyTitle: 'Política de privacidade vinda do backend.',
+    privacyEyebrow: 'Privacidade',
+    privacyTitle: 'Transparência sobre seus dados.',
     privacyDescription:
-      'A página legal renderiza somente o documento publicado na API.',
+      'Consulte a política de privacidade publicada para entender como protegemos as informações da sua família.',
     privacyMissing:
-      'Ainda não existe política de privacidade publicada no backend.',
+      'A política de privacidade ainda não foi publicada.',
     privacyUpdated: 'Atualizada em',
     privacyOpen: 'Abrir política',
     interval: {
@@ -112,10 +115,10 @@ export const copy: Record<Locale, Copy> = {
     privacyPage: {
       title: 'Política de privacidade',
       description:
-        'Documento público carregado diretamente do backend da plataforma.',
+        'Informações sobre coleta, uso e proteção de dados na plataforma.',
       missingTitle: 'Política não configurada',
       missingBody:
-        'Publique o documento de privacidade no backend para esta página renderizar o conteúdo legal.',
+        'A política de privacidade ainda não foi publicada.',
       back: 'Voltar para a landing',
     },
     familyPage: {
@@ -127,15 +130,18 @@ export const copy: Record<Locale, Copy> = {
       events: 'Datas especiais',
       empty: 'Este espaço público ainda não tem conteúdo publicado.',
     },
+    footerTagline: 'Memórias, rotina e presença familiar em um só lugar.',
+    footerApp: 'Abrir app',
+    footerRights: 'Todos os direitos reservados.',
     seo: {
-      title: 'Nossa Família | Memórias, rotina e site familiar',
+      title: 'Sua Família | Memórias, rotina e site familiar',
       description:
-        'Nossa Família ajuda famílias a preservarem memórias, organizarem rotinas e publicarem um site familiar com controle e privacidade.',
+        'Sua Família ajuda famílias a preservarem memórias, organizarem rotinas e publicarem um site familiar com controle e privacidade.',
     },
   },
   en: {
     htmlLang: 'en',
-    brand: 'Our Family',
+    brand: 'Your Family',
     navProduct: 'Product',
     navPlans: 'Plans',
     navPrivacy: 'Privacy',
@@ -166,18 +172,18 @@ export const copy: Record<Locale, Copy> = {
         body: 'Each family can publish its own site when that makes sense.',
       },
     ],
-    plansEyebrow: 'Dynamic plans',
-    plansTitle: 'Plans published by the backend.',
+    plansEyebrow: 'Plans',
+    plansTitle: 'Choose your family plan.',
     plansDescription:
-      'The prices below come from the public API. Nothing is locked into Next.',
-    plansEmpty: 'No active plan was returned by the backend right now.',
+      'Start with a simple subscription and grow as your family needs more.',
+    plansEmpty: 'No plan is available right now.',
     highlighted: 'Most chosen',
     choosePlan: 'Choose plan',
-    privacyEyebrow: 'Public document',
-    privacyTitle: 'Privacy policy from the backend.',
+    privacyEyebrow: 'Privacy',
+    privacyTitle: 'Transparency about your data.',
     privacyDescription:
-      'The legal page renders only the document published by the API.',
-    privacyMissing: 'There is no published privacy policy in the backend yet.',
+      'Read the published privacy policy to understand how we protect your family information.',
+    privacyMissing: 'The privacy policy has not been published yet.',
     privacyUpdated: 'Updated on',
     privacyOpen: 'Open policy',
     interval: {
@@ -189,10 +195,10 @@ export const copy: Record<Locale, Copy> = {
     privacyPage: {
       title: 'Privacy policy',
       description:
-        'Public document loaded directly from the platform backend.',
+        'Information about data collection, use, and protection in the platform.',
       missingTitle: 'Policy not configured',
       missingBody:
-        'Publish the privacy document in the backend for this page to render legal content.',
+        'The privacy policy has not been published yet.',
       back: 'Back to landing',
     },
     familyPage: {
@@ -204,15 +210,18 @@ export const copy: Record<Locale, Copy> = {
       events: 'Special dates',
       empty: 'This public space does not have published content yet.',
     },
+    footerTagline: 'Memories, routines, and family presence in one place.',
+    footerApp: 'Open app',
+    footerRights: 'All rights reserved.',
     seo: {
-      title: 'Our Family | Memories, routine and family site',
+      title: 'Your Family | Memories, routine and family site',
       description:
-        'Our Family helps families preserve memories, organize routines and publish a controlled family site.',
+        'Your Family helps families preserve memories, organize routines and publish a controlled family site.',
     },
   },
   es: {
     htmlLang: 'es',
-    brand: 'Nuestra Familia',
+    brand: 'Tu Familia',
     navProduct: 'Producto',
     navPlans: 'Planes',
     navPrivacy: 'Privacidad',
@@ -243,19 +252,19 @@ export const copy: Record<Locale, Copy> = {
         body: 'Cada familia puede publicar su propio sitio cuando tenga sentido.',
       },
     ],
-    plansEyebrow: 'Planes dinámicos',
-    plansTitle: 'Planes publicados por el backend.',
+    plansEyebrow: 'Planes',
+    plansTitle: 'Elige el plan de tu familia.',
     plansDescription:
-      'Los valores abajo vienen desde la API pública. Nada queda fijo en Next.',
-    plansEmpty: 'Ningún plan activo fue devuelto por el backend en este momento.',
+      'Empieza con una suscripción simple y crece según lo que tu familia necesite.',
+    plansEmpty: 'Ningún plan está disponible en este momento.',
     highlighted: 'Más elegido',
     choosePlan: 'Seleccionar plan',
-    privacyEyebrow: 'Documento público',
-    privacyTitle: 'Política de privacidad desde el backend.',
+    privacyEyebrow: 'Privacidad',
+    privacyTitle: 'Transparencia sobre tus datos.',
     privacyDescription:
-      'La página legal renderiza solamente el documento publicado en la API.',
+      'Consulta la política de privacidad publicada para entender cómo protegemos la información de tu familia.',
     privacyMissing:
-      'Todavía no existe política de privacidad publicada en el backend.',
+      'La política de privacidad aún no fue publicada.',
     privacyUpdated: 'Actualizada el',
     privacyOpen: 'Abrir política',
     interval: {
@@ -267,10 +276,10 @@ export const copy: Record<Locale, Copy> = {
     privacyPage: {
       title: 'Política de privacidad',
       description:
-        'Documento público cargado directamente desde el backend de la plataforma.',
+        'Información sobre recopilación, uso y protección de datos en la plataforma.',
       missingTitle: 'Política no configurada',
       missingBody:
-        'Publica el documento de privacidad en el backend para que esta página renderice el contenido legal.',
+        'La política de privacidad aún no fue publicada.',
       back: 'Volver a la landing',
     },
     familyPage: {
@@ -282,10 +291,13 @@ export const copy: Record<Locale, Copy> = {
       events: 'Fechas especiales',
       empty: 'Este espacio público todavía no tiene contenido publicado.',
     },
+    footerTagline: 'Recuerdos, rutina y presencia familiar en un solo lugar.',
+    footerApp: 'Abrir app',
+    footerRights: 'Todos los derechos reservados.',
     seo: {
-      title: 'Nuestra Familia | Recuerdos, rutina y sitio familiar',
+      title: 'Tu Familia | Recuerdos, rutina y sitio familiar',
       description:
-        'Nuestra Familia ayuda a familias a preservar recuerdos, organizar rutinas y publicar un sitio familiar controlado.',
+        'Tu Familia ayuda a familias a preservar recuerdos, organizar rutinas y publicar un sitio familiar controlado.',
     },
   },
 };

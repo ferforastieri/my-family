@@ -39,8 +39,15 @@ class _DemoPageState extends State<DemoPage> {
                 icon: const Icon(Icons.arrow_back),
                 tooltip: t.back,
               ),
-              title: Text(t.brand,
-                  style: const TextStyle(fontWeight: FontWeight.w900)),
+              title: Semantics(
+                label: t.brand,
+                image: true,
+                child: Image.asset(
+                  'assets/brand/family-logo.png',
+                  height: 38,
+                  alignment: Alignment.centerLeft,
+                ),
+              ),
               actions: [
                 TextButton(
                   onPressed: () =>

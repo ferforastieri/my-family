@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { HeroScene } from '@/components/HeroScene';
+import { SiteFooter } from '@/components/SiteFooter';
+import { SiteHeader } from '@/components/SiteHeader';
 import { getAppOrigin, getLandingData, getSiteOrigin } from '@/lib/api';
 import { Locale, copy, localePath, locales, resolveLocale } from '@/lib/i18n';
 
@@ -62,23 +64,7 @@ export default async function LandingPage({ params }: PageProps) {
       <section className="hero">
         <HeroScene />
         <div className="hero-grid-layer" />
-        <header className="site-header" aria-label="Principal">
-          <Link href={localePath(locale)} className="brand">
-            <span className="brand-mark">NF</span>
-            <span>{t.brand}</span>
-          </Link>
-          <nav className="top-nav" aria-label="Navegação">
-            <a href="#produto">{t.navProduct}</a>
-            <a href="#planos">{t.navPlans}</a>
-            <Link href={localePath(locale, '/privacidade')}>
-              {t.navPrivacy}
-            </Link>
-            <a href={loginUrl}>{t.navLogin}</a>
-            <a className="nav-action" href={signupUrl}>
-              {t.navSignup}
-            </a>
-          </nav>
-        </header>
+        <SiteHeader locale={locale} loginHref={loginUrl} primaryHref={signupUrl} />
         <div className="hero-content">
           <p className="eyebrow">{t.eyebrow}</p>
           <h1>{t.title}</h1>
@@ -174,6 +160,7 @@ export default async function LandingPage({ params }: PageProps) {
           {t.privacyOpen}
         </Link>
       </section>
+      <SiteFooter locale={locale} appHref={`${appOrigin}/`} loginHref={loginUrl} />
     </main>
   );
 }
