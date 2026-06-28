@@ -49,8 +49,6 @@ services:
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-my_family}:${MONGO_ROOT_PASSWORD}@mongo:27017/my-family?authSource=admin
       REDIS_URL: redis://redis:6379
       PORT: 3000
-      BACKEND_INTERNAL_PORT: 3001
-      NEXT_INTERNAL_PORT: 3002
       NODE_ENV: production
       API_BASE_URL: ${API_BASE_URL:?API_BASE_URL is required}
       JWT_SECRET: ${JWT_SECRET}

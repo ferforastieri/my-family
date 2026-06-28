@@ -8,8 +8,8 @@ const backendDir = path.join(rootDir, 'backend');
 const landingDir = path.join(rootDir, 'landing-page');
 
 const publicPort = portFromEnv('PORT', 3000);
-const backendPort = portFromEnv('BACKEND_INTERNAL_PORT', 3001);
-const nextPort = portFromEnv('NEXT_INTERNAL_PORT', 3002);
+const backendPort = publicPort + 1;
+const nextPort = publicPort + 2;
 
 const apiBaseUrl = requiredEnv('API_BASE_URL');
 const backendOrigin = `http://127.0.0.1:${backendPort}`;
