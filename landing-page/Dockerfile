@@ -1,7 +1,7 @@
 FROM node:22-alpine AS deps
 
 WORKDIR /app
-COPY landing-page/package*.json ./
+COPY package*.json ./
 RUN npm ci
 
 FROM node:22-alpine AS build
@@ -15,7 +15,7 @@ ENV NEXT_PUBLIC_SITE_ORIGIN=${NEXT_PUBLIC_SITE_ORIGIN}
 ENV NEXT_PUBLIC_APP_ORIGIN=${NEXT_PUBLIC_APP_ORIGIN}
 
 COPY --from=deps /app/node_modules ./node_modules
-COPY landing-page/ ./
+COPY . ./
 RUN npm run build
 
 FROM node:22-alpine AS runtime

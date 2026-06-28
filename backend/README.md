@@ -14,7 +14,8 @@ Backend do projeto Nossa Familia. Ele foi criado como estudo pratico de arquitet
 - Helmet, CORS, CSRF e rate limit
 
 Este serviço também entrega o build Flutter Web em `/app/`. As rotas públicas
-indexáveis continuam renderizadas pelo NestJS.
+indexáveis ficam no app Next.js em `landing-page/`; o backend fornece os dados
+dinâmicos usados por essas páginas.
 
 ## Organizacao
 
@@ -42,6 +43,7 @@ implementação de referência para a migração gradual das demais features.
 - `notifications`: historico, envio imediato, agendamento e push mobile.
 - `location`: localizacao, locais, presenca e alertas.
 - `billing`: checkout Stripe, portal, webhook e processamento assíncrono.
+- `landing`: endpoints públicos para landing, planos e documentos legais.
 - `tenancy`: famílias, membros e isolamento dos dados SaaS.
 - `health`: healthcheck.
 
@@ -141,6 +143,9 @@ Variaveis principais:
 - `FIREBASE_SERVICE_ACCOUNT_JSON`
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` quando checkout estiver ativo
 - `BILLING_SUCCESS_URL`, `BILLING_CANCEL_URL` quando checkout estiver ativo
+
+O backend não precisa de variável específica para a landing. A política de
+privacidade fica em MongoDB e pode ser publicada pelo painel da plataforma.
 
 ## Seguranca
 

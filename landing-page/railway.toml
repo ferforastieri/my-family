@@ -1,6 +1,6 @@
 [build]
-dockerfilePath = "Dockerfile.landing-page"
-watchPatterns = ["landing-page/**", "Dockerfile.landing-page", "railway.landing-page.toml"]
+dockerfilePath = "Dockerfile"
+watchPatterns = ["**"]
 
 [deploy]
 healthcheckPath = "/pt"

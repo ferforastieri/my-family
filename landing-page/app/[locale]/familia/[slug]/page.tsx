@@ -8,7 +8,7 @@ type PageProps = {
   params: Promise<{ locale: string; slug: string }>;
 };
 
-export const revalidate = 300;
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({
   params,

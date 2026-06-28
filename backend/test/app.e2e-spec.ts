@@ -20,10 +20,7 @@ describe('AppController (e2e)', () => {
     await app.close();
   });
 
-  it('/ redirects to the Portuguese landing page', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(308)
-      .expect('Location', '/pt');
+  it('/ is not served by the backend landing anymore', () => {
+    return request(app.getHttpServer()).get('/').expect(404);
   });
 });

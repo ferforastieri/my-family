@@ -6,34 +6,36 @@ linha do tempo, chat, listas, jogos, notificações e localização.
 ## Arquitetura
 
 - `app/`: um único cliente Flutter para Web, Android e iOS.
-- `backend/`: API NestJS, autenticação, multi-tenancy, Stripe, páginas SEO e
-  entrega do Flutter Web em `/app/`.
+- `landing-page/`: landing pública em Next.js, renderizada no servidor para SEO.
+- `backend/`: API NestJS, autenticação, multi-tenancy, Stripe, conteúdo público
+  dinâmico e entrega do Flutter Web em `/app/`.
 - MongoDB: dados persistentes de todas as famílias, isolados por `tenantId`.
 - Redis/BullMQ: filas, notificações e trabalhos em segundo plano.
 
-Não existe mais uma aplicação Next.js. As páginas que precisam de indexação são
-HTML renderizado pelo NestJS; a experiência interativa completa fica no Flutter.
+Planos e política de privacidade não ficam chumbados na landing. O Next.js lê
+esses dados do backend em tempo de request.
 
 ## Rotas públicas
 
-- `/pt`, `/en`, `/es`: landing pages indexáveis.
+- `/pt`, `/en`, `/es`: landing pages indexáveis no serviço `landing-page`.
+- `/{idioma}/privacidade`: política renderizada pela landing a partir do backend.
 - `/app/`: cliente Flutter Web.
 - `/app/demo`: demonstração no Flutter.
 - `/app/signup`: cadastro e início da assinatura.
 - `/app/login/cliente`: login do cliente.
 - `/app/login/painel`: login para o painel da família.
 - `/app/familia/{slug}/login`: login direto em uma família.
-- `/{idioma}/familia/{slug}`: site compartilhado da família, com Open Graph e
-  `noindex` para não expor conteúdo familiar nos buscadores.
-- `/robots.txt` e `/sitemap.xml`: gerados pelo NestJS.
+- `/{idioma}/familia/{slug}`: site compartilhado da família, renderizado pelo
+  Next.js a partir de `/api/public/sites/{slug}`.
+- `/robots.txt` e `/sitemap.xml`: gerados pela landing Next.js.
 
 Android e iOS apresentam o mesmo fluxo público, demonstração, cadastro,
 assinatura e funcionalidades do Web.
 
 ## Serviços Docker
 
-- `backend`: única porta pública; serve o Flutter em `/app/`, as páginas SEO,
-  a API e o Socket.IO.
+- `backend`: API, Socket.IO e Flutter Web em `/app/`.
+- `landing-page`: landing pública SEO em Next.js.
 - `mongo` e `redis`: persistência e filas.
 
 ```bash
@@ -41,14 +43,17 @@ docker compose build
 docker compose up -d
 ```
 
-O endereço padrão é `http://localhost:3458`.
+O endereço padrão da landing é `http://localhost:3458`. O backend fica em
+`http://localhost:3000`.
 
 ## Deploy
 
-- Railway cria o serviço a partir deste repositório, usando `railway.toml` e
-  `Dockerfile.backend`.
-- O serviço Railway expõe o backend, as páginas SEO, `/api`, `/socket.io` e o
-  Flutter Web em `/app/`.
+- Railway deve ter dois serviços:
+  - Backend: raiz do repositório, usando `railway.toml` e `Dockerfile.backend`.
+  - Landing: root directory `landing-page`, usando `landing-page/railway.toml`.
+- O backend expõe `/api`, `/socket.io` e o Flutter Web em `/app/`.
+- A landing expõe `/pt`, `/en`, `/es`, `/privacidade`, páginas familiares,
+  `robots.txt` e `sitemap.xml`.
 - MongoDB, Redis/BullMQ e Bucket S3 ficam no Railway ou em serviços externos
   apontados por variáveis.
 - Cloudflare fica como DNS, proxy, SSL, WAF e camada de segurança do domínio.
@@ -72,6 +77,14 @@ REGION=<regiao>
 ACCESS_KEY_ID=<access-key>
 SECRET_ACCESS_KEY=<secret-key>
 PASSWORD_RESET_URL=https://seu-dominio.com/app/reset-password
+```
+
+Variáveis principais do serviço `landing-page`:
+
+```text
+BACKEND_ORIGIN=https://api.seu-dominio.com
+NEXT_PUBLIC_SITE_ORIGIN=https://seu-dominio.com
+NEXT_PUBLIC_APP_ORIGIN=https://api.seu-dominio.com/app
 ```
 
 Stripe e URLs de billing são opcionais. Configure
@@ -117,6 +130,17 @@ flutter pub get
 flutter run
 ```
 
+Landing:
+
+```bash
+cd landing-page
+npm install
+BACKEND_ORIGIN=http://localhost:3000 \
+NEXT_PUBLIC_SITE_ORIGIN=http://localhost:3458 \
+NEXT_PUBLIC_APP_ORIGIN=http://localhost:3000/app \
+npm run dev -- -p 3458
+```
+
 Android:
 
 ```bash
@@ -132,6 +156,7 @@ Validação:
 ```bash
 cd backend && npm run build && npm test -- --runInBand
 cd app && flutter analyze && flutter test
+cd landing-page && npm run typecheck && npm run build
 ```
 
 ## Dados

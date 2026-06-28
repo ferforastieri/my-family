@@ -119,7 +119,7 @@ export async function getFamilySite(
 
 async function backendFetch<T>(path: string): Promise<T> {
   const response = await fetch(`${backendOrigin}${path}`, {
-    next: { revalidate: 300 },
+    cache: 'no-store',
     headers: { accept: 'application/json' },
   });
   if (!response.ok) {

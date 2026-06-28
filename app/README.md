@@ -1,8 +1,7 @@
 # App Flutter
 
-Cliente Flutter do SaaS Nossa Família. O Android é o build de aplicativo usado
-agora; o Web continua disponível em `/app/` quando o serviço fullstack do
-Railway é usado.
+Cliente Flutter do SaaS Nossa Família. Android e iOS usam uma landing nativa em
+Dart. A landing web com SEO fica separada em `landing-page/`.
 
 ## Tecnologias
 
@@ -17,14 +16,15 @@ Railway é usado.
 
 ## Areas Do App
 
-- Demonstração e cadastro em `/app/demo` e `/app/signup`
-- Login do cliente em `/app/login/cliente`
-- Login do painel em `/app/login/painel`
-- Login direto de uma família em `/app/familia/:tenantSlug/login`
-- Painel da família em `/app/painel`
-- Administração da família em `/app/admin/familia`
-- Administração global da plataforma em `/app/admin/plataforma`
-- Home
+- Landing mobile nativa em `/`
+- Demonstração e cadastro em `/demo` e `/signup`
+- Login do cliente em `/login/cliente`
+- Login do painel em `/login/painel`
+- Login direto de uma família em `/familia/:tenantSlug/login`
+- Painel da família em `/painel`
+- Administração da família em `/admin/familia`
+- Administração global da plataforma em `/admin/plataforma`
+- Home autenticada em `/home`
 - Memorias/fotos
 - Playlist
 - Cartas

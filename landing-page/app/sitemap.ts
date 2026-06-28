@@ -2,6 +2,8 @@ import type { MetadataRoute } from 'next';
 import { getPublishedFamilySlugs, siteOrigin } from '@/lib/api';
 import { locales } from '@/lib/i18n';
 
+export const dynamic = 'force-dynamic';
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const slugs = await getPublishedFamilySlugs();

@@ -87,8 +87,8 @@ services:
 
   landing-page:
     build:
-      context: .
-      dockerfile: Dockerfile.landing-page
+      context: ./landing-page
+      dockerfile: Dockerfile
       args:
         BACKEND_ORIGIN: ${BACKEND_ORIGIN:-http://backend:3000}
         NEXT_PUBLIC_SITE_ORIGIN: ${NEXT_PUBLIC_SITE_ORIGIN:-http://localhost:3458}
