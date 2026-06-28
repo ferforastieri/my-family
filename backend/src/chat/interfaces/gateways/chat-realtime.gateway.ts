@@ -3,15 +3,15 @@ import { Server } from 'socket.io';
 import { emitToTenant } from '@tenancy/application/tenant-context';
 
 @WebSocketGateway()
-export class LocationGateway {
+export class ChatRealtimeGateway {
   @WebSocketServer()
   private server?: Server;
 
-  emitLocationUpdated(row: unknown) {
-    emitToTenant(this.server, 'location.updated', row);
+  emitToTenant(event: string, payload?: unknown) {
+    emitToTenant(this.server, event, payload);
   }
 
-  emitPlacesChanged(row: unknown) {
-    emitToTenant(this.server, 'location.places.changed', row);
+  to(room: string, event: string, payload?: unknown) {
+    this.server?.to(room).emit(event, payload);
   }
 }

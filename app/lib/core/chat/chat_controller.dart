@@ -5,7 +5,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../data/family_repository.dart';
 import '../../data/models.dart';
-import '../api/socket_api_client.dart';
+import '../api/http_api_client.dart';
 import '../socket/socket_client.dart';
 
 class ChatController extends ChangeNotifier {
@@ -13,7 +13,7 @@ class ChatController extends ChangeNotifier {
 
   final SocketClient socket;
   final FamilyRepository repository;
-  late final SocketApiClient api = SocketApiClient(socket);
+  late final HttpApiClient api = HttpApiClient(socket);
 
   final List<ChatConversation> conversations = [];
   final List<ChatMessage> messages = [];
@@ -31,9 +31,9 @@ class ChatController extends ChangeNotifier {
   ChatMessage? replyingTo;
 
   int get unreadCount => conversations.fold(
-        0,
-        (total, conversation) => total + conversation.unreadCount,
-      );
+    0,
+    (total, conversation) => total + conversation.unreadCount,
+  );
 
   Future<void> bootstrap() async {
     if (!_listenersBound) {
@@ -72,8 +72,9 @@ class ChatController extends ChangeNotifier {
               message.readBy.contains(userId)) {
             continue;
           }
-          messages[index] =
-              message.copyWith(readBy: [...message.readBy, userId]);
+          messages[index] = message.copyWith(
+            readBy: [...message.readBy, userId],
+          );
           changed = true;
         }
         if (changed) notifyListeners();
@@ -94,8 +95,10 @@ class ChatController extends ChangeNotifier {
         if (isTyping) {
           typingUsers[userId] = senderName;
           _remoteTypingClearTimer?.cancel();
-          _remoteTypingClearTimer =
-              Timer(const Duration(seconds: 4), clearTypingUsers);
+          _remoteTypingClearTimer = Timer(
+            const Duration(seconds: 4),
+            clearTypingUsers,
+          );
         } else {
           typingUsers.remove(userId);
         }
@@ -124,16 +127,23 @@ class ChatController extends ChangeNotifier {
       notifyListeners();
     }
     try {
-      final data = await api
-          .query<dynamic>('chat.conversations', {'page': 1, 'limit': 100});
+      final data = await api.query<dynamic>('chat.conversations', {
+        'page': 1,
+        'limit': 100,
+      });
       final rows = data is List
           ? data
           : ((Map<String, dynamic>.from(data as Map)['items'] as List?) ??
-              const []);
+                const []);
       conversations
         ..clear()
-        ..addAll(rows.map((row) =>
-            ChatConversation.fromJson(Map<String, dynamic>.from(row as Map))));
+        ..addAll(
+          rows.map(
+            (row) => ChatConversation.fromJson(
+              Map<String, dynamic>.from(row as Map),
+            ),
+          ),
+        );
       active = active == null
           ? (conversations.isNotEmpty ? conversations.first : null)
           : conversations.firstWhere(
@@ -156,8 +166,11 @@ class ChatController extends ChangeNotifier {
     final rows = await api.query<List<dynamic>>('chat.users');
     users
       ..clear()
-      ..addAll(rows.map(
-          (row) => ChatUser.fromJson(Map<String, dynamic>.from(row as Map))));
+      ..addAll(
+        rows.map(
+          (row) => ChatUser.fromJson(Map<String, dynamic>.from(row as Map)),
+        ),
+      );
     notifyListeners();
   }
 
@@ -167,16 +180,23 @@ class ChatController extends ChangeNotifier {
     errorMessage = null;
     notifyListeners();
     try {
-      final data = await api.query<dynamic>('chat.messages',
-          {'conversationId': conversation.id, 'page': 1, 'limit': 80});
+      final data = await api.query<dynamic>('chat.messages', {
+        'conversationId': conversation.id,
+        'page': 1,
+        'limit': 80,
+      });
       final rows = data is List
           ? data
           : ((Map<String, dynamic>.from(data as Map)['items'] as List?) ??
-              const []);
+                const []);
       messages
         ..clear()
-        ..addAll(rows.map((row) =>
-            ChatMessage.fromJson(Map<String, dynamic>.from(row as Map))));
+        ..addAll(
+          rows.map(
+            (row) =>
+                ChatMessage.fromJson(Map<String, dynamic>.from(row as Map)),
+          ),
+        );
       clearReply();
       clearTypingUsers();
       await markRead(conversation.id);
@@ -192,17 +212,20 @@ class ChatController extends ChangeNotifier {
 
   Future<void> openConversation(String conversationId) async {
     if (active?.id == conversationId && messages.isNotEmpty) return;
-    final conversation =
-        conversations.where((item) => item.id == conversationId).firstOrNull;
+    final conversation = conversations
+        .where((item) => item.id == conversationId)
+        .firstOrNull;
     if (conversation != null) await loadMessages(conversation);
   }
 
   Future<void> createConversation(ChatUser user) async {
-    final row =
-        await api.mutate<Map<String, dynamic>>('chat.conversation.create', {
-      'title': user.label,
-      'participantIds': [user.id],
-    });
+    final row = await api.mutate<Map<String, dynamic>>(
+      'chat.conversation.create',
+      {
+        'title': user.label,
+        'participantIds': [user.id],
+      },
+    );
     final conversation = ChatConversation.fromJson(row);
     conversations.add(conversation);
     await loadMessages(conversation);
@@ -288,10 +311,9 @@ class ChatController extends ChangeNotifier {
   }
 
   Future<void> markRead(String conversationId) async {
-    await api.mutate<Map<String, dynamic>>(
-      'chat.messages.read',
-      {'conversationId': conversationId},
-    );
+    await api.mutate<Map<String, dynamic>>('chat.messages.read', {
+      'conversationId': conversationId,
+    });
   }
 
   Future<void> editMessage(ChatMessage message, String text) async {
@@ -379,8 +401,9 @@ class ChatController extends ChangeNotifier {
   }
 
   void _markConversationRead(String conversationId) {
-    final index = conversations
-        .indexWhere((conversation) => conversation.id == conversationId);
+    final index = conversations.indexWhere(
+      (conversation) => conversation.id == conversationId,
+    );
     if (index == -1 || conversations[index].unreadCount == 0) return;
     conversations[index] = conversations[index].copyWith(unreadCount: 0);
     notifyListeners();

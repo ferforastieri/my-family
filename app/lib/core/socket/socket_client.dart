@@ -87,77 +87,12 @@ class SocketClient {
     await (_connectCompleter?.future ?? Future<void>.value()).timeout(
       const Duration(seconds: 8),
       onTimeout: () {
-        throw TimeoutException(_lastConnectError ??
-            'Tempo esgotado conectando em ${AppConfig.socketUrl}.');
+        throw TimeoutException(
+          _lastConnectError ??
+              'Tempo esgotado conectando em ${AppConfig.socketUrl}.',
+        );
       },
     );
-  }
-
-  Future<T> emitAck<T>(String event, [Object? payload]) async {
-    try {
-      return await _emitAckOnce<T>(event, payload);
-    } catch (error) {
-      if (_looksLikeAuthError(error) &&
-          onAuthError != null &&
-          await onAuthError!()) {
-        return _emitAckOnce<T>(event, payload);
-      }
-      rethrow;
-    }
-  }
-
-  Future<T> _emitAckOnce<T>(String event, [Object? payload]) async {
-    final nextToken = await onBeforeRequest?.call();
-    if (nextToken != null && nextToken != _token) {
-      connect(token: nextToken, force: true);
-    }
-    await ensureConnected();
-    final completer = Completer<T>();
-    _socket!.emitWithAck(
-      event,
-      payload,
-      ack: (dynamic data) {
-        if (completer.isCompleted) return;
-        try {
-          if (data is Map &&
-              (data['status'] == 'error' || data['ok'] == false)) {
-            completer.completeError(data['message'] ?? 'Erro no servidor');
-            return;
-          }
-          if (data is Map) {
-            final message = data['message'];
-            if (message is String) _lastMessage = message;
-          }
-          if (data is Map &&
-              data.containsKey('ok') &&
-              data.containsKey('data')) {
-            completer.complete(data['data'] as T);
-            return;
-          }
-          completer.complete(data as T);
-        } catch (error, stackTrace) {
-          completer.completeError(error, stackTrace);
-        }
-      },
-    );
-    return completer.future.timeout(
-      const Duration(seconds: 20),
-      onTimeout: () => throw TimeoutException(
-          'Tempo esgotado aguardando resposta de "$event". Verifique a conexão com ${AppConfig.socketUrl}.'),
-    );
-  }
-
-  bool _looksLikeAuthError(Object error) {
-    final message = error.toString().toLowerCase();
-    return message.contains('unauthorized') ||
-        message.contains('autenticação') ||
-        message.contains('autenticacao') ||
-        message.contains('não autorizado') ||
-        message.contains('nao autorizado') ||
-        message.contains('invalid token') ||
-        message.contains('token inválido') ||
-        message.contains('token invalido') ||
-        message.contains('jwt');
   }
 
   String _socketErrorMessage(dynamic error) {

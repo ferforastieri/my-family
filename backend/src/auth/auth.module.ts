@@ -13,7 +13,6 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { UserRepository } from './infrastructure/repositories/user.repository';
 import { PasswordResetRepository } from './infrastructure/repositories/password-reset.repository';
-import { UsersGateway } from './interfaces/gateways/users.gateway';
 import { WsSessionService } from './application/services/ws-session.service';
 import { AuditModule } from '../audit/audit.module';
 import { SupportSessionService } from './application/services/support-session.service';
@@ -54,7 +53,6 @@ import { UserDocument, UserSchema } from './infrastructure/persistence/user.sche
     PasswordResetRepository,
     WsSessionService,
     SupportSessionService,
-    UsersGateway,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     RolesGuard,
   ],

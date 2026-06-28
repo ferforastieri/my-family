@@ -4,7 +4,7 @@ import { AuthModule } from '@auth/auth.module';
 import { DatabaseModule } from '@shared/infrastructure/database/database.module';
 import { ListsService } from './application/services/lists.service';
 import { ListsRepository } from './infrastructure/repositories/lists.repository';
-import { ListsGateway } from './interfaces/gateways/lists.gateway';
+import { ListsController } from './interfaces/controllers/lists.controller';
 import { ListsRealtimeGateway } from './interfaces/gateways/lists-realtime.gateway';
 import {
   FamilyListDocument,
@@ -24,10 +24,10 @@ import {
     ]),
     AuthModule,
   ],
+  controllers: [ListsController],
   providers: [
     ListsService,
     ListsRepository,
-    ListsGateway,
     ListsRealtimeGateway,
   ],
   exports: [ListsService, ListsRealtimeGateway],

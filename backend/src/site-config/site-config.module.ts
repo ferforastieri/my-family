@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from '@auth/auth.module';
 import { SiteConfigService } from './application/site-config.service';
-import { SiteConfigGateway } from './interfaces/site-config.gateway';
+import { SiteConfigController } from './interfaces/site-config.controller';
 import {
   SiteConfigDocument,
   SiteConfigSchema,
@@ -15,7 +15,8 @@ import {
     ]),
     AuthModule,
   ],
-  providers: [SiteConfigService, SiteConfigGateway],
+  controllers: [SiteConfigController],
+  providers: [SiteConfigService],
   exports: [SiteConfigService],
 })
 export class SiteConfigModule {}

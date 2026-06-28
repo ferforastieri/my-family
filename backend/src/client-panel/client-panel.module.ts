@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from '@auth/auth.module';
-import { ClientPanelGateway } from './client-panel.gateway';
+import { ClientPanelController } from './client-panel.controller';
 import { ClientPanelService } from './client-panel.service';
 import {
   FotoDocument,
@@ -30,6 +30,7 @@ import {
     ]),
     AuthModule,
   ],
-  providers: [ClientPanelService, ClientPanelGateway],
+  controllers: [ClientPanelController],
+  providers: [ClientPanelService],
 })
 export class ClientPanelModule {}

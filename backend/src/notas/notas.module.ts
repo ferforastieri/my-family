@@ -4,7 +4,7 @@ import { AuthModule } from '@auth/auth.module';
 import { DatabaseModule } from '@shared/infrastructure/database/database.module';
 import { NotasService } from './application/services/notas.service';
 import { NotasRepository } from './infrastructure/repositories/notas.repository';
-import { NotasGateway } from './interfaces/gateways/notas.gateway';
+import { NotasController } from './interfaces/controllers/notas.controller';
 import {
   NotaDocument,
   NotaSchema,
@@ -18,7 +18,8 @@ import {
     ]),
     AuthModule,
   ],
-  providers: [NotasService, NotasRepository, NotasGateway],
+  controllers: [NotasController],
+  providers: [NotasService, NotasRepository],
   exports: [NotasService],
 })
 export class NotasModule {}

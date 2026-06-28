@@ -4,7 +4,6 @@ import { AuditModule } from '../audit/audit.module';
 import { PlatformAdminController } from './platform-admin.controller';
 import { PlatformAdminGuard } from './platform-admin.guard';
 import { PlatformAdminService } from './platform-admin.service';
-import { PlatformAdminGateway } from './platform-admin.gateway';
 import { AuthModule } from '@auth/auth.module';
 import { BillingModule } from '../billing/billing.module';
 import {
@@ -37,6 +36,6 @@ import {
     BillingModule,
   ],
   controllers: [PlatformAdminController],
-  providers: [PlatformAdminService, PlatformAdminGuard, PlatformAdminGateway],
+  providers: [PlatformAdminService, PlatformAdminGuard],
 })
 export class PlatformAdminModule {}

@@ -5,6 +5,7 @@ import {
   Delete,
   Param,
   Body,
+  Query,
   UseGuards,
   NotFoundException,
 } from '@nestjs/common';
@@ -12,6 +13,7 @@ import { UserService } from '@auth/application/services/user.service';
 import { RolesGuard } from '@auth/guards/roles.guard';
 import { Roles } from '@auth/decorators/roles.decorator';
 import { UpdateUserDto } from '../dto/user.dto';
+import { PaginationMessageDto } from '@shared/interfaces/websocket/websocket.dto';
 
 @Controller('users')
 @UseGuards(RolesGuard)
@@ -20,8 +22,8 @@ export class UsersController {
   constructor(private user: UserService) {}
 
   @Get()
-  list() {
-    return this.user.list();
+  list(@Query() query: PaginationMessageDto) {
+    return this.user.list(query);
   }
 
   @Get(':id')

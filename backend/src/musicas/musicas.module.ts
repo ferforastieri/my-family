@@ -5,7 +5,6 @@ import { MusicasService } from './application/services/musicas.service';
 import { DatabaseModule } from '@shared/infrastructure/database/database.module';
 import { MusicasRepository } from './infrastructure/repositories/musicas.repository';
 import { AuthModule } from '@auth/auth.module';
-import { MusicasGateway } from './interfaces/gateways/musicas.gateway';
 import {
   MusicaDocument,
   MusicaSchema,
@@ -20,7 +19,7 @@ import {
     AuthModule,
   ],
   controllers: [MusicasController],
-  providers: [MusicasService, MusicasRepository, MusicasGateway],
+  providers: [MusicasService, MusicasRepository],
   exports: [MusicasService],
 })
 export class MusicasModule {}

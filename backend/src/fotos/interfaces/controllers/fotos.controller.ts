@@ -24,6 +24,7 @@ import {
   UploadContext,
 } from '@shared/infrastructure/upload';
 import { FotoUpdateDto, FotoWriteDto } from '../dto/foto.dto';
+import { PaginationMessageDto } from '@shared/interfaces/websocket/websocket.dto';
 
 @Controller('fotos')
 @UseGuards(AccessGuard)
@@ -35,8 +36,13 @@ export class FotosController {
   ) {}
 
   @Get()
-  async findAll() {
-    return this.fotosService.findAll();
+  async findAll(@Query() query: PaginationMessageDto) {
+    return this.fotosService.findAll(query);
+  }
+
+  @Get('albums')
+  async albums() {
+    return this.fotosService.findAlbums();
   }
 
   @Get('file')

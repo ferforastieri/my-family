@@ -4,7 +4,8 @@ import { AuthModule } from '@auth/auth.module';
 import { DatabaseModule } from '@shared/infrastructure/database/database.module';
 import { ChatService } from './application/services/chat.service';
 import { ChatRepository } from './infrastructure/repositories/chat.repository';
-import { ChatGateway } from './interfaces/gateways/chat.gateway';
+import { ChatRealtimeGateway } from './interfaces/gateways/chat-realtime.gateway';
+import { ChatController } from './interfaces/controllers/chat.controller';
 import { ListsModule } from '../lists/lists.module';
 import { FotosModule } from '../fotos/fotos.module';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -29,6 +30,7 @@ import {
     FotosModule,
     NotificationsModule,
   ],
-  providers: [ChatService, ChatRepository, ChatGateway],
+  controllers: [ChatController],
+  providers: [ChatService, ChatRepository, ChatRealtimeGateway],
 })
 export class ChatModule {}

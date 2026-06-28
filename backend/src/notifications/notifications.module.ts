@@ -6,7 +6,6 @@ import { AuthModule } from '@auth/auth.module';
 import { NotificationsService } from './application/services/notifications.service';
 import { NotificationsController } from './interfaces/controllers/notifications.controller';
 import { NotificationsRepository } from './infrastructure/repositories/notifications.repository';
-import { NotificationsGateway } from './interfaces/gateways/notifications.gateway';
 import { NotificationsRealtimeGateway } from './interfaces/gateways/notifications-realtime.gateway';
 import { NotificationSchedulerService } from './application/services/notification-scheduler.service';
 import { ScheduledNotificationsRepository } from './infrastructure/repositories/scheduled-notifications.repository';
@@ -44,7 +43,6 @@ import {
     NotificationSchedulerService,
     NotificationsRepository,
     ScheduledNotificationsRepository,
-    NotificationsGateway,
     NotificationsRealtimeGateway,
     NotificationQueueProcessor,
   ],

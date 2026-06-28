@@ -11,7 +11,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/models.dart';
 import '../../firebase_options.dart';
-import '../api/socket_api_client.dart';
+import '../api/http_api_client.dart';
 import '../auth/token_store.dart';
 import '../config/app_config.dart';
 import '../socket/socket_client.dart';
@@ -38,14 +38,15 @@ Future<FirebaseApp> _initializeFirebase() {
   final current = _firebaseInitialization;
   if (current != null) return current;
   if (kIsWeb || AppConfig.hasFirebaseConfig) {
-    _firebaseInitialization = Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    ).catchError((error) {
-      if (error is FirebaseException && error.code == 'duplicate-app') {
-        return Firebase.app();
-      }
-      throw error;
-    });
+    _firebaseInitialization =
+        Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        ).catchError((error) {
+          if (error is FirebaseException && error.code == 'duplicate-app') {
+            return Firebase.app();
+          }
+          throw error;
+        });
     return _firebaseInitialization!;
   }
   _firebaseInitialization = Firebase.initializeApp().catchError((error) {
@@ -105,7 +106,7 @@ Future<void> _handleNotificationResponse(NotificationResponse response) async {
   final token = await TokenStore().readAccessToken();
   if (token == null || token.isEmpty) return;
   final socket = SocketClient()..connect(token: token);
-  final api = SocketApiClient(socket);
+  final api = HttpApiClient(socket);
   try {
     if (actionId == _replyActionId) {
       final text = response.input?.trim();
@@ -168,8 +169,9 @@ Future<void> _showPushNotification(
         category: isChat
             ? AndroidNotificationCategory.message
             : AndroidNotificationCategory.status,
-        groupKey:
-            isChat && conversationId != null ? 'chat-$conversationId' : null,
+        groupKey: isChat && conversationId != null
+            ? 'chat-$conversationId'
+            : null,
         playSound: true,
         enableVibration: true,
         actions: isChat
@@ -196,8 +198,9 @@ Future<void> _showPushNotification(
         presentBadge: true,
         presentSound: true,
         categoryIdentifier: isChat ? _chatNotificationCategory : null,
-        threadIdentifier:
-            isChat && conversationId != null ? 'chat-$conversationId' : null,
+        threadIdentifier: isChat && conversationId != null
+            ? 'chat-$conversationId'
+            : null,
       ),
     ),
   );
@@ -207,7 +210,7 @@ class NotificationsController extends ChangeNotifier {
   NotificationsController(this.socket);
 
   final SocketClient socket;
-  late final SocketApiClient api = SocketApiClient(socket);
+  late final HttpApiClient api = HttpApiClient(socket);
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -232,8 +235,9 @@ class NotificationsController extends ChangeNotifier {
     socket.on('notifications.created', (data) {
       if (data is Map) {
         final item = AppNotification.fromJson(Map<String, dynamic>.from(data));
-        final index = notifications
-            .indexWhere((notification) => notification.id == item.id);
+        final index = notifications.indexWhere(
+          (notification) => notification.id == item.id,
+        );
         if (index >= 0) {
           notifications[index] = item;
         } else {
@@ -245,8 +249,9 @@ class NotificationsController extends ChangeNotifier {
     socket.on('notifications.updated', (data) {
       if (data is Map) {
         final item = AppNotification.fromJson(Map<String, dynamic>.from(data));
-        final index = notifications
-            .indexWhere((notification) => notification.id == item.id);
+        final index = notifications.indexWhere(
+          (notification) => notification.id == item.id,
+        );
         if (index >= 0) {
           notifications[index] = item;
         } else {
@@ -303,16 +308,22 @@ class NotificationsController extends ChangeNotifier {
     loading = true;
     notifyListeners();
     try {
-      final data = await api
-          .query<dynamic>('notifications.list', {'page': 1, 'limit': 30});
+      final data = await api.query<dynamic>('notifications.list', {
+        'page': 1,
+        'limit': 30,
+      });
       final rows = data is List
           ? data
           : ((Map<String, dynamic>.from(data as Map)['items'] as List?) ??
-              const []);
+                const []);
       notifications
         ..clear()
-        ..addAll(rows.map((row) =>
-            AppNotification.fromJson(Map<String, dynamic>.from(row as Map))));
+        ..addAll(
+          rows.map(
+            (row) =>
+                AppNotification.fromJson(Map<String, dynamic>.from(row as Map)),
+          ),
+        );
     } finally {
       loading = false;
       notifyListeners();
@@ -320,20 +331,21 @@ class NotificationsController extends ChangeNotifier {
   }
 
   Future<void> markRead(AppNotification notification) async {
-    final index =
-        notifications.indexWhere((item) => item.id == notification.id);
+    final index = notifications.indexWhere(
+      (item) => item.id == notification.id,
+    );
     if (index >= 0 && !notifications[index].read) {
       notifications[index] = notifications[index].copyWith(read: true);
       notifyListeners();
     }
     try {
-      final row = await api.mutate<Map<String, dynamic>>(
-        'notifications.read',
-        {'id': notification.id},
-      );
+      final row = await api.mutate<Map<String, dynamic>>('notifications.read', {
+        'id': notification.id,
+      });
       final updated = AppNotification.fromJson(row);
-      final updatedIndex =
-          notifications.indexWhere((item) => item.id == updated.id);
+      final updatedIndex = notifications.indexWhere(
+        (item) => item.id == updated.id,
+      );
       if (updatedIndex >= 0) {
         notifications[updatedIndex] = updated;
         notifyListeners();
@@ -385,9 +397,10 @@ class NotificationsController extends ChangeNotifier {
             _openUrl(payload['url'] ?? response.payload);
           },
         );
-        final android =
-            _localNotifications.resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin>();
+        final android = _localNotifications
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
         await android?.createNotificationChannel(
           const AndroidNotificationChannel(
             'chat_messages',
@@ -412,14 +425,15 @@ class NotificationsController extends ChangeNotifier {
           await android?.requestNotificationsPermission();
         }
 
-        final launchDetails =
-            await _localNotifications.getNotificationAppLaunchDetails();
+        final launchDetails = await _localNotifications
+            .getNotificationAppLaunchDetails();
         if (launchDetails?.didNotificationLaunchApp == true) {
           final payload = _decodeNotificationPayload(
             launchDetails?.notificationResponse?.payload,
           );
           _openUrl(
-              payload['url'] ?? launchDetails?.notificationResponse?.payload);
+            payload['url'] ?? launchDetails?.notificationResponse?.payload,
+          );
         }
       }
 
@@ -431,8 +445,11 @@ class NotificationsController extends ChangeNotifier {
       await FirebaseMessaging.instance.setAutoInitEnabled(true);
       final permission = _pushPermissionRequested
           ? await FirebaseMessaging.instance.getNotificationSettings()
-          : await FirebaseMessaging.instance
-              .requestPermission(alert: true, badge: true, sound: true);
+          : await FirebaseMessaging.instance.requestPermission(
+              alert: true,
+              badge: true,
+              sound: true,
+            );
       _pushPermissionRequested = true;
       if (permission.authorizationStatus == AuthorizationStatus.denied) {
         throw StateError('Permissão de notificações negada.');
@@ -460,8 +477,8 @@ class NotificationsController extends ChangeNotifier {
         );
         _pushListenersBound = true;
       }
-      final initialMessage =
-          await FirebaseMessaging.instance.getInitialMessage();
+      final initialMessage = await FirebaseMessaging.instance
+          .getInitialMessage();
       if (initialMessage != null) _openUrl(initialMessage.data['url']);
       pushReady = true;
       notifyListeners();
@@ -488,10 +505,7 @@ class NotificationsController extends ChangeNotifier {
   Future<void> _subscribeToken(String token) async {
     fcmToken = token;
     await api.mutate<Map<String, dynamic>>('notifications.subscribe', {
-      'subscription': {
-        'token': token,
-        'platform': _platform,
-      },
+      'subscription': {'token': token, 'platform': _platform},
     });
     pushReady = true;
     pushError = null;

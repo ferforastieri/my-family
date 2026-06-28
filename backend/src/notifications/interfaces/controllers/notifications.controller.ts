@@ -7,6 +7,7 @@ import {
   Req,
   Body,
   Param,
+  Query,
   NotFoundException,
   UseGuards,
   BadRequestException,
@@ -22,6 +23,8 @@ import {
   NotificationScheduleDto,
   NotificationSendDto,
   NotificationUpdateDto,
+  NotificationListQueryDto,
+  ScheduledNotificationListQueryDto,
 } from '../dto/notification.dto';
 import { RolesGuard } from '@auth/guards/roles.guard';
 import { Roles } from '@auth/decorators/roles.decorator';
@@ -33,8 +36,11 @@ export class NotificationsController {
   ) {}
 
   @Get()
-  async list() {
-    return this.notifications.list();
+  async list(
+    @Req() request: Request & { user: UserEntity },
+    @Query() query: NotificationListQueryDto,
+  ) {
+    return this.notifications.list(query, request.user);
   }
 
   @Post('subscribe')
@@ -63,6 +69,21 @@ export class NotificationsController {
     return { ok: true, message: 'Notificações desativadas.' };
   }
 
+  @Patch('read-all')
+  async readAll(@Req() request: Request & { user: UserEntity }) {
+    const count = await this.notifications.markAllRead(request.user);
+    return { ok: true, count, message: 'Notificações lidas.' };
+  }
+
+  @Patch(':id/read')
+  async read(
+    @Req() request: Request & { user: UserEntity },
+    @Param('id') id: string,
+  ) {
+    const row = await this.notifications.markRead(id, request.user);
+    return row ? { message: 'Notificação lida.', ...row } : row;
+  }
+
   @Delete()
   @UseGuards(RolesGuard)
   @Roles('owner', 'admin')
@@ -74,8 +95,8 @@ export class NotificationsController {
   @Get('scheduled/list')
   @UseGuards(RolesGuard)
   @Roles('owner', 'admin')
-  async scheduledList() {
-    return this.scheduler.list();
+  async scheduledList(@Query() query: ScheduledNotificationListQueryDto) {
+    return this.scheduler.list(query);
   }
 
   @Get(':id')

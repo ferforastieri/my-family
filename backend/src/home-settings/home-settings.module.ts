@@ -4,7 +4,7 @@ import { AuthModule } from '@auth/auth.module';
 import { DatabaseModule } from '@shared/infrastructure/database/database.module';
 import { HomeSettingsService } from './application/home-settings.service';
 import { HomeSettingsRepository } from './infrastructure/home-settings.repository';
-import { HomeSettingsGateway } from './interfaces/home-settings.gateway';
+import { HomeSettingsController } from './interfaces/home-settings.controller';
 import {
   HomeSettingsDocument,
   HomeSettingsSchema,
@@ -18,11 +18,8 @@ import {
     ]),
     AuthModule,
   ],
-  providers: [
-    HomeSettingsService,
-    HomeSettingsRepository,
-    HomeSettingsGateway,
-  ],
+  controllers: [HomeSettingsController],
+  providers: [HomeSettingsService, HomeSettingsRepository],
   exports: [HomeSettingsService],
 })
 export class HomeSettingsModule {}

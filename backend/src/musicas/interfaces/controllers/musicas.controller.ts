@@ -6,12 +6,14 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { Access } from '@auth/decorators/access.decorator';
 import { AccessGuard } from '@auth/guards/access.guard';
 import { MusicasService } from '../../application/services/musicas.service';
 import { MusicaUpdateDto, MusicaWriteDto } from '../dto/musica.dto';
+import { PaginationMessageDto } from '@shared/interfaces/websocket/websocket.dto';
 
 @Controller('musicas')
 @UseGuards(AccessGuard)
@@ -20,8 +22,8 @@ export class MusicasController {
   constructor(private readonly musicasService: MusicasService) {}
 
   @Get()
-  async findAll() {
-    return this.musicasService.findAll();
+  async findAll(@Query() query: PaginationMessageDto) {
+    return this.musicasService.findAll(query);
   }
 
   @Get(':id')

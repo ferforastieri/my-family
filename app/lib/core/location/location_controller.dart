@@ -7,7 +7,7 @@ import 'package:battery_plus/battery_plus.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../auth/auth_controller.dart';
-import '../api/socket_api_client.dart';
+import '../api/http_api_client.dart';
 import '../config/app_config.dart';
 import '../socket/socket_client.dart';
 
@@ -16,10 +16,11 @@ class LocationController with WidgetsBindingObserver {
 
   final SocketClient socket;
   final AuthController auth;
-  late final SocketApiClient api = SocketApiClient(socket);
+  late final HttpApiClient api = HttpApiClient(socket);
   final Battery _battery = Battery();
-  static const MethodChannel _backgroundChannel =
-      MethodChannel('com.viciofer.my_family/background_location');
+  static const MethodChannel _backgroundChannel = MethodChannel(
+    'com.viciofer.my_family/background_location',
+  );
   StreamSubscription<Position>? _positionSubscription;
   Timer? _timer;
   bool _started = false;
@@ -213,7 +214,8 @@ class LocationController with WidgetsBindingObserver {
         'heading': position.heading,
         if (batteryLevel != null) 'batteryLevel': batteryLevel,
         if (batteryState != null)
-          'isCharging': batteryState == BatteryState.charging ||
+          'isCharging':
+              batteryState == BatteryState.charging ||
               batteryState == BatteryState.full,
         'platform': _platform,
       });

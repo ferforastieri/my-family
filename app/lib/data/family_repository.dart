@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 import '../core/config/app_config.dart';
-import '../core/api/socket_api_client.dart';
+import '../core/api/http_api_client.dart';
 import '../core/socket/socket_client.dart';
 import 'models.dart';
 
@@ -12,7 +12,7 @@ class FamilyRepository {
   FamilyRepository(this.socket);
 
   final SocketClient socket;
-  late final SocketApiClient api = SocketApiClient(socket);
+  late final HttpApiClient api = HttpApiClient(socket);
 
   String? takeMessage() => socket.takeLastMessage();
 
@@ -28,14 +28,18 @@ class FamilyRepository {
       if (album != null && album.trim().isNotEmpty) 'album': album.trim(),
     });
     return _paginated(
-        data, (row) => FamilyItem(Map<String, dynamic>.from(row)));
+      data,
+      (row) => FamilyItem(Map<String, dynamic>.from(row)),
+    );
   }
 
   Future<List<PhotoAlbumSummary>> listPhotoAlbums() async {
     final rows = await api.query<List<dynamic>>('fotos.albums');
     return rows
-        .map((row) =>
-            PhotoAlbumSummary.fromJson(Map<String, dynamic>.from(row as Map)))
+        .map(
+          (row) =>
+              PhotoAlbumSummary.fromJson(Map<String, dynamic>.from(row as Map)),
+        )
         .toList();
   }
 
@@ -44,15 +48,22 @@ class FamilyRepository {
   }
 
   Future<FamilyItem> create(String resource, Map<String, dynamic> data) async {
-    final row =
-        await api.mutate<Map<String, dynamic>>('$resource.create', data);
+    final row = await api.mutate<Map<String, dynamic>>(
+      '$resource.create',
+      data,
+    );
     return FamilyItem(Map<String, dynamic>.from(row));
   }
 
   Future<FamilyItem> update(
-      String resource, String id, Map<String, dynamic> data) async {
-    final row = await api.mutate<Map<String, dynamic>>(
-        '$resource.update', {'id': id, 'data': data});
+    String resource,
+    String id,
+    Map<String, dynamic> data,
+  ) async {
+    final row = await api.mutate<Map<String, dynamic>>('$resource.update', {
+      'id': id,
+      'data': data,
+    });
     return FamilyItem(Map<String, dynamic>.from(row));
   }
 
@@ -61,14 +72,20 @@ class FamilyRepository {
   }
 
   Future<String> uploadPhotoFile(XFile file) async {
-    final request =
-        http.MultipartRequest('POST', AppConfig.apiUri('/fotos/upload'));
+    final request = http.MultipartRequest(
+      'POST',
+      AppConfig.apiUri('/fotos/upload'),
+    );
     final token = socket.token;
     if (token != null) request.headers['Authorization'] = 'Bearer $token';
 
-    request.files.add(http.MultipartFile.fromBytes(
-        'file', await file.readAsBytes(),
-        filename: file.name));
+    request.files.add(
+      http.MultipartFile.fromBytes(
+        'file',
+        await file.readAsBytes(),
+        filename: file.name,
+      ),
+    );
 
     final response = await request.send();
     final body = await response.stream.bytesToString();
@@ -94,11 +111,17 @@ class FamilyRepository {
   }
 
   Future<PaginatedResult<QuizQuestion>> listQuizQuestionsPage(
-      int page, int limit) async {
-    final data = await api
-        .query<dynamic>('games.quiz.list', {'page': page, 'limit': limit});
+    int page,
+    int limit,
+  ) async {
+    final data = await api.query<dynamic>('games.quiz.list', {
+      'page': page,
+      'limit': limit,
+    });
     return _paginated(
-        data, (row) => QuizQuestion.fromJson(Map<String, dynamic>.from(row)));
+      data,
+      (row) => QuizQuestion.fromJson(Map<String, dynamic>.from(row)),
+    );
   }
 
   Future<List<QuizQuestion>> listQuizQuestionsAdmin() async {
@@ -106,23 +129,35 @@ class FamilyRepository {
   }
 
   Future<PaginatedResult<QuizQuestion>> listQuizQuestionsAdminPage(
-      int page, int limit) async {
-    final data = await api.query<dynamic>(
-        'games.quiz.admin.list', {'page': page, 'limit': limit});
+    int page,
+    int limit,
+  ) async {
+    final data = await api.query<dynamic>('games.quiz.admin.list', {
+      'page': page,
+      'limit': limit,
+    });
     return _paginated(
-        data, (row) => QuizQuestion.fromJson(Map<String, dynamic>.from(row)));
+      data,
+      (row) => QuizQuestion.fromJson(Map<String, dynamic>.from(row)),
+    );
   }
 
   Future<QuizQuestion> createQuizQuestion(Map<String, dynamic> data) async {
-    final row =
-        await api.mutate<Map<String, dynamic>>('games.quiz.create', data);
+    final row = await api.mutate<Map<String, dynamic>>(
+      'games.quiz.create',
+      data,
+    );
     return QuizQuestion.fromJson(Map<String, dynamic>.from(row));
   }
 
   Future<QuizQuestion> updateQuizQuestion(
-      String id, Map<String, dynamic> data) async {
-    final row = await api.mutate<Map<String, dynamic>>(
-        'games.quiz.update', {'id': id, 'data': data});
+    String id,
+    Map<String, dynamic> data,
+  ) async {
+    final row = await api.mutate<Map<String, dynamic>>('games.quiz.update', {
+      'id': id,
+      'data': data,
+    });
     return QuizQuestion.fromJson(Map<String, dynamic>.from(row));
   }
 
@@ -135,11 +170,17 @@ class FamilyRepository {
   }
 
   Future<PaginatedResult<GameWord>> listGameWordsPage(
-      int page, int limit) async {
-    final data = await api
-        .query<dynamic>('games.words.list', {'page': page, 'limit': limit});
+    int page,
+    int limit,
+  ) async {
+    final data = await api.query<dynamic>('games.words.list', {
+      'page': page,
+      'limit': limit,
+    });
     return _paginated(
-        data, (row) => GameWord.fromJson(Map<String, dynamic>.from(row)));
+      data,
+      (row) => GameWord.fromJson(Map<String, dynamic>.from(row)),
+    );
   }
 
   Future<List<GameWord>> listGameWordsAdmin() async {
@@ -147,22 +188,32 @@ class FamilyRepository {
   }
 
   Future<PaginatedResult<GameWord>> listGameWordsAdminPage(
-      int page, int limit) async {
-    final data = await api.query<dynamic>(
-        'games.words.admin.list', {'page': page, 'limit': limit});
+    int page,
+    int limit,
+  ) async {
+    final data = await api.query<dynamic>('games.words.admin.list', {
+      'page': page,
+      'limit': limit,
+    });
     return _paginated(
-        data, (row) => GameWord.fromJson(Map<String, dynamic>.from(row)));
+      data,
+      (row) => GameWord.fromJson(Map<String, dynamic>.from(row)),
+    );
   }
 
   Future<GameWord> createGameWord(Map<String, dynamic> data) async {
-    final row =
-        await api.mutate<Map<String, dynamic>>('games.words.create', data);
+    final row = await api.mutate<Map<String, dynamic>>(
+      'games.words.create',
+      data,
+    );
     return GameWord.fromJson(Map<String, dynamic>.from(row));
   }
 
   Future<GameWord?> updateGameWord(String id, Map<String, dynamic> data) async {
-    final row = await api.mutate<Map<String, dynamic>?>(
-        'games.words.update', {'id': id, 'data': data});
+    final row = await api.mutate<Map<String, dynamic>?>('games.words.update', {
+      'id': id,
+      'data': data,
+    });
     return row == null
         ? null
         : GameWord.fromJson(Map<String, dynamic>.from(row));
@@ -177,9 +228,13 @@ class FamilyRepository {
   }
 
   Future<PaginatedResult<MiniGameConfig>> listMiniGamesPage(
-      int page, int limit) async {
-    final data = await api
-        .query<dynamic>('games.mini.list', {'page': page, 'limit': limit});
+    int page,
+    int limit,
+  ) async {
+    final data = await api.query<dynamic>('games.mini.list', {
+      'page': page,
+      'limit': limit,
+    });
     return _paginated(
       data,
       (row) => MiniGameConfig.fromJson(Map<String, dynamic>.from(row)),
@@ -187,9 +242,13 @@ class FamilyRepository {
   }
 
   Future<PaginatedResult<MiniGameConfig>> listMiniGamesAdminPage(
-      int page, int limit) async {
-    final data = await api.query<dynamic>(
-        'games.mini.admin.list', {'page': page, 'limit': limit});
+    int page,
+    int limit,
+  ) async {
+    final data = await api.query<dynamic>('games.mini.admin.list', {
+      'page': page,
+      'limit': limit,
+    });
     return _paginated(
       data,
       (row) => MiniGameConfig.fromJson(Map<String, dynamic>.from(row)),
@@ -197,15 +256,21 @@ class FamilyRepository {
   }
 
   Future<MiniGameConfig> createMiniGame(Map<String, dynamic> data) async {
-    final row =
-        await api.mutate<Map<String, dynamic>>('games.mini.create', data);
+    final row = await api.mutate<Map<String, dynamic>>(
+      'games.mini.create',
+      data,
+    );
     return MiniGameConfig.fromJson(Map<String, dynamic>.from(row));
   }
 
   Future<MiniGameConfig?> updateMiniGame(
-      String id, Map<String, dynamic> data) async {
-    final row = await api.mutate<Map<String, dynamic>?>(
-        'games.mini.update', {'id': id, 'data': data});
+    String id,
+    Map<String, dynamic> data,
+  ) async {
+    final row = await api.mutate<Map<String, dynamic>?>('games.mini.update', {
+      'id': id,
+      'data': data,
+    });
     return row == null
         ? null
         : MiniGameConfig.fromJson(Map<String, dynamic>.from(row));
@@ -235,8 +300,10 @@ class FamilyRepository {
   }
 
   Future<PaginatedResult<GameStat>> gameStatsPage(int page, int limit) async {
-    final data =
-        await api.query<dynamic>('games.stats', {'page': page, 'limit': limit});
+    final data = await api.query<dynamic>('games.stats', {
+      'page': page,
+      'limit': limit,
+    });
     return _paginated(
       data,
       (row) => GameStat.fromJson(Map<String, dynamic>.from(row)),
@@ -248,15 +315,21 @@ class FamilyRepository {
   }
 
   Future<PaginatedResult<AppUser>> listUsersPage(int page, int limit) async {
-    final data =
-        await api.query<dynamic>('users.list', {'page': page, 'limit': limit});
+    final data = await api.query<dynamic>('users.list', {
+      'page': page,
+      'limit': limit,
+    });
     return _paginated(
-        data, (row) => AppUser.fromJson(Map<String, dynamic>.from(row)));
+      data,
+      (row) => AppUser.fromJson(Map<String, dynamic>.from(row)),
+    );
   }
 
   Future<AppUser> updateUser(String id, Map<String, dynamic> data) async {
-    final row = await api
-        .mutate<Map<String, dynamic>>('users.update', {'id': id, ...data});
+    final row = await api.mutate<Map<String, dynamic>>('users.update', {
+      'id': id,
+      ...data,
+    });
     return AppUser.fromJson(Map<String, dynamic>.from(row));
   }
 
@@ -269,26 +342,36 @@ class FamilyRepository {
   }
 
   Future<PaginatedResult<AppNotification>> listNotificationsAdminPage(
-      int page, int limit) async {
+    int page,
+    int limit,
+  ) async {
     final data = await api.query<dynamic>('notifications.list', {
       'page': page,
       'limit': limit,
       'type': 'manual',
     });
-    return _paginated(data,
-        (row) => AppNotification.fromJson(Map<String, dynamic>.from(row)));
+    return _paginated(
+      data,
+      (row) => AppNotification.fromJson(Map<String, dynamic>.from(row)),
+    );
   }
 
   Future<AppNotification> createNotification(Map<String, dynamic> data) async {
-    final row =
-        await api.mutate<Map<String, dynamic>>('notifications.create', data);
+    final row = await api.mutate<Map<String, dynamic>>(
+      'notifications.create',
+      data,
+    );
     return AppNotification.fromJson(Map<String, dynamic>.from(row));
   }
 
   Future<AppNotification?> updateNotification(
-      String id, Map<String, dynamic> data) async {
+    String id,
+    Map<String, dynamic> data,
+  ) async {
     final row = await api.mutate<Map<String, dynamic>?>(
-        'notifications.update', {'id': id, 'data': data});
+      'notifications.update',
+      {'id': id, 'data': data},
+    );
     return row == null
         ? null
         : AppNotification.fromJson(Map<String, dynamic>.from(row));
@@ -336,18 +419,15 @@ class FamilyRepository {
     });
     final page = _paginated(
       data,
-      (row) => ScheduledNotification.fromJson(
-        Map<String, dynamic>.from(row),
-      ),
+      (row) => ScheduledNotification.fromJson(Map<String, dynamic>.from(row)),
     );
     return page.items;
   }
 
   Future<void> deleteScheduledNotification(String id) async {
-    await api.mutate<Map<String, dynamic>>(
-      'notifications.scheduled.delete',
-      {'id': id},
-    );
+    await api.mutate<Map<String, dynamic>>('notifications.scheduled.delete', {
+      'id': id,
+    });
   }
 
   Future<List<FamilyList>> listFamilyLists() async {
@@ -355,11 +435,17 @@ class FamilyRepository {
   }
 
   Future<PaginatedResult<FamilyList>> listFamilyListsPage(
-      int page, int limit) async {
-    final data =
-        await api.query<dynamic>('lists.list', {'page': page, 'limit': limit});
+    int page,
+    int limit,
+  ) async {
+    final data = await api.query<dynamic>('lists.list', {
+      'page': page,
+      'limit': limit,
+    });
     return _paginated(
-        data, (row) => FamilyList.fromJson(Map<String, dynamic>.from(row)));
+      data,
+      (row) => FamilyList.fromJson(Map<String, dynamic>.from(row)),
+    );
   }
 
   Future<FamilyList> createFamilyList(Map<String, dynamic> data) async {
@@ -368,9 +454,13 @@ class FamilyRepository {
   }
 
   Future<FamilyList?> updateFamilyList(
-      String id, Map<String, dynamic> data) async {
-    final row = await api.mutate<Map<String, dynamic>?>(
-        'lists.update', {'id': id, 'data': data});
+    String id,
+    Map<String, dynamic> data,
+  ) async {
+    final row = await api.mutate<Map<String, dynamic>?>('lists.update', {
+      'id': id,
+      'data': data,
+    });
     return row == null
         ? null
         : FamilyList.fromJson(Map<String, dynamic>.from(row));
@@ -385,15 +475,25 @@ class FamilyRepository {
   }
 
   Future<PaginatedResult<FamilyListItem>> listFamilyListItemsPage(
-      String listId, int page, int limit) async {
-    final data = await api.query<dynamic>(
-        'lists.items', {'listId': listId, 'page': page, 'limit': limit});
+    String listId,
+    int page,
+    int limit,
+  ) async {
+    final data = await api.query<dynamic>('lists.items', {
+      'listId': listId,
+      'page': page,
+      'limit': limit,
+    });
     return _paginated(
-        data, (row) => FamilyListItem.fromJson(Map<String, dynamic>.from(row)));
+      data,
+      (row) => FamilyListItem.fromJson(Map<String, dynamic>.from(row)),
+    );
   }
 
   Future<FamilyListItem> createFamilyListItem(
-      String listId, String text) async {
+    String listId,
+    String text,
+  ) async {
     final row = await api.mutate<Map<String, dynamic>>('lists.items.create', {
       'listId': listId,
       'text': text,
@@ -402,9 +502,13 @@ class FamilyRepository {
   }
 
   Future<FamilyListItem?> updateFamilyListItem(
-      String id, Map<String, dynamic> data) async {
-    final row = await api.mutate<Map<String, dynamic>?>(
-        'lists.items.update', {'id': id, 'data': data});
+    String id,
+    Map<String, dynamic> data,
+  ) async {
+    final row = await api.mutate<Map<String, dynamic>?>('lists.items.update', {
+      'id': id,
+      'data': data,
+    });
     return row == null
         ? null
         : FamilyListItem.fromJson(Map<String, dynamic>.from(row));
@@ -415,39 +519,51 @@ class FamilyRepository {
   }
 
   Future<List<LocationSnapshot>> listLocations() async {
-    final data =
-        await api.query<dynamic>('location.latest', {'page': 1, 'limit': 50});
-    return _paginated(data,
-            (row) => LocationSnapshot.fromJson(Map<String, dynamic>.from(row)))
-        .items;
+    final data = await api.query<dynamic>('location.latest', {
+      'page': 1,
+      'limit': 50,
+    });
+    return _paginated(
+      data,
+      (row) => LocationSnapshot.fromJson(Map<String, dynamic>.from(row)),
+    ).items;
   }
 
   Future<List<LocationPlace>> listLocationPlaces() async {
     final data = await api.query<List<dynamic>>('location.places');
     return data
-        .map((row) =>
-            LocationPlace.fromJson(Map<String, dynamic>.from(row as Map)))
+        .map(
+          (row) =>
+              LocationPlace.fromJson(Map<String, dynamic>.from(row as Map)),
+        )
         .toList();
   }
 
   Future<LocationPlace> createLocationPlace(Map<String, dynamic> data) async {
-    final row =
-        await api.mutate<Map<String, dynamic>>('location.places.create', data);
+    final row = await api.mutate<Map<String, dynamic>>(
+      'location.places.create',
+      data,
+    );
     return LocationPlace.fromJson(Map<String, dynamic>.from(row));
   }
 
   Future<LocationPlace?> updateLocationPlace(
-      String id, Map<String, dynamic> data) async {
+    String id,
+    Map<String, dynamic> data,
+  ) async {
     final row = await api.mutate<Map<String, dynamic>?>(
-        'location.places.update', {'id': id, 'data': data});
+      'location.places.update',
+      {'id': id, 'data': data},
+    );
     return row == null
         ? null
         : LocationPlace.fromJson(Map<String, dynamic>.from(row));
   }
 
   Future<void> deleteLocationPlace(String id) async {
-    await api
-        .mutate<Map<String, dynamic>>('location.places.delete', {'id': id});
+    await api.mutate<Map<String, dynamic>>('location.places.delete', {
+      'id': id,
+    });
   }
 
   Future<HomeSettingsConfig> getHomeSettings() async {
@@ -466,7 +582,9 @@ class FamilyRepository {
   }
 
   PaginatedResult<T> _paginated<T>(
-      dynamic data, T Function(Map<String, dynamic> row) mapper) {
+    dynamic data,
+    T Function(Map<String, dynamic> row) mapper,
+  ) {
     if (data is List) {
       return PaginatedResult<T>(
         items: data
