@@ -17,7 +17,7 @@ esses dados do backend em tempo de request.
 
 ## Rotas públicas
 
-- `/pt`, `/en`, `/es`: landing pages indexáveis no serviço `landing-page`.
+- `/pt`, `/en`, `/es`: landing pages indexáveis renderizadas pelo Next.js.
 - `/{idioma}/privacidade`: política renderizada pela landing a partir do backend.
 - `/app/`: cliente Flutter Web.
 - `/app/demo`: demonstração no Flutter.
@@ -34,8 +34,7 @@ assinatura e funcionalidades do Web.
 
 ## Serviços Docker
 
-- `backend`: API, Socket.IO e Flutter Web em `/app/`.
-- `landing-page`: landing pública SEO em Next.js.
+- `app`: serviço único com landing Next.js, API NestJS, Socket.IO e Flutter Web.
 - `mongo` e `redis`: persistência e filas.
 
 ```bash
@@ -43,16 +42,21 @@ docker compose build
 docker compose up -d
 ```
 
-O endereço padrão da landing é `http://localhost:3458`. O backend fica em
-`http://localhost:3000`.
+O endereço padrão é `http://localhost:3458`:
+
+- `/`: redireciona para `/pt`.
+- `/pt`, `/en`, `/es`: landing SEO em Next.js.
+- `/api`: backend NestJS.
+- `/app`: Flutter Web.
+- `/socket.io`: WebSocket do backend.
 
 ## Deploy
 
-- Railway deve ter dois serviços:
-  - Backend: raiz do repositório, usando `railway.toml` e `Dockerfile.backend`.
-  - Landing: root directory `landing-page`, usando `landing-page/railway.toml`.
-- O backend expõe `/api`, `/socket.io` e o Flutter Web em `/app/`.
-- A landing expõe `/pt`, `/en`, `/es`, `/privacidade`, páginas familiares,
+- Railway deve ter um único serviço apontando para a raiz do repositório,
+  usando `railway.toml` e `Dockerfile.backend`.
+- O container sobe três processos internos: NestJS, Next.js e um roteador HTTP.
+- O roteador expõe `/api`, `/socket.io` e `/app/` pelo NestJS; o restante fica
+  com o Next.js, incluindo landing, privacidade, páginas familiares,
   `robots.txt` e `sitemap.xml`.
 - MongoDB, Redis/BullMQ e Bucket S3 ficam no Railway ou em serviços externos
   apontados por variáveis.
@@ -61,12 +65,12 @@ O endereço padrão da landing é `http://localhost:3458`. O backend fica em
   partir de `app/` com Flutter, apontando para o domínio público do backend.
 
 No Railway, mantenha a raiz do repositório como fonte do serviço. As variáveis
-principais do serviço são:
+principais são:
 
 ```text
 NODE_ENV=production
-PORT=3000
 CORS_ORIGIN=https://seu-dominio.com
+API_BASE_URL=https://seu-dominio.com/api
 MONGO_URI=<mongo-uri>
 REDIS_URL=<redis-url>
 JWT_SECRET=<segredo>
@@ -77,14 +81,6 @@ REGION=<regiao>
 ACCESS_KEY_ID=<access-key>
 SECRET_ACCESS_KEY=<secret-key>
 PASSWORD_RESET_URL=https://seu-dominio.com/app/reset-password
-```
-
-Variáveis principais do serviço `landing-page`:
-
-```text
-BACKEND_ORIGIN=https://api.seu-dominio.com
-NEXT_PUBLIC_SITE_ORIGIN=https://seu-dominio.com
-NEXT_PUBLIC_APP_ORIGIN=https://api.seu-dominio.com/app
 ```
 
 Stripe e URLs de billing são opcionais. Configure
@@ -135,9 +131,7 @@ Landing:
 ```bash
 cd landing-page
 npm install
-BACKEND_ORIGIN=http://localhost:3000 \
-NEXT_PUBLIC_SITE_ORIGIN=http://localhost:3458 \
-NEXT_PUBLIC_APP_ORIGIN=http://localhost:3000/app \
+API_BASE_URL=http://localhost:3001/api \
 npm run dev -- -p 3458
 ```
 

@@ -28,12 +28,12 @@ services:
       timeout: 5s
       retries: 5
 
-  backend:
+  app:
     build:
       context: .
       dockerfile: Dockerfile.backend
       args:
-        API_BASE_URL: ${API_BASE_URL:-}
+        API_BASE_URL: ${API_BASE_URL:?API_BASE_URL is required}
         SOCKET_URL: ${SOCKET_URL:-}
         PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-}
         FIREBASE_API_KEY: ${FIREBASE_API_KEY:-}
@@ -43,13 +43,16 @@ services:
         FIREBASE_AUTH_DOMAIN: ${FIREBASE_AUTH_DOMAIN:-}
         FIREBASE_STORAGE_BUCKET: ${FIREBASE_STORAGE_BUCKET:-}
         FIREBASE_WEB_PUSH_CERTIFICATE_KEY: ${FIREBASE_WEB_PUSH_CERTIFICATE_KEY:-}
-    container_name: my-family-backend
+    container_name: my-family-app
     restart: unless-stopped
     environment:
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-my_family}:${MONGO_ROOT_PASSWORD}@mongo:27017/my-family?authSource=admin
       REDIS_URL: redis://redis:6379
       PORT: 3000
+      BACKEND_INTERNAL_PORT: 3001
+      NEXT_INTERNAL_PORT: 3002
       NODE_ENV: production
+      API_BASE_URL: ${API_BASE_URL:?API_BASE_URL is required}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3458}
@@ -70,42 +73,18 @@ services:
       THROTTLE_TTL_MS: ${THROTTLE_TTL_MS:?THROTTLE_TTL_MS is required}
       THROTTLE_LIMIT: ${THROTTLE_LIMIT:?THROTTLE_LIMIT is required}
       CSRF_SECRET: ${CSRF_SECRET:?CSRF_SECRET is required}
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:?STRIPE_SECRET_KEY is required}
-      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:?STRIPE_WEBHOOK_SECRET is required}
-      STRIPE_PRICE_ID: ${STRIPE_PRICE_ID:?STRIPE_PRICE_ID is required}
-      BILLING_SUCCESS_URL: ${BILLING_SUCCESS_URL:?BILLING_SUCCESS_URL is required}
-      BILLING_CANCEL_URL: ${BILLING_CANCEL_URL:?BILLING_CANCEL_URL is required}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_PRICE_ID: ${STRIPE_PRICE_ID:-}
+      BILLING_SUCCESS_URL: ${BILLING_SUCCESS_URL:-http://localhost:3458/app/billing}
+      BILLING_CANCEL_URL: ${BILLING_CANCEL_URL:-http://localhost:3458/app/billing}
     ports:
-      - "${BACKEND_PORT:-3000}:3000"
+      - "${APP_PORT:-3458}:3000"
     depends_on:
       mongo:
         condition: service_started
       redis:
         condition: service_healthy
-    networks:
-      - my-family-network
-
-  landing-page:
-    build:
-      context: ./landing-page
-      dockerfile: Dockerfile
-      args:
-        BACKEND_ORIGIN: ${BACKEND_ORIGIN:-http://backend:3000}
-        NEXT_PUBLIC_SITE_ORIGIN: ${NEXT_PUBLIC_SITE_ORIGIN:-http://localhost:3458}
-        NEXT_PUBLIC_APP_ORIGIN: ${NEXT_PUBLIC_APP_ORIGIN:-http://localhost:3000/app}
-    container_name: my-family-landing-page
-    restart: unless-stopped
-    environment:
-      BACKEND_ORIGIN: ${BACKEND_ORIGIN:-http://backend:3000}
-      NEXT_PUBLIC_SITE_ORIGIN: ${NEXT_PUBLIC_SITE_ORIGIN:-http://localhost:3458}
-      NEXT_PUBLIC_APP_ORIGIN: ${NEXT_PUBLIC_APP_ORIGIN:-http://localhost:3000/app}
-      PORT: 3000
-      NODE_ENV: production
-    ports:
-      - "${APP_PORT:-3458}:3000"
-    depends_on:
-      backend:
-        condition: service_started
     networks:
       - my-family-network
 

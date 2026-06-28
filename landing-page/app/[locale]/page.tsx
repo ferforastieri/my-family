@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { HeroScene } from '@/components/HeroScene';
-import { appOrigin, getLandingData, siteOrigin } from '@/lib/api';
+import { getAppOrigin, getLandingData, getSiteOrigin } from '@/lib/api';
 import { Locale, copy, localePath, locales, resolveLocale } from '@/lib/i18n';
 
 type PageProps = {
@@ -16,6 +16,7 @@ export async function generateMetadata({
   const locale = resolveLocale((await params).locale);
   const t = copy[locale];
   const path = localePath(locale);
+  const siteOrigin = getSiteOrigin();
   return {
     title: t.seo.title,
     description: t.seo.description,
@@ -45,6 +46,7 @@ export default async function LandingPage({ params }: PageProps) {
   const locale = resolveLocale((await params).locale);
   const t = copy[locale];
   const data = await getLandingData(locale);
+  const appOrigin = getAppOrigin();
   const signupUrl = `${appOrigin}/signup?locale=${locale}`;
   const loginUrl = `${appOrigin}/login/cliente?locale=${locale}`;
   const demoUrl = `${appOrigin}/demo?locale=${locale}`;
@@ -193,6 +195,7 @@ function buildJsonLd(
   locale: Locale,
   plans: Awaited<ReturnType<typeof getLandingData>>['plans'],
 ) {
+  const siteOrigin = getSiteOrigin();
   return {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',

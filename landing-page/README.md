@@ -8,9 +8,7 @@ privacidade chumbados: ambos são carregados do backend NestJS.
 Copie `.env.example` para `.env.local` quando quiser rodar localmente.
 
 ```text
-BACKEND_ORIGIN=http://localhost:3000
-NEXT_PUBLIC_SITE_ORIGIN=http://localhost:3458
-NEXT_PUBLIC_APP_ORIGIN=http://localhost:3000/app
+API_BASE_URL=http://localhost:3001/api
 ```
 
 ## Desenvolvimento
@@ -27,8 +25,8 @@ npm run typecheck
 npm run build
 ```
 
-## Railway
+## Deploy
 
-Crie um serviço separado no Railway com root directory `landing-page`. Esse
-serviço usa `landing-page/railway.toml` e precisa das três variáveis acima
-apontando para os domínios públicos de produção.
+No Railway, esta aplicação roda dentro do serviço único da raiz do repositório.
+O `Dockerfile.backend` builda a landing e o roteador interno envia `/`, `/pt`,
+`/robots.txt` e `/sitemap.xml` para o Next.js.

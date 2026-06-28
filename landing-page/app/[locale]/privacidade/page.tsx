@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { getPrivacyPolicy, siteOrigin } from '@/lib/api';
+import { getPrivacyPolicy, getSiteOrigin } from '@/lib/api';
 import { copy, localePath, locales, resolveLocale } from '@/lib/i18n';
 
 type PageProps = {
@@ -17,6 +17,7 @@ export async function generateMetadata({
   const policy = await getPrivacyPolicy(locale);
   const title = policy?.title ?? t.privacyPage.title;
   const path = localePath(locale, '/privacidade');
+  const siteOrigin = getSiteOrigin();
   return {
     title,
     description: t.privacyPage.description,

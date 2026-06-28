@@ -1,6 +1,6 @@
 [build]
 dockerfilePath = "Dockerfile.backend"
-watchPatterns = ["backend/**", "app/**", "Dockerfile.backend", "railway.toml"]
+watchPatterns = ["backend/**", "app/**", "landing-page/**", "deploy/**", "Dockerfile.backend", "railway.toml"]
 
 [deploy]
 healthcheckPath = "/api/health"

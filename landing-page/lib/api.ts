@@ -58,67 +58,56 @@ export type PublicFamilySite = {
   journey?: Array<Record<string, unknown>>;
 };
 
-const backendOrigin =
-  process.env.BACKEND_ORIGIN?.replace(/\/$/, '') ?? 'http://localhost:3000';
+export function getApiBaseUrl(): string {
+  const value = requiredEnv('API_BASE_URL');
+  if (!value.endsWith('/api')) {
+    throw new Error('API_BASE_URL deve terminar com /api.');
+  }
+  return value;
+}
 
-export const siteOrigin =
-  process.env.NEXT_PUBLIC_SITE_ORIGIN?.replace(/\/$/, '') ??
-  'http://localhost:3458';
+export function getSiteOrigin(): string {
+  return getApiBaseUrl().slice(0, -4);
+}
 
-export const appOrigin =
-  process.env.NEXT_PUBLIC_APP_ORIGIN?.replace(/\/$/, '') ??
-  `${backendOrigin}/app`;
+export function getAppOrigin(): string {
+  return `${getSiteOrigin()}/app`;
+}
 
 export function mediaUrl(slug: string, relativePath: string) {
   const search = new URLSearchParams({ path: relativePath });
-  return `${backendOrigin}/api/public/sites/${encodeURIComponent(slug)}/media?${search.toString()}`;
+  return `${getApiBaseUrl()}/public/sites/${encodeURIComponent(slug)}/media?${search.toString()}`;
 }
 
 export async function getLandingData(locale: Locale): Promise<LandingData> {
-  try {
-    return await backendFetch<LandingData>(`/api/public/landing?locale=${locale}`);
-  } catch {
-    return { locale, plans: [], privacyPolicy: null };
-  }
+  return backendFetch<LandingData>(`/public/landing?locale=${locale}`);
 }
 
 export async function getPrivacyPolicy(
   locale: Locale,
 ): Promise<PublicLegalDocument | null> {
-  try {
-    return await backendFetch<PublicLegalDocument | null>(
-      `/api/public/landing/privacy-policy?locale=${locale}`,
-    );
-  } catch {
-    return null;
-  }
+  return backendFetch<PublicLegalDocument | null>(
+    `/public/landing/privacy-policy?locale=${locale}`,
+  );
 }
 
 export async function getPublishedFamilySlugs(): Promise<string[]> {
-  try {
-    const data = await backendFetch<{ slugs: string[] }>(
-      '/api/public/sites/published-slugs',
-    );
-    return data.slugs ?? [];
-  } catch {
-    return [];
-  }
+  const data = await backendFetch<{ slugs: string[] }>(
+    '/public/sites/published-slugs',
+  );
+  return data.slugs;
 }
 
 export async function getFamilySite(
   slug: string,
 ): Promise<PublicFamilySite | null> {
-  try {
-    return await backendFetch<PublicFamilySite>(
-      `/api/public/sites/${encodeURIComponent(slug)}`,
-    );
-  } catch {
-    return null;
-  }
+  return backendFetch<PublicFamilySite | null>(
+    `/public/sites/${encodeURIComponent(slug)}`,
+  );
 }
 
 async function backendFetch<T>(path: string): Promise<T> {
-  const response = await fetch(`${backendOrigin}${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     cache: 'no-store',
     headers: { accept: 'application/json' },
   });
@@ -139,4 +128,10 @@ function unwrapApiResponse<T>(payload: unknown): T {
     return (payload as { data: T }).data;
   }
   return payload as T;
+}
+
+function requiredEnv(name: string): string {
+  const value = process.env[name]?.trim().replace(/\/+$/, '');
+  if (!value) throw new Error(`${name} não foi configurada.`);
+  return value;
 }

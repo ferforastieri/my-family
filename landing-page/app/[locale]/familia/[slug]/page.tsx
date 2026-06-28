@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { appOrigin, getFamilySite, mediaUrl, siteOrigin } from '@/lib/api';
+import { getAppOrigin, getFamilySite, getSiteOrigin, mediaUrl } from '@/lib/api';
 import { copy, localePath, resolveLocale } from '@/lib/i18n';
 
 type PageProps = {
@@ -31,6 +31,7 @@ export async function generateMetadata({
     firstString(site.photos?.[0]?.url);
   const image = imagePath ? mediaUrl(site.tenant.slug, imagePath) : undefined;
   const path = localePath(locale, `/familia/${encodeURIComponent(slug)}`);
+  const siteOrigin = getSiteOrigin();
   return {
     title,
     description,
@@ -56,6 +57,7 @@ export default async function FamilyPage({ params }: PageProps) {
   const headline = brand.headline || site.tenant.name;
   const subheadline = brand.subheadline || t.familyPage.empty;
   const cover = brand.coverPath ? mediaUrl(site.tenant.slug, brand.coverPath) : null;
+  const appOrigin = getAppOrigin();
   const loginUrl = `${appOrigin}/familia/${encodeURIComponent(site.tenant.slug)}/login?locale=${locale}`;
   const photos = (site.photos ?? []).slice(0, 12);
   const songs = (site.songs ?? []).slice(0, 8);
