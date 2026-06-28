@@ -88,7 +88,7 @@ class MarketingCopy {
 
 const marketingCopy = <MarketingLocale, MarketingCopy>{
   MarketingLocale.pt: MarketingCopy(
-    brand: 'Sua Família',
+    brand: 'My Family',
     eyebrow: 'Um lugar só de vocês',
     title: 'A história da sua família merece um cantinho especial.',
     description:
@@ -124,7 +124,7 @@ const marketingCopy = <MarketingLocale, MarketingCopy>{
     events: 'Datas especiais',
   ),
   MarketingLocale.en: MarketingCopy(
-    brand: 'Your Family',
+    brand: 'My Family',
     eyebrow: 'A place that belongs to you',
     title: 'Your family story deserves a special home.',
     description:
@@ -159,7 +159,7 @@ const marketingCopy = <MarketingLocale, MarketingCopy>{
     events: 'Special dates',
   ),
   MarketingLocale.es: MarketingCopy(
-    brand: 'Tu Familia',
+    brand: 'My Family',
     eyebrow: 'Un lugar solo para ustedes',
     title: 'La historia de tu familia merece un rincón especial.',
     description:

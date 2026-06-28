@@ -1,6 +1,6 @@
 {
-  "name": "Sua Família",
-  "short_name": "Sua Família",
+  "name": "My Family",
+  "short_name": "My Family",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#fff7fb",

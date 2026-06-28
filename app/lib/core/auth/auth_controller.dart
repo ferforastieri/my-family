@@ -414,6 +414,9 @@ class AuthController extends ChangeNotifier {
       'tenantSlug': tenantSlug,
     });
     await _acceptAuth(response);
+    if (token != null) {
+      await socket.ensureConnected(token: token);
+    }
   }
 
   Future<void> updateTenant({

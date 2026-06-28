@@ -201,9 +201,9 @@ class _HomePageState extends State<HomePage> {
                       Padding(
                         padding: EdgeInsets.fromLTRB(18, 10, 18, 0),
                         child: AppPageHeader(
-                          title: 'Sua Família',
+                          title: 'My Family',
                           titleWidget: Semantics(
-                            label: 'Sua Família',
+                            label: 'My Family',
                             image: true,
                             child: Image(
                               image: AssetImage('assets/brand/family-logo.png'),
@@ -370,7 +370,7 @@ class _HomeTitle extends StatelessWidget {
       child: Column(
         children: [
           Semantics(
-            label: context.tr('Sua Família'),
+            label: context.tr('My Family'),
             image: true,
             child: Image.asset(
               'assets/brand/family-logo.png',

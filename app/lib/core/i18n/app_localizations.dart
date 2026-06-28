@@ -73,17 +73,17 @@ class AppLocalizations {
     AppLocaleOption(
       locale: Locale('pt', 'BR'),
       nativeLabel: 'Português',
-      productName: 'Sua Família',
+      productName: 'My Family',
     ),
     AppLocaleOption(
       locale: Locale('en'),
       nativeLabel: 'English',
-      productName: 'Your Family',
+      productName: 'My Family',
     ),
     AppLocaleOption(
       locale: Locale('es'),
       nativeLabel: 'Español',
-      productName: 'Tu Familia',
+      productName: 'My Family',
     ),
   ];
 
@@ -129,7 +129,7 @@ class AppLocalizations {
         _ => 'pt-BR',
       };
 
-  String get productName => tr('Sua Família');
+  String get productName => tr('My Family');
 
   String tr(String key, {Map<String, Object?> args = const {}}) {
     final value = _translations[code]?[key] ?? key;
@@ -206,7 +206,7 @@ const _translations = <String, Map<String, String>>{
     'month.12': 'dezembro',
   },
   'en': {
-    'Sua Família': 'Your Family',
+    'My Family': 'My Family',
     'Voltar': 'Back',
     'Notificações': 'Notifications',
     'Cor e tema': 'Color and theme',
@@ -685,7 +685,7 @@ const _translations = <String, Map<String, String>>{
     'month.12': 'December',
   },
   'es': {
-    'Sua Família': 'Tu Familia',
+    'My Family': 'My Family',
     'Voltar': 'Volver',
     'Notificações': 'Notificaciones',
     'Cor e tema': 'Color y tema',

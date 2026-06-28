@@ -27,9 +27,10 @@ export class WsSessionService {
   ) {}
 
   async getUser(client: Socket): Promise<UserEntity | null> {
-    const cached = client.data.user as UserEntity | undefined;
-    if (cached) return cached;
     const token = this.tokenFromClient(client);
+    const cached = client.data.user as UserEntity | undefined;
+    const cachedToken = client.data.authToken as string | undefined;
+    if (cached && cachedToken === token) return cached;
     if (!token) return null;
     try {
       const payload = this.jwt.verify<AuthJwtPayload>(token, {
@@ -38,10 +39,13 @@ export class WsSessionService {
       const user = await this.auth.resolvePayload(payload);
       if (user) {
         client.data.user = user;
+        client.data.authToken = token;
         if (user.tenantId) await client.join(tenantRoom(user.tenantId));
       }
       return user;
     } catch {
+      client.data.user = undefined;
+      client.data.authToken = undefined;
       return null;
     }
   }

@@ -1,6 +1,6 @@
 # Backend NestJS
 
-Backend do projeto Sua Familia. Ele foi criado como estudo pratico de arquitetura NestJS, WebSocket, MongoDB, filas, Firebase Admin, upload e seguranca em uma aplicacao real.
+Backend do projeto My Family. Ele foi criado como estudo pratico de arquitetura NestJS, WebSocket, MongoDB, filas, Firebase Admin, upload e seguranca em uma aplicacao real.
 
 ## Tecnologias
 

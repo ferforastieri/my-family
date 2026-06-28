@@ -34,7 +34,7 @@ export class NotificationsGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() query?: NotificationListQueryDto,
   ) {
-    const user = await this.session.requireUser(client);
+    const user = await this.session.requireTenant(client);
     return this.notifications.list(query, user);
   }
 
@@ -82,14 +82,14 @@ export class NotificationsGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() body: IdMessageDto,
   ) {
-    const user = await this.session.requireUser(client);
+    const user = await this.session.requireTenant(client);
     const row = await this.notifications.markRead(body.id, user);
     return row ? { message: 'Notificação lida.', ...row } : row;
   }
 
   @SubscribeMessage('notifications.readAll')
   async readAll(@ConnectedSocket() client: Socket) {
-    const user = await this.session.requireUser(client);
+    const user = await this.session.requireTenant(client);
     const count = await this.notifications.markAllRead(user);
     return { ok: true, count, message: 'Notificações lidas.' };
   }
@@ -145,7 +145,7 @@ export class NotificationsGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() body: FcmSubscribeRequestDto,
   ) {
-    const user = await this.session.requireUser(client);
+    const user = await this.session.requireTenant(client);
     if (body.subscription?.token) {
       try {
         await this.notifications.pushSubscribe(
@@ -169,7 +169,7 @@ export class NotificationsGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() body: FcmUnsubscribeDto,
   ) {
-    const user = await this.session.requireUser(client);
+    const user = await this.session.requireTenant(client);
     if (body.token) await this.notifications.pushUnsubscribe(body.token, user);
     return { ok: true, message: 'Notificações desativadas.' };
   }

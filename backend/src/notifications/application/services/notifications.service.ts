@@ -192,7 +192,7 @@ export class NotificationsService {
         await getMessaging().send({
           token: sub.fcmToken,
           notification: {
-            title: title ?? 'Sua Família',
+            title: title ?? 'My Family',
             body: body ?? '',
           },
           data: {

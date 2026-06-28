@@ -22,7 +22,7 @@ export class HomeSettingsGateway {
 
   @SubscribeMessage('home.settings.get')
   async get(@ConnectedSocket() client: Socket) {
-    await this.session.requireUser(client);
+    await this.session.requireTenant(client);
     return this.settings.get();
   }
 

@@ -21,7 +21,7 @@ export class NotificationFactory implements Factory<
     input: NotificationCreateDto | NotificationSendDto,
   ): NotificationWrite {
     return {
-      title: input.title ?? 'Sua Família',
+      title: input.title ?? 'My Family',
       body: input.body ?? '',
       url: input.url ?? '/home',
       icon: 'icon' in input ? input.icon : undefined,

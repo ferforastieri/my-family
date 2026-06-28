@@ -56,8 +56,8 @@ async function bootstrap() {
       request.ip ||
       'anonymous',
     cookieName: environment.isProduction()
-      ? '__Host-fmf.x-csrf-token'
-      : 'fmf.x-csrf-token',
+      ? '__Host-mf.x-csrf-token'
+      : 'mf.x-csrf-token',
     cookieOptions: {
       httpOnly: true,
       path: '/',
@@ -145,4 +145,3 @@ function isAuthHttpEndpoint(path: string): boolean {
     normalized === '/auth/reset-password'
   );
 }
-

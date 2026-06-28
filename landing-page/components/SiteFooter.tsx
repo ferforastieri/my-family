@@ -1,5 +1,5 @@
-import Link from 'next/link';
-import { copy, Locale, localePath } from '@/lib/i18n';
+import Link from "next/link";
+import { copy, Locale, localePath } from "@/lib/i18n";
 
 type SiteFooterProps = {
   locale: Locale;
@@ -13,14 +13,18 @@ export function SiteFooter({ locale, appHref, loginHref }: SiteFooterProps) {
     <footer className="site-footer">
       <div className="footer-inner">
         <div className="footer-brand">
-          <img className="footer-logo" src="/brand/family-logo.png" alt={t.brand} />
+          <img
+            className="footer-logo"
+            src="/brand/family-logo.png"
+            alt={t.brand}
+          />
           <div>
             <p>{t.footerTagline}</p>
           </div>
         </div>
         <nav className="footer-links" aria-label="Rodapé">
           <Link href={localePath(locale)}>{t.navProduct}</Link>
-          <Link href={localePath(locale, '/privacidade')}>{t.navPrivacy}</Link>
+          <Link href={localePath(locale, "/privacidade")}>{t.navPrivacy}</Link>
           <a href={appHref}>{t.footerApp}</a>
           <a href={loginHref}>{t.navLogin}</a>
         </nav>
