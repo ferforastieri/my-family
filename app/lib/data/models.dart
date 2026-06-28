@@ -260,7 +260,7 @@ class AppNotification {
         id: json['id'].toString(),
         title: (json['title'] ?? 'Nossa Família').toString(),
         body: (json['body'] ?? '').toString(),
-        url: (json['url'] ?? '/').toString(),
+        url: (json['url'] ?? '/home').toString(),
         read: json['read'] == true,
         type: (json['type'] ?? 'manual').toString(),
         at: DateTime.fromMillisecondsSinceEpoch((json['at'] as num?)?.toInt() ??
@@ -301,7 +301,7 @@ class ScheduledNotification {
       id: json['id'].toString(),
       title: (json['title'] ?? 'Nossa Família').toString(),
       body: (json['body'] ?? '').toString(),
-      url: (json['url'] ?? '/').toString(),
+      url: (json['url'] ?? '/home').toString(),
       scheduledAt: parseDate(json['scheduledAt']),
       status: (json['status'] ?? 'pending').toString(),
       sentAt: json['sentAt'] == null ? null : parseDate(json['sentAt']),

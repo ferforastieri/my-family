@@ -35,6 +35,8 @@ dependencies:
   dio: ^5.9.2
   fresh_dio: ^0.6.0
   url_launcher: ^6.3.2
+  webview_flutter: ^4.14.0
+  web: ^1.1.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

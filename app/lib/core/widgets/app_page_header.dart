@@ -209,7 +209,7 @@ class AppPageHeader extends StatelessWidget {
       context.pop();
       return;
     }
-    context.go('/');
+    context.go('/home');
   }
 }
 

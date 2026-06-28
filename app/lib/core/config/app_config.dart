@@ -15,8 +15,10 @@ class AppConfig {
         _socketUrl,
       );
   static String get publicWebUrl {
-    if (_publicWebUrl.trim().isNotEmpty) return _publicWebUrl;
-    return kIsWeb ? Uri.base.origin : '';
+    final configured = _publicWebUrl.trim().replaceAll(RegExp(r'/+$'), '');
+    if (configured.isNotEmpty) return configured;
+    if (kIsWeb) return Uri.base.origin;
+    return _requiredEnv('PUBLIC_WEB_URL', configured);
   }
 
   static const firebaseApiKey = String.fromEnvironment('FIREBASE_API_KEY');

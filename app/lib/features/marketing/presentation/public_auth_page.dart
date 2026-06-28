@@ -300,7 +300,7 @@ class _PublicAuthPageState extends State<PublicAuthPage> {
     final tenant = widget.auth.tenant;
     if (tenant == null) return widget.afterLoginPath ?? '/familias';
     if (!tenant.isActive) return '/billing';
-    return widget.afterLoginPath ?? '/';
+    return widget.afterLoginPath ?? '/home';
   }
 
   Future<void> _submit() async {
