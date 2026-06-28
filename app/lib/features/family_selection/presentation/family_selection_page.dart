@@ -40,7 +40,7 @@ class _FamilySelectionPageState extends State<FamilySelectionPage> {
       if (!mounted) return;
       final tenant = widget.auth.tenant;
       context.go(
-        tenant?.isActive == true ? widget.nextPath ?? '/home' : '/billing',
+        tenant?.isActive == true ? widget.nextPath ?? '/' : '/billing',
       );
     } catch (error) {
       widget.toast.error(authErrorMessage(error));

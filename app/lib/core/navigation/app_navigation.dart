@@ -5,7 +5,7 @@ extension AppNavigation on BuildContext {
   void openAppRoute(String path) {
     final current = GoRouterState.of(this).uri.path;
     if (current == path) return;
-    if (path == '/home') {
+    if (path == '/') {
       go(path);
       return;
     }

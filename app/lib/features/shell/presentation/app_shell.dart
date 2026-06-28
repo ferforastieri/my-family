@@ -275,10 +275,10 @@ List<_NavigationItem> _familyNavigation(
   return [
     _NavigationItem(
       label: 'Início',
-      path: '/home',
+      path: '/',
       icon: Icons.home_outlined,
       selectedIcon: Icons.home,
-      selected: currentLocation == '/home',
+      selected: currentLocation == '/',
       enabled: user != null,
       onDisabled: onLogin,
     ),
@@ -351,10 +351,10 @@ List<_NavigationItem> _panelNavigation(String currentLocation) {
     ),
     _NavigationItem(
       label: 'Site',
-      path: '/home',
+      path: '/',
       icon: Icons.family_restroom_outlined,
       selectedIcon: Icons.family_restroom,
-      selected: currentLocation == '/home',
+      selected: currentLocation == '/',
       logo: true,
     ),
     _NavigationItem(
@@ -877,7 +877,7 @@ class _BadgeLabel extends StatelessWidget {
 }
 
 bool _isSelected(String itemPath, String currentLocation) {
-  if (itemPath == '/home') return currentLocation == '/home';
+  if (itemPath == '/') return currentLocation == '/';
   return currentLocation == itemPath ||
       currentLocation.startsWith('$itemPath/');
 }

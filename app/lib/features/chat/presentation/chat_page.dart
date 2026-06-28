@@ -391,7 +391,7 @@ class _ChatPageState extends State<ChatPage> {
     if (context.canPop()) {
       context.pop();
     } else {
-      context.go('/home');
+      context.go('/');
     }
   }
 }
