@@ -108,7 +108,6 @@ bootstrap();
 function serveFlutterWeb(httpServer: express.Express): void {
   const appPath = join(process.cwd(), 'public', 'app');
   const indexPath = join(appPath, 'index.html');
-  if (!existsSync(indexPath)) return;
 
   httpServer.get('/app', (_request, response) => {
     response.redirect(308, '/app/');
@@ -132,6 +131,10 @@ function serveFlutterWeb(httpServer: express.Express): void {
     }),
   );
   httpServer.get(/^\/app\/.*$/, (_request, response) => {
+    if (!existsSync(indexPath)) {
+      response.status(404).send('Flutter Web build não encontrado.');
+      return;
+    }
     response.setHeader('Cache-Control', 'no-store');
     response.sendFile(indexPath);
   });
@@ -159,5 +162,4 @@ function isAuthHttpEndpoint(path: string): boolean {
     normalized === '/auth/reset-password'
   );
 }
-
 

@@ -21,6 +21,7 @@ out
 .next
 .vercel
 .netlify
+backend/public/
 
 logs
 *.log
