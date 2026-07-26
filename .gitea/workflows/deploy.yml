@@ -70,7 +70,6 @@ jobs:
           test -n "$FIREBASE_PROJECT_ID" || { echo "Missing secret FIREBASE_PROJECT_ID"; exit 1; }
           test -n "$FIREBASE_AUTH_DOMAIN" || { echo "Missing secret FIREBASE_AUTH_DOMAIN"; exit 1; }
           test -n "$FIREBASE_STORAGE_BUCKET" || { echo "Missing secret FIREBASE_STORAGE_BUCKET"; exit 1; }
-          test -n "$FIREBASE_WEB_PUSH_CERTIFICATE_KEY" || { echo "Missing secret FIREBASE_WEB_PUSH_CERTIFICATE_KEY"; exit 1; }
           test -n "$GOOGLE_SERVICES_JSON" || { echo "Missing secret GOOGLE_SERVICES_JSON"; exit 1; }
 
       - name: Create deploy environment
