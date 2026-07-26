@@ -9,7 +9,7 @@ on:
 jobs:
   deploy:
     name: Build and deploy on this server
-    runs-on: ubuntu-latest
+    runs-on: my-family
 
     steps:
       - name: Checkout repository
