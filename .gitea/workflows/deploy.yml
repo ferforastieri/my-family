@@ -46,6 +46,8 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
           FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+          FIREBASE_ANDROID_API_KEY: ${{ secrets.FIREBASE_ANDROID_API_KEY }}
+          FIREBASE_ANDROID_APP_ID: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
           FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
           FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
@@ -66,6 +68,8 @@ jobs:
           test -n "$FIREBASE_SERVICE_ACCOUNT_JSON" || { echo "Missing secret FIREBASE_SERVICE_ACCOUNT_JSON"; exit 1; }
           test -n "$FIREBASE_API_KEY" || { echo "Missing secret FIREBASE_API_KEY"; exit 1; }
           test -n "$FIREBASE_APP_ID" || { echo "Missing secret FIREBASE_APP_ID"; exit 1; }
+          test -n "$FIREBASE_ANDROID_API_KEY" || { echo "Missing secret FIREBASE_ANDROID_API_KEY"; exit 1; }
+          test -n "$FIREBASE_ANDROID_APP_ID" || { echo "Missing secret FIREBASE_ANDROID_APP_ID"; exit 1; }
           test -n "$FIREBASE_MESSAGING_SENDER_ID" || { echo "Missing secret FIREBASE_MESSAGING_SENDER_ID"; exit 1; }
           test -n "$FIREBASE_PROJECT_ID" || { echo "Missing secret FIREBASE_PROJECT_ID"; exit 1; }
           test -n "$FIREBASE_AUTH_DOMAIN" || { echo "Missing secret FIREBASE_AUTH_DOMAIN"; exit 1; }
@@ -150,8 +154,8 @@ jobs:
         env:
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
           SOCKET_URL: ${{ secrets.SOCKET_URL }}
-          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
-          FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_ANDROID_API_KEY }}
+          FIREBASE_APP_ID: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
           FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
           FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
