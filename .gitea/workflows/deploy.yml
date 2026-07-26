@@ -197,9 +197,9 @@ jobs:
           unset DOCKER_API_VERSION || true
           mkdir -p "$DOCKER_CONFIG"
 
-          if docker compose version >/dev/null 2>&1 && docker compose --env-file .env -f docker-compose.yml config >/dev/null 2>&1; then
+          if docker compose version >/dev/null 2>&1; then
             COMPOSE="docker compose"
-          elif command -v docker-compose >/dev/null 2>&1 && docker-compose --env-file .env -f docker-compose.yml config >/dev/null 2>&1; then
+          elif command -v docker-compose >/dev/null 2>&1; then
             COMPOSE="docker-compose"
           else
             echo "Docker Compose is not configured in the runner/server"
@@ -207,6 +207,7 @@ jobs:
           fi
 
           export COMPOSE_PROJECT_NAME=my-family
+          $COMPOSE --env-file .env -f docker-compose.yml config >/dev/null
           $COMPOSE --env-file .env build --pull
           $COMPOSE --env-file .env up -d mongo redis
           $COMPOSE --env-file .env up -d --remove-orphans
