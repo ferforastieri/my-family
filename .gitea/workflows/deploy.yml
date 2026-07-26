@@ -178,14 +178,23 @@ jobs:
           fi
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > app/android/app/release-keystore.jks
 
-          docker run --rm \
-            -v "$PWD/app:/app" \
+          flutter_container="my-family-flutter-${GITHUB_RUN_ID:-manual}"
+          docker rm -f "$flutter_container" >/dev/null 2>&1 || true
+          docker create \
+            --name "$flutter_container" \
+            --workdir /app \
+            ghcr.io/cirruslabs/flutter:stable \
+            tail -f /dev/null >/dev/null
+          trap 'docker rm -f "$flutter_container" >/dev/null 2>&1 || true' EXIT
+          docker start "$flutter_container" >/dev/null
+          docker cp "$PWD/app/." "$flutter_container:/app"
+
+          docker exec \
             -e ANDROID_KEYSTORE_PATH=/app/android/app/release-keystore.jks \
             -e ANDROID_KEYSTORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD" \
             -e ANDROID_KEY_ALIAS="$ANDROID_KEY_ALIAS" \
             -e ANDROID_KEY_PASSWORD="$ANDROID_KEY_PASSWORD" \
-            -w /app \
-            ghcr.io/cirruslabs/flutter:stable \
+            "$flutter_container" \
             flutter build apk --release \
               --dart-define=API_BASE_URL="$API_BASE_URL" \
               --dart-define=SOCKET_URL="$SOCKET_URL" \
@@ -196,6 +205,13 @@ jobs:
               --dart-define=FIREBASE_AUTH_DOMAIN="${FIREBASE_AUTH_DOMAIN:-}" \
               --dart-define=FIREBASE_STORAGE_BUCKET="${FIREBASE_STORAGE_BUCKET:-}" \
               --dart-define=FIREBASE_WEB_PUSH_CERTIFICATE_KEY="${FIREBASE_WEB_PUSH_CERTIFICATE_KEY:-}"
+
+          mkdir -p app/build/app/outputs/flutter-apk
+          docker cp \
+            "$flutter_container:/app/build/app/outputs/flutter-apk/app-release.apk" \
+            app/build/app/outputs/flutter-apk/app-release.apk
+          docker rm -f "$flutter_container" >/dev/null
+          trap - EXIT
 
       - name: Upload Android APK
         uses: actions/upload-artifact@v3
