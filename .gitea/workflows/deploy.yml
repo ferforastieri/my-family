@@ -10,10 +10,27 @@ jobs:
   deploy:
     name: Build and deploy on this server
     runs-on: my-family
+    container:
+      options: >-
+        -v /opt/gitea-runner-unified/ssh:/run/gitea-deploy:ro
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Configure remote Docker target
+        run: |
+          set -eu
+          apt-get update
+          apt-get install -y openssh-client
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
+          cp /run/gitea-deploy/id_ed25519 "$HOME/.ssh/id_ed25519"
+          cp /run/gitea-deploy/known_hosts "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/id_ed25519" "$HOME/.ssh/known_hosts"
+          printf 'DOCKER_HOST=ssh://gitea-deploy@192.168.15.21\n' >> "$GITHUB_ENV"
+          printf 'DOCKER_SSH_COMMAND=ssh -i %s -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=%s\n' "$HOME/.ssh/id_ed25519" "$HOME/.ssh/known_hosts" >> "$GITHUB_ENV"
+          docker -H ssh://gitea-deploy@192.168.15.21 version
 
       - name: Ensure Docker CLI
         run: |
