@@ -1,6 +1,7 @@
 name: Deploy
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -236,6 +237,7 @@ jobs:
           $COMPOSE --env-file .env ps
 
       - name: Build Android APK
+        if: github.event_name == 'workflow_dispatch'
         env:
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
           SOCKET_URL: ${{ secrets.SOCKET_URL }}
@@ -253,6 +255,8 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           set -eu
+          # Android builds stay on the runner CT, which has more headroom than the app target.
+          unset DOCKER_HOST DOCKER_SSH_COMMAND DOCKER_API_VERSION || true
           test -n "$ANDROID_KEYSTORE_BASE64" || { echo "Missing secret ANDROID_KEYSTORE_BASE64"; exit 1; }
           test -n "$ANDROID_KEYSTORE_PASSWORD" || { echo "Missing secret ANDROID_KEYSTORE_PASSWORD"; exit 1; }
           test -n "$ANDROID_KEY_ALIAS" || { echo "Missing secret ANDROID_KEY_ALIAS"; exit 1; }
@@ -264,15 +268,33 @@ jobs:
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > app/android/app/release-keystore.jks
 
           flutter_container="my-family-flutter-${GITHUB_RUN_ID:-manual}"
+          docker volume create my-family-flutter-pub-cache >/dev/null
+          docker volume create my-family-flutter-gradle-cache >/dev/null
           docker rm -f "$flutter_container" >/dev/null 2>&1 || true
           docker create \
             --name "$flutter_container" \
             --workdir /app \
+            --memory=5g \
+            --cpus=4 \
+            --volume my-family-flutter-pub-cache:/root/.pub-cache \
+            --volume my-family-flutter-gradle-cache:/root/.gradle \
             ghcr.io/cirruslabs/flutter:stable \
             tail -f /dev/null >/dev/null
           trap 'docker rm -f "$flutter_container" >/dev/null 2>&1 || true' EXIT
           docker start "$flutter_container" >/dev/null
-          docker cp "$PWD/app/." "$flutter_container:/app"
+          tar \
+            --exclude=.git \
+            --exclude=build \
+            --exclude=.dart_tool \
+            -C app -cf - . | docker exec -i "$flutter_container" tar -xf - -C /app
+
+          docker exec \
+            -e ANDROID_KEYSTORE_PATH=/app/android/app/release-keystore.jks \
+            -e ANDROID_KEYSTORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD" \
+            -e ANDROID_KEY_ALIAS="$ANDROID_KEY_ALIAS" \
+            -e ANDROID_KEY_PASSWORD="$ANDROID_KEY_PASSWORD" \
+            "$flutter_container" \
+            flutter pub get
 
           docker exec \
             -e ANDROID_KEYSTORE_PATH=/app/android/app/release-keystore.jks \
@@ -281,6 +303,7 @@ jobs:
             -e ANDROID_KEY_PASSWORD="$ANDROID_KEY_PASSWORD" \
             "$flutter_container" \
             flutter build apk --release \
+              --no-pub \
               --dart-define=API_BASE_URL="$API_BASE_URL" \
               --dart-define=SOCKET_URL="$SOCKET_URL" \
               --dart-define=FIREBASE_API_KEY="${FIREBASE_API_KEY:-}" \
@@ -299,6 +322,7 @@ jobs:
           trap - EXIT
 
       - name: Upload Android APK
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v3
         with:
           name: my-family-android-apk
