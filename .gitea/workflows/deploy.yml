@@ -227,6 +227,7 @@ jobs:
           fi
 
           export COMPOSE_PROJECT_NAME=my-family
+          docker rm -f my-family-front my-family-backend my-family-redis my-family-mongo >/dev/null 2>&1 || true
           $COMPOSE --env-file .env down --remove-orphans || true
           $COMPOSE --env-file .env -f docker-compose.yml config >/dev/null
           $COMPOSE --env-file .env build --pull
