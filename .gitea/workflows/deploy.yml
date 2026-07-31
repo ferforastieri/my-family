@@ -227,6 +227,7 @@ jobs:
           fi
 
           export COMPOSE_PROJECT_NAME=my-family
+          $COMPOSE --env-file .env down --remove-orphans || true
           $COMPOSE --env-file .env -f docker-compose.yml config >/dev/null
           $COMPOSE --env-file .env build --pull
           $COMPOSE --env-file .env up -d mongo redis
