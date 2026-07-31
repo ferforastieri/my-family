@@ -4,8 +4,8 @@ WORKDIR /app
 COPY app/pubspec.yaml app/analysis_options.yaml ./
 RUN flutter pub get
 
-ARG API_BASE_URL=http://localhost:3459/api
-ARG SOCKET_URL=http://localhost:3459
+ARG API_BASE_URL=https://family.home.fer.tec.br/api
+ARG SOCKET_URL=https://family.home.fer.tec.br
 ARG FIREBASE_API_KEY=
 ARG FIREBASE_APP_ID=
 ARG FIREBASE_MESSAGING_SENDER_ID=
