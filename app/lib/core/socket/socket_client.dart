@@ -47,7 +47,7 @@ class SocketClient {
       io.OptionBuilder()
           .enableForceNew()
           .disableMultiplex()
-          .setTransports(kIsWeb ? ['polling', 'websocket'] : ['websocket'])
+          .setTransports(['polling', 'websocket'])
           .disableAutoConnect()
           .enableReconnection()
           .setReconnectionAttempts(20)
