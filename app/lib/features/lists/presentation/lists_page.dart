@@ -158,7 +158,7 @@ class _ListsPageState extends State<ListsPage> {
       child: AppFixedHeaderScrollView(
         header: const AppPageHeader(
           title: 'Listas',
-          subtitle: 'Compras, tarefas e qualquer combinado da família.',
+          subtitle: 'Compras, tarefas e combinados.',
           icon: Icons.checklist_outlined,
         ),
         children: [

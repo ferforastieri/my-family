@@ -714,7 +714,7 @@ class MobileOptionsPage extends StatelessWidget {
       child: AppFixedHeaderScrollView(
         header: AppPageHeader(
           title: title,
-          subtitle: 'Escolha para onde seguir.',
+          subtitle: 'Escolha uma opção.',
           icon: Icons.favorite_outline,
         ),
         headerGap: 22,

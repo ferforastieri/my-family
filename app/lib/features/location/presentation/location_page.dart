@@ -78,7 +78,7 @@ class _LocationPageState extends State<LocationPage> {
         padding: const EdgeInsets.fromLTRB(18, 18, 18, 112),
         header: const AppPageHeader(
           title: 'Localização',
-          subtitle: 'Onde a família está agora e como anda a bateria.',
+          subtitle: 'Localização e bateria da família.',
           icon: Icons.location_on_outlined,
         ),
         children: [

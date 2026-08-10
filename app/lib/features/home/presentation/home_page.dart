@@ -123,24 +123,7 @@ class _HomePageState extends State<HomePage> {
                             else if (homeItems.isEmpty)
                               const _HomeCountersLoading()
                             else if (wide)
-                              LayoutBuilder(
-                                builder: (context, gridConstraints) {
-                                  final crossAxisCount =
-                                      gridConstraints.maxWidth >= 1040 ? 3 : 2;
-                                  return GridView.count(
-                                    shrinkWrap: true,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    crossAxisCount: crossAxisCount,
-                                    childAspectRatio: 1.58,
-                                    crossAxisSpacing: 16,
-                                    mainAxisSpacing: 14,
-                                    children: homeItems
-                                        .map((item) => item.build(context))
-                                        .toList(),
-                                  );
-                                },
-                              )
+                              _DesktopHomeLayout(items: homeItems)
                             else
                               Column(
                                 children: [
@@ -181,8 +164,7 @@ class _HomePageState extends State<HomePage> {
                         padding: EdgeInsets.fromLTRB(18, 10, 18, 0),
                         child: AppPageHeader(
                           title: 'Nossa Família',
-                          subtitle:
-                              'Amor, memórias e pequenos milagres do caminho.',
+                          subtitle: 'Memórias da nossa família.',
                           icon: Icons.favorite_outline,
                           leading: _HomeLogoMark(),
                           showBackButton: false,
@@ -513,6 +495,58 @@ class _HomeGalleryLayoutItem extends _HomeLayoutItem {
   Widget build(BuildContext context) => _HomePhotoCarousel(images: images);
 }
 
+class _DesktopHomeLayout extends StatelessWidget {
+  const _DesktopHomeLayout({required this.items});
+
+  final List<_HomeLayoutItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = constraints.maxWidth >= 1040 ? 3 : 2;
+        final sections = <Widget>[];
+        final cardItems = <_HomeLayoutItem>[];
+
+        void addCards() {
+          if (cardItems.isEmpty) return;
+          sections.add(
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: crossAxisCount,
+              childAspectRatio: 1.58,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 14,
+              children: cardItems.map((item) => item.build(context)).toList(),
+            ),
+          );
+          cardItems.clear();
+        }
+
+        for (final item in items) {
+          if (item is _HomeGalleryLayoutItem) {
+            addCards();
+            sections.add(SizedBox(height: 408, child: item.build(context)));
+          } else {
+            cardItems.add(item);
+          }
+        }
+        addCards();
+
+        return Column(
+          children: [
+            for (var index = 0; index < sections.length; index++) ...[
+              sections[index],
+              if (index < sections.length - 1) const SizedBox(height: 18),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
 class _HomePhotoCarousel extends StatefulWidget {
   const _HomePhotoCarousel({required this.images});
 
@@ -559,13 +593,14 @@ class _HomePhotoCarouselState extends State<_HomePhotoCarousel> {
       builder: (context, constraints) {
         final bounded = constraints.hasBoundedHeight;
         final photoHeight = bounded
-            ? (constraints.maxHeight - 48).clamp(150.0, 386.0)
+            ? (constraints.maxHeight - 20).clamp(150.0, 386.0)
             : (mobile ? 292.0 : 386.0);
         return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SizedBox(
-                height: photoHeight,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              height: photoHeight,
+              child: ClipRect(
                 child: PageView.builder(
                   controller: controller,
                   itemCount: widget.images.length,
@@ -574,9 +609,7 @@ class _HomePhotoCarouselState extends State<_HomePhotoCarousel> {
                     final image = widget.images[index];
                     return AnimatedBuilder(
                       animation: controller,
-                      child: _FloatingHomePhoto(
-                        url: _homeMediaUrl(image),
-                      ),
+                      child: _FloatingHomePhoto(url: _homeMediaUrl(image)),
                       builder: (context, child) {
                         var page = current.toDouble();
                         if (controller.hasClients &&
@@ -584,20 +617,11 @@ class _HomePhotoCarouselState extends State<_HomePhotoCarousel> {
                           page = controller.page ?? page;
                         }
                         final distance = (page - index).abs().clamp(0.0, 1.0);
-                        final scale = 1 - distance * .10;
-                        final rotate = (index - page).clamp(-1.0, 1.0) * .045;
-                        final y = distance * (mobile ? 22 : 30);
-                        return Transform.translate(
-                          offset: Offset(0, y),
-                          child: Transform.rotate(
-                            angle: rotate,
-                            child: Transform.scale(
-                              scale: scale,
-                              child: Opacity(
-                                opacity: 1 - distance * .24,
-                                child: child,
-                              ),
-                            ),
+                        return Transform.scale(
+                          scale: 1 - distance * .06,
+                          child: Opacity(
+                            opacity: 1 - distance * .20,
+                            child: child,
                           ),
                         );
                       },
@@ -605,30 +629,31 @@ class _HomePhotoCarouselState extends State<_HomePhotoCarousel> {
                   },
                 ),
               ),
-              if (widget.images.length > 1 && !bounded)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      for (var i = 0; i < widget.images.length; i++)
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          width: i == current ? 18 : 7,
-                          height: 7,
-                          margin: const EdgeInsets.symmetric(horizontal: 3),
-                          decoration: BoxDecoration(
-                            color: i == current
-                                ? palette.primary
-                                : palette.primary.withValues(alpha: .22),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
+            ),
+            if (widget.images.length > 1 && !bounded)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    for (var i = 0; i < widget.images.length; i++)
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        width: i == current ? 18 : 7,
+                        height: 7,
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        decoration: BoxDecoration(
+                          color: i == current
+                              ? palette.primary
+                              : palette.primary.withValues(alpha: .22),
+                          borderRadius: BorderRadius.circular(999),
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
-            ],
-          );
+              ),
+          ],
+        );
       },
     );
   }
@@ -641,15 +666,38 @@ class _FloatingHomePhoto extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Image.network(
-      url,
-      fit: BoxFit.cover,
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) return child;
-        return const Center(child: CircularProgressIndicator());
-      },
-      errorBuilder: (_, __, ___) => const Center(
-        child: Icon(Icons.broken_image_outlined, size: 42),
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: palette.primary.withValues(alpha: .38),
+            width: 1.4,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: .16),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Image.network(
+            url,
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, progress) {
+              if (progress == null) return child;
+              return const Center(child: CircularProgressIndicator());
+            },
+            errorBuilder: (_, __, ___) => const Center(
+              child: Icon(Icons.broken_image_outlined, size: 42),
+            ),
+          ),
+        ),
       ),
     );
   }
