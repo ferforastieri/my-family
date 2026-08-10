@@ -273,8 +273,9 @@ jobs:
           docker create \
             --name "$flutter_container" \
             --workdir /app \
-            --memory=5g \
-            --cpus=4 \
+            --memory=4g \
+            --memory-swap=4g \
+            --cpus=2 \
             --volume my-family-flutter-pub-cache:/root/.pub-cache \
             --volume my-family-flutter-gradle-cache:/root/.gradle \
             ghcr.io/cirruslabs/flutter:stable \
