@@ -36,7 +36,6 @@ class AdminPage extends StatefulWidget {
 
 class _AdminPageState extends State<AdminPage> {
   static const _adminPageLimit = 20;
-  final scaffoldKey = GlobalKey<ScaffoldState>();
 
   List<AppUser> users = [];
   List<AppNotification> notifications = [];
@@ -91,8 +90,8 @@ class _AdminPageState extends State<AdminPage> {
         );
       }, errors),
       _fetchPart('agendadas', () async {
-        nextScheduledNotifications = await widget.repository
-            .listScheduledNotifications();
+        nextScheduledNotifications =
+            await widget.repository.listScheduledNotifications();
       }, errors),
       _fetchPart('perguntas', () async {
         nextQuestions = await widget.repository.listQuizQuestionsAdminPage(
@@ -149,58 +148,79 @@ class _AdminPageState extends State<AdminPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: scaffoldKey,
-      backgroundColor: Colors.transparent,
-      endDrawer: Drawer(
-        width: 320,
-        child: _AdminRightNavigation(
-          selected: selected,
-          onChanged: _selectSection,
+    return LoveBackground(
+      child: AppFixedHeaderScrollView(
+        header: AppPageHeader(
+          title: 'Administração',
+          subtitle: selected.label,
+          icon: Icons.admin_panel_settings_outlined,
+          actionLabel: 'Seções',
+          actionIcon: Icons.tune_outlined,
+          inlineAction: true,
+          onAction: _openSectionPicker,
         ),
-      ),
-      body: LoveBackground(
-        child: AppFixedHeaderScrollView(
-          header: AppPageHeader(
-            title: 'Administração',
-            subtitle: selected.label,
-            icon: Icons.admin_panel_settings_outlined,
-            actionLabel: 'Menu',
-            actionIcon: Icons.menu_open_outlined,
-            inlineAction: true,
-            onAction: () => scaffoldKey.currentState?.openEndDrawer(),
-          ),
-          children: [
-            AppQuery<_AdminData>(
-              queryKey: QueryKeys.adminPage(
-                usersPage: usersPage,
-                notificationsPage: notificationsPage,
-                questionsPage: questionsPage,
-                wordsPage: wordsPage,
-                miniGamesPage: miniGamesPage,
-                statsPage: statsPage,
-              ),
-              queryFn: _fetchAdminData,
-              loading: _AdminScaffold(child: const _AdminLoadingState()),
-              builder: (context, data, _) {
-                _applyAdminData(data);
-                return _AdminScaffold(
-                  error: loadError,
-                  child: SizedBox(
-                    height: MediaQuery.sizeOf(context).width >= 860 ? 720 : 640,
-                    child: _sectionContent(),
-                  ),
-                );
-              },
+        children: [
+          AppQuery<_AdminData>(
+            queryKey: QueryKeys.adminPage(
+              usersPage: usersPage,
+              notificationsPage: notificationsPage,
+              questionsPage: questionsPage,
+              wordsPage: wordsPage,
+              miniGamesPage: miniGamesPage,
+              statsPage: statsPage,
             ),
-          ],
-        ),
+            queryFn: _fetchAdminData,
+            loading: _AdminScaffold(child: const _AdminLoadingState()),
+            builder: (context, data, _) {
+              _applyAdminData(data);
+              return _AdminScaffold(
+                error: loadError,
+                child: SizedBox(
+                  height: MediaQuery.sizeOf(context).width >= 860 ? 720 : 640,
+                  child: _sectionContent(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
 
   void _selectSection(_AdminSection value) {
     setState(() => selected = value);
+  }
+
+  void _openSectionPicker() {
+    showAppSheet<void>(
+      context: context,
+      builder: (sheetContext) => SizedBox(
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Áreas administrativas',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 12),
+            for (final section in _AdminSection.values)
+              ListTile(
+                leading: Icon(section.icon),
+                title: Text(section.label),
+                trailing:
+                    selected == section ? const Icon(Icons.check_circle) : null,
+                onTap: () {
+                  _selectSection(section);
+                  Navigator.of(sheetContext).pop();
+                },
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _applyAdminData(_AdminData data) {
@@ -226,70 +246,70 @@ class _AdminPageState extends State<AdminPage> {
   Widget _sectionContent() {
     return switch (selected) {
       _AdminSection.users => _UsersAdminTab(
-        users: users,
-        loading: false,
-        onEdit: _openUserSheet,
-        onDelete: _deleteUser,
-        pagination: _pagination(usersPagination, (page) => usersPage = page),
-      ),
+          users: users,
+          loading: false,
+          onEdit: _openUserSheet,
+          onDelete: _deleteUser,
+          pagination: _pagination(usersPagination, (page) => usersPage = page),
+        ),
       _AdminSection.notifications => _NotificationsAdminTab(
-        notifications: notifications,
-        scheduledNotifications: scheduledNotifications,
-        loading: false,
-        onAdd: () => _openNotificationSheet(),
-        onEdit: _openNotificationSheet,
-        onDelete: _deleteNotification,
-        onSend: _sendNotification,
-        onScheduleNew: () => _scheduleNotification(),
-        onDeleteScheduled: _deleteScheduledNotification,
-        pagination: _pagination(
-          notificationsPagination,
-          (page) => notificationsPage = page,
+          notifications: notifications,
+          scheduledNotifications: scheduledNotifications,
+          loading: false,
+          onAdd: () => _openNotificationSheet(),
+          onEdit: _openNotificationSheet,
+          onDelete: _deleteNotification,
+          onSend: _sendNotification,
+          onScheduleNew: () => _scheduleNotification(),
+          onDeleteScheduled: _deleteScheduledNotification,
+          pagination: _pagination(
+            notificationsPagination,
+            (page) => notificationsPage = page,
+          ),
         ),
-      ),
       _AdminSection.games => _GamesAdminTab(
-        questions: questions,
-        words: words,
-        miniGames: miniGames,
-        loading: false,
-        onAddQuestion: () => _openQuestionSheet(),
-        onEditQuestion: _openQuestionSheet,
-        onDeleteQuestion: _deleteQuestion,
-        onAddWord: () => _openWordSheet(),
-        onEditWord: _openWordSheet,
-        onDeleteWord: _deleteWord,
-        onAddMiniGame: () => _openMiniGameSheet(),
-        onEditMiniGame: _openMiniGameSheet,
-        onDeleteMiniGame: _deleteMiniGame,
-        questionsPagination: _pagination(
-          questionsPagination,
-          (page) => questionsPage = page,
+          questions: questions,
+          words: words,
+          miniGames: miniGames,
+          loading: false,
+          onAddQuestion: () => _openQuestionSheet(),
+          onEditQuestion: _openQuestionSheet,
+          onDeleteQuestion: _deleteQuestion,
+          onAddWord: () => _openWordSheet(),
+          onEditWord: _openWordSheet,
+          onDeleteWord: _deleteWord,
+          onAddMiniGame: () => _openMiniGameSheet(),
+          onEditMiniGame: _openMiniGameSheet,
+          onDeleteMiniGame: _deleteMiniGame,
+          questionsPagination: _pagination(
+            questionsPagination,
+            (page) => questionsPage = page,
+          ),
+          wordsPagination: _pagination(
+            wordsPagination,
+            (page) => wordsPage = page,
+          ),
+          miniGamesPagination: _pagination(
+            miniGamesPagination,
+            (page) => miniGamesPage = page,
+          ),
         ),
-        wordsPagination: _pagination(
-          wordsPagination,
-          (page) => wordsPage = page,
-        ),
-        miniGamesPagination: _pagination(
-          miniGamesPagination,
-          (page) => miniGamesPage = page,
-        ),
-      ),
       _AdminSection.stats => _StatsAdminTab(
-        stats: stats,
-        loading: false,
-        pagination: _pagination(statsPagination, (page) => statsPage = page),
-      ),
+          stats: stats,
+          loading: false,
+          pagination: _pagination(statsPagination, (page) => statsPage = page),
+        ),
       _AdminSection.home => _HomeSettingsAdminTab(
-        events: homeEvents,
-        galleryImages: homeGalleryImages,
-        galleryOrder: homeGalleryOrder,
-        repository: widget.repository,
-        onSave: (settings) async {
-          await widget.repository.updateHomeSettings(settings);
-          widget.toast.backendSuccess(widget.repository.takeMessage());
-          _invalidateAdmin();
-        },
-      ),
+          events: homeEvents,
+          galleryImages: homeGalleryImages,
+          galleryOrder: homeGalleryOrder,
+          repository: widget.repository,
+          onSave: (settings) async {
+            await widget.repository.updateHomeSettings(settings);
+            widget.toast.backendSuccess(widget.repository.takeMessage());
+            _invalidateAdmin();
+          },
+        ),
     };
   }
 
@@ -385,27 +405,26 @@ class _AdminPageState extends State<AdminPage> {
       context: context,
       builder: (_) => _ScheduleNotificationSheet(
         notification: notification,
-        onSchedule:
-            ({
-              required String title,
-              String? body,
-              String? url,
-              required DateTime scheduledAt,
-            }) async {
-              try {
-                await widget.repository.scheduleNotification(
-                  title: title,
-                  body: body,
-                  url: url,
-                  scheduledAt: scheduledAt,
-                );
-                widget.toast.backendSuccess(widget.repository.takeMessage());
-                _invalidateAdmin();
-              } catch (error) {
-                widget.toast.error(_friendlyError(error));
-                rethrow;
-              }
-            },
+        onSchedule: ({
+          required String title,
+          String? body,
+          String? url,
+          required DateTime scheduledAt,
+        }) async {
+          try {
+            await widget.repository.scheduleNotification(
+              title: title,
+              body: body,
+              url: url,
+              scheduledAt: scheduledAt,
+            );
+            widget.toast.backendSuccess(widget.repository.takeMessage());
+            _invalidateAdmin();
+          } catch (error) {
+            widget.toast.error(_friendlyError(error));
+            rethrow;
+          }
+        },
       ),
     );
   }
@@ -540,70 +559,6 @@ class _AdminScaffold extends StatelessWidget {
   }
 }
 
-class _AdminRightNavigation extends StatelessWidget {
-  const _AdminRightNavigation({
-    required this.selected,
-    required this.onChanged,
-  });
-
-  final _AdminSection selected;
-  final ValueChanged<_AdminSection> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 14, 14, 18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Menu administrativo',
-                    style: TextStyle(
-                      color: palette.foreground,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.maybePop(context),
-                  icon: const Icon(Icons.close),
-                  tooltip: 'Fechar',
-                ),
-              ],
-            ),
-            Text(
-              'Escolha uma área para gerenciar.',
-              style: TextStyle(
-                color: palette.muted,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 18),
-            for (final section in _AdminSection.values)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _AdminNavTile(
-                  section: section,
-                  selected: selected == section,
-                  onTap: () {
-                    onChanged(section);
-                    Navigator.maybePop(context);
-                  },
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _AdminLoadingState extends StatelessWidget {
   const _AdminLoadingState();
 
@@ -712,20 +667,20 @@ IconData _gameStatIcon(String game) {
 
 extension _AdminSectionView on _AdminSection {
   String get label => switch (this) {
-    _AdminSection.users => 'Usuários',
-    _AdminSection.notifications => 'Notificações',
-    _AdminSection.games => 'Jogos',
-    _AdminSection.stats => 'Estatísticas',
-    _AdminSection.home => 'Home',
-  };
+        _AdminSection.users => 'Usuários',
+        _AdminSection.notifications => 'Notificações',
+        _AdminSection.games => 'Jogos',
+        _AdminSection.stats => 'Estatísticas',
+        _AdminSection.home => 'Home',
+      };
 
   IconData get icon => switch (this) {
-    _AdminSection.users => Icons.people_outline,
-    _AdminSection.notifications => Icons.notifications_outlined,
-    _AdminSection.games => Icons.sports_esports_outlined,
-    _AdminSection.stats => Icons.query_stats_outlined,
-    _AdminSection.home => Icons.home_outlined,
-  };
+        _AdminSection.users => Icons.people_outline,
+        _AdminSection.notifications => Icons.notifications_outlined,
+        _AdminSection.games => Icons.sports_esports_outlined,
+        _AdminSection.stats => Icons.query_stats_outlined,
+        _AdminSection.home => Icons.home_outlined,
+      };
 }
 
 class _AdminErrorBanner extends StatelessWidget {
@@ -756,53 +711,6 @@ class _AdminErrorBanner extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AdminNavTile extends StatelessWidget {
-  const _AdminNavTile({
-    required this.section,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final _AdminSection section;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
-    return Material(
-      color: selected
-          ? palette.primary.withValues(alpha: .12)
-          : Colors.transparent,
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                section.icon,
-                color: selected ? palette.primary : palette.muted,
-              ),
-              const SizedBox(width: 10),
-              Text(
-                section.label,
-                style: TextStyle(
-                  color: selected ? palette.primary : palette.foreground,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -1143,13 +1051,13 @@ class _NotificationsAdminTab extends StatelessWidget {
           child: loading
               ? const _AdminListSkeleton()
               : items.isEmpty
-              ? const _EmptyAdminState('Nenhuma notificação cadastrada.')
-              : ListView.separated(
-                  padding: _adminListPadding,
-                  itemCount: items.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (_, index) => items[index],
-                ),
+                  ? const _EmptyAdminState('Nenhuma notificação cadastrada.')
+                  : ListView.separated(
+                      padding: _adminListPadding,
+                      itemCount: items.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (_, index) => items[index],
+                    ),
         ),
       ],
     );
@@ -1239,81 +1147,82 @@ class _GamesAdminTabState extends State<_GamesAdminTab> {
               ? const _AdminListSkeleton()
               : switch (section) {
                   _GamesAdminSection.quiz => _GameSection(
-                    title: 'Quiz do Amor',
-                    empty: 'Nenhuma pergunta cadastrada.',
-                    scrollable: true,
-                    pagination: widget.questionsPagination,
-                    children: [
-                      for (final question in widget.questions)
-                        _AdminTile(
-                          icon: Icons.favorite_outline,
-                          title: question.question,
-                          subtitle:
-                              '${question.options.length} opções • correta: ${_correctAnswerLabel(question)} • ${question.active ? 'ativa' : 'inativa'}',
-                          actions: [
-                            IconButton(
-                              onPressed: () => widget.onEditQuestion(question),
-                              icon: const Icon(Icons.edit_outlined),
-                              tooltip: 'Editar',
-                            ),
-                            IconButton(
-                              onPressed: () =>
-                                  widget.onDeleteQuestion(question),
-                              icon: const Icon(Icons.delete_outline),
-                              tooltip: 'Remover',
-                            ),
-                          ],
-                        ),
-                    ],
-                  ),
+                      title: 'Quiz do Amor',
+                      empty: 'Nenhuma pergunta cadastrada.',
+                      scrollable: true,
+                      pagination: widget.questionsPagination,
+                      children: [
+                        for (final question in widget.questions)
+                          _AdminTile(
+                            icon: Icons.favorite_outline,
+                            title: question.question,
+                            subtitle:
+                                '${question.options.length} opções • correta: ${_correctAnswerLabel(question)} • ${question.active ? 'ativa' : 'inativa'}',
+                            actions: [
+                              IconButton(
+                                onPressed: () =>
+                                    widget.onEditQuestion(question),
+                                icon: const Icon(Icons.edit_outlined),
+                                tooltip: 'Editar',
+                              ),
+                              IconButton(
+                                onPressed: () =>
+                                    widget.onDeleteQuestion(question),
+                                icon: const Icon(Icons.delete_outline),
+                                tooltip: 'Remover',
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
                   _GamesAdminSection.words => _GameSection(
-                    title: 'Caça Palavras',
-                    empty: 'Nenhuma palavra cadastrada.',
-                    scrollable: true,
-                    pagination: widget.wordsPagination,
-                    children: [
-                      for (final word in widget.words)
-                        _AdminTile(
-                          icon: Icons.grid_on_outlined,
-                          title: word.word,
-                          subtitle:
-                              '${word.word.length} letras • ${word.active ? 'ativa' : 'inativa'}',
-                          actions: [
-                            IconButton(
-                              onPressed: () => widget.onEditWord(word),
-                              icon: const Icon(Icons.edit_outlined),
-                              tooltip: 'Editar',
-                            ),
-                            IconButton(
-                              onPressed: () => widget.onDeleteWord(word),
-                              icon: const Icon(Icons.delete_outline),
-                              tooltip: 'Remover',
-                            ),
-                          ],
-                        ),
-                    ],
-                  ),
+                      title: 'Caça Palavras',
+                      empty: 'Nenhuma palavra cadastrada.',
+                      scrollable: true,
+                      pagination: widget.wordsPagination,
+                      children: [
+                        for (final word in widget.words)
+                          _AdminTile(
+                            icon: Icons.grid_on_outlined,
+                            title: word.word,
+                            subtitle:
+                                '${word.word.length} letras • ${word.active ? 'ativa' : 'inativa'}',
+                            actions: [
+                              IconButton(
+                                onPressed: () => widget.onEditWord(word),
+                                icon: const Icon(Icons.edit_outlined),
+                                tooltip: 'Editar',
+                              ),
+                              IconButton(
+                                onPressed: () => widget.onDeleteWord(word),
+                                icon: const Icon(Icons.delete_outline),
+                                tooltip: 'Remover',
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
                   _GamesAdminSection.memoryMatch => _MiniGameConfigSection(
-                    title: 'Memória da Família',
-                    empty: 'Nenhuma configuração de memória cadastrada.',
-                    games: _configsByType('memory_match'),
-                    onEdit: widget.onEditMiniGame,
-                    onDelete: widget.onDeleteMiniGame,
-                  ),
+                      title: 'Memória da Família',
+                      empty: 'Nenhuma configuração de memória cadastrada.',
+                      games: _configsByType('memory_match'),
+                      onEdit: widget.onEditMiniGame,
+                      onDelete: widget.onDeleteMiniGame,
+                    ),
                   _GamesAdminSection.loveOrder => _MiniGameConfigSection(
-                    title: 'Linha do Amor',
-                    empty: 'Nenhuma configuração de linha cadastrada.',
-                    games: _configsByType('love_order'),
-                    onEdit: widget.onEditMiniGame,
-                    onDelete: widget.onDeleteMiniGame,
-                  ),
+                      title: 'Linha do Amor',
+                      empty: 'Nenhuma configuração de linha cadastrada.',
+                      games: _configsByType('love_order'),
+                      onEdit: widget.onEditMiniGame,
+                      onDelete: widget.onDeleteMiniGame,
+                    ),
                   _GamesAdminSection.thisOrThat => _MiniGameConfigSection(
-                    title: 'Isso ou Aquilo',
-                    empty: 'Nenhuma configuração de escolhas cadastrada.',
-                    games: _configsByType('this_or_that'),
-                    onEdit: widget.onEditMiniGame,
-                    onDelete: widget.onDeleteMiniGame,
-                  ),
+                      title: 'Isso ou Aquilo',
+                      empty: 'Nenhuma configuração de escolhas cadastrada.',
+                      games: _configsByType('this_or_that'),
+                      onEdit: widget.onEditMiniGame,
+                      onDelete: widget.onDeleteMiniGame,
+                    ),
                 },
         ),
       ],
@@ -1592,9 +1501,8 @@ class _HomeSettingsAdminTab extends StatelessWidget {
                       '${galleryImages.length} foto${galleryImages.length == 1 ? '' : 's'} • aparece como card flutuante na Home',
                   actions: [
                     IconButton(
-                      onPressed: item.order <= 0
-                          ? null
-                          : () => _moveGallery(-1),
+                      onPressed:
+                          item.order <= 0 ? null : () => _moveGallery(-1),
                       icon: const Icon(Icons.arrow_upward),
                       tooltip: 'Subir',
                     ),
@@ -2648,8 +2556,8 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
                         onSelectionChanged: saving
                             ? null
                             : (value) => setState(
-                                () => draft.countDirection = value.first,
-                              ),
+                                  () => draft.countDirection = value.first,
+                                ),
                       ),
                       const SizedBox(height: 10),
                       _AdminSwitchRow(
@@ -2830,22 +2738,22 @@ class _HomeEventDraft {
   });
 
   factory _HomeEventDraft.fromEvent(HomeEventConfig event) => _HomeEventDraft(
-    title: TextEditingController(text: event.title),
-    icon: TextEditingController(text: event.icon),
-    message: TextEditingController(text: event.message),
-    date: event.date,
-    countDirection: event.countDirection,
-    hidden: event.hidden,
-  );
+        title: TextEditingController(text: event.title),
+        icon: TextEditingController(text: event.icon),
+        message: TextEditingController(text: event.message),
+        date: event.date,
+        countDirection: event.countDirection,
+        hidden: event.hidden,
+      );
 
   factory _HomeEventDraft.empty() => _HomeEventDraft(
-    title: TextEditingController(),
-    icon: TextEditingController(text: '💗'),
-    message: TextEditingController(),
-    date: DateTime.now(),
-    countDirection: HomeCountDirection.forward,
-    hidden: false,
-  );
+        title: TextEditingController(),
+        icon: TextEditingController(text: '💗'),
+        message: TextEditingController(),
+        date: DateTime.now(),
+        countDirection: HomeCountDirection.forward,
+        hidden: false,
+      );
 
   final TextEditingController title;
   final TextEditingController icon;
@@ -2893,9 +2801,8 @@ class _UserSheetState extends State<_UserSheet> {
     name = TextEditingController(text: widget.user.name ?? '');
     password = TextEditingController();
     confirmPassword = TextEditingController();
-    role = appUserRoles.contains(widget.user.role)
-        ? widget.user.role
-        : 'friends';
+    role =
+        appUserRoles.contains(widget.user.role) ? widget.user.role : 'friends';
     access = widget.user.access.toSet();
   }
 
@@ -3179,8 +3086,7 @@ class _ScheduleNotificationSheet extends StatefulWidget {
     String? body,
     String? url,
     required DateTime scheduledAt,
-  })
-  onSchedule;
+  }) onSchedule;
 
   @override
   State<_ScheduleNotificationSheet> createState() =>
@@ -3216,12 +3122,12 @@ class _ScheduleNotificationSheetState
   }
 
   DateTime get scheduledAt => DateTime(
-    selectedDate.year,
-    selectedDate.month,
-    selectedDate.day,
-    selectedTime.hour,
-    selectedTime.minute,
-  );
+        selectedDate.year,
+        selectedDate.month,
+        selectedDate.day,
+        selectedTime.hour,
+        selectedTime.minute,
+      );
 
   void _setDateTime(DateTime value) {
     selectedDate = DateTime(value.year, value.month, value.day);
@@ -3348,16 +3254,14 @@ class _ScheduleNotificationSheetState
               ActionChip(
                 avatar: const Icon(Icons.schedule_outlined, size: 18),
                 label: const Text('Em 1 hora'),
-                onPressed: saving
-                    ? null
-                    : () => _setPreset(const Duration(hours: 1)),
+                onPressed:
+                    saving ? null : () => _setPreset(const Duration(hours: 1)),
               ),
               ActionChip(
                 avatar: const Icon(Icons.today_outlined, size: 18),
                 label: const Text('Amanhã'),
-                onPressed: saving
-                    ? null
-                    : () => _setPreset(const Duration(days: 1)),
+                onPressed:
+                    saving ? null : () => _setPreset(const Duration(days: 1)),
               ),
             ],
           ),
@@ -3501,9 +3405,8 @@ class _QuestionSheetState extends State<_QuestionSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           AppSheetHeader(
-            title: widget.question == null
-                ? 'Nova pergunta'
-                : 'Editar pergunta',
+            title:
+                widget.question == null ? 'Nova pergunta' : 'Editar pergunta',
             subtitle: 'Monte as opções e marque qual resposta está correta.',
             icon: Icons.quiz_outlined,
           ),
