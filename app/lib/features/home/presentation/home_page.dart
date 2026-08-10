@@ -553,6 +553,7 @@ class _HomePhotoCarouselState extends State<_HomePhotoCarousel> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
     final mobile = MediaQuery.sizeOf(context).width < 760;
     return LayoutBuilder(
       builder: (context, constraints) {
