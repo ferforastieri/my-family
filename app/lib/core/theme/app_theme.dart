@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'app_colors.dart' as brand;
 import 'theme_controller.dart';
 
-ThemeData buildAppTheme(
-    {ThemeColorChoice color = ThemeColorChoice.rosa,
-    ThemeMode mode = ThemeMode.light}) {
+ThemeData buildAppTheme({
+  ThemeColorChoice color = ThemeColorChoice.floral,
+  ThemeMode mode = ThemeMode.light,
+}) {
   final palette = AppPalette.from(color, mode);
   return ThemeData(
     brightness: mode == ThemeMode.dark ? Brightness.dark : Brightness.light,
@@ -17,10 +19,9 @@ ThemeData buildAppTheme(
     ),
     scaffoldBackgroundColor: palette.bgStart,
     useMaterial3: true,
-    textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme).apply(
-      bodyColor: palette.foreground,
-      displayColor: palette.foreground,
-    ),
+    textTheme: GoogleFonts.nunitoSansTextTheme(
+      ThemeData.light().textTheme,
+    ).apply(bodyColor: palette.foreground, displayColor: palette.foreground),
     appBarTheme: AppBarTheme(
       centerTitle: false,
       elevation: 0,
@@ -30,18 +31,21 @@ ThemeData buildAppTheme(
     ),
     extensions: <ThemeExtension<dynamic>>[
       AppTextThemes(
-        display: GoogleFonts.playfairDisplay(),
-        body: GoogleFonts.inter(),
+        display: GoogleFonts.cormorantGaramond(
+          fontWeight: FontWeight.w700,
+          letterSpacing: -.3,
+        ),
+        body: GoogleFonts.nunitoSans(),
       ),
       palette,
     ],
     cardTheme: CardThemeData(
       color: palette.card.withValues(alpha: .90),
       elevation: 3,
-      shadowColor: palette.primary.withValues(alpha: .10),
+      shadowColor: palette.copper.withValues(alpha: .14),
       margin: const EdgeInsets.symmetric(vertical: 6),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         side: BorderSide(color: palette.border),
       ),
     ),
@@ -49,7 +53,7 @@ ThemeData buildAppTheme(
       style: FilledButton.styleFrom(
         backgroundColor: palette.primary,
         foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     ),
     iconButtonTheme: IconButtonThemeData(
@@ -92,6 +96,9 @@ class AppPalette extends ThemeExtension<AppPalette> {
     required this.muted,
     required this.border,
     required this.card,
+    required this.petal,
+    required this.copper,
+    required this.gold,
   });
 
   final Color primary;
@@ -102,46 +109,75 @@ class AppPalette extends ThemeExtension<AppPalette> {
   final Color muted;
   final Color border;
   final Color card;
+  final Color petal;
+  final Color copper;
+  final Color gold;
 
   factory AppPalette.from(ThemeColorChoice color, ThemeMode mode) {
     final isDark = mode == ThemeMode.dark;
     final base = switch (color) {
-      ThemeColorChoice.rosa => (
-          const Color(0xffff69b4),
-          const Color(0xffd4488e),
-          const Color(0xfffff8fa),
-          const Color(0xfffff0f5),
-          const Color(0xff1a0a12),
-          const Color(0xff2d151f)
-        ),
+      ThemeColorChoice.floral => (
+        brand.primary,
+        brand.primaryDark,
+        brand.bgStart,
+        brand.bgEnd,
+        const Color(0xff2d171b),
+        const Color(0xff3a2023),
+        brand.petal,
+        brand.copper,
+        brand.gold,
+      ),
       ThemeColorChoice.azul => (
-          const Color(0xff3b82f6),
-          const Color(0xff2563eb),
-          const Color(0xffeff6ff),
-          const Color(0xffdbeafe),
-          const Color(0xff0f172a),
-          const Color(0xff1e3a5f)
-        ),
+        const Color(0xff3b82f6),
+        const Color(0xff2563eb),
+        const Color(0xffeff6ff),
+        const Color(0xffdbeafe),
+        const Color(0xff0f172a),
+        const Color(0xff1e3a5f),
+        const Color(0xffbfdbfe),
+        const Color(0xff60a5fa),
+        const Color(0xfff59e0b),
+      ),
       ThemeColorChoice.vermelho => (
-          const Color(0xffef4444),
-          const Color(0xffdc2626),
-          const Color(0xfffef2f2),
-          const Color(0xfffee2e2),
-          const Color(0xff1c0a0a),
-          const Color(0xff2d1515)
-        ),
+        const Color(0xffef4444),
+        const Color(0xffdc2626),
+        const Color(0xfffef2f2),
+        const Color(0xfffee2e2),
+        const Color(0xff1c0a0a),
+        const Color(0xff2d1515),
+        const Color(0xfffecaca),
+        const Color(0xfff87171),
+        const Color(0xfff59e0b),
+      ),
     };
     return AppPalette(
       primary: base.$1,
       primaryDark: base.$2,
       bgStart: isDark ? base.$5 : base.$3,
       bgEnd: isDark ? base.$6 : base.$4,
-      foreground: isDark ? const Color(0xfff7edf2) : const Color(0xff26131d),
-      muted: isDark ? const Color(0xffc9aeba) : const Color(0xff775b6b),
+      foreground: isDark
+          ? brand.bgStart
+          : color == ThemeColorChoice.floral
+          ? brand.foreground
+          : const Color(0xff26131d),
+      muted: isDark
+          ? base.$7
+          : color == ThemeColorChoice.floral
+          ? brand.muted
+          : const Color(0xff775b6b),
       border: isDark
-          ? base.$1.withValues(alpha: .22)
+          ? base.$8.withValues(alpha: .34)
+          : color == ThemeColorChoice.floral
+          ? brand.border
           : base.$1.withValues(alpha: .22),
-      card: isDark ? const Color(0xff1f1118) : Colors.white,
+      card: isDark
+          ? const Color(0xff321c1f)
+          : color == ThemeColorChoice.floral
+          ? const Color(0xfffffdf8)
+          : Colors.white,
+      petal: base.$7,
+      copper: base.$8,
+      gold: base.$9,
     );
   }
 
@@ -155,6 +191,9 @@ class AppPalette extends ThemeExtension<AppPalette> {
     Color? muted,
     Color? border,
     Color? card,
+    Color? petal,
+    Color? copper,
+    Color? gold,
   }) {
     return AppPalette(
       primary: primary ?? this.primary,
@@ -165,6 +204,9 @@ class AppPalette extends ThemeExtension<AppPalette> {
       muted: muted ?? this.muted,
       border: border ?? this.border,
       card: card ?? this.card,
+      petal: petal ?? this.petal,
+      copper: copper ?? this.copper,
+      gold: gold ?? this.gold,
     );
   }
 
@@ -180,6 +222,9 @@ class AppPalette extends ThemeExtension<AppPalette> {
       muted: Color.lerp(muted, other.muted, t)!,
       border: Color.lerp(border, other.border, t)!,
       card: Color.lerp(card, other.card, t)!,
+      petal: Color.lerp(petal, other.petal, t)!,
+      copper: Color.lerp(copper, other.copper, t)!,
+      gold: Color.lerp(gold, other.gold, t)!,
     );
   }
 }
@@ -193,7 +238,9 @@ class AppTextThemes extends ThemeExtension<AppTextThemes> {
   @override
   AppTextThemes copyWith({TextStyle? display, TextStyle? body}) {
     return AppTextThemes(
-        display: display ?? this.display, body: body ?? this.body);
+      display: display ?? this.display,
+      body: body ?? this.body,
+    );
   }
 
   @override

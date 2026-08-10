@@ -3,11 +3,12 @@ import { AuthModule } from '@auth/auth.module';
 import { MongoModelsModule } from '@shared/infrastructure/database/database.providers';
 import { GamesService } from './application/services/games.service';
 import { GamesRepository } from './infrastructure/repositories/games.repository';
-import { GamesGateway } from './interfaces/gateways/games.gateway';
+import { GamesController } from './interfaces/controllers/games.controller';
 
 @Module({
   imports: [MongoModelsModule, AuthModule],
-  providers: [GamesService, GamesRepository, GamesGateway],
+  controllers: [GamesController],
+  providers: [GamesService, GamesRepository],
   exports: [GamesService],
 })
 export class GamesModule {}

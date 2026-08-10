@@ -43,27 +43,6 @@ class _EditableTextCollectionPageState
 
   int page = 1;
 
-  @override
-  void initState() {
-    super.initState();
-    for (final event in _journeyEvents) {
-      widget.repository.socket.on(event, _handleRealtimeChange);
-    }
-  }
-
-  @override
-  void dispose() {
-    for (final event in _journeyEvents) {
-      widget.repository.socket.off(event, _handleRealtimeChange);
-    }
-    super.dispose();
-  }
-
-  void _handleRealtimeChange(dynamic _) {
-    if (!mounted) return;
-    _invalidate();
-  }
-
   void _invalidate() {
     invalidateQueries(context, QueryKeys.textCollectionScope(widget.prefix));
   }
@@ -123,11 +102,11 @@ class _EditableTextCollectionPageState
                                 itemCount: items.length,
                                 gridDelegate:
                                     SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: columns,
-                                  mainAxisExtent: columns == 1 ? 250 : 240,
-                                  crossAxisSpacing: 24,
-                                  mainAxisSpacing: 24,
-                                ),
+                                      crossAxisCount: columns,
+                                      mainAxisExtent: columns == 1 ? 250 : 240,
+                                      crossAxisSpacing: 24,
+                                      mainAxisSpacing: 24,
+                                    ),
                                 itemBuilder: (context, index) {
                                   final item = items[index];
                                   return InkWell(
@@ -141,7 +120,8 @@ class _EditableTextCollectionPageState
                                           child: LoveTextCard(
                                             title: item.title,
                                             body: item.subtitle,
-                                            footer: item.data['data']
+                                            footer:
+                                                item.data['data']
                                                     ?.toString()
                                                     .split('T')
                                                     .first ??
@@ -158,13 +138,15 @@ class _EditableTextCollectionPageState
                                                   onPressed: () =>
                                                       _openEditor(item),
                                                   icon: const Icon(
-                                                      Icons.edit_outlined),
+                                                    Icons.edit_outlined,
+                                                  ),
                                                 ),
                                                 IconButton(
                                                   onPressed: () =>
                                                       _delete(item),
                                                   icon: const Icon(
-                                                      Icons.delete_outline),
+                                                    Icons.delete_outline,
+                                                  ),
                                                 ),
                                               ],
                                             ),
@@ -246,12 +228,6 @@ class _EditableTextCollectionPageState
   }
 }
 
-const _journeyEvents = [
-  'journey.created',
-  'journey.updated',
-  'journey.deleted',
-];
-
 class _TextReaderSheet extends StatelessWidget {
   const _TextReaderSheet({required this.item});
 
@@ -267,10 +243,7 @@ class _TextReaderSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppSheetHeader(
-            title: item.title,
-            icon: Icons.auto_stories_outlined,
-          ),
+          AppSheetHeader(title: item.title, icon: Icons.auto_stories_outlined),
           const SizedBox(height: 18),
           Text(
             item.subtitle,
@@ -342,8 +315,9 @@ class _TextEntrySheetState extends State<_TextEntrySheet> {
       if (mounted) Navigator.pop(context);
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(error.toString())));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.toString())));
       }
     } finally {
       if (mounted) setState(() => saving = false);
@@ -359,8 +333,9 @@ class _TextEntrySheetState extends State<_TextEntrySheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           AppSheetHeader(
-            title:
-                widget.item == null ? 'Escrever em ${widget.title}' : 'Editar',
+            title: widget.item == null
+                ? 'Escrever em ${widget.title}'
+                : 'Editar',
             subtitle: 'Registre um texto especial para aparecer no app.',
             icon: Icons.edit_note_outlined,
           ),

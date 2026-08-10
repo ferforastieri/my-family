@@ -6,7 +6,6 @@ import { MongoModelsModule } from '@shared/infrastructure/database/database.prov
 import { UploadModule } from '@shared/infrastructure/upload';
 import { AuthModule } from '@auth/auth.module';
 import { FotosRepository } from './infrastructure/repositories/fotos.repository';
-import { FotosGateway } from './interfaces/gateways/fotos.gateway';
 import { MediaQueueProcessor } from './infrastructure/queues/media-queue.processor';
 import { CleanupQueueProcessor } from './infrastructure/queues/cleanup-queue.processor';
 
@@ -16,7 +15,6 @@ import { CleanupQueueProcessor } from './infrastructure/queues/cleanup-queue.pro
   providers: [
     FotosService,
     FotosRepository,
-    FotosGateway,
     MediaQueueProcessor,
     CleanupQueueProcessor,
   ],

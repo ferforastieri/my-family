@@ -7,12 +7,14 @@ import {
   Body,
   UseGuards,
   NotFoundException,
+  Query,
 } from '@nestjs/common';
 import { UserService } from '@auth/application/services/user.service';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@auth/guards/roles.guard';
 import { Roles } from '@auth/decorators/roles.decorator';
 import { UpdateUserDto } from '../dto/user.dto';
+import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -21,8 +23,8 @@ export class UsersController {
   constructor(private user: UserService) {}
 
   @Get()
-  list() {
-    return this.user.list();
+  list(@Query() query: PaginationQuery) {
+    return this.user.list(query);
   }
 
   @Get(':id')

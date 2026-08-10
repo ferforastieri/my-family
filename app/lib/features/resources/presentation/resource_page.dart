@@ -18,12 +18,13 @@ import '../../../data/family_repository.dart';
 import '../../../data/models.dart';
 
 class ResourcePage extends StatefulWidget {
-  const ResourcePage(
-      {super.key,
-      required this.title,
-      required this.resource,
-      required this.repository,
-      required this.toast});
+  const ResourcePage({
+    super.key,
+    required this.title,
+    required this.resource,
+    required this.repository,
+    required this.toast,
+  });
 
   final String title;
   final String resource;
@@ -38,27 +39,6 @@ class _ResourcePageState extends State<ResourcePage> {
   static const _pageLimit = 24;
   int page = 1;
   String? selectedAlbum;
-
-  @override
-  void initState() {
-    super.initState();
-    for (final event in _resourceEvents(widget.resource)) {
-      widget.repository.socket.on(event, _handleRealtimeChange);
-    }
-  }
-
-  @override
-  void dispose() {
-    for (final event in _resourceEvents(widget.resource)) {
-      widget.repository.socket.off(event, _handleRealtimeChange);
-    }
-    super.dispose();
-  }
-
-  void _handleRealtimeChange(dynamic _) {
-    if (!mounted) return;
-    _invalidate();
-  }
 
   void _reload({int? nextPage}) {
     setState(() {
@@ -94,82 +74,84 @@ class _ResourcePageState extends State<ResourcePage> {
           loading: const PageSkeleton(),
           builder: (context, albums, _) =>
               AppQuery<PaginatedResult<FamilyItem>>(
-            key: ValueKey('${widget.resource}-$page-${selectedAlbum ?? 'all'}'),
-            queryKey: QueryKeys.resource(
-              widget.resource,
-              page,
-              _pageLimit,
-              album: selectedAlbum,
-            ),
-            queryFn: () => widget.repository.listPage(
-              widget.resource,
-              page,
-              _pageLimit,
-              album: selectedAlbum,
-            ),
-            loading: const PageSkeleton(),
-            builder: (context, result, refetch) {
-              final items = result.items;
-              return AppFixedHeaderScrollView(
-                header: _ResourceHero(
-                  resource: widget.resource,
-                  title: _titleFor(widget.resource, widget.title),
-                  subtitle: _subtitleFor(widget.resource),
-                  actionLabel: _actionLabelFor(widget.resource),
-                  onPressed: () => _openCreate(context),
+                key: ValueKey(
+                  '${widget.resource}-$page-${selectedAlbum ?? 'all'}',
                 ),
-                children: [
-                  if (widget.resource != 'fotos' &&
-                      widget.resource != 'musicas' &&
-                      widget.resource != 'cartas' &&
-                      widget.resource != 'notas') ...[
-                    _ResourceMetrics(
+                queryKey: QueryKeys.resource(
+                  widget.resource,
+                  page,
+                  _pageLimit,
+                  album: selectedAlbum,
+                ),
+                queryFn: () => widget.repository.listPage(
+                  widget.resource,
+                  page,
+                  _pageLimit,
+                  album: selectedAlbum,
+                ),
+                loading: const PageSkeleton(),
+                builder: (context, result, refetch) {
+                  final items = result.items;
+                  return AppFixedHeaderScrollView(
+                    header: _ResourceHero(
                       resource: widget.resource,
-                      total: result.total,
-                      visible: items.length,
-                      albums: albums.length,
+                      title: _titleFor(widget.resource, widget.title),
+                      subtitle: _subtitleFor(widget.resource),
+                      actionLabel: _actionLabelFor(widget.resource),
+                      onPressed: () => _openCreate(context),
                     ),
-                    const SizedBox(height: 14),
-                  ],
-                  if (widget.resource == 'fotos') ...[
-                    _AlbumFilter(
-                      albums: albums,
-                      selectedAlbum: selectedAlbum,
-                      onSelected: _selectAlbum,
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  items.isEmpty
-                      ? _EmptyResourceState(
-                          title: selectedAlbum == null
-                              ? '${widget.title} ainda está vazio.'
-                              : 'Nenhuma memória nesse álbum.',
-                          actionLabel: _actionLabelFor(widget.resource),
-                          onPressed: () => _openCreate(context),
-                        )
-                      : _ResourceGrid(
+                    children: [
+                      if (widget.resource != 'fotos' &&
+                          widget.resource != 'musicas' &&
+                          widget.resource != 'cartas' &&
+                          widget.resource != 'notas') ...[
+                        _ResourceMetrics(
                           resource: widget.resource,
-                          items: items,
-                          onEdit: _openEdit,
-                          onDelete: _deleteItem,
-                          onView: _openPhotoViewer,
+                          total: result.total,
+                          visible: items.length,
+                          albums: albums.length,
                         ),
-                  const SizedBox(height: 12),
-                  AppPagination(
-                    page: result.page,
-                    pages: result.pages,
-                    total: result.total,
-                    onPrevious: result.hasPrevious
-                        ? () => _reload(nextPage: result.page - 1)
-                        : null,
-                    onNext: result.hasNext
-                        ? () => _reload(nextPage: result.page + 1)
-                        : null,
-                  ),
-                ],
-              );
-            },
-          ),
+                        const SizedBox(height: 14),
+                      ],
+                      if (widget.resource == 'fotos') ...[
+                        _AlbumFilter(
+                          albums: albums,
+                          selectedAlbum: selectedAlbum,
+                          onSelected: _selectAlbum,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      items.isEmpty
+                          ? _EmptyResourceState(
+                              title: selectedAlbum == null
+                                  ? '${widget.title} ainda está vazio.'
+                                  : 'Nenhuma memória nesse álbum.',
+                              actionLabel: _actionLabelFor(widget.resource),
+                              onPressed: () => _openCreate(context),
+                            )
+                          : _ResourceGrid(
+                              resource: widget.resource,
+                              items: items,
+                              onEdit: _openEdit,
+                              onDelete: _deleteItem,
+                              onView: _openPhotoViewer,
+                            ),
+                      const SizedBox(height: 12),
+                      AppPagination(
+                        page: result.page,
+                        pages: result.pages,
+                        total: result.total,
+                        onPrevious: result.hasPrevious
+                            ? () => _reload(nextPage: result.page - 1)
+                            : null,
+                        onNext: result.hasNext
+                            ? () => _reload(nextPage: result.page + 1)
+                            : null,
+                      ),
+                    ],
+                  );
+                },
+              ),
         ),
       ),
     );
@@ -230,7 +212,8 @@ class _ResourcePageState extends State<ResourcePage> {
   Future<void> _deleteItem(FamilyItem item) async {
     await widget.repository.delete(widget.resource, item.id);
     widget.toast.success(
-        widget.resource == 'fotos' ? 'Memória removida.' : 'Item removido.');
+      widget.resource == 'fotos' ? 'Memória removida.' : 'Item removido.',
+    );
     _reload();
   }
 
@@ -256,14 +239,6 @@ class _ResourcePageState extends State<ResourcePage> {
       builder: (_) => _PhotoViewer(item: item),
     );
   }
-}
-
-List<String> _resourceEvents(String resource) {
-  return [
-    '$resource.created',
-    '$resource.updated',
-    '$resource.deleted',
-  ];
 }
 
 class _ResourceHero extends StatelessWidget {
@@ -311,24 +286,29 @@ class _ResourceMetrics extends StatelessWidget {
   Widget build(BuildContext context) {
     final values = [
       _MetricValue(
-          _resourceCountLabel(resource), total, _resourceIcon(resource)),
+        _resourceCountLabel(resource),
+        total,
+        _resourceIcon(resource),
+      ),
       if (resource == 'fotos')
         _MetricValue('Álbuns', albums, Icons.collections_bookmark_outlined),
       if (resource == 'fotos')
         _MetricValue('Na visão atual', visible, Icons.filter_alt_outlined),
     ];
-    return LayoutBuilder(builder: (context, constraints) {
-      final columns = constraints.maxWidth >= 760 ? values.length : 1;
-      return GridView.count(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        crossAxisCount: columns,
-        childAspectRatio: constraints.maxWidth >= 760 ? 3.6 : 4.8,
-        mainAxisSpacing: 10,
-        crossAxisSpacing: 10,
-        children: values.map((value) => _ResourceMetricCard(value)).toList(),
-      );
-    });
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 760 ? values.length : 1;
+        return GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: columns,
+          childAspectRatio: constraints.maxWidth >= 760 ? 3.6 : 4.8,
+          mainAxisSpacing: 10,
+          crossAxisSpacing: 10,
+          children: values.map((value) => _ResourceMetricCard(value)).toList(),
+        );
+      },
+    );
   }
 }
 
@@ -362,13 +342,19 @@ class _ResourceMetricCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${value.value}',
-                    style: const TextStyle(
-                        fontSize: 22, fontWeight: FontWeight.w900)),
-                Text(value.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: palette.muted, fontSize: 12)),
+                Text(
+                  '${value.value}',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                Text(
+                  value.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: palette.muted, fontSize: 12),
+                ),
               ],
             ),
           ),
@@ -407,8 +393,10 @@ class _AlbumFilter extends StatelessWidget {
               color: palette.primary.withValues(alpha: .10),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(Icons.collections_bookmark_outlined,
-                color: palette.primary),
+            child: Icon(
+              Icons.collections_bookmark_outlined,
+              color: palette.primary,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -416,11 +404,14 @@ class _AlbumFilter extends StatelessWidget {
               onPressed: () => _openAlbumSheet(context, total),
               style: OutlinedButton.styleFrom(
                 alignment: Alignment.centerLeft,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
                 side: BorderSide(color: palette.border),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
               child: Row(
                 children: [
@@ -544,8 +535,9 @@ class _OptionTile extends StatelessWidget {
       leading: Icon(icon, color: selected ? palette.primary : palette.muted),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
       subtitle: Text(subtitle),
-      trailing:
-          selected ? Icon(Icons.check_circle, color: palette.primary) : null,
+      trailing: selected
+          ? Icon(Icons.check_circle, color: palette.primary)
+          : null,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
     );
   }
@@ -571,10 +563,11 @@ class _EmptyResourceState extends StatelessWidget {
         children: [
           Icon(Icons.favorite_border, color: palette.primary, size: 42),
           const SizedBox(height: 10),
-          Text(title,
-              textAlign: TextAlign.center,
-              style:
-                  const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+          ),
           const SizedBox(height: 14),
           AppButton(onPressed: onPressed, label: actionLabel, icon: Icons.add),
         ],
@@ -602,24 +595,25 @@ class _ResourceGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final visualCards = resource == 'fotos' ||
+        final visualCards =
+            resource == 'fotos' ||
             resource == 'musicas' ||
             resource == 'cartas' ||
             resource == 'notas';
         final noteCards = resource == 'notas';
         final columns = visualCards
             ? (constraints.maxWidth >= 1280
-                ? 4
-                : constraints.maxWidth >= 1024
-                    ? 3
-                    : constraints.maxWidth >= 640
-                        ? 2
-                        : 1)
+                  ? 4
+                  : constraints.maxWidth >= 1024
+                  ? 3
+                  : constraints.maxWidth >= 640
+                  ? 2
+                  : 1)
             : (constraints.maxWidth >= 900
-                ? 3
-                : constraints.maxWidth >= 620
-                    ? 2
-                    : 1);
+                  ? 3
+                  : constraints.maxWidth >= 620
+                  ? 2
+                  : 1);
         return GridView.count(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -630,17 +624,14 @@ class _ResourceGrid extends StatelessWidget {
           children: items.map((item) {
             if (resource == 'fotos') {
               return _PhotoCard(
-                  item: item,
-                  onEdit: onEdit,
-                  onDelete: onDelete,
-                  onView: onView);
-            }
-            if (resource == 'musicas') {
-              return _MusicCard(
                 item: item,
                 onEdit: onEdit,
                 onDelete: onDelete,
+                onView: onView,
               );
+            }
+            if (resource == 'musicas') {
+              return _MusicCard(item: item, onEdit: onEdit, onDelete: onDelete);
             }
             if (resource == 'cartas') {
               return _LetterCard(
@@ -694,8 +685,9 @@ class _TextResourceCard extends StatelessWidget {
           Positioned.fill(
             child: LoveActionCard(
               title: item.title,
-              description:
-                  item.subtitle.isEmpty ? 'Sem descrição.' : item.subtitle,
+              description: item.subtitle.isEmpty
+                  ? 'Sem descrição.'
+                  : item.subtitle,
               icon: _resourceIcon(resource),
               onTap: () => onEdit(item),
               trailing: Icon(Icons.chevron_right, color: palette.primary),
@@ -714,19 +706,22 @@ class _TextResourceCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                        color: palette.primary,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12),
+                      color: palette.primary,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
                 IconButton(
-                    onPressed: () => onEdit(item),
-                    icon: const Icon(Icons.edit_outlined),
-                    tooltip: 'Editar'),
+                  onPressed: () => onEdit(item),
+                  icon: const Icon(Icons.edit_outlined),
+                  tooltip: 'Editar',
+                ),
                 IconButton(
-                    onPressed: () => onDelete(item),
-                    icon: const Icon(Icons.delete_outline),
-                    tooltip: 'Excluir'),
+                  onPressed: () => onDelete(item),
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: 'Excluir',
+                ),
               ],
             ),
           ),
@@ -792,10 +787,14 @@ class _MusicCard extends StatelessWidget {
                               color: Colors.white.withValues(alpha: .22),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                  color: Colors.white.withValues(alpha: .26)),
+                                color: Colors.white.withValues(alpha: .26),
+                              ),
                             ),
-                            child: const Icon(Icons.music_note,
-                                color: Colors.white, size: 30),
+                            child: const Icon(
+                              Icons.music_note,
+                              color: Colors.white,
+                              size: 30,
+                            ),
                           ),
                           const SizedBox(height: 14),
                           Text(
@@ -838,7 +837,9 @@ class _MusicCard extends StatelessWidget {
                             ),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 6),
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
                               child: Text(
                                 moment,
                                 maxLines: 1,
@@ -874,13 +875,15 @@ class _MusicCard extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                      onPressed: () => onEdit(item),
-                      icon: const Icon(Icons.edit_outlined),
-                      tooltip: 'Editar'),
+                    onPressed: () => onEdit(item),
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: 'Editar',
+                  ),
                   IconButton(
-                      onPressed: () => onDelete(item),
-                      icon: const Icon(Icons.delete_outline),
-                      tooltip: 'Excluir'),
+                    onPressed: () => onDelete(item),
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: 'Excluir',
+                  ),
                 ],
               ),
             ),
@@ -915,9 +918,7 @@ class _LetterCard extends StatelessWidget {
         child: Stack(
           children: [
             Positioned.fill(
-              child: ColoredBox(
-                color: palette.primary.withValues(alpha: .06),
-              ),
+              child: ColoredBox(color: palette.primary.withValues(alpha: .06)),
             ),
             Positioned(
               left: 18,
@@ -1143,11 +1144,12 @@ class _NoteCard extends StatelessWidget {
 }
 
 class _PhotoCard extends StatelessWidget {
-  const _PhotoCard(
-      {required this.item,
-      required this.onEdit,
-      required this.onDelete,
-      required this.onView});
+  const _PhotoCard({
+    required this.item,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onView,
+  });
 
   final FamilyItem item;
   final ValueChanged<FamilyItem> onEdit;
@@ -1172,22 +1174,30 @@ class _PhotoCard extends StatelessWidget {
                     ColoredBox(
                       color: palette.primary.withValues(alpha: .08),
                       child: item.tipo == 'video'
-                          ? Icon(Icons.play_circle_fill,
-                              color: palette.primary, size: 64)
+                          ? Icon(
+                              Icons.play_circle_fill,
+                              color: palette.primary,
+                              size: 64,
+                            )
                           : Image.network(
                               _photoUrl(item),
                               fit: BoxFit.cover,
                               loadingBuilder:
                                   (context, child, loadingProgress) {
-                                if (loadingProgress == null) return child;
-                                return const Center(
-                                    child: SkeletonBox(
+                                    if (loadingProgress == null) return child;
+                                    return const Center(
+                                      child: SkeletonBox(
                                         width: 120,
                                         height: 120,
-                                        borderRadius: 18));
-                              },
-                              errorBuilder: (_, __, ___) => Icon(Icons.photo,
-                                  color: palette.primary, size: 48),
+                                        borderRadius: 18,
+                                      ),
+                                    );
+                                  },
+                              errorBuilder: (_, __, ___) => Icon(
+                                Icons.photo,
+                                color: palette.primary,
+                                size: 48,
+                              ),
                             ),
                     ),
                     Positioned(
@@ -1200,12 +1210,17 @@ class _PhotoCard extends StatelessWidget {
                         ),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 6),
-                          child: Text(item.album,
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800)),
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          child: Text(
+                            item.album,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -1233,19 +1248,22 @@ class _PhotoCard extends StatelessWidget {
                         child: Text(
                           item.tipo == 'video' ? 'Vídeo' : 'Foto',
                           style: TextStyle(
-                              color: palette.primary,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 12),
+                            color: palette.primary,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                       IconButton(
-                          onPressed: () => onEdit(item),
-                          icon: const Icon(Icons.edit_outlined),
-                          tooltip: 'Editar'),
+                        onPressed: () => onEdit(item),
+                        icon: const Icon(Icons.edit_outlined),
+                        tooltip: 'Editar',
+                      ),
                       IconButton(
-                          onPressed: () => onDelete(item),
-                          icon: const Icon(Icons.delete_outline),
-                          tooltip: 'Excluir'),
+                        onPressed: () => onDelete(item),
+                        icon: const Icon(Icons.delete_outline),
+                        tooltip: 'Excluir',
+                      ),
                     ],
                   ),
                 ],
@@ -1259,12 +1277,13 @@ class _PhotoCard extends StatelessWidget {
 }
 
 class ResourceDialog extends StatefulWidget {
-  const ResourceDialog(
-      {super.key,
-      required this.title,
-      required this.resource,
-      required this.onSave,
-      this.initial});
+  const ResourceDialog({
+    super.key,
+    required this.title,
+    required this.resource,
+    required this.onSave,
+    this.initial,
+  });
 
   final String title;
   final String resource;
@@ -1288,7 +1307,8 @@ class _ResourceDialogState extends State<ResourceDialog> {
     if (item != null) {
       title.text = item.title;
       subtitle.text = item.subtitle;
-      extra.text = item.data['linkSpotify']?.toString() ??
+      extra.text =
+          item.data['linkSpotify']?.toString() ??
           item.data['momento']?.toString() ??
           '';
     }
@@ -1312,20 +1332,23 @@ class _ResourceDialogState extends State<ResourceDialog> {
           ),
           const SizedBox(height: 16),
           TextField(
-              controller: title,
-              decoration: InputDecoration(
-                  labelText:
-                      widget.resource == 'fotos' ? 'Título ou URL' : 'Título'),
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => _save()),
+            controller: title,
+            decoration: InputDecoration(
+              labelText: widget.resource == 'fotos'
+                  ? 'Título ou URL'
+                  : 'Título',
+            ),
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _save(),
+          ),
           const SizedBox(height: 10),
           TextField(
             controller: subtitle,
             decoration: InputDecoration(
               labelText:
                   widget.resource == 'cartas' || widget.resource == 'notas'
-                      ? 'Conteúdo'
-                      : 'Texto / artista',
+                  ? 'Conteúdo'
+                  : 'Texto / artista',
             ),
             minLines: widget.resource == 'cartas' || widget.resource == 'notas'
                 ? 7
@@ -1335,20 +1358,21 @@ class _ResourceDialogState extends State<ResourceDialog> {
                 : 1,
             textInputAction:
                 widget.resource == 'cartas' || widget.resource == 'notas'
-                    ? TextInputAction.newline
-                    : TextInputAction.done,
+                ? TextInputAction.newline
+                : TextInputAction.done,
             onSubmitted:
                 widget.resource == 'cartas' || widget.resource == 'notas'
-                    ? null
-                    : (_) => _save(),
+                ? null
+                : (_) => _save(),
           ),
           if (widget.resource != 'cartas' && widget.resource != 'notas') ...[
             const SizedBox(height: 10),
             TextField(
-                controller: extra,
-                decoration: const InputDecoration(labelText: 'Extra'),
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _save()),
+              controller: extra,
+              decoration: const InputDecoration(labelText: 'Extra'),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _save(),
+            ),
           ],
           const SizedBox(height: 18),
           AppSheetActions(
@@ -1366,18 +1390,18 @@ class _ResourceDialogState extends State<ResourceDialog> {
     try {
       final data = switch (widget.resource) {
         'musicas' => {
-            'titulo': title.text,
-            'artista': subtitle.text,
-            'linkSpotify': extra.text,
-            'momento': 'Especial',
-          },
+          'titulo': title.text,
+          'artista': subtitle.text,
+          'linkSpotify': extra.text,
+          'momento': 'Especial',
+        },
         'cartas' => {'titulo': title.text, 'conteudo': subtitle.text},
         'notas' => {'titulo': title.text, 'conteudo': subtitle.text},
         'fotos' => {
-            'url': title.text,
-            'texto': subtitle.text,
-            'tipo': extra.text == 'video' ? 'video' : 'imagem'
-          },
+          'url': title.text,
+          'texto': subtitle.text,
+          'tipo': extra.text == 'video' ? 'video' : 'imagem',
+        },
         _ => <String, dynamic>{},
       };
       await widget.onSave(data);
@@ -1501,18 +1525,18 @@ class _PhotoMemorySheetState extends State<PhotoMemorySheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(widget.item == null ? 'Adicionar memória' : 'Editar memória',
-                style: TextStyle(
-                    color: palette.primary,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 22)),
+            Text(
+              widget.item == null ? 'Adicionar memória' : 'Editar memória',
+              style: TextStyle(
+                color: palette.primary,
+                fontWeight: FontWeight.w900,
+                fontSize: 22,
+              ),
+            ),
             const SizedBox(height: 6),
             Text(
               'Escolha a mídia, organize por álbum e marque a data pelo calendário.',
-              style: TextStyle(
-                color: palette.muted,
-                height: 1.35,
-              ),
+              style: TextStyle(color: palette.muted, height: 1.35),
             ),
             const SizedBox(height: 16),
             OutlinedButton.icon(
@@ -1522,18 +1546,20 @@ class _PhotoMemorySheetState extends State<PhotoMemorySheet> {
             ),
             const SizedBox(height: 12),
             TextField(
-                controller: album,
-                decoration: const InputDecoration(labelText: 'Álbum'),
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _save()),
+              controller: album,
+              decoration: const InputDecoration(labelText: 'Álbum'),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _save(),
+            ),
             const SizedBox(height: 10),
             TextField(
-                controller: texto,
-                decoration: const InputDecoration(labelText: 'Descrição'),
-                minLines: 2,
-                maxLines: 4,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _save()),
+              controller: texto,
+              decoration: const InputDecoration(labelText: 'Descrição'),
+              minLines: 2,
+              maxLines: 4,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _save(),
+            ),
             const SizedBox(height: 10),
             AppDateField(
               label: 'Data da memória',
@@ -1759,15 +1785,9 @@ class _EnvelopePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final back = Paint()..color = Color.alphaBlend(color, Colors.white);
     final flap = Paint()
-      ..color = Color.alphaBlend(
-        color.withValues(alpha: .78),
-        Colors.white,
-      );
+      ..color = Color.alphaBlend(color.withValues(alpha: .78), Colors.white);
     final front = Paint()
-      ..color = Color.alphaBlend(
-        color.withValues(alpha: .92),
-        Colors.white,
-      );
+      ..color = Color.alphaBlend(color.withValues(alpha: .92), Colors.white);
     final line = Paint()
       ..color = lineColor
       ..style = PaintingStyle.stroke
@@ -1811,11 +1831,7 @@ class _EnvelopePainter extends CustomPainter {
     canvas.drawPath(frontFold, line);
 
     final sealCenter = Offset(size.width / 2, size.height * .60);
-    canvas.drawCircle(
-      sealCenter,
-      14,
-      Paint()..color = const Color(0xffc93f78),
-    );
+    canvas.drawCircle(sealCenter, 14, Paint()..color = const Color(0xffc93f78));
     final heart = Path()
       ..moveTo(sealCenter.dx, sealCenter.dy + 5)
       ..cubicTo(
@@ -1857,11 +1873,14 @@ class _PhotoViewer extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(item.album,
-              style: TextStyle(
-                  color: palette.primary,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 22)),
+          Text(
+            item.album,
+            style: TextStyle(
+              color: palette.primary,
+              fontWeight: FontWeight.w900,
+              fontSize: 22,
+            ),
+          ),
           const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(18),
@@ -1870,15 +1889,20 @@ class _PhotoViewer extends StatelessWidget {
                     height: 260,
                     color: palette.primary.withValues(alpha: .08),
                     alignment: Alignment.center,
-                    child: Icon(Icons.play_circle_fill,
-                        color: palette.primary, size: 72),
+                    child: Icon(
+                      Icons.play_circle_fill,
+                      color: palette.primary,
+                      size: 72,
+                    ),
                   )
                 : Image.network(_photoUrl(item), fit: BoxFit.contain),
           ),
           if (item.subtitle.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text(item.subtitle,
-                style: TextStyle(color: palette.muted, height: 1.4)),
+            Text(
+              item.subtitle,
+              style: TextStyle(color: palette.muted, height: 1.4),
+            ),
           ],
         ],
       ),
@@ -1899,8 +1923,8 @@ String _titleFor(String resource, String fallback) {
 String _photoUrl(FamilyItem item) {
   if (item.url.startsWith('http')) return item.url;
   return AppConfig.apiUri(
-          '/fotos/file?path=${Uri.encodeQueryComponent(item.url)}')
-      .toString();
+    '/fotos/file?path=${Uri.encodeQueryComponent(item.url)}',
+  ).toString();
 }
 
 String _subtitleFor(String resource) {

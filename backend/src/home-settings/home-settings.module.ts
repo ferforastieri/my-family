@@ -4,15 +4,12 @@ import { DatabaseModule } from '@shared/infrastructure/database/database.module'
 import { MongoModelsModule } from '@shared/infrastructure/database/database.providers';
 import { HomeSettingsService } from './application/home-settings.service';
 import { HomeSettingsRepository } from './infrastructure/home-settings.repository';
-import { HomeSettingsGateway } from './interfaces/home-settings.gateway';
+import { HomeSettingsController } from './interfaces/home-settings.controller';
 
 @Module({
   imports: [DatabaseModule, MongoModelsModule, AuthModule],
-  providers: [
-    HomeSettingsService,
-    HomeSettingsRepository,
-    HomeSettingsGateway,
-  ],
+  controllers: [HomeSettingsController],
+  providers: [HomeSettingsService, HomeSettingsRepository],
   exports: [HomeSettingsService],
 })
 export class HomeSettingsModule {}

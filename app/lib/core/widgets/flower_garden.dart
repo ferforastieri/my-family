@@ -27,12 +27,14 @@ class _FlowerGardenState extends State<FlowerGarden>
   @override
   void initState() {
     super.initState();
-    windController =
-        AnimationController(vsync: this, duration: const Duration(seconds: 5))
-          ..repeat();
-    growController =
-        AnimationController(vsync: this, duration: const Duration(seconds: 2))
-          ..forward();
+    windController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 5),
+    )..repeat();
+    growController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..forward();
   }
 
   @override
@@ -52,10 +54,12 @@ class _FlowerGardenState extends State<FlowerGarden>
           final height = constraints.maxHeight;
           if (width <= 0 || height <= 0) return;
           setState(() {
-            plantedFlowers.add(Offset(
-              (details.localPosition.dx / width).clamp(.04, .96),
-              (details.localPosition.dy / height).clamp(.50, .92),
-            ));
+            plantedFlowers.add(
+              Offset(
+                (details.localPosition.dx / width).clamp(.04, .96),
+                (details.localPosition.dy / height).clamp(.50, .92),
+              ),
+            );
             if (plantedFlowers.length > 16) {
               plantedFlowers.removeAt(0);
             }
@@ -167,13 +171,23 @@ class _FlowerPainter extends CustomPainter {
     return .36 + Curves.easeOutCubic.transform(progress) * .64;
   }
 
-  void _drawFlower(Canvas canvas, Offset base, double scale, double grow,
-      double opacity, double tilt, double phase, String initial) {
+  void _drawFlower(
+    Canvas canvas,
+    Offset base,
+    double scale,
+    double grow,
+    double opacity,
+    double tilt,
+    double phase,
+    String initial,
+  ) {
     final sway = math.sin((t + phase) * math.pi * 2) * .055;
     final safeGrow = grow.clamp(.08, 1.0).toDouble();
 
     canvas.saveLayer(
-        null, Paint()..color = Colors.white.withValues(alpha: opacity));
+      null,
+      Paint()..color = Colors.white.withValues(alpha: opacity),
+    );
     canvas.translate(base.dx, base.dy);
     canvas.scale(safeGrow, safeGrow);
     canvas.rotate(tilt + sway);
@@ -194,13 +208,13 @@ class _FlowerPainter extends CustomPainter {
             ? [
                 const Color(0xff120914).withValues(alpha: .12),
                 palette.primaryDark.withValues(alpha: .18),
-                const Color(0xff173322).withValues(alpha: .26),
+                palette.copper.withValues(alpha: .18),
                 palette.bgEnd.withValues(alpha: .54),
               ]
             : [
                 palette.bgStart.withValues(alpha: .06),
-                const Color(0xffffedf5).withValues(alpha: .52),
-                const Color(0xffeaf7ef).withValues(alpha: .62),
+                palette.petal.withValues(alpha: .28),
+                palette.copper.withValues(alpha: .18),
                 palette.bgEnd.withValues(alpha: .72),
               ],
       ).createShader(Offset.zero & size);
@@ -211,21 +225,25 @@ class _FlowerPainter extends CustomPainter {
       glowCenter,
       size.shortestSide * .26,
       Paint()
-        ..shader = RadialGradient(
-          colors: isDark
-              ? [
-                  palette.primary.withValues(alpha: .20),
-                  const Color(0xff7f2f68).withValues(alpha: .10),
-                  Colors.transparent,
-                ]
-              : [
-                  Colors.white.withValues(alpha: .32),
-                  const Color(0xffffb6d4).withValues(alpha: .12),
-                  Colors.transparent,
-                ],
-        ).createShader(
-          Rect.fromCircle(center: glowCenter, radius: size.shortestSide * .28),
-        ),
+        ..shader =
+            RadialGradient(
+              colors: isDark
+                  ? [
+                      palette.primary.withValues(alpha: .20),
+                      palette.primaryDark.withValues(alpha: .10),
+                      Colors.transparent,
+                    ]
+                  : [
+                      Colors.white.withValues(alpha: .32),
+                      palette.petal.withValues(alpha: .16),
+                      Colors.transparent,
+                    ],
+            ).createShader(
+              Rect.fromCircle(
+                center: glowCenter,
+                radius: size.shortestSide * .28,
+              ),
+            ),
     );
   }
 
@@ -233,10 +251,22 @@ class _FlowerPainter extends CustomPainter {
     final isDark = palette.bgStart.computeLuminance() < .18;
     final back = Path()
       ..moveTo(0, size.height * .62)
-      ..cubicTo(size.width * .16, size.height * .50, size.width * .28,
-          size.height * .64, size.width * .44, size.height * .55)
-      ..cubicTo(size.width * .62, size.height * .44, size.width * .77,
-          size.height * .61, size.width, size.height * .50)
+      ..cubicTo(
+        size.width * .16,
+        size.height * .50,
+        size.width * .28,
+        size.height * .64,
+        size.width * .44,
+        size.height * .55,
+      )
+      ..cubicTo(
+        size.width * .62,
+        size.height * .44,
+        size.width * .77,
+        size.height * .61,
+        size.width,
+        size.height * .50,
+      )
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..close();
@@ -248,22 +278,34 @@ class _FlowerPainter extends CustomPainter {
           end: Alignment.bottomCenter,
           colors: isDark
               ? [
-                  const Color(0xff4da46d).withValues(alpha: .22),
-                  const Color(0xff123923).withValues(alpha: .18),
+                  palette.copper.withValues(alpha: .22),
+                  palette.primaryDark.withValues(alpha: .12),
                 ]
               : [
-                  const Color(0xff8bcf9a).withValues(alpha: .18),
-                  const Color(0xff2f7d56).withValues(alpha: .08),
+                  palette.petal.withValues(alpha: .18),
+                  palette.copper.withValues(alpha: .10),
                 ],
         ).createShader(Offset.zero & size),
     );
 
     final front = Path()
       ..moveTo(0, size.height * .70)
-      ..cubicTo(size.width * .18, size.height * .61, size.width * .31,
-          size.height * .74, size.width * .50, size.height * .65)
-      ..cubicTo(size.width * .68, size.height * .56, size.width * .84,
-          size.height * .73, size.width, size.height * .63)
+      ..cubicTo(
+        size.width * .18,
+        size.height * .61,
+        size.width * .31,
+        size.height * .74,
+        size.width * .50,
+        size.height * .65,
+      )
+      ..cubicTo(
+        size.width * .68,
+        size.height * .56,
+        size.width * .84,
+        size.height * .73,
+        size.width,
+        size.height * .63,
+      )
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..close();
@@ -315,40 +357,51 @@ class _FlowerPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
     for (var i = 0; i < 18; i++) {
       final phase = (t + i * .073) % 1;
-      final x = (size.width * ((i * 37) % 100) / 100) +
+      final x =
+          (size.width * ((i * 37) % 100) / 100) +
           math.sin(phase * math.pi * 2) * 18 * scale;
-      final y = size.height * (.18 + ((i * 19) % 54) / 100) +
+      final y =
+          size.height * (.18 + ((i * 19) % 54) / 100) +
           math.cos(phase * math.pi * 2) * 12 * scale;
       final len = (3 + i % 3) * scale;
-      paint.color = (i.isEven ? palette.primary : const Color(0xffffb703))
-          .withValues(alpha: .12 + math.sin(phase * math.pi * 2).abs() * .12);
+      paint.color = (i.isEven ? palette.primary : palette.gold).withValues(
+        alpha: .12 + math.sin(phase * math.pi * 2).abs() * .12,
+      );
       canvas.drawLine(Offset(x - len, y), Offset(x + len, y), paint);
       canvas.drawLine(Offset(x, y - len), Offset(x, y + len), paint);
     }
   }
 
   void _drawButterflies(Canvas canvas, Size size, double scale) {
-    final colors = [
-      const Color(0xffff73b9),
-      const Color(0xffa855f7),
-      const Color(0xffffb703),
-    ];
+    final colors = [palette.primary, palette.petal, palette.gold];
     for (var i = 0; i < 3; i++) {
       final phase = (t + i * .27) % 1;
-      final x = size.width * (.22 + i * .25) +
+      final x =
+          size.width * (.22 + i * .25) +
           math.sin(phase * math.pi * 2) * 30 * scale;
-      final y = size.height * (.32 + i * .055) +
+      final y =
+          size.height * (.32 + i * .055) +
           math.cos(phase * math.pi * 2 + i) * 18 * scale;
-      _drawButterfly(canvas, Offset(x, y), scale * (.42 + i * .06), colors[i],
-          phase + i * .13);
+      _drawButterfly(
+        canvas,
+        Offset(x, y),
+        scale * (.42 + i * .06),
+        colors[i],
+        phase + i * .13,
+      );
     }
   }
 
   void _drawButterfly(
-      Canvas canvas, Offset center, double scale, Color color, double phase) {
+    Canvas canvas,
+    Offset center,
+    double scale,
+    Color color,
+    double phase,
+  ) {
     final flap = .72 + math.sin(phase * math.pi * 10).abs() * .38;
     final body = Paint()
-      ..color = const Color(0xff5b3a2f).withValues(alpha: .62)
+      ..color = palette.copper.withValues(alpha: .72)
       ..strokeWidth = 2 * scale
       ..strokeCap = StrokeCap.round;
     final wing = Paint()
@@ -388,11 +441,7 @@ class _FlowerPainter extends CustomPainter {
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            palette.primary,
-            palette.primaryDark,
-            const Color(0xff2d5a27)
-          ],
+          colors: [palette.primary, palette.primaryDark, palette.copper],
         ).createShader(stem.outerRect),
     );
   }
@@ -410,25 +459,41 @@ class _FlowerPainter extends CustomPainter {
 
     for (var i = 0; i < 12; i++) {
       final angle = i * 30.0;
-      _drawRadialPetal(canvas, head, scale, angle, palette.primaryDark,
-          const Color(0xffffb6c1));
+      _drawRadialPetal(
+        canvas,
+        head,
+        scale,
+        angle,
+        palette.primaryDark,
+        palette.petal,
+      );
     }
 
-    _drawRadialPetal(canvas, head.translate(26 * scale, 34 * scale),
-        scale * .72, 142, const Color(0xff39c6d6), const Color(0xffa7ffee));
+    _drawRadialPetal(
+      canvas,
+      head.translate(26 * scale, 34 * scale),
+      scale * .72,
+      142,
+      palette.copper,
+      palette.petal,
+    );
 
     final white = Paint()..color = Colors.white.withValues(alpha: .96);
     canvas.drawOval(
-        Rect.fromCenter(center: head, width: 72 * scale, height: 44 * scale),
-        white);
+      Rect.fromCenter(center: head, width: 72 * scale, height: 44 * scale),
+      white,
+    );
     canvas.drawOval(
       Rect.fromCenter(center: head, width: 43 * scale, height: 24 * scale),
       Paint()
-        ..shader =
-            LinearGradient(colors: [const Color(0xffffb6c1), palette.primary])
-                .createShader(
-          Rect.fromCenter(center: head, width: 42 * scale, height: 21 * scale),
-        ),
+        ..shader = LinearGradient(colors: [palette.petal, palette.primary])
+            .createShader(
+              Rect.fromCenter(
+                center: head,
+                width: 42 * scale,
+                height: 21 * scale,
+              ),
+            ),
     );
 
     final textPainter = TextPainter(
@@ -444,18 +509,24 @@ class _FlowerPainter extends CustomPainter {
     )..layout();
     textPainter.paint(
       canvas,
-      Offset(
-        head.dx - textPainter.width / 2,
-        head.dy - textPainter.height / 2,
-      ),
+      Offset(head.dx - textPainter.width / 2, head.dy - textPainter.height / 2),
     );
   }
 
-  void _drawRadialPetal(Canvas canvas, Offset center, double scale,
-      double degrees, Color dark, Color light) {
+  void _drawRadialPetal(
+    Canvas canvas,
+    Offset center,
+    double scale,
+    double degrees,
+    Color dark,
+    Color light,
+  ) {
     final pulse = 1 + math.sin(t * math.pi * 2 + degrees * .07) * .025;
     final rect = Rect.fromCenter(
-        center: Offset(0, -50 * scale), width: 42 * scale, height: 82 * scale);
+      center: Offset(0, -50 * scale),
+      width: 42 * scale,
+      height: 82 * scale,
+    );
 
     canvas.save();
     canvas.translate(center.dx, center.dy);
@@ -465,9 +536,10 @@ class _FlowerPainter extends CustomPainter {
       rect,
       Paint()
         ..shader = LinearGradient(
-            begin: Alignment.bottomCenter,
-            end: Alignment.topCenter,
-            colors: [dark, light]).createShader(rect),
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: [dark, light],
+        ).createShader(rect),
     );
     canvas.drawOval(
       rect,
@@ -493,11 +565,20 @@ class _FlowerPainter extends CustomPainter {
   }
 
   void _drawLeaf(
-      Canvas canvas, Offset origin, double scale, double degrees, bool left) {
+    Canvas canvas,
+    Offset origin,
+    double scale,
+    double degrees,
+    bool left,
+  ) {
     final path = Path()
       ..moveTo(0, 0)
-      ..quadraticBezierTo((left ? -58 : 58) * scale, -32 * scale,
-          (left ? -90 : 90) * scale, 8 * scale)
+      ..quadraticBezierTo(
+        (left ? -58 : 58) * scale,
+        -32 * scale,
+        (left ? -90 : 90) * scale,
+        8 * scale,
+      )
       ..quadraticBezierTo((left ? -48 : 48) * scale, 38 * scale, 0, 0)
       ..close();
 
@@ -507,12 +588,15 @@ class _FlowerPainter extends CustomPainter {
     canvas.drawPath(
       path,
       Paint()
-        ..shader = LinearGradient(colors: [
-          palette.primaryDark.withValues(alpha: .55),
-          palette.primary
-        ]).createShader(
-          Rect.fromLTWH(-100 * scale, -45 * scale, 200 * scale, 90 * scale),
-        ),
+        ..shader =
+            LinearGradient(
+              colors: [
+                palette.primaryDark.withValues(alpha: .55),
+                palette.primary,
+              ],
+            ).createShader(
+              Rect.fromLTWH(-100 * scale, -45 * scale, 200 * scale, 90 * scale),
+            ),
     );
     canvas.restore();
   }
@@ -527,7 +611,11 @@ class _FlowerPainter extends CustomPainter {
       final path = Path()
         ..moveTo(x, 0)
         ..quadraticBezierTo(
-            x - 18 * scale, -h * .55, x + math.sin(i) * 18 * scale, -h);
+          x - 18 * scale,
+          -h * .55,
+          x + math.sin(i) * 18 * scale,
+          -h,
+        );
       canvas.drawPath(
         path,
         Paint()
@@ -541,14 +629,30 @@ class _FlowerPainter extends CustomPainter {
   }
 
   void _drawGrassBed(Canvas canvas, Size size, double scale) {
-    final rect =
-        Rect.fromLTWH(0, size.height - 132 * scale, size.width, 142 * scale);
+    final rect = Rect.fromLTWH(
+      0,
+      size.height - 132 * scale,
+      size.width,
+      142 * scale,
+    );
     final bed = Path()
       ..moveTo(0, size.height - 92 * scale)
-      ..cubicTo(size.width * .20, size.height - 142 * scale, size.width * .40,
-          size.height - 62 * scale, size.width * .60, size.height - 116 * scale)
-      ..cubicTo(size.width * .78, size.height - 164 * scale, size.width * .90,
-          size.height - 82 * scale, size.width, size.height - 112 * scale)
+      ..cubicTo(
+        size.width * .20,
+        size.height - 142 * scale,
+        size.width * .40,
+        size.height - 62 * scale,
+        size.width * .60,
+        size.height - 116 * scale,
+      )
+      ..cubicTo(
+        size.width * .78,
+        size.height - 164 * scale,
+        size.width * .90,
+        size.height - 82 * scale,
+        size.width,
+        size.height - 112 * scale,
+      )
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..close();
@@ -559,8 +663,8 @@ class _FlowerPainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            const Color(0xff7bcf7e).withValues(alpha: .20),
-            const Color(0xff2d5a27).withValues(alpha: .18),
+            palette.petal.withValues(alpha: .20),
+            palette.copper.withValues(alpha: .18),
             palette.primaryDark.withValues(alpha: .20),
           ],
         ).createShader(rect),
@@ -571,7 +675,8 @@ class _FlowerPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     for (var i = 0; i < 78; i++) {
       final x = size.width * i / 77;
-      final h = (26 + (i % 9) * 5) *
+      final h =
+          (26 + (i % 9) * 5) *
           scale *
           (1 + math.sin(t * math.pi * 2 + i) * .07);
       final path = Path()
@@ -586,10 +691,22 @@ class _FlowerPainter extends CustomPainter {
   void _drawGardenPath(Canvas canvas, Size size, double scale) {
     final path = Path()
       ..moveTo(size.width * .42, size.height)
-      ..cubicTo(size.width * .46, size.height * .87, size.width * .48,
-          size.height * .78, size.width * .49, size.height * .66)
-      ..cubicTo(size.width * .50, size.height * .78, size.width * .56,
-          size.height * .89, size.width * .64, size.height)
+      ..cubicTo(
+        size.width * .46,
+        size.height * .87,
+        size.width * .48,
+        size.height * .78,
+        size.width * .49,
+        size.height * .66,
+      )
+      ..cubicTo(
+        size.width * .50,
+        size.height * .78,
+        size.width * .56,
+        size.height * .89,
+        size.width * .64,
+        size.height,
+      )
       ..close();
     canvas.drawPath(
       path,
@@ -598,8 +715,8 @@ class _FlowerPainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            const Color(0xfffff0d9).withValues(alpha: .26),
-            const Color(0xffd9a86c).withValues(alpha: .18),
+            palette.bgEnd.withValues(alpha: .32),
+            palette.gold.withValues(alpha: .16),
           ],
         ).createShader(Offset.zero & size),
     );
@@ -624,7 +741,11 @@ class _FlowerPainter extends CustomPainter {
     final ground = size.height - 62 * scale;
     _drawTree(canvas, Offset(size.width * .10, ground), scale * 1.08, -.05);
     _drawTree(
-        canvas, Offset(size.width * .88, ground + 4 * scale), scale * .92, .08);
+      canvas,
+      Offset(size.width * .88, ground + 4 * scale),
+      scale * .92,
+      .08,
+    );
   }
 
   void _drawTree(Canvas canvas, Offset base, double scale, double lean) {
@@ -639,37 +760,67 @@ class _FlowerPainter extends CustomPainter {
     canvas.drawRRect(
       trunk,
       Paint()
-        ..shader = const LinearGradient(
+        ..shader = LinearGradient(
           begin: Alignment.bottomCenter,
           end: Alignment.topCenter,
-          colors: [Color(0xff6b3f2a), Color(0xff9a623d)],
+          colors: [palette.primaryDark, palette.copper],
         ).createShader(trunk.outerRect),
     );
 
     final canopy = Path()
       ..moveTo(-112 * scale, -154 * scale)
-      ..cubicTo(-104 * scale, -218 * scale, -58 * scale, -272 * scale,
-          2 * scale, -278 * scale)
-      ..cubicTo(72 * scale, -286 * scale, 118 * scale, -226 * scale,
-          110 * scale, -164 * scale)
-      ..cubicTo(88 * scale, -110 * scale, 26 * scale, -102 * scale, -18 * scale,
-          -112 * scale)
-      ..cubicTo(-68 * scale, -102 * scale, -108 * scale, -116 * scale,
-          -112 * scale, -154 * scale)
+      ..cubicTo(
+        -104 * scale,
+        -218 * scale,
+        -58 * scale,
+        -272 * scale,
+        2 * scale,
+        -278 * scale,
+      )
+      ..cubicTo(
+        72 * scale,
+        -286 * scale,
+        118 * scale,
+        -226 * scale,
+        110 * scale,
+        -164 * scale,
+      )
+      ..cubicTo(
+        88 * scale,
+        -110 * scale,
+        26 * scale,
+        -102 * scale,
+        -18 * scale,
+        -112 * scale,
+      )
+      ..cubicTo(
+        -68 * scale,
+        -102 * scale,
+        -108 * scale,
+        -116 * scale,
+        -112 * scale,
+        -154 * scale,
+      )
       ..close();
     canvas.drawPath(
       canopy,
       Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            palette.primary.withValues(alpha: .20),
-            palette.primaryDark.withValues(alpha: .16),
-          ],
-        ).createShader(
-          Rect.fromLTWH(-120 * scale, -286 * scale, 240 * scale, 190 * scale),
-        ),
+        ..shader =
+            LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                palette.primary.withValues(alpha: .20),
+                palette.primaryDark.withValues(alpha: .16),
+              ],
+            ).createShader(
+              Rect.fromLTWH(
+                -120 * scale,
+                -286 * scale,
+                240 * scale,
+                190 * scale,
+              ),
+            ),
     );
     final highlight = Paint()
       ..color = Colors.white.withValues(alpha: .10)
@@ -696,16 +847,16 @@ class _FlowerPainter extends CustomPainter {
   void _drawGardenFlowers(Canvas canvas, Size size, double scale) {
     final ground = size.height - 80 * scale;
     final colors = [
-      (const Color(0xffff69b4), const Color(0xffffb6c1)),
-      (const Color(0xffef4444), const Color(0xfffca5a5)),
-      (const Color(0xffa855f7), const Color(0xffd8b4fe)),
-      (const Color(0xff3b82f6), const Color(0xff93c5fd)),
-      (const Color(0xffffb703), const Color(0xffffe08a)),
+      (palette.primaryDark, palette.petal),
+      (palette.primary, palette.petal),
+      (palette.copper, palette.bgEnd),
+      (palette.gold, palette.petal),
     ];
     for (var i = 0; i < 42; i++) {
       final row = i % 3;
       final x = size.width * ((i * 29 % 100) / 100);
-      final y = ground -
+      final y =
+          ground -
           row * 26 * scale +
           math.sin(i * 1.7) * 10 * scale +
           math.cos(t * math.pi * 2 + i) * 2 * scale;
@@ -713,20 +864,32 @@ class _FlowerPainter extends CustomPainter {
       final pair = colors[i % colors.length];
       if (i % 4 == 0) {
         _drawTulip(
-            canvas, Offset(x, y), flowerScale * 1.2, pair.$1, pair.$2, i * .21);
+          canvas,
+          Offset(x, y),
+          flowerScale * 1.2,
+          pair.$1,
+          pair.$2,
+          i * .21,
+        );
       } else {
         _drawSmallFlower(
-            canvas, Offset(x, y), flowerScale, pair.$1, pair.$2, i * .21);
+          canvas,
+          Offset(x, y),
+          flowerScale,
+          pair.$1,
+          pair.$2,
+          i * .21,
+        );
       }
     }
   }
 
   void _drawAmbientFlowers(Canvas canvas, Size size, double scale) {
     final colors = [
-      (const Color(0xffff69b4), const Color(0xffffc1d8)),
-      (const Color(0xffa855f7), const Color(0xffddd6fe)),
-      (const Color(0xffffb703), const Color(0xffffe08a)),
-      (const Color(0xff3b82f6), const Color(0xffbfdbfe)),
+      (palette.primaryDark, palette.petal),
+      (palette.primary, palette.bgEnd),
+      (palette.gold, palette.petal),
+      (palette.copper, palette.bgStart),
     ];
     final bottom = size.height - 18 * scale;
     for (var i = 0; i < 26; i++) {
@@ -734,17 +897,30 @@ class _FlowerPainter extends CustomPainter {
       final edge = side == 0.0
           ? size.width * (.025 + (i % 7) * .028)
           : size.width * (.975 - (i % 7) * .028);
-      final y = bottom -
+      final y =
+          bottom -
           (i % 6) * 18 * scale +
           math.sin(t * math.pi * 2 + i) * 3 * scale;
       final pair = colors[i % colors.length];
       final flowerScale = scale * (.18 + (i % 4) * .025);
       if (i % 5 == 0) {
-        _drawTulip(canvas, Offset(edge, y), flowerScale * 1.15, pair.$1,
-            pair.$2, i * .17);
+        _drawTulip(
+          canvas,
+          Offset(edge, y),
+          flowerScale * 1.15,
+          pair.$1,
+          pair.$2,
+          i * .17,
+        );
       } else {
         _drawSmallFlower(
-            canvas, Offset(edge, y), flowerScale, pair.$1, pair.$2, i * .17);
+          canvas,
+          Offset(edge, y),
+          flowerScale,
+          pair.$1,
+          pair.$2,
+          i * .17,
+        );
       }
     }
 
@@ -753,7 +929,13 @@ class _FlowerPainter extends CustomPainter {
       final y = size.height - 24 * scale + math.sin(i * 1.8) * 5 * scale;
       final pair = colors[(i + 2) % colors.length];
       _drawSmallFlower(
-          canvas, Offset(x, y), scale * .15, pair.$1, pair.$2, i * .23);
+        canvas,
+        Offset(x, y),
+        scale * .15,
+        pair.$1,
+        pair.$2,
+        i * .23,
+      );
     }
   }
 
@@ -764,14 +946,15 @@ class _FlowerPainter extends CustomPainter {
     required bool backLayer,
   }) {
     final count = backLayer ? 46 : 34;
-    final baseY =
-        backLayer ? size.height - 126 * scale : size.height - 34 * scale;
+    final baseY = backLayer
+        ? size.height - 126 * scale
+        : size.height - 34 * scale;
     final alpha = backLayer ? .22 : .42;
     for (var i = 0; i < count; i++) {
       final x = size.width * ((i * 17 % 100) / 100);
       final y = baseY + math.sin(i * 1.31) * 18 * scale;
       final blades = backLayer ? 3 : 5;
-      final color = (i.isEven ? const Color(0xff2f7d56) : palette.primaryDark)
+      final color = (i.isEven ? palette.copper : palette.primaryDark)
           .withValues(alpha: alpha);
       for (var j = 0; j < blades; j++) {
         final h = (backLayer ? 28 : 46) * scale * (.72 + (j % 3) * .18);
@@ -794,10 +977,10 @@ class _FlowerPainter extends CustomPainter {
 
   void _drawPlantedFlowers(Canvas canvas, Size size, double scale) {
     final colors = [
-      (palette.primaryDark, const Color(0xffffb6c1)),
-      (const Color(0xffa855f7), const Color(0xffddd6fe)),
-      (const Color(0xffef4444), const Color(0xfffecaca)),
-      (const Color(0xff22c55e), const Color(0xffbbf7d0)),
+      (palette.primaryDark, palette.petal),
+      (palette.primary, palette.bgEnd),
+      (palette.copper, palette.petal),
+      (palette.gold, palette.bgStart),
     ];
     for (var i = 0; i < plantedFlowers.length; i++) {
       final point = plantedFlowers[i];
@@ -814,26 +997,44 @@ class _FlowerPainter extends CustomPainter {
     }
   }
 
-  void _drawSmallFlower(Canvas canvas, Offset base, double scale, Color dark,
-      Color light, double phase) {
+  void _drawSmallFlower(
+    Canvas canvas,
+    Offset base,
+    double scale,
+    Color dark,
+    Color light,
+    double phase,
+  ) {
     final sway = math.sin((t + phase) * math.pi * 2) * .10;
     final stemPaint = Paint()
-      ..color = const Color(0xff3f7a38).withValues(alpha: .75)
+      ..color = palette.copper.withValues(alpha: .75)
       ..strokeWidth = 4 * scale
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
     final top = base.translate(
-        math.sin(phase) * 10 * scale + sway * 18 * scale, -86 * scale);
+      math.sin(phase) * 10 * scale + sway * 18 * scale,
+      -86 * scale,
+    );
     canvas.drawLine(base, top, stemPaint);
-    _drawLeaf(canvas, base.translate(0, -38 * scale), scale * .34,
-        phase.isNegative ? -40 : 42, phase % 2 < 1);
+    _drawLeaf(
+      canvas,
+      base.translate(0, -38 * scale),
+      scale * .34,
+      phase.isNegative ? -40 : 42,
+      phase % 2 < 1,
+    );
 
     for (var i = 0; i < 8; i++) {
       final angle = i * math.pi / 4;
       final center = top.translate(
-          math.cos(angle) * 18 * scale, math.sin(angle) * 18 * scale);
+        math.cos(angle) * 18 * scale,
+        math.sin(angle) * 18 * scale,
+      );
       final rect = Rect.fromCenter(
-          center: center, width: 20 * scale, height: 30 * scale);
+        center: center,
+        width: 20 * scale,
+        height: 30 * scale,
+      );
       canvas.save();
       canvas.translate(center.dx, center.dy);
       canvas.rotate(angle + math.pi / 2);
@@ -845,40 +1046,62 @@ class _FlowerPainter extends CustomPainter {
       );
       canvas.restore();
     }
-    canvas.drawCircle(
-        top, 10 * scale, Paint()..color = const Color(0xffffd166));
+    canvas.drawCircle(top, 10 * scale, Paint()..color = palette.gold);
   }
 
-  void _drawTulip(Canvas canvas, Offset base, double scale, Color dark,
-      Color light, double phase) {
+  void _drawTulip(
+    Canvas canvas,
+    Offset base,
+    double scale,
+    Color dark,
+    Color light,
+    double phase,
+  ) {
     final sway = math.sin((t + phase) * math.pi * 2) * .08;
     final top = base.translate(sway * 18 * scale, -82 * scale);
     canvas.drawLine(
       base,
       top,
       Paint()
-        ..color = const Color(0xff3f7a38).withValues(alpha: .72)
+        ..color = palette.copper.withValues(alpha: .72)
         ..strokeWidth = 4 * scale
         ..strokeCap = StrokeCap.round,
     );
     _drawLeaf(canvas, base.translate(0, -34 * scale), scale * .32, 38, false);
     final bloom = Path()
       ..moveTo(top.dx, top.dy + 18 * scale)
-      ..cubicTo(top.dx - 28 * scale, top.dy - 6 * scale, top.dx - 18 * scale,
-          top.dy - 40 * scale, top.dx, top.dy - 22 * scale)
-      ..cubicTo(top.dx + 18 * scale, top.dy - 40 * scale, top.dx + 28 * scale,
-          top.dy - 6 * scale, top.dx, top.dy + 18 * scale)
+      ..cubicTo(
+        top.dx - 28 * scale,
+        top.dy - 6 * scale,
+        top.dx - 18 * scale,
+        top.dy - 40 * scale,
+        top.dx,
+        top.dy - 22 * scale,
+      )
+      ..cubicTo(
+        top.dx + 18 * scale,
+        top.dy - 40 * scale,
+        top.dx + 28 * scale,
+        top.dy - 6 * scale,
+        top.dx,
+        top.dy + 18 * scale,
+      )
       ..close();
     canvas.drawPath(
       bloom,
       Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-          colors: [dark, light],
-        ).createShader(
-          Rect.fromCenter(center: top, width: 64 * scale, height: 70 * scale),
-        ),
+        ..shader =
+            LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: [dark, light],
+            ).createShader(
+              Rect.fromCenter(
+                center: top,
+                width: 64 * scale,
+                height: 70 * scale,
+              ),
+            ),
     );
     canvas.drawPath(
       bloom,

@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 
-const primary = Color(0xffff69b4);
-const primaryDark = Color(0xffd4488e);
-const bgStart = Color(0xfffff8fa);
-const bgEnd = Color(0xfffff0f5);
-const foreground = Color(0xff26131d);
-const muted = Color(0xff775b6b);
-const border = Color(0xffffdce9);
+// Paleta medida diretamente da marca floral FMF.
+const primary = Color(0xff9f4d4d);
+const primaryDark = Color(0xff8c3b3f);
+const petal = Color(0xffedbfb3);
+const copper = Color(0xffc3866b);
+const gold = Color(0xfff7a62f);
+const bgStart = Color(0xfffefbf3);
+const bgEnd = Color(0xfffbebdc);
+const foreground = Color(0xff542a30);
+const muted = Color(0xff8c5b59);
+const border = Color(0xffeec0a2);

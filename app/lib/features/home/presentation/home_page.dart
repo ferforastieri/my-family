@@ -45,14 +45,12 @@ class _HomePageState extends State<HomePage> {
       if (events.isEmpty) return;
       setState(() => counters = _buildCounters(events));
     });
-    widget.repository.socket.on('home.settings.changed', _onSettingsChanged);
     _loadSettings();
   }
 
   @override
   void dispose() {
     timer.cancel();
-    widget.repository.socket.off('home.settings.changed', _onSettingsChanged);
     super.dispose();
   }
 
@@ -79,28 +77,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _onSettingsChanged(dynamic data) {
-    if (!mounted || data is! Map) return;
-    final rows = data['events'];
-    if (rows is! List) return;
-    final loaded = rows
-        .map((row) => HomeEventConfig.fromJson(
-              Map<String, dynamic>.from(row as Map),
-            ))
-        .toList();
-    final images = ((data['galleryImages'] as List?) ?? const [])
-        .map((image) => image.toString())
-        .where((image) => image.trim().isNotEmpty)
-        .toList();
-    final nextGalleryOrder = (data['galleryOrder'] as num?)?.toInt();
-    setState(() {
-      events = loaded;
-      galleryImages = images;
-      galleryOrder = nextGalleryOrder;
-      counters = _buildCounters(events);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return LoveBackground(
@@ -116,7 +92,11 @@ class _HomePageState extends State<HomePage> {
             final content = ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.fromLTRB(
-                  18, mobile ? 16 : 10, 18, mobile ? 0 : 340),
+                18,
+                mobile ? 16 : 10,
+                18,
+                mobile ? 0 : 340,
+              ),
               children: [
                 Center(
                   child: ConstrainedBox(
@@ -164,9 +144,11 @@ class _HomePageState extends State<HomePage> {
                             else
                               Column(
                                 children: [
-                                  for (var i = 0;
-                                      i < homeItems.length;
-                                      i++) ...[
+                                  for (
+                                    var i = 0;
+                                    i < homeItems.length;
+                                    i++
+                                  ) ...[
                                     homeItems[i].build(context),
                                     if (i < homeItems.length - 1)
                                       const SizedBox(height: 14),
@@ -190,9 +172,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 if (!mobile)
                   const Positioned.fill(
-                    child: IgnorePointer(
-                      child: _HomeGardenLayer(),
-                    ),
+                    child: IgnorePointer(child: _HomeGardenLayer()),
                   ),
                 if (mobile)
                   Column(
@@ -221,9 +201,7 @@ class _HomePageState extends State<HomePage> {
                       child: SizedBox(
                         width: 30,
                         height: 30,
-                        child: CustomPaint(
-                          painter: _FlowerCursorPainter(),
-                        ),
+                        child: CustomPaint(painter: _FlowerCursorPainter()),
                       ),
                     ),
                   ),
@@ -259,10 +237,7 @@ class _HomeLogoMark extends StatelessWidget {
         ],
       ),
       child: ClipOval(
-        child: Image.asset(
-          'assets/brand/family-logo.png',
-          fit: BoxFit.cover,
-        ),
+        child: Image.asset('assets/brand/family-logo.png', fit: BoxFit.cover),
       ),
     );
   }
@@ -302,10 +277,7 @@ class _HomeGardenLayer extends StatelessWidget {
         final mobile = constraints.maxWidth < 760;
         if (!mobile) return const FlowerGarden();
 
-        final visibleHeight = math.min(
-          constraints.maxHeight * .50,
-          430.0,
-        );
+        final visibleHeight = math.min(constraints.maxHeight * .50, 430.0);
         final paintHeight = visibleHeight + 90;
         return Align(
           alignment: Alignment.bottomCenter,
@@ -355,8 +327,12 @@ class _FlowerCursorPainter extends CustomPainter {
     canvas.drawCircle(center, 5, Paint()..color = const Color(0xffffd166));
     final stem = Path()
       ..moveTo(center.dx + 2, center.dy + 8)
-      ..quadraticBezierTo(size.width * .70, size.height * .78, size.width * .90,
-          size.height * .92);
+      ..quadraticBezierTo(
+        size.width * .70,
+        size.height * .78,
+        size.width * .90,
+        size.height * .92,
+      );
     canvas.drawPath(
       stem,
       Paint()
@@ -367,10 +343,18 @@ class _FlowerCursorPainter extends CustomPainter {
     );
     final leaf = Path()
       ..moveTo(size.width * .70, size.height * .78)
-      ..quadraticBezierTo(size.width * .52, size.height * .76, size.width * .58,
-          size.height * .62)
-      ..quadraticBezierTo(size.width * .74, size.height * .66, size.width * .70,
-          size.height * .78)
+      ..quadraticBezierTo(
+        size.width * .52,
+        size.height * .76,
+        size.width * .58,
+        size.height * .62,
+      )
+      ..quadraticBezierTo(
+        size.width * .74,
+        size.height * .66,
+        size.width * .70,
+        size.height * .78,
+      )
       ..close();
     canvas.drawPath(
       leaf,
@@ -478,8 +462,10 @@ List<_HomeLayoutItem> _buildHomeItems(
   int? galleryOrder,
 ) {
   final items = <_HomeLayoutItem>[];
-  final normalizedGalleryOrder =
-      (galleryOrder ?? events.length).clamp(0, events.length);
+  final normalizedGalleryOrder = (galleryOrder ?? events.length).clamp(
+    0,
+    events.length,
+  );
   for (var index = 0; index <= events.length; index++) {
     if (galleryImages.isNotEmpty && index == normalizedGalleryOrder) {
       items.add(_HomeGalleryLayoutItem(galleryImages));
@@ -487,14 +473,18 @@ List<_HomeLayoutItem> _buildHomeItems(
     if (index == events.length) continue;
     final event = events[index];
     if (event.hidden) continue;
-    items.add(_HomeCounterLayoutItem(CounterInfo(
-      title: event.title,
-      icon: event.icon,
-      date: event.date,
-      message: event.message,
-      elapsed: _elapsed(event.date, event.countDirection),
-      countDirection: event.countDirection,
-    )));
+    items.add(
+      _HomeCounterLayoutItem(
+        CounterInfo(
+          title: event.title,
+          icon: event.icon,
+          date: event.date,
+          message: event.message,
+          elapsed: _elapsed(event.date, event.countDirection),
+          countDirection: event.countDirection,
+        ),
+      ),
+    );
   }
   return items;
 }
@@ -572,8 +562,10 @@ class _HomePhotoCarouselState extends State<_HomePhotoCarousel> {
             ? (constraints.maxHeight - 48).clamp(150.0, 386.0)
             : (mobile ? 292.0 : 386.0);
         return Padding(
-          padding:
-              EdgeInsets.only(top: mobile ? 4 : 8, bottom: mobile ? 4 : 12),
+          padding: EdgeInsets.only(
+            top: mobile ? 4 : 8,
+            bottom: mobile ? 4 : 12,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -594,13 +586,18 @@ class _HomePhotoCarouselState extends State<_HomePhotoCarousel> {
                     ],
                   ),
                   child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.auto_awesome,
-                            color: palette.primary, size: 18),
+                        Icon(
+                          Icons.auto_awesome,
+                          color: palette.primary,
+                          size: 18,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           'Nossas fotos',
@@ -694,10 +691,7 @@ class _HomePhotoCarouselState extends State<_HomePhotoCarousel> {
 }
 
 class _FloatingHomePhoto extends StatelessWidget {
-  const _FloatingHomePhoto({
-    required this.url,
-    required this.compact,
-  });
+  const _FloatingHomePhoto({required this.url, required this.compact});
 
   final String url;
   final bool compact;
@@ -786,8 +780,9 @@ class _FloatingHomePhoto extends StatelessWidget {
 
 String _homeMediaUrl(String url) {
   if (url.startsWith('http')) return url;
-  return AppConfig.apiUri('/fotos/file?path=${Uri.encodeQueryComponent(url)}')
-      .toString();
+  return AppConfig.apiUri(
+    '/fotos/file?path=${Uri.encodeQueryComponent(url)}',
+  ).toString();
 }
 
 ElapsedTime _elapsed(DateTime date, HomeCountDirection countDirection) {
@@ -847,10 +842,7 @@ class _HomeCountersLoading extends StatelessWidget {
 }
 
 class _HomeLoadError extends StatelessWidget {
-  const _HomeLoadError({
-    required this.message,
-    required this.onRetry,
-  });
+  const _HomeLoadError({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
@@ -923,8 +915,10 @@ class CounterCard extends StatelessWidget {
                 width: compact ? 38 : 44,
                 height: compact ? 38 : 44,
                 child: Center(
-                  child: Text(info.icon,
-                      style: TextStyle(fontSize: compact ? 26 : 30)),
+                  child: Text(
+                    info.icon,
+                    style: TextStyle(fontSize: compact ? 26 : 30),
+                  ),
                 ),
               ),
               SizedBox(width: compact ? 10 : 12),
@@ -1078,7 +1072,7 @@ String _formatDate(DateTime date) {
     'setembro',
     'outubro',
     'novembro',
-    'dezembro'
+    'dezembro',
   ];
   return '${date.day.toString().padLeft(2, '0')} de ${months[date.month - 1]} de ${date.year}';
 }
