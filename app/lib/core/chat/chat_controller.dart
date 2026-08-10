@@ -134,13 +134,11 @@ class ChatController extends ChangeNotifier {
         ..clear()
         ..addAll(rows.map((row) =>
             ChatConversation.fromJson(Map<String, dynamic>.from(row as Map))));
-      active = active == null
-          ? (conversations.isNotEmpty ? conversations.first : null)
-          : conversations.firstWhere(
-              (conversation) => conversation.id == active!.id,
-              orElse: () =>
-                  conversations.isNotEmpty ? conversations.first : active!,
-            );
+      if (active != null) {
+        active = conversations
+            .where((conversation) => conversation.id == active!.id)
+            .firstOrNull;
+      }
       if (active != null) await loadMessages(active!);
       errorMessage = null;
     } catch (error) {
@@ -195,6 +193,14 @@ class ChatController extends ChangeNotifier {
     final conversation =
         conversations.where((item) => item.id == conversationId).firstOrNull;
     if (conversation != null) await loadMessages(conversation);
+  }
+
+  void clearActiveConversation() {
+    active = null;
+    messages.clear();
+    clearReply();
+    clearTypingUsers();
+    notifyListeners();
   }
 
   Future<void> createConversation(ChatUser user) async {

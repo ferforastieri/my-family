@@ -142,6 +142,13 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
                 description: 'Atualize seu nome e suas informações.',
                 onTap: widget.onEditProfile,
               ),
+              const SizedBox(height: 10),
+              _ProfileActionTile(
+                icon: Icons.palette_outlined,
+                label: 'Cor e tema',
+                description: 'Escolha as cores, fonte e modo do app.',
+                onTap: () => AppHeaderActionsScope.maybeOf(context)?.onTheme(),
+              ),
               if (user.isAdmin) ...[
                 const SizedBox(height: 10),
                 _ProfileActionTile(

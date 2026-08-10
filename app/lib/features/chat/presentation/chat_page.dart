@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/chat/chat_controller.dart';
@@ -36,6 +36,7 @@ class _ChatPageState extends State<ChatPage> {
   final name = TextEditingController();
   final messagesScroll = ScrollController();
   bool sending = false;
+  bool showMobileConversationList = true;
   String? _lastScrollSignature;
   String? _lastScrolledConversationId;
 
@@ -45,11 +46,13 @@ class _ChatPageState extends State<ChatPage> {
     text.addListener(_handleTypingChanged);
     Future.microtask(() async {
       try {
+        widget.chat.clearActiveConversation();
         await widget.chat.bootstrap();
         await widget.chat.refreshConversations();
         final conversationId = widget.initialConversationId;
         if (conversationId != null) {
           await widget.chat.openConversation(conversationId);
+          if (mounted) setState(() => showMobileConversationList = false);
         }
       } catch (error) {
         widget.toast.error(error.toString());
@@ -173,46 +176,6 @@ class _ChatPageState extends State<ChatPage> {
     return name.text.trim();
   }
 
-  Future<void> _openPeoplePicker() async {
-    try {
-      await widget.chat.refreshUsers();
-      if (!mounted) return;
-      final user = await showAppSheet<ChatUser>(
-        context: context,
-        builder: (sheetContext) => SizedBox(
-          width: 460,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Nova conversa',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-              const SizedBox(height: 12),
-              if (widget.chat.users.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text('Nenhuma pessoa encontrada.'),
-                ),
-              for (final user in widget.chat.users)
-                ListTile(
-                  leading: const Icon(Icons.person_outline),
-                  title: Text(user.label),
-                  onTap: () => Navigator.of(sheetContext).pop(user),
-                ),
-            ],
-          ),
-        ),
-      );
-      if (user == null || !mounted) return;
-      try {
-        await widget.chat.createConversation(user);
-      } catch (error) {
-        widget.toast.error(error.toString());
-      }
-    } catch (error) {
-      widget.toast.error(error.toString());
-    }
-  }
-
   Future<void> _editMessage(ChatMessage message) async {
     final value = await showAppSheet<String>(
       context: context,
@@ -272,7 +235,6 @@ class _ChatPageState extends State<ChatPage> {
             final sidebar = _ConversationList(
               chat: widget.chat,
               auth: widget.auth,
-              onNewConversation: _openPeoplePicker,
             );
             final messages = _MessagePane(
               chat: widget.chat,
@@ -288,12 +250,20 @@ class _ChatPageState extends State<ChatPage> {
               onDeleteMessage: _deleteMessage,
               onReplyMessage: widget.chat.setReply,
               compact: !wide,
-              onBack: () => _goBack(context),
-              onOpenConversations: _openConversationsSheet,
               showHeader: wide,
             );
 
             if (!wide) {
+              if (showMobileConversationList) {
+                return Container(
+                  color: palette.bgStart,
+                  child: _ConversationList(
+                    chat: widget.chat,
+                    auth: widget.auth,
+                    onConversationSelected: _openMobileConversation,
+                  ),
+                );
+              }
               return Container(
                 color: palette.bgStart,
                 child: Column(
@@ -310,10 +280,7 @@ class _ChatPageState extends State<ChatPage> {
                           conversation: widget.chat.active,
                           size: 42,
                         ),
-                        actionLabel: 'Conversas',
-                        actionIcon: Icons.forum_outlined,
-                        onAction: _openConversationsSheet,
-                        inlineAction: true,
+                        onBack: _showMobileConversationList,
                       ),
                     ),
                     Expanded(child: messages),
@@ -361,36 +328,16 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  Future<void> _openConversationsSheet() async {
-    showAppSheet<void>(
-      context: context,
-      builder: (sheetContext) => SizedBox(
-        width: 520,
-        height: MediaQuery.of(context).size.height * .72,
-        child: _ConversationList(
-          chat: widget.chat,
-          auth: widget.auth,
-          onNewConversation: () {
-            Navigator.of(sheetContext).pop();
-            _openPeoplePicker();
-          },
-          onConversationSelected: (conversation) {
-            Navigator.of(sheetContext).pop();
-            widget.chat
-                .loadMessages(conversation)
-                .catchError((error) => widget.toast.error(error.toString()));
-          },
-        ),
-      ),
-    );
+  void _openMobileConversation(ChatConversation conversation) {
+    setState(() => showMobileConversationList = false);
+    widget.chat
+        .loadMessages(conversation)
+        .catchError((error) => widget.toast.error(error.toString()));
   }
 
-  void _goBack(BuildContext context) {
-    if (context.canPop()) {
-      context.pop();
-    } else {
-      context.go('/');
-    }
+  void _showMobileConversationList() {
+    widget.chat.updateTyping('', senderName: _senderName);
+    setState(() => showMobileConversationList = true);
   }
 }
 
@@ -449,77 +396,152 @@ class _EditMessageSheetState extends State<_EditMessageSheet> {
   }
 }
 
-class _ConversationList extends StatelessWidget {
+enum _ConversationFilter { all, unread, favorites }
+
+class _ConversationList extends StatefulWidget {
   const _ConversationList({
     required this.chat,
     required this.auth,
-    required this.onNewConversation,
     this.onConversationSelected,
   });
 
   final ChatController chat;
   final AuthController auth;
-  final VoidCallback onNewConversation;
   final ValueChanged<ChatConversation>? onConversationSelected;
+
+  @override
+  State<_ConversationList> createState() => _ConversationListState();
+}
+
+class _ConversationListState extends State<_ConversationList> {
+  static const _favoritesPrefix = 'chat.favorite-conversations.';
+
+  _ConversationFilter filter = _ConversationFilter.all;
+  Set<String> favorites = const {};
+
+  String get _favoritesKey =>
+      '$_favoritesPrefix${widget.auth.user?.id ?? 'anonymous'}';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavorites();
+  }
+
+  Future<void> _loadFavorites() async {
+    final preferences = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      favorites = preferences.getStringList(_favoritesKey)?.toSet() ?? {};
+    });
+  }
+
+  Future<void> _toggleFavorite(String conversationId) async {
+    final updated = {...favorites};
+    if (!updated.add(conversationId)) updated.remove(conversationId);
+    setState(() => favorites = updated);
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setStringList(_favoritesKey, updated.toList());
+  }
 
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
+    final conversations = widget.chat.conversations.where((conversation) {
+      return switch (filter) {
+        _ConversationFilter.all => true,
+        _ConversationFilter.unread => conversation.unreadCount > 0,
+        _ConversationFilter.favorites => favorites.contains(conversation.id),
+      };
+    }).toList()
+      ..sort((a, b) {
+        final aFavorite = favorites.contains(a.id);
+        final bFavorite = favorites.contains(b.id);
+        if (aFavorite != bFavorite) return aFavorite ? -1 : 1;
+        return 0;
+      });
     return Column(
       children: [
         Container(
-          height: 72,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          height: 68,
+          padding: const EdgeInsets.symmetric(horizontal: 18),
           color: palette.primary.withValues(alpha: .08),
           child: Row(
             children: [
-              CircleAvatar(
-                backgroundColor: palette.primary,
-                foregroundColor: Colors.white,
-                child: const Icon(Icons.chat_bubble_outline),
-              ),
-              const SizedBox(width: 12),
               const Expanded(
                 child: Text('Conversas',
                     style:
                         TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
               ),
-              if (auth.user != null)
-                IconButton(
-                  onPressed: onNewConversation,
-                  icon: const Icon(Icons.add_comment_outlined),
-                  tooltip: 'Nova conversa',
-                ),
             ],
           ),
         ),
-        if (chat.errorMessage != null)
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+          child: Row(
+            children: [
+              _ConversationFilterChip(
+                label: 'Todas',
+                selected: filter == _ConversationFilter.all,
+                onSelected: () =>
+                    setState(() => filter = _ConversationFilter.all),
+              ),
+              const SizedBox(width: 8),
+              _ConversationFilterChip(
+                label: 'Não lidas',
+                selected: filter == _ConversationFilter.unread,
+                onSelected: () =>
+                    setState(() => filter = _ConversationFilter.unread),
+              ),
+              const SizedBox(width: 8),
+              _ConversationFilterChip(
+                label: 'Favoritos',
+                selected: filter == _ConversationFilter.favorites,
+                onSelected: () =>
+                    setState(() => filter = _ConversationFilter.favorites),
+              ),
+            ],
+          ),
+        ),
+        if (widget.chat.errorMessage != null)
           Padding(
             padding: const EdgeInsets.all(12),
-            child: Text(chat.errorMessage!,
+            child: Text(widget.chat.errorMessage!,
                 style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ),
         Expanded(
-          child: chat.loading && chat.conversations.isEmpty
+          child: widget.chat.loading && widget.chat.conversations.isEmpty
               ? const _ConversationSkeleton()
-              : ListView.separated(
+              : conversations.isEmpty
+                  ? Center(
+                      child: Text(
+                        filter == _ConversationFilter.unread
+                            ? 'Nenhuma conversa não lida.'
+                            : 'Nenhuma conversa favorita.',
+                        style: TextStyle(color: palette.muted),
+                      ),
+                    )
+                  : ListView.separated(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  itemCount: chat.conversations.length,
+                  itemCount: conversations.length,
                   separatorBuilder: (_, __) =>
                       Divider(height: 1, color: palette.border),
                   itemBuilder: (context, index) {
-                    final conversation = chat.conversations[index];
-                    final selected = chat.active?.id == conversation.id;
+                    final conversation = conversations[index];
+                    final selected = widget.chat.active?.id == conversation.id;
                     return _ConversationListItem(
                       conversation: conversation,
                       selected: selected,
+                      favorite: favorites.contains(conversation.id),
+                      onToggleFavorite: () => _toggleFavorite(conversation.id),
                       onTap: () {
-                        final handler = onConversationSelected;
+                        final handler = widget.onConversationSelected;
                         if (handler != null) {
                           handler(conversation);
                           return;
                         }
-                        chat
+                        widget.chat
                             .loadMessages(conversation)
                             .catchError((error) => null);
                       },
@@ -532,16 +554,41 @@ class _ConversationList extends StatelessWidget {
   }
 }
 
+class _ConversationFilterChip extends StatelessWidget {
+  const _ConversationFilterChip({
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  @override
+  Widget build(BuildContext context) => ChoiceChip(
+        label: Text(label),
+        selected: selected,
+        onSelected: (_) => onSelected(),
+        visualDensity: VisualDensity.compact,
+        labelStyle: const TextStyle(fontWeight: FontWeight.w800),
+      );
+}
+
 class _ConversationListItem extends StatelessWidget {
   const _ConversationListItem({
     required this.conversation,
     required this.selected,
+    required this.favorite,
     required this.onTap,
+    required this.onToggleFavorite,
   });
 
   final ChatConversation conversation;
   final bool selected;
+  final bool favorite;
   final VoidCallback onTap;
+  final VoidCallback onToggleFavorite;
 
   @override
   Widget build(BuildContext context) {
@@ -557,13 +604,13 @@ class _ConversationListItem extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: SizedBox(
-          height: 76,
+          height: 80,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                _ConversationAvatar(conversation: conversation, size: 40),
-                const SizedBox(width: 12),
+                _ConversationAvatar(conversation: conversation, size: 48),
+                const SizedBox(width: 13),
                 Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -596,6 +643,19 @@ class _ConversationListItem extends StatelessWidget {
                   const SizedBox(width: 10),
                   _UnreadBadge(count: conversation.unreadCount),
                 ],
+                const SizedBox(width: 2),
+                IconButton(
+                  onPressed: onToggleFavorite,
+                  tooltip: favorite
+                      ? 'Remover dos favoritos'
+                      : 'Adicionar aos favoritos',
+                  visualDensity: VisualDensity.compact,
+                  icon: Icon(
+                    favorite ? Icons.star_rounded : Icons.star_outline_rounded,
+                    color: favorite ? palette.primary : palette.muted,
+                    size: 20,
+                  ),
+                ),
               ],
             ),
           ),
@@ -620,8 +680,6 @@ class _MessagePane extends StatelessWidget {
     required this.onDeleteMessage,
     required this.onReplyMessage,
     required this.compact,
-    required this.onBack,
-    required this.onOpenConversations,
     this.showHeader = true,
   });
 
@@ -638,14 +696,20 @@ class _MessagePane extends StatelessWidget {
   final ValueChanged<ChatMessage> onDeleteMessage;
   final ValueChanged<ChatMessage> onReplyMessage;
   final bool compact;
-  final VoidCallback onBack;
-  final VoidCallback onOpenConversations;
   final bool showHeader;
 
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     final active = chat.active;
+    if (active == null) {
+      return Center(
+        child: Text(
+          'Escolha uma conversa para começar.',
+          style: TextStyle(color: palette.muted, fontWeight: FontWeight.w700),
+        ),
+      );
+    }
     return Column(
       children: [
         if (showHeader) ...[
@@ -656,12 +720,6 @@ class _MessagePane extends StatelessWidget {
                 compact ? palette.primary.withValues(alpha: .08) : palette.card,
             child: Row(
               children: [
-                AppHeaderIconButton(
-                  onPressed: onBack,
-                  icon: const Icon(Icons.arrow_back),
-                  tooltip: 'Voltar',
-                ),
-                const SizedBox(width: 10),
                 _ConversationAvatar(
                   conversation: active,
                   size: 42,
@@ -688,12 +746,6 @@ class _MessagePane extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (compact)
-                  IconButton(
-                    onPressed: onOpenConversations,
-                    icon: const Icon(Icons.forum_outlined),
-                    tooltip: 'Conversas',
-                  ),
               ],
             ),
           ),
