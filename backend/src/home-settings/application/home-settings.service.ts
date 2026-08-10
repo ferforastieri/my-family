@@ -39,12 +39,18 @@ export class HomeSettingsService {
         current.events,
         current.galleryImages ?? [],
         current.galleryOrder,
+        current.galleryTitle,
+        current.galleryTitleVisible,
+        current.galleryTitleLayout,
       );
     }
     const created = await this.repository.save({
       events: defaultEvents,
       galleryImages: [],
       galleryOrder: defaultEvents.length,
+      galleryTitle: 'Nossas memórias',
+      galleryTitleVisible: true,
+      galleryTitleLayout: 'arc',
     });
     return this.toDto(created?.events ?? defaultEvents);
   }
@@ -60,6 +66,9 @@ export class HomeSettingsService {
     }>;
     galleryImages?: string[];
     galleryOrder?: number;
+    galleryTitle?: string;
+    galleryTitleVisible?: boolean;
+    galleryTitleLayout?: string;
   }) {
     if (!Array.isArray(input?.events) || input.events.length < 1) {
       throw new BadRequestException('Informe pelo menos um card da Home.');
@@ -94,15 +103,25 @@ export class HomeSettingsService {
       typeof input.galleryOrder === 'number' && Number.isFinite(input.galleryOrder)
         ? Math.max(0, Math.min(events.length, Math.floor(input.galleryOrder)))
         : events.length;
+    const galleryTitle = input.galleryTitle?.trim() || 'Nossas memórias';
+    const galleryTitleVisible = input.galleryTitleVisible !== false;
+    const galleryTitleLayout =
+      input.galleryTitleLayout === 'straight' ? 'straight' : 'arc';
     const saved = await this.repository.save({
       events,
       galleryImages,
       galleryOrder,
+      galleryTitle,
+      galleryTitleVisible,
+      galleryTitleLayout,
     });
     return this.toDto(
       saved?.events ?? events,
       saved?.galleryImages ?? galleryImages,
       saved?.galleryOrder ?? galleryOrder,
+      saved?.galleryTitle ?? galleryTitle,
+      saved?.galleryTitleVisible ?? galleryTitleVisible,
+      saved?.galleryTitleLayout ?? galleryTitleLayout,
     );
   }
 
@@ -110,6 +129,9 @@ export class HomeSettingsService {
     events: HomeEventWrite[],
     galleryImages: string[] = [],
     galleryOrder = events.length,
+    galleryTitle = 'Nossas memórias',
+    galleryTitleVisible = true,
+    galleryTitleLayout: 'arc' | 'straight' = 'arc',
   ) {
     const normalizedGalleryOrder = Math.max(
       0,
@@ -127,6 +149,9 @@ export class HomeSettingsService {
       })),
       galleryImages,
       galleryOrder: normalizedGalleryOrder,
+      galleryTitle: galleryTitle.trim() || 'Nossas memórias',
+      galleryTitleVisible,
+      galleryTitleLayout: galleryTitleLayout === 'straight' ? 'straight' : 'arc',
     };
   }
 }

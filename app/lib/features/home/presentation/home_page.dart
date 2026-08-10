@@ -34,6 +34,9 @@ class _HomePageState extends State<HomePage> {
   List<HomeEventConfig> events = [];
   List<String> galleryImages = [];
   int? galleryOrder;
+  String galleryTitle = 'Nossas memórias';
+  bool galleryTitleVisible = true;
+  String galleryTitleLayout = 'arc';
   String? loadError;
   Offset? cursorPosition;
 
@@ -63,6 +66,9 @@ class _HomePageState extends State<HomePage> {
         events = loaded.events;
         galleryImages = loaded.galleryImages;
         galleryOrder = loaded.galleryOrder;
+        galleryTitle = loaded.galleryTitle;
+        galleryTitleVisible = loaded.galleryTitleVisible;
+        galleryTitleLayout = loaded.galleryTitleLayout;
         counters = _buildCounters(events);
       });
     } catch (error) {
@@ -72,6 +78,9 @@ class _HomePageState extends State<HomePage> {
         events = [];
         galleryImages = [];
         galleryOrder = null;
+        galleryTitle = 'Nossas memórias';
+        galleryTitleVisible = true;
+        galleryTitleLayout = 'arc';
         counters = const [];
       });
     }
@@ -108,6 +117,9 @@ class _HomePageState extends State<HomePage> {
                           events,
                           galleryImages,
                           galleryOrder,
+                          galleryTitle,
+                          galleryTitleVisible,
+                          galleryTitleLayout,
                         );
                         return Column(
                           children: [
@@ -419,6 +431,9 @@ List<_HomeLayoutItem> _buildHomeItems(
   List<HomeEventConfig> events,
   List<String> galleryImages,
   int? galleryOrder,
+  String galleryTitle,
+  bool galleryTitleVisible,
+  String galleryTitleLayout,
 ) {
   final items = <_HomeLayoutItem>[];
   final normalizedGalleryOrder = (galleryOrder ?? events.length).clamp(
@@ -427,7 +442,14 @@ List<_HomeLayoutItem> _buildHomeItems(
   );
   for (var index = 0; index <= events.length; index++) {
     if (galleryImages.isNotEmpty && index == normalizedGalleryOrder) {
-      items.add(_HomeGalleryLayoutItem(galleryImages));
+      items.add(
+        _HomeGalleryLayoutItem(
+          galleryImages,
+          title: galleryTitle,
+          titleVisible: galleryTitleVisible,
+          titleLayout: galleryTitleLayout,
+        ),
+      );
     }
     if (index == events.length) continue;
     final event = events[index];
@@ -464,12 +486,25 @@ class _HomeCounterLayoutItem extends _HomeLayoutItem {
 }
 
 class _HomeGalleryLayoutItem extends _HomeLayoutItem {
-  const _HomeGalleryLayoutItem(this.images);
+  const _HomeGalleryLayoutItem(
+    this.images, {
+    required this.title,
+    required this.titleVisible,
+    required this.titleLayout,
+  });
 
   final List<String> images;
+  final String title;
+  final bool titleVisible;
+  final String titleLayout;
 
   @override
-  Widget build(BuildContext context) => _HomePhotoCarousel(images: images);
+  Widget build(BuildContext context) => _HomePhotoCarousel(
+        images: images,
+        title: title,
+        titleVisible: titleVisible,
+        titleLayout: titleLayout,
+      );
 }
 
 class _DesktopHomeLayout extends StatelessWidget {
@@ -569,9 +604,17 @@ class _DesktopCounterGrid extends StatelessWidget {
 }
 
 class _HomePhotoCarousel extends StatefulWidget {
-  const _HomePhotoCarousel({required this.images});
+  const _HomePhotoCarousel({
+    required this.images,
+    required this.title,
+    required this.titleVisible,
+    required this.titleLayout,
+  });
 
   final List<String> images;
+  final String title;
+  final bool titleVisible;
+  final String titleLayout;
 
   @override
   State<_HomePhotoCarousel> createState() => _HomePhotoCarouselState();
@@ -613,12 +656,19 @@ class _HomePhotoCarouselState extends State<_HomePhotoCarousel> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final bounded = constraints.hasBoundedHeight;
+        final showTitle = widget.titleVisible && widget.title.trim().isNotEmpty;
+        final titleHeight = showTitle ? (mobile ? 42.0 : 52.0) : 0.0;
         final photoHeight = bounded
-            ? (constraints.maxHeight - 20).clamp(150.0, 444.0)
+            ? (constraints.maxHeight - 20 - titleHeight).clamp(150.0, 444.0)
             : (mobile ? 292.0 : 386.0);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (showTitle)
+              _HomeGalleryTitle(
+                title: widget.title,
+                arc: widget.titleLayout == 'arc',
+              ),
             SizedBox(
               height: photoHeight,
               child: ClipRect(
@@ -678,6 +728,86 @@ class _HomePhotoCarouselState extends State<_HomePhotoCarousel> {
       },
     );
   }
+}
+
+class _HomeGalleryTitle extends StatelessWidget {
+  const _HomeGalleryTitle({required this.title, required this.arc});
+
+  final String title;
+  final bool arc;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final text = Theme.of(context).extension<AppTextThemes>()!;
+    final style = text.display.merge(
+      TextStyle(
+        color: palette.primary,
+        fontSize: 19,
+        height: 1,
+        fontWeight: FontWeight.w900,
+      ),
+    );
+    if (!arc) {
+      return SizedBox(
+        height: 42,
+        child: Center(
+          child: Text(title, textAlign: TextAlign.center, style: style),
+        ),
+      );
+    }
+    return SizedBox(
+      height: 52,
+      width: double.infinity,
+      child: CustomPaint(
+        painter: _ArcGalleryTitlePainter(title: title, style: style),
+      ),
+    );
+  }
+}
+
+class _ArcGalleryTitlePainter extends CustomPainter {
+  const _ArcGalleryTitlePainter({required this.title, required this.style});
+
+  final String title;
+  final TextStyle style;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final letters = title.runes.map(String.fromCharCode).toList();
+    if (letters.isEmpty) return;
+    final painters = letters
+        .map(
+          (letter) => TextPainter(
+            text: TextSpan(text: letter, style: style),
+            textDirection: TextDirection.ltr,
+          )..layout(),
+        )
+        .toList();
+    final totalWidth = painters.fold<double>(
+      0,
+      (sum, painter) => sum + painter.width,
+    );
+    var x = (size.width - totalWidth) / 2;
+    for (final painter in painters) {
+      final center = x + painter.width / 2;
+      final progress = ((center - size.width / 2) / (size.width / 2)).clamp(
+        -1.0,
+        1.0,
+      );
+      final y = 25 + 12 * progress * progress;
+      canvas.save();
+      canvas.translate(center, y);
+      canvas.rotate(progress * .22);
+      painter.paint(canvas, Offset(-painter.width / 2, -painter.height / 2));
+      canvas.restore();
+      x += painter.width;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ArcGalleryTitlePainter oldDelegate) =>
+      oldDelegate.title != title || oldDelegate.style != style;
 }
 
 class _FloatingHomePhoto extends StatelessWidget {

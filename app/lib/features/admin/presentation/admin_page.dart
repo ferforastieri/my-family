@@ -47,6 +47,9 @@ class _AdminPageState extends State<AdminPage> {
   List<HomeEventConfig> homeEvents = [];
   List<String> homeGalleryImages = [];
   int? homeGalleryOrder;
+  String homeGalleryTitle = 'Nossas memórias';
+  bool homeGalleryTitleVisible = true;
+  String homeGalleryTitleLayout = 'arc';
   PaginatedResult<AppUser>? usersPagination;
   PaginatedResult<AppNotification>? notificationsPagination;
   PaginatedResult<QuizQuestion>? questionsPagination;
@@ -240,6 +243,9 @@ class _AdminPageState extends State<AdminPage> {
     homeEvents = data.homeSettings?.events ?? const [];
     homeGalleryImages = data.homeSettings?.galleryImages ?? const [];
     homeGalleryOrder = data.homeSettings?.galleryOrder;
+    homeGalleryTitle = data.homeSettings?.galleryTitle ?? 'Nossas memórias';
+    homeGalleryTitleVisible = data.homeSettings?.galleryTitleVisible ?? true;
+    homeGalleryTitleLayout = data.homeSettings?.galleryTitleLayout ?? 'arc';
     loadError = data.loadError;
   }
 
@@ -303,6 +309,9 @@ class _AdminPageState extends State<AdminPage> {
           events: homeEvents,
           galleryImages: homeGalleryImages,
           galleryOrder: homeGalleryOrder,
+          galleryTitle: homeGalleryTitle,
+          galleryTitleVisible: homeGalleryTitleVisible,
+          galleryTitleLayout: homeGalleryTitleLayout,
           repository: widget.repository,
           onSave: (settings) async {
             await widget.repository.updateHomeSettings(settings);
@@ -1458,6 +1467,9 @@ class _HomeSettingsAdminTab extends StatelessWidget {
     required this.events,
     required this.galleryImages,
     required this.galleryOrder,
+    required this.galleryTitle,
+    required this.galleryTitleVisible,
+    required this.galleryTitleLayout,
     required this.repository,
     required this.onSave,
   });
@@ -1465,6 +1477,9 @@ class _HomeSettingsAdminTab extends StatelessWidget {
   final List<HomeEventConfig> events;
   final List<String> galleryImages;
   final int? galleryOrder;
+  final String galleryTitle;
+  final bool galleryTitleVisible;
+  final String galleryTitleLayout;
   final FamilyRepository repository;
   final Future<void> Function(HomeSettingsConfig settings) onSave;
 
@@ -1498,7 +1513,7 @@ class _HomeSettingsAdminTab extends StatelessWidget {
                   icon: Icons.auto_awesome_motion_outlined,
                   title: 'Carrossel de fotos',
                   subtitle:
-                      '${galleryImages.length} foto${galleryImages.length == 1 ? '' : 's'} • aparece como card flutuante na Home',
+                      '${galleryImages.length} foto${galleryImages.length == 1 ? '' : 's'} • ${galleryTitleVisible ? galleryTitle : 'título oculto'}',
                   actions: [
                     IconButton(
                       onPressed:
@@ -1591,6 +1606,9 @@ class _HomeSettingsAdminTab extends StatelessWidget {
     List<HomeEventConfig>? nextEvents,
     List<String>? nextGalleryImages,
     int? nextGalleryOrder,
+    String? nextGalleryTitle,
+    bool? nextGalleryTitleVisible,
+    String? nextGalleryTitleLayout,
   }) {
     final eventsToSave = nextEvents ?? events;
     return onSave(
@@ -1601,6 +1619,9 @@ class _HomeSettingsAdminTab extends StatelessWidget {
           0,
           eventsToSave.length,
         ),
+        galleryTitle: nextGalleryTitle ?? galleryTitle,
+        galleryTitleVisible: nextGalleryTitleVisible ?? galleryTitleVisible,
+        galleryTitleLayout: nextGalleryTitleLayout ?? galleryTitleLayout,
       ),
     );
   }
@@ -1630,13 +1651,23 @@ class _HomeSettingsAdminTab extends StatelessWidget {
   }
 
   Future<void> _openGallerySheet(BuildContext context) async {
-    final images = await showAppSheet<List<String>>(
+    final gallery = await showAppSheet<_HomeGalleryEdit>(
       context: context,
-      builder: (_) =>
-          _HomeGallerySheet(images: galleryImages, repository: repository),
+      builder: (_) => _HomeGallerySheet(
+        images: galleryImages,
+        title: galleryTitle,
+        titleVisible: galleryTitleVisible,
+        titleLayout: galleryTitleLayout,
+        repository: repository,
+      ),
     );
-    if (images == null) return;
-    await _save(nextGalleryImages: images);
+    if (gallery == null) return;
+    await _save(
+      nextGalleryImages: gallery.images,
+      nextGalleryTitle: gallery.title,
+      nextGalleryTitleVisible: gallery.titleVisible,
+      nextGalleryTitleLayout: gallery.titleLayout,
+    );
   }
 
   Future<void> _deleteEvent(int index) async {
@@ -2197,9 +2228,18 @@ class _HomeEventSheetState extends State<_HomeEventSheet> {
 }
 
 class _HomeGallerySheet extends StatefulWidget {
-  const _HomeGallerySheet({required this.images, required this.repository});
+  const _HomeGallerySheet({
+    required this.images,
+    required this.title,
+    required this.titleVisible,
+    required this.titleLayout,
+    required this.repository,
+  });
 
   final List<String> images;
+  final String title;
+  final bool titleVisible;
+  final String titleLayout;
   final FamilyRepository repository;
 
   @override
@@ -2208,6 +2248,9 @@ class _HomeGallerySheet extends StatefulWidget {
 
 class _HomeGallerySheetState extends State<_HomeGallerySheet> {
   late final List<String> images;
+  late final TextEditingController title;
+  late bool titleVisible;
+  late String titleLayout;
   final imagePicker = ImagePicker();
   bool uploading = false;
   String? errorText;
@@ -2216,6 +2259,15 @@ class _HomeGallerySheetState extends State<_HomeGallerySheet> {
   void initState() {
     super.initState();
     images = [...widget.images];
+    title = TextEditingController(text: widget.title);
+    titleVisible = widget.titleVisible;
+    titleLayout = widget.titleLayout == 'straight' ? 'straight' : 'arc';
+  }
+
+  @override
+  void dispose() {
+    title.dispose();
+    super.dispose();
   }
 
   Future<void> _addImages() async {
@@ -2257,6 +2309,40 @@ class _HomeGallerySheetState extends State<_HomeGallerySheet> {
             icon: Icons.auto_awesome_motion_outlined,
           ),
           const SizedBox(height: 18),
+          TextField(
+            controller: title,
+            enabled: !uploading,
+            decoration: const InputDecoration(labelText: 'Título do carrossel'),
+            textInputAction: TextInputAction.done,
+          ),
+          const SizedBox(height: 10),
+          _AdminSwitchRow(
+            value: titleVisible,
+            onChanged: uploading
+                ? (_) {}
+                : (value) => setState(() => titleVisible = value),
+            label: 'Mostrar título acima das fotos',
+          ),
+          const SizedBox(height: 10),
+          SegmentedButton<String>(
+            segments: const [
+              ButtonSegment(
+                value: 'arc',
+                icon: Icon(Icons.architecture_outlined),
+                label: Text('Arco'),
+              ),
+              ButtonSegment(
+                value: 'straight',
+                icon: Icon(Icons.horizontal_rule_rounded),
+                label: Text('Reto'),
+              ),
+            ],
+            selected: {titleLayout},
+            onSelectionChanged: uploading
+                ? null
+                : (value) => setState(() => titleLayout = value.first),
+          ),
+          const SizedBox(height: 18),
           _HomeGalleryEditor(
             images: images,
             uploading: uploading,
@@ -2276,13 +2362,37 @@ class _HomeGallerySheetState extends State<_HomeGallerySheet> {
           const SizedBox(height: 20),
           AppSheetActions(
             onCancel: uploading ? null : () => Navigator.pop(context),
-            onSave: uploading ? null : () => Navigator.pop(context, images),
+            onSave: uploading
+                ? null
+                : () => Navigator.pop(
+                      context,
+                      _HomeGalleryEdit(
+                        images: images,
+                        title: title.text.trim(),
+                        titleVisible: titleVisible,
+                        titleLayout: titleLayout,
+                      ),
+                    ),
             loading: uploading,
           ),
         ],
       ),
     );
   }
+}
+
+class _HomeGalleryEdit {
+  const _HomeGalleryEdit({
+    required this.images,
+    required this.title,
+    required this.titleVisible,
+    required this.titleLayout,
+  });
+
+  final List<String> images;
+  final String title;
+  final bool titleVisible;
+  final String titleLayout;
 }
 
 class _HomeSettingsSheet extends StatefulWidget {
