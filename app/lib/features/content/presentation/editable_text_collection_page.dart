@@ -73,8 +73,8 @@ class _EditableTextCollectionPageState
               header: AppPageHeader(
                 title: widget.title,
                 subtitle: canWrite
-                    ? 'Escreva e edite os textos desta página.'
-                    : 'Textos publicados para a família.',
+                    ? 'Escreva os textos desta página.'
+                    : 'Textos da família.',
                 icon: Icons.edit_note_outlined,
                 actionLabel: canWrite ? 'Escrever' : null,
                 actionIcon: Icons.edit_outlined,

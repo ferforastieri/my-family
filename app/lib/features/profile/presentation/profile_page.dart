@@ -34,7 +34,7 @@ class ProfilePage extends StatelessWidget {
       child: AppFixedHeaderScrollView(
         header: const AppPageHeader(
           title: 'Perfil',
-          subtitle: 'Conta, avatar e opções do app.',
+          subtitle: 'Conta e preferências.',
           icon: Icons.person_outline,
         ),
         children: [

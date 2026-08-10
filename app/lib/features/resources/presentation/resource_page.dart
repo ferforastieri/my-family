@@ -1930,11 +1930,11 @@ String _photoUrl(FamilyItem item) {
 String _subtitleFor(String resource) {
   return switch (resource) {
     'musicas' =>
-      'Cada música conta uma história nossa. Uma melodia que nos faz sorrir, dançar e reviver momentos especiais do nosso amor.',
+      'Nossa trilha de memórias.',
     'cartas' =>
-      'Um espaço especial onde guardo todas as minhas declarações de amor para você. Cada carta é um pedacinho do meu coração transformado em palavras.',
+      'Cartas para quem você ama.',
     'notas' =>
-      'Notas livres para guardar ideias, lembretes e detalhes importantes da família.',
+      'Ideias e lembretes da família.',
     _ => '',
   };
 }

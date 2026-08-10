@@ -149,7 +149,7 @@ class _GamesHero extends StatelessWidget {
   Widget build(BuildContext context) {
     return const AppPageHeader(
       title: 'Jogos do Amor',
-      subtitle: 'Escolha para onde seguir.',
+      subtitle: 'Escolha um jogo.',
       icon: Icons.favorite_outline,
     );
   }

@@ -140,8 +140,7 @@ class AppPageHeader extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       subtitle!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      softWrap: true,
                       style: TextStyle(color: palette.muted, fontSize: 13),
                     ),
                   ],
