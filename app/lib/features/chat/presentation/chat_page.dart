@@ -418,6 +418,8 @@ class _ConversationListState extends State<_ConversationList> {
 
   _ConversationFilter filter = _ConversationFilter.all;
   Set<String> favorites = const {};
+  late final TextEditingController searchController;
+  String searchQuery = '';
 
   String get _favoritesKey =>
       '$_favoritesPrefix${widget.auth.user?.id ?? 'anonymous'}';
@@ -425,7 +427,17 @@ class _ConversationListState extends State<_ConversationList> {
   @override
   void initState() {
     super.initState();
+    searchController = TextEditingController();
+    searchController.addListener(() {
+      setState(() => searchQuery = searchController.text.trim().toLowerCase());
+    });
     _loadFavorites();
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadFavorites() async {
@@ -448,11 +460,14 @@ class _ConversationListState extends State<_ConversationList> {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     final conversations = widget.chat.conversations.where((conversation) {
-      return switch (filter) {
+      final matchesFilter = switch (filter) {
         _ConversationFilter.all => true,
         _ConversationFilter.unread => conversation.unreadCount > 0,
         _ConversationFilter.favorites => favorites.contains(conversation.id),
       };
+      final title = conversation.type == 'global' ? 'Chat' : conversation.title;
+      return matchesFilter &&
+          (searchQuery.isEmpty || title.toLowerCase().contains(searchQuery));
     }).toList()
       ..sort((a, b) {
         final aFavorite = favorites.contains(a.id);
@@ -469,9 +484,34 @@ class _ConversationListState extends State<_ConversationList> {
             icon: Icons.chat_bubble_outline,
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+          child: TextField(
+            controller: searchController,
+            textInputAction: TextInputAction.search,
+            decoration: InputDecoration(
+              hintText: 'Pesquisar conversas',
+              prefixIcon: const Icon(Icons.search_rounded),
+              suffixIcon: searchQuery.isEmpty
+                  ? null
+                  : IconButton(
+                      onPressed: searchController.clear,
+                      icon: const Icon(Icons.close_rounded),
+                      tooltip: 'Limpar pesquisa',
+                    ),
+              isDense: true,
+              filled: true,
+              fillColor: palette.primary.withValues(alpha: .07),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+        ),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+          padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
           child: Row(
             children: [
               _ConversationFilterChip(
@@ -508,11 +548,17 @@ class _ConversationListState extends State<_ConversationList> {
               ? const _ConversationSkeleton()
               : conversations.isEmpty
                   ? Center(
-                      child: Text(
-                        filter == _ConversationFilter.unread
-                            ? 'Nenhuma conversa não lida.'
-                            : 'Nenhuma conversa favorita.',
-                        style: TextStyle(color: palette.muted),
+                      child: Padding(
+                        padding: const EdgeInsets.all(28),
+                        child: Text(
+                          searchQuery.isNotEmpty
+                              ? 'Nenhuma conversa encontrada.'
+                              : filter == _ConversationFilter.unread
+                                  ? 'Nenhuma conversa não lida.'
+                                  : 'Nenhuma conversa favorita.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: palette.muted),
+                        ),
                       ),
                     )
                   : ListView.separated(
@@ -561,13 +607,29 @@ class _ConversationFilterChip extends StatelessWidget {
   final VoidCallback onSelected;
 
   @override
-  Widget build(BuildContext context) => ChoiceChip(
-        label: Text(label),
-        selected: selected,
-        onSelected: (_) => onSelected(),
-        visualDensity: VisualDensity.compact,
-        labelStyle: const TextStyle(fontWeight: FontWeight.w800),
-      );
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Material(
+      color:
+          selected ? palette.primary : palette.primary.withValues(alpha: .08),
+      borderRadius: BorderRadius.circular(999),
+      child: InkWell(
+        onTap: onSelected,
+        borderRadius: BorderRadius.circular(999),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected ? Colors.white : palette.foreground,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _ConversationListItem extends StatelessWidget {
@@ -599,13 +661,13 @@ class _ConversationListItem extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: SizedBox(
-          height: 80,
+          height: 84,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                _ConversationAvatar(conversation: conversation, size: 48),
-                const SizedBox(width: 13),
+                _ConversationAvatar(conversation: conversation, size: 52),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -620,36 +682,42 @@ class _ConversationListItem extends StatelessWidget {
                           fontWeight: FontWeight.w900,
                         ),
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 4),
                       Text(
                         subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: palette.muted,
-                          fontSize: 13,
+                          fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
                 ),
-                if (conversation.unreadCount > 0) ...[
-                  const SizedBox(width: 10),
-                  _UnreadBadge(count: conversation.unreadCount),
-                ],
-                const SizedBox(width: 2),
-                IconButton(
-                  onPressed: onToggleFavorite,
-                  tooltip: favorite
-                      ? 'Remover dos favoritos'
-                      : 'Adicionar aos favoritos',
-                  visualDensity: VisualDensity.compact,
-                  icon: Icon(
-                    favorite ? Icons.star_rounded : Icons.star_outline_rounded,
-                    color: favorite ? palette.primary : palette.muted,
-                    size: 20,
-                  ),
+                const SizedBox(width: 8),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    InkResponse(
+                      onTap: onToggleFavorite,
+                      radius: 18,
+                      child: Icon(
+                        favorite
+                            ? Icons.star_rounded
+                            : Icons.star_outline_rounded,
+                        color: favorite ? palette.primary : palette.muted,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    if (conversation.unreadCount > 0)
+                      _UnreadBadge(count: conversation.unreadCount)
+                    else
+                      const SizedBox(height: 24),
+                  ],
                 ),
               ],
             ),
@@ -725,15 +793,12 @@ class _MessagePane extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                          active?.type == 'global'
-                              ? 'Chat'
-                              : active?.title ?? 'Chat',
+                      Text(active.type == 'global' ? 'Chat' : active.title,
                           style: const TextStyle(
                               fontSize: 18, fontWeight: FontWeight.w900)),
                       if (!compact)
                         Text(
-                          active?.type == 'global'
+                          active.type == 'global'
                               ? 'Conversa aberta para todos'
                               : 'Conversa entre pessoas logadas',
                           style: TextStyle(color: palette.muted),
@@ -745,57 +810,49 @@ class _MessagePane extends StatelessWidget {
             ),
           ),
         ],
+        if (!showHeader) _MobileConversationContext(conversation: active),
         if (chat.typingUsers.isNotEmpty)
           _TypingIndicator(names: chat.typingUsers.values.toList()),
         Expanded(
-          child: active == null
-              ? ListView(
+          child: chat.loading
+              ? const _MessagesSkeleton()
+              : ListView.builder(
+                  controller: messagesScroll,
+                  reverse: true,
                   physics: const AlwaysScrollableScrollPhysics(),
-                  children: const [
-                    SizedBox(height: 180),
-                    Center(child: Text('Nenhuma conversa disponível.')),
-                  ],
-                )
-              : chat.loading
-                  ? const _MessagesSkeleton()
-                  : ListView.builder(
-                      controller: messagesScroll,
-                      reverse: true,
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.fromLTRB(
-                        compact ? 4 : 8,
-                        16,
-                        compact ? 4 : 8,
-                        16,
-                      ),
-                      itemCount: chat.messages.length,
-                      itemBuilder: (context, index) {
-                        final message =
-                            chat.messages[chat.messages.length - 1 - index];
-                        final previousIndex =
-                            chat.messages.length - 1 - index - 1;
-                        final previous = previousIndex >= 0
-                            ? chat.messages[previousIndex]
-                            : null;
-                        final showDay = previous == null ||
-                            !_isSameDay(previous.at, message.at);
-                        return Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (showDay) _DayDivider(date: message.at),
-                            _MessageBubble(
-                              message: message,
-                              isMine: _isMine(message, auth.user),
-                              currentUser: auth.user,
-                              compact: compact,
-                              onEdit: () => onEditMessage(message),
-                              onDelete: () => onDeleteMessage(message),
-                              onReply: () => onReplyMessage(message),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
+                  padding: EdgeInsets.fromLTRB(
+                    compact ? 4 : 8,
+                    16,
+                    compact ? 4 : 8,
+                    16,
+                  ),
+                  itemCount: chat.messages.length,
+                  itemBuilder: (context, index) {
+                    final message =
+                        chat.messages[chat.messages.length - 1 - index];
+                    final previousIndex = chat.messages.length - 1 - index - 1;
+                    final previous = previousIndex >= 0
+                        ? chat.messages[previousIndex]
+                        : null;
+                    final showDay = previous == null ||
+                        !_isSameDay(previous.at, message.at);
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (showDay) _DayDivider(date: message.at),
+                        _MessageBubble(
+                          message: message,
+                          isMine: _isMine(message, auth.user),
+                          currentUser: auth.user,
+                          compact: compact,
+                          onEdit: () => onEditMessage(message),
+                          onDelete: () => onDeleteMessage(message),
+                          onReply: () => onReplyMessage(message),
+                        ),
+                      ],
+                    );
+                  },
+                ),
         ),
         if (auth.user == null)
           Padding(
@@ -889,6 +946,66 @@ class _MessagePane extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _MobileConversationContext extends StatelessWidget {
+  const _MobileConversationContext({required this.conversation});
+
+  final ChatConversation conversation;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final isGlobal = conversation.type == 'global';
+    final people = conversation.participantIds.length;
+    final detail = isGlobal
+        ? 'Espaço compartilhado da família'
+        : '$people pessoa${people == 1 ? '' : 's'} nesta conversa';
+    return Container(
+      margin: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: palette.primary.withValues(alpha: .07),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: palette.primary.withValues(alpha: .14)),
+      ),
+      child: Row(
+        children: [
+          _ConversationAvatar(conversation: conversation, size: 34),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  isGlobal ? 'Chat da família' : conversation.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: palette.foreground,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  detail,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: palette.muted, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          Icon(
+            isGlobal ? Icons.groups_2_outlined : Icons.lock_outline,
+            size: 18,
+            color: palette.primary,
+          ),
+        ],
+      ),
     );
   }
 }
