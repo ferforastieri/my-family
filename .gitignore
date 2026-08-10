@@ -13,6 +13,7 @@ app/ios/Runner/GoogleService-Info.plist
 firebase-service-account*.json
 *service-account*.json
 
+
 node_modules
 dist
 dist-ssr
