@@ -299,7 +299,7 @@ jobs:
             "$flutter_container" \
             flutter pub get
 
-          docker exec \
+          timeout --signal=TERM --kill-after=1m 25m docker exec \
             -e ANDROID_KEYSTORE_PATH=/app/android/app/release-keystore.jks \
             -e ANDROID_KEYSTORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD" \
             -e ANDROID_KEY_ALIAS="$ANDROID_KEY_ALIAS" \
