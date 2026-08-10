@@ -13,7 +13,7 @@ import { Access } from '@auth/decorators/access.decorator';
 import { AccessGuard } from '@auth/guards/access.guard';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { MusicasService } from '../../application/services/musicas.service';
-import type { MusicaWriteDto } from '../dto/musica.dto';
+import { MusicaWriteDto } from '../dto/musica.dto';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 @Controller('musicas')

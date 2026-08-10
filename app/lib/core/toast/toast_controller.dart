@@ -5,8 +5,9 @@ import 'package:flutter/foundation.dart';
 enum ToastKind { success, error, info }
 
 class AppToast {
-  const AppToast({required this.message, required this.kind});
+  const AppToast({required this.id, required this.message, required this.kind});
 
+  final int id;
   final String message;
   final ToastKind kind;
 }
@@ -28,7 +29,11 @@ class ToastController extends ChangeNotifier {
 
   void show(String message, ToastKind kind) {
     _timer?.cancel();
-    current = AppToast(message: message, kind: kind);
+    current = AppToast(
+      id: DateTime.now().microsecondsSinceEpoch,
+      message: message,
+      kind: kind,
+    );
     notifyListeners();
     _timer = Timer(const Duration(seconds: 3), clear);
   }

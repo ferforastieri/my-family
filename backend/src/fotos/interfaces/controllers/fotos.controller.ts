@@ -20,7 +20,7 @@ import { Access } from '@auth/decorators/access.decorator';
 import { AccessGuard } from '@auth/guards/access.guard';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { UploadService, UploadContext } from '@shared/infrastructure/upload';
-import type { FotoWriteDto } from '../dto/foto.dto';
+import { FotoWriteDto } from '../dto/foto.dto';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 @Controller('fotos')

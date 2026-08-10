@@ -16,7 +16,7 @@ import { AccessGuard } from '@auth/guards/access.guard';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 import { CartasService } from '../../application/services/cartas.service';
-import type { CartaWriteDto } from '../dto/carta.dto';
+import { CartaWriteDto } from '../dto/carta.dto';
 
 @Controller('journey')
 @UseGuards(JwtAuthGuard, AccessGuard)

@@ -14,7 +14,7 @@ import { AccessGuard } from '@auth/guards/access.guard';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 import { NotasService } from '../../application/services/notas.service';
-import type { NotaWriteDto } from '../dto/nota.dto';
+import { NotaWriteDto } from '../dto/nota.dto';
 
 @Controller('notas')
 @UseGuards(JwtAuthGuard, AccessGuard)

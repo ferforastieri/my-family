@@ -115,7 +115,11 @@ class MyFamilyApp extends StatelessWidget {
           return MaterialApp(
             title: 'Nossa Família',
             debugShowCheckedModeBanner: false,
-            theme: buildAppTheme(color: theme.color, mode: theme.mode),
+            theme: buildAppTheme(
+              color: theme.color,
+              mode: theme.mode,
+              font: theme.font,
+            ),
             builder: (context, child) => _AppTextScale(
               child: child ?? const SizedBox.shrink(),
             ),
@@ -128,7 +132,11 @@ class MyFamilyApp extends StatelessWidget {
         return MaterialApp.router(
           title: 'Nossa Família',
           debugShowCheckedModeBanner: false,
-          theme: buildAppTheme(color: theme.color, mode: theme.mode),
+          theme: buildAppTheme(
+            color: theme.color,
+            mode: theme.mode,
+            font: theme.font,
+          ),
           routerConfig:
               buildRouter(auth, notifications, chat, theme, toast, repository),
           builder: (context, child) => _AppTextScale(

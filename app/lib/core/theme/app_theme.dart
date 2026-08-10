@@ -7,8 +7,17 @@ import 'theme_controller.dart';
 ThemeData buildAppTheme({
   ThemeColorChoice color = ThemeColorChoice.floral,
   ThemeMode mode = ThemeMode.light,
+  AppFontChoice font = AppFontChoice.moderna,
 }) {
   final palette = AppPalette.from(color, mode);
+  final usesLogoFont = font == AppFontChoice.logo;
+  final baseTextTheme = ThemeData.light().textTheme;
+  final textTheme = usesLogoFont
+      ? GoogleFonts.cormorantGaramondTextTheme(baseTextTheme)
+      : GoogleFonts.nunitoSansTextTheme(baseTextTheme);
+  final textStyle = usesLogoFont
+      ? GoogleFonts.cormorantGaramond()
+      : GoogleFonts.nunitoSans();
   return ThemeData(
     brightness: mode == ThemeMode.dark ? Brightness.dark : Brightness.light,
     colorScheme: ColorScheme.fromSeed(
@@ -19,9 +28,10 @@ ThemeData buildAppTheme({
     ),
     scaffoldBackgroundColor: palette.bgStart,
     useMaterial3: true,
-    textTheme: GoogleFonts.nunitoSansTextTheme(
-      ThemeData.light().textTheme,
-    ).apply(bodyColor: palette.foreground, displayColor: palette.foreground),
+    textTheme: textTheme.apply(
+      bodyColor: palette.foreground,
+      displayColor: palette.foreground,
+    ),
     appBarTheme: AppBarTheme(
       centerTitle: false,
       elevation: 0,
@@ -31,11 +41,11 @@ ThemeData buildAppTheme({
     ),
     extensions: <ThemeExtension<dynamic>>[
       AppTextThemes(
-        display: GoogleFonts.cormorantGaramond(
+        display: textStyle.copyWith(
           fontWeight: FontWeight.w700,
           letterSpacing: -.3,
         ),
-        body: GoogleFonts.nunitoSans(),
+        body: textStyle,
       ),
       palette,
     ],
@@ -126,6 +136,17 @@ class AppPalette extends ThemeExtension<AppPalette> {
         brand.petal,
         brand.copper,
         brand.gold,
+      ),
+      ThemeColorChoice.rosa => (
+        const Color(0xffff69b4),
+        const Color(0xffd4488e),
+        const Color(0xfffff8fa),
+        const Color(0xfffff0f5),
+        const Color(0xff1a0a12),
+        const Color(0xff2d151f),
+        const Color(0xffffb8d8),
+        const Color(0xffff69b4),
+        const Color(0xffffc857),
       ),
       ThemeColorChoice.azul => (
         const Color(0xff3b82f6),

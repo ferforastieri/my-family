@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum ThemeColorChoice { floral, azul, vermelho }
+enum ThemeColorChoice { floral, rosa, azul, vermelho }
+
+enum AppFontChoice { moderna, logo }
 
 class ThemeController extends ChangeNotifier {
   ThemeMode mode = ThemeMode.light;
   ThemeColorChoice color = ThemeColorChoice.floral;
+  AppFontChoice font = AppFontChoice.moderna;
 
   Future<void> bootstrap() async {
     final prefs = await SharedPreferences.getInstance();
@@ -16,6 +19,11 @@ class ThemeController extends ChangeNotifier {
     color = ThemeColorChoice.values.firstWhere(
       (item) => item.name == savedColor,
       orElse: () => ThemeColorChoice.floral,
+    );
+    final savedFont = prefs.getString('theme.font');
+    font = AppFontChoice.values.firstWhere(
+      (item) => item.name == savedFont,
+      orElse: () => AppFontChoice.moderna,
     );
     notifyListeners();
   }
@@ -35,5 +43,12 @@ class ThemeController extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('theme.color', value.name);
+  }
+
+  Future<void> setFont(AppFontChoice value) async {
+    font = value;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('theme.font', value.name);
   }
 }
