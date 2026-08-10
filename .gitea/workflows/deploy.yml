@@ -237,7 +237,6 @@ jobs:
           $COMPOSE --env-file .env ps
 
       - name: Build Android APK
-        if: github.event_name == 'workflow_dispatch'
         env:
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
           SOCKET_URL: ${{ secrets.SOCKET_URL }}
@@ -322,7 +321,6 @@ jobs:
           trap - EXIT
 
       - name: Upload Android APK
-        if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v3
         with:
           name: my-family-android-apk
