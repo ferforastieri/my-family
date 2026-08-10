@@ -48,6 +48,7 @@ class AppShell extends StatelessWidget {
               onNotifications: () => _openNotificationsSheet(context),
               onTheme: () => _openThemeSheet(context),
               notificationCount: notifications.badgeCount,
+              showMobileNotifications: currentLocation == '/',
               child: child,
             ),
             bottomNavigationBar: wide

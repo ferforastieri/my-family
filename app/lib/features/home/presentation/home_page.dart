@@ -553,7 +553,6 @@ class _HomePhotoCarouselState extends State<_HomePhotoCarousel> {
 
   @override
   Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
     final mobile = MediaQuery.sizeOf(context).width < 760;
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -561,63 +560,9 @@ class _HomePhotoCarouselState extends State<_HomePhotoCarousel> {
         final photoHeight = bounded
             ? (constraints.maxHeight - 48).clamp(150.0, 386.0)
             : (mobile ? 292.0 : 386.0);
-        return Padding(
-          padding: EdgeInsets.only(
-            top: mobile ? 4 : 8,
-            bottom: mobile ? 4 : 12,
-          ),
-          child: Column(
+        return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: palette.card.withValues(alpha: .76),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: palette.primary.withValues(alpha: .16),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: palette.primary.withValues(alpha: .10),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.auto_awesome,
-                          color: palette.primary,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Nossas fotos',
-                          style: TextStyle(
-                            color: palette.foreground,
-                            fontSize: mobile ? 17 : 19,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Icon(
-                          Icons.photo_library_outlined,
-                          color: palette.primary,
-                          size: 18,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
               SizedBox(
                 height: photoHeight,
                 child: PageView.builder(
@@ -630,7 +575,6 @@ class _HomePhotoCarouselState extends State<_HomePhotoCarousel> {
                       animation: controller,
                       child: _FloatingHomePhoto(
                         url: _homeMediaUrl(image),
-                        compact: mobile || bounded,
                       ),
                       builder: (context, child) {
                         var page = current.toDouble();
@@ -683,96 +627,28 @@ class _HomePhotoCarouselState extends State<_HomePhotoCarousel> {
                   ),
                 ),
             ],
-          ),
-        );
+          );
       },
     );
   }
 }
 
 class _FloatingHomePhoto extends StatelessWidget {
-  const _FloatingHomePhoto({required this.url, required this.compact});
+  const _FloatingHomePhoto({required this.url});
 
   final String url;
-  final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: compact ? 7 : 10,
-        vertical: compact ? 14 : 18,
-      ),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: .22),
-              blurRadius: compact ? 22 : 34,
-              offset: Offset(0, compact ? 14 : 20),
-            ),
-            BoxShadow(
-              color: palette.primary.withValues(alpha: .20),
-              blurRadius: compact ? 28 : 42,
-              offset: const Offset(0, 0),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Image.network(
-                url,
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, progress) {
-                  if (progress == null) return child;
-                  return ColoredBox(
-                    color: palette.primary.withValues(alpha: .06),
-                    child: const Center(child: CircularProgressIndicator()),
-                  );
-                },
-                errorBuilder: (_, __, ___) => ColoredBox(
-                  color: palette.primary.withValues(alpha: .06),
-                  child: const Center(
-                    child: Icon(Icons.broken_image_outlined, size: 42),
-                  ),
-                ),
-              ),
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.white.withValues(alpha: .10),
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: .18),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: .38),
-                        width: 1.4,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+    return Image.network(
+      url,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return const Center(child: CircularProgressIndicator());
+      },
+      errorBuilder: (_, __, ___) => const Center(
+        child: Icon(Icons.broken_image_outlined, size: 42),
       ),
     );
   }

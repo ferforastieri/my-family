@@ -57,8 +57,8 @@ class _ToastCard extends StatelessWidget {
     final palette = Theme.of(context).extension<AppPalette>()!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = switch (toast.kind) {
-      ToastKind.success => isDark ? const Color(0xff86efac) : const Color(0xff15803d),
-      ToastKind.error => isDark ? const Color(0xfffca5a5) : Theme.of(context).colorScheme.error,
+      ToastKind.success => palette.primary,
+      ToastKind.error => Theme.of(context).colorScheme.error,
       ToastKind.info => palette.primary,
     };
     final icon = switch (toast.kind) {
@@ -72,36 +72,32 @@ class _ToastCard extends StatelessWidget {
       direction: DismissDirection.horizontal,
       onDismissed: (_) => controller.clear(),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520),
+        constraints: const BoxConstraints(maxWidth: 420),
         child: Material(
           color: palette.card,
-          elevation: 12,
-          borderRadius: BorderRadius.circular(16),
+          elevation: 8,
+          borderRadius: BorderRadius.circular(12),
           child: Container(
-            padding: const EdgeInsets.only(left: 16, top: 10, right: 6, bottom: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: color.withValues(alpha: isDark ? .16 : .08),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: color.withValues(alpha: .42)),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: color.withValues(alpha: .34)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, color: color),
-                const SizedBox(width: 10),
+                Icon(icon, color: color, size: 18),
+                const SizedBox(width: 8),
                 Flexible(
                   child: Text(
                     toast.message,
                     style: TextStyle(
                       color: palette.foreground,
+                      fontSize: 13,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                ),
-                IconButton(
-                  onPressed: controller.clear,
-                  tooltip: 'Fechar',
-                  icon: const Icon(Icons.close),
                 ),
               ],
             ),

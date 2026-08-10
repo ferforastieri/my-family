@@ -10,12 +10,14 @@ class AppHeaderActionsScope extends InheritedWidget {
     required this.onNotifications,
     required this.onTheme,
     required this.notificationCount,
+    this.showMobileNotifications = false,
     required super.child,
   });
 
   final VoidCallback onNotifications;
   final VoidCallback onTheme;
   final int notificationCount;
+  final bool showMobileNotifications;
 
   static AppHeaderActionsScope? maybeOf(BuildContext context) {
     return context.dependOnInheritedWidgetOfExactType<AppHeaderActionsScope>();
@@ -25,7 +27,8 @@ class AppHeaderActionsScope extends InheritedWidget {
   bool updateShouldNotify(AppHeaderActionsScope oldWidget) {
     return onNotifications != oldWidget.onNotifications ||
         onTheme != oldWidget.onTheme ||
-        notificationCount != oldWidget.notificationCount;
+        notificationCount != oldWidget.notificationCount ||
+        showMobileNotifications != oldWidget.showMobileNotifications;
   }
 }
 
@@ -147,20 +150,14 @@ class AppPageHeader extends StatelessWidget {
             ),
             if (!desktop) ...[
               const SizedBox(width: 10),
-              if (mobileActions != null) ...[
+              if (mobileActions?.showMobileNotifications == true) ...[
                 AppHeaderIconButton(
-                  onPressed: mobileActions.onNotifications,
+                  onPressed: mobileActions!.onNotifications,
                   icon: _HeaderBadge(
-                    count: mobileActions.notificationCount,
+                    count: mobileActions!.notificationCount,
                     child: const Icon(Icons.notifications_outlined),
                   ),
                   tooltip: 'Notificações',
-                ),
-                const SizedBox(width: 6),
-                AppHeaderIconButton(
-                  onPressed: mobileActions.onTheme,
-                  icon: const Icon(Icons.palette_outlined),
-                  tooltip: 'Cor e tema',
                 ),
               ],
             ],
