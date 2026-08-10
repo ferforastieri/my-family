@@ -266,9 +266,12 @@ jobs:
           fi
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > app/android/app/release-keystore.jks
 
-          flutter_container="my-family-flutter-${GITHUB_RUN_ID:-manual}"
-          docker volume create my-family-flutter-pub-cache >/dev/null
-          docker volume create my-family-flutter-gradle-cache >/dev/null
+          flutter_run_id="${GITHUB_RUN_ID:-manual}"
+          flutter_container="my-family-flutter-${flutter_run_id}"
+          flutter_pub_cache="my-family-flutter-pub-cache-${flutter_run_id}"
+          flutter_gradle_cache="my-family-flutter-gradle-cache-${flutter_run_id}"
+          docker volume create "$flutter_pub_cache" >/dev/null
+          docker volume create "$flutter_gradle_cache" >/dev/null
           docker rm -f "$flutter_container" >/dev/null 2>&1 || true
           docker create \
             --name "$flutter_container" \
@@ -276,11 +279,11 @@ jobs:
             --memory=4g \
             --memory-swap=4g \
             --cpus=2 \
-            --volume my-family-flutter-pub-cache:/root/.pub-cache \
-            --volume my-family-flutter-gradle-cache:/root/.gradle \
+            --volume "$flutter_pub_cache:/root/.pub-cache" \
+            --volume "$flutter_gradle_cache:/root/.gradle" \
             ghcr.io/cirruslabs/flutter:stable \
             tail -f /dev/null >/dev/null
-          trap 'docker rm -f "$flutter_container" >/dev/null 2>&1 || true' EXIT
+          trap 'docker rm -f "$flutter_container" >/dev/null 2>&1 || true; docker volume rm "$flutter_pub_cache" "$flutter_gradle_cache" >/dev/null 2>&1 || true' EXIT
           docker start "$flutter_container" >/dev/null
           tar \
             --exclude=.git \
@@ -319,6 +322,7 @@ jobs:
             "$flutter_container:/app/build/app/outputs/flutter-apk/app-release.apk" \
             app/build/app/outputs/flutter-apk/app-release.apk
           docker rm -f "$flutter_container" >/dev/null
+          docker volume rm "$flutter_pub_cache" "$flutter_gradle_cache" >/dev/null
           trap - EXIT
 
       - name: Upload Android APK
