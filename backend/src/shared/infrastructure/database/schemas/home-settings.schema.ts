@@ -22,6 +22,15 @@ export class HomeSettingsDocument {
   @Prop()
   galleryOrder?: number;
 
+  @Prop({ default: 'Nossas memórias' })
+  galleryTitle?: string;
+
+  @Prop({ default: true })
+  galleryTitleVisible?: boolean;
+
+  @Prop({ default: 'arc' })
+  galleryTitleLayout?: 'arc' | 'straight';
+
   createdAt?: Date;
   updatedAt?: Date;
 }

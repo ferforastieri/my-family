@@ -19,6 +19,9 @@ export type HomeSettingsWrite = {
   events: HomeEventWrite[];
   galleryImages?: string[];
   galleryOrder?: number;
+  galleryTitle?: string;
+  galleryTitleVisible?: boolean;
+  galleryTitleLayout?: 'arc' | 'straight';
 };
 
 @Injectable()

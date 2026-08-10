@@ -631,11 +631,17 @@ class HomeSettingsConfig {
     required this.events,
     this.galleryImages = const [],
     this.galleryOrder,
+    this.galleryTitle = 'Nossas memórias',
+    this.galleryTitleVisible = true,
+    this.galleryTitleLayout = 'arc',
   });
 
   final List<HomeEventConfig> events;
   final List<String> galleryImages;
   final int? galleryOrder;
+  final String galleryTitle;
+  final bool galleryTitleVisible;
+  final String galleryTitleLayout;
 
   factory HomeSettingsConfig.fromJson(Map<String, dynamic> json) {
     final events = (json['events'] as List?) ?? const [];
@@ -651,6 +657,11 @@ class HomeSettingsConfig {
           .where((image) => image.trim().isNotEmpty)
           .toList(),
       galleryOrder: (json['galleryOrder'] as num?)?.toInt(),
+      galleryTitle: json['galleryTitle']?.toString() ?? 'Nossas memórias',
+      galleryTitleVisible: json['galleryTitleVisible'] != false,
+      galleryTitleLayout: json['galleryTitleLayout']?.toString() == 'straight'
+          ? 'straight'
+          : 'arc',
     );
   }
 
@@ -658,6 +669,9 @@ class HomeSettingsConfig {
         'events': events.map((event) => event.toJson()).toList(),
         'galleryImages': galleryImages,
         if (galleryOrder != null) 'galleryOrder': galleryOrder,
+        'galleryTitle': galleryTitle,
+        'galleryTitleVisible': galleryTitleVisible,
+        'galleryTitleLayout': galleryTitleLayout,
       };
 }
 
