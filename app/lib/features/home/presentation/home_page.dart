@@ -175,15 +175,9 @@ class _HomePageState extends State<HomePage> {
                   content,
                 if (kIsWeb && cursorPosition != null)
                   Positioned(
-                    left: cursorPosition!.dx - 13,
-                    top: cursorPosition!.dy - 13,
-                    child: const IgnorePointer(
-                      child: SizedBox(
-                        width: 30,
-                        height: 30,
-                        child: CustomPaint(painter: _FlowerCursorPainter()),
-                      ),
-                    ),
+                    left: cursorPosition!.dx - 2,
+                    top: cursorPosition!.dy - 2,
+                    child: const IgnorePointer(child: _HomeCursor()),
                   ),
               ],
             );
@@ -279,71 +273,56 @@ class _HomeGardenLayer extends StatelessWidget {
   }
 }
 
-class _FlowerCursorPainter extends CustomPainter {
-  const _FlowerCursorPainter();
+class _HomeCursor extends StatelessWidget {
+  const _HomeCursor();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return SizedBox(
+      width: 25,
+      height: 29,
+      child: CustomPaint(
+        painter: _HomeCursorPainter(
+          fill: palette.card,
+          outline: palette.primary,
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeCursorPainter extends CustomPainter {
+  const _HomeCursorPainter({required this.fill, required this.outline});
+
+  final Color fill;
+  final Color outline;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width * .48, size.height * .46);
-    final petalPaints = [
-      Paint()..color = const Color(0xffff73b9),
-      Paint()..color = const Color(0xffffb6d4),
-    ];
-    for (var i = 0; i < 8; i++) {
-      final angle = i * math.pi / 4;
-      final petalCenter = center.translate(
-        math.cos(angle) * 7,
-        math.sin(angle) * 7,
-      );
-      canvas.save();
-      canvas.translate(petalCenter.dx, petalCenter.dy);
-      canvas.rotate(angle);
-      canvas.drawOval(
-        Rect.fromCenter(center: Offset.zero, width: 8, height: 13),
-        petalPaints[i.isEven ? 0 : 1],
-      );
-      canvas.restore();
-    }
-    canvas.drawCircle(center, 5, Paint()..color = const Color(0xffffd166));
-    final stem = Path()
-      ..moveTo(center.dx + 2, center.dy + 8)
-      ..quadraticBezierTo(
-        size.width * .70,
-        size.height * .78,
-        size.width * .90,
-        size.height * .92,
-      );
-    canvas.drawPath(
-      stem,
-      Paint()
-        ..color = const Color(0xff3f7a38)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2
-        ..strokeCap = StrokeCap.round,
-    );
-    final leaf = Path()
-      ..moveTo(size.width * .70, size.height * .78)
-      ..quadraticBezierTo(
-        size.width * .52,
-        size.height * .76,
-        size.width * .58,
-        size.height * .62,
-      )
-      ..quadraticBezierTo(
-        size.width * .74,
-        size.height * .66,
-        size.width * .70,
-        size.height * .78,
-      )
+    final pointer = Path()
+      ..moveTo(2.5, 1.5)
+      ..lineTo(4.4, 22)
+      ..lineTo(9.4, 16.8)
+      ..lineTo(14.7, 27)
+      ..lineTo(19.1, 24.8)
+      ..lineTo(13.8, 14.5)
+      ..lineTo(23, 13.8)
       ..close();
+    canvas.drawPath(pointer, Paint()..color = fill);
     canvas.drawPath(
-      leaf,
-      Paint()..color = const Color(0xff47a35a).withValues(alpha: .9),
+      pointer,
+      Paint()
+        ..color = outline
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.7
+        ..strokeJoin = StrokeJoin.round,
     );
   }
 
   @override
-  bool shouldRepaint(covariant _FlowerCursorPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _HomeCursorPainter oldDelegate) =>
+      oldDelegate.fill != fill || oldDelegate.outline != outline;
 }
 
 class _HomeTitle extends StatelessWidget {
@@ -506,34 +485,15 @@ class _DesktopHomeLayout extends StatelessWidget {
         final gallery = galleries.isEmpty ? null : galleries.first;
         final cards = items.whereType<_HomeCounterLayoutItem>().toList();
 
-        // A lembrança principal ocupa uma moldura vertical e os marcos da
-        // família formam uma grade única ao lado. Isso evita que uma foto
-        // retrato vire uma faixa larga entre grupos de cards.
-        if (gallery != null &&
-            cards.isNotEmpty &&
-            constraints.maxWidth >= 940) {
-          const layoutHeight = 464.0;
-          final photoWidth = (constraints.maxWidth * .30).clamp(280.0, 350.0);
-          return SizedBox(
-            height: layoutHeight,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(width: photoWidth, child: gallery.build(context)),
-                const SizedBox(width: 22),
-                Expanded(
-                  child: GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    childAspectRatio: 1.82,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 14,
-                    children: cards.map((item) => item.build(context)).toList(),
-                  ),
-                ),
+        if (constraints.maxWidth >= 940) {
+          return Column(
+            children: [
+              if (gallery != null) ...[
+                SizedBox(height: 370, child: gallery.build(context)),
+                if (cards.isNotEmpty) const SizedBox(height: 20),
               ],
-            ),
+              if (cards.isNotEmpty) _DesktopCounterGrid(cards: cards),
+            ],
           );
         }
 
@@ -570,6 +530,37 @@ class _DesktopHomeLayout extends StatelessWidget {
               sections[index],
               if (index < sections.length - 1) const SizedBox(height: 18),
             ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _DesktopCounterGrid extends StatelessWidget {
+  const _DesktopCounterGrid({required this.cards});
+
+  final List<_HomeCounterLayoutItem> cards;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 16.0;
+        final columns = constraints.maxWidth >= 1080 ? 4 : 3;
+        final cardWidth =
+            (constraints.maxWidth - gap * (columns - 1)) / columns;
+        return Wrap(
+          alignment: WrapAlignment.center,
+          spacing: gap,
+          runSpacing: 14,
+          children: [
+            for (final card in cards)
+              SizedBox(
+                width: cardWidth,
+                height: 228,
+                child: card.build(context),
+              ),
           ],
         );
       },
