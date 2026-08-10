@@ -14,7 +14,7 @@ import { Access } from '@auth/decorators/access.decorator';
 import { AccessGuard } from '@auth/guards/access.guard';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { CartasService } from '../../application/services/cartas.service';
-import type { CartaWriteDto } from '../dto/carta.dto';
+import { CartaWriteDto } from '../dto/carta.dto';
 import type { UserEntity } from '@auth/domain/entities/user.entity';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 

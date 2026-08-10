@@ -46,7 +46,10 @@ class SocketClient {
       io.OptionBuilder()
           .enableForceNew()
           .disableMultiplex()
-          .setTransports(['polling', 'websocket'])
+          // Mobile browsers are more reliable with the Socket.IO upgrade
+          // skipped entirely. The proxy exposes this exact path to the API.
+          .setTransports(['websocket'])
+          .setPath('/socket.io/')
           .disableAutoConnect()
           .enableReconnection()
           .setReconnectionAttempts(20)

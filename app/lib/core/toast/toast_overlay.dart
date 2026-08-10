@@ -19,8 +19,7 @@ class ToastOverlay extends StatelessWidget {
           listenable: controller,
           builder: (context, _) {
             final toast = controller.current;
-            return IgnorePointer(
-              child: AnimatedAlign(
+            return AnimatedAlign(
                 duration: const Duration(milliseconds: 220),
                 curve: Curves.easeOut,
                 alignment: toast == null
@@ -35,12 +34,11 @@ class ToastOverlay extends StatelessWidget {
                           const EdgeInsets.only(top: 14, left: 16, right: 16),
                       child: toast == null
                           ? const SizedBox.shrink()
-                          : _ToastCard(toast: toast),
+                          : _ToastCard(toast: toast, controller: controller),
                     ),
                   ),
                 ),
-              ),
-            );
+              );
           },
         ),
       ],
@@ -49,16 +47,18 @@ class ToastOverlay extends StatelessWidget {
 }
 
 class _ToastCard extends StatelessWidget {
-  const _ToastCard({required this.toast});
+  const _ToastCard({required this.toast, required this.controller});
 
   final AppToast toast;
+  final ToastController controller;
 
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = switch (toast.kind) {
-      ToastKind.success => const Color(0xff16a34a),
-      ToastKind.error => Theme.of(context).colorScheme.error,
+      ToastKind.success => isDark ? const Color(0xff86efac) : const Color(0xff15803d),
+      ToastKind.error => isDark ? const Color(0xfffca5a5) : Theme.of(context).colorScheme.error,
       ToastKind.info => palette.primary,
     };
     final icon = switch (toast.kind) {
@@ -67,31 +67,44 @@ class _ToastCard extends StatelessWidget {
       ToastKind.info => Icons.info_outline,
     };
 
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 520),
-      child: Material(
-        color: palette.card,
-        elevation: 12,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withValues(alpha: .32)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: color),
-              const SizedBox(width: 10),
-              Flexible(
-                child: Text(
-                  toast.message,
-                  style: TextStyle(
-                      color: palette.foreground, fontWeight: FontWeight.w700),
+    return Dismissible(
+      key: ValueKey(toast.id),
+      direction: DismissDirection.horizontal,
+      onDismissed: (_) => controller.clear(),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 520),
+        child: Material(
+          color: palette.card,
+          elevation: 12,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.only(left: 16, top: 10, right: 6, bottom: 10),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: isDark ? .16 : .08),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: color.withValues(alpha: .42)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: color),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Text(
+                    toast.message,
+                    style: TextStyle(
+                      color: palette.foreground,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
-              ),
-            ],
+                IconButton(
+                  onPressed: controller.clear,
+                  tooltip: 'Fechar',
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
           ),
         ),
       ),

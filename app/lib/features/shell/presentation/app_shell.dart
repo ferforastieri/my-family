@@ -350,6 +350,13 @@ class _ThemeSheet extends StatelessWidget {
               _ColorChoice(
                 theme: theme,
                 toast: toast,
+                value: ThemeColorChoice.rosa,
+                color: const Color(0xffff69b4),
+                label: 'Rosa',
+              ),
+              _ColorChoice(
+                theme: theme,
+                toast: toast,
                 value: ThemeColorChoice.azul,
                 color: const Color(0xff3b82f6),
                 label: 'Azul',
@@ -362,6 +369,36 @@ class _ThemeSheet extends StatelessWidget {
                 label: 'Vermelho',
               ),
             ],
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Fonte',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 10),
+          Center(
+            child: SegmentedButton<AppFontChoice>(
+              segments: const [
+                ButtonSegment(
+                  value: AppFontChoice.moderna,
+                  label: Text('Moderna'),
+                ),
+                ButtonSegment(
+                  value: AppFontChoice.logo,
+                  label: Text('Fonte da logo'),
+                ),
+              ],
+              selected: {theme.font},
+              onSelectionChanged: (value) {
+                theme.setFont(value.first);
+                toast.success(
+                  value.first == AppFontChoice.logo
+                      ? 'Fonte da logo ativada.'
+                      : 'Fonte moderna ativada.',
+                );
+              },
+            ),
           ),
           const SizedBox(height: 20),
           const Text(
