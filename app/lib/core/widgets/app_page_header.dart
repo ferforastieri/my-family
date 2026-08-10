@@ -174,26 +174,51 @@ class _AppHeaderLogoButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: 'Abrir navegação',
-      child: InkResponse(
-        onTap: onPressed,
-        radius: 28,
-        child: Container(
-          width: 42,
-          height: 42,
-          padding: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            color: palette.card.withValues(alpha: .92),
-            shape: BoxShape.circle,
-            border: Border.all(color: palette.primary.withValues(alpha: .22)),
-          ),
-          child: ClipOval(
-            child: Image.asset(
-              'assets/brand/family-logo.png',
-              fit: BoxFit.cover,
-            ),
+    return Tooltip(
+      message: 'Abrir menu',
+      child: Semantics(
+        button: true,
+        label: 'Abrir navegação',
+        child: InkResponse(
+          onTap: onPressed,
+          radius: 28,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: palette.card.withValues(alpha: .92),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: palette.primary.withValues(alpha: .22),
+                  ),
+                ),
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/brand/family-logo.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              Positioned(
+                right: -3,
+                bottom: -2,
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    color: palette.primary,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: palette.card, width: 1.5),
+                  ),
+                  child: const Icon(Icons.menu_rounded,
+                      size: 12, color: Colors.white),
+                ),
+              ),
+            ],
           ),
         ),
       ),

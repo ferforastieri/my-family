@@ -254,38 +254,41 @@ class _ChatPageState extends State<ChatPage> {
             );
 
             if (!wide) {
-              if (showMobileConversationList) {
-                return Container(
-                  color: palette.bgStart,
-                  child: _ConversationList(
-                    chat: widget.chat,
-                    auth: widget.auth,
-                    onConversationSelected: _openMobileConversation,
-                  ),
-                );
-              }
-              return Container(
-                color: palette.bgStart,
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 10, 18, 0),
-                      child: AppPageHeader(
-                        title: widget.chat.active?.type == 'global'
-                            ? 'Chat'
-                            : widget.chat.active?.title ?? 'Chat',
-                        subtitle: null,
-                        icon: Icons.chat_bubble_outline,
-                        leading: _ConversationAvatar(
-                          conversation: widget.chat.active,
-                          size: 42,
-                        ),
-                        onBack: _showMobileConversationList,
+              final mobileContent = showMobileConversationList
+                  ? Container(
+                      color: palette.bgStart,
+                      child: _ConversationList(
+                        chat: widget.chat,
+                        auth: widget.auth,
+                        onConversationSelected: _openMobileConversation,
                       ),
-                    ),
-                    Expanded(child: messages),
-                  ],
-                ),
+                    )
+                  : Container(
+                      color: palette.bgStart,
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(18, 10, 18, 0),
+                            child: AppPageHeader(
+                              title: widget.chat.active?.type == 'global'
+                                  ? 'Chat'
+                                  : widget.chat.active?.title ?? 'Chat',
+                              subtitle: null,
+                              icon: Icons.chat_bubble_outline,
+                            ),
+                          ),
+                          Expanded(child: messages),
+                        ],
+                      ),
+                    );
+              return PopScope(
+                canPop: showMobileConversationList,
+                onPopInvokedWithResult: (didPop, _) {
+                  if (!didPop && !showMobileConversationList) {
+                    _showMobileConversationList();
+                  }
+                },
+                child: mobileContent,
               );
             }
 
@@ -810,7 +813,6 @@ class _MessagePane extends StatelessWidget {
             ),
           ),
         ],
-        if (!showHeader) _MobileConversationContext(conversation: active),
         if (chat.typingUsers.isNotEmpty)
           _TypingIndicator(names: chat.typingUsers.values.toList()),
         Expanded(
@@ -946,66 +948,6 @@ class _MessagePane extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _MobileConversationContext extends StatelessWidget {
-  const _MobileConversationContext({required this.conversation});
-
-  final ChatConversation conversation;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
-    final isGlobal = conversation.type == 'global';
-    final people = conversation.participantIds.length;
-    final detail = isGlobal
-        ? 'Espaço compartilhado da família'
-        : '$people pessoa${people == 1 ? '' : 's'} nesta conversa';
-    return Container(
-      margin: const EdgeInsets.fromLTRB(14, 0, 14, 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-      decoration: BoxDecoration(
-        color: palette.primary.withValues(alpha: .07),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: palette.primary.withValues(alpha: .14)),
-      ),
-      child: Row(
-        children: [
-          _ConversationAvatar(conversation: conversation, size: 34),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  isGlobal ? 'Chat da família' : conversation.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: palette.foreground,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 13,
-                  ),
-                ),
-                Text(
-                  detail,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: palette.muted, fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-          Icon(
-            isGlobal ? Icons.groups_2_outlined : Icons.lock_outline,
-            size: 18,
-            color: palette.primary,
-          ),
-        ],
-      ),
     );
   }
 }
