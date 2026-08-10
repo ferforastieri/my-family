@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../theme/app_theme.dart';
 import 'app_button.dart';
@@ -10,14 +9,14 @@ class AppHeaderActionsScope extends InheritedWidget {
     required this.onNotifications,
     required this.onTheme,
     required this.notificationCount,
-    this.showMobileNotifications = false,
+    required this.onNavigation,
     required super.child,
   });
 
   final VoidCallback onNotifications;
   final VoidCallback onTheme;
   final int notificationCount;
-  final bool showMobileNotifications;
+  final VoidCallback onNavigation;
 
   static AppHeaderActionsScope? maybeOf(BuildContext context) {
     return context.dependOnInheritedWidgetOfExactType<AppHeaderActionsScope>();
@@ -28,7 +27,7 @@ class AppHeaderActionsScope extends InheritedWidget {
     return onNotifications != oldWidget.onNotifications ||
         onTheme != oldWidget.onTheme ||
         notificationCount != oldWidget.notificationCount ||
-        showMobileNotifications != oldWidget.showMobileNotifications;
+        onNavigation != oldWidget.onNavigation;
   }
 }
 
@@ -84,31 +83,11 @@ class AppPageHeader extends StatelessWidget {
         final titleRow = Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            if (!desktop && showBackButton) ...[
-              AppHeaderIconButton(
-                onPressed: onBack ?? () => _defaultBack(context),
-                icon: const Icon(Icons.arrow_back),
-                tooltip: 'Voltar',
+            if (!desktop) ...[
+              _AppHeaderLogoButton(
+                onPressed: mobileActions?.onNavigation,
+                palette: palette,
               ),
-              const SizedBox(width: 12),
-              if (leading != null) ...[
-                leading!,
-                const SizedBox(width: 12),
-              ],
-            ] else if (!desktop) ...[
-              leading ??
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: palette.primary.withValues(alpha: .12),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: palette.primary.withValues(alpha: .22),
-                      ),
-                    ),
-                    child: Icon(icon, color: palette.primary, size: 22),
-                  ),
               const SizedBox(width: 12),
             ],
             Expanded(
@@ -130,10 +109,6 @@ class AppPageHeader extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (!desktop && showBackButton && leading == null) ...[
-                        const SizedBox(width: 8),
-                        Icon(icon, color: palette.primary, size: 22),
-                      ],
                     ],
                   ),
                   if (!desktop && subtitle != null && subtitle!.isNotEmpty) ...[
@@ -149,11 +124,11 @@ class AppPageHeader extends StatelessWidget {
             ),
             if (!desktop) ...[
               const SizedBox(width: 10),
-              if (mobileActions?.showMobileNotifications == true) ...[
+              if (mobileActions != null) ...[
                 AppHeaderIconButton(
-                  onPressed: mobileActions!.onNotifications,
+                  onPressed: mobileActions.onNotifications,
                   icon: _HeaderBadge(
-                    count: mobileActions!.notificationCount,
+                    count: mobileActions.notificationCount,
                     child: const Icon(Icons.notifications_outlined),
                   ),
                   tooltip: 'Notificações',
@@ -189,13 +164,40 @@ class AppPageHeader extends StatelessWidget {
       },
     );
   }
+}
 
-  void _defaultBack(BuildContext context) {
-    if (context.canPop()) {
-      context.pop();
-      return;
-    }
-    context.go('/');
+class _AppHeaderLogoButton extends StatelessWidget {
+  const _AppHeaderLogoButton({required this.onPressed, required this.palette});
+
+  final VoidCallback? onPressed;
+  final AppPalette palette;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Abrir navegação',
+      child: InkResponse(
+        onTap: onPressed,
+        radius: 28,
+        child: Container(
+          width: 42,
+          height: 42,
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            color: palette.card.withValues(alpha: .92),
+            shape: BoxShape.circle,
+            border: Border.all(color: palette.primary.withValues(alpha: .22)),
+          ),
+          child: ClipOval(
+            child: Image.asset(
+              'assets/brand/family-logo.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

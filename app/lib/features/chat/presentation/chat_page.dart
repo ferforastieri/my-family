@@ -462,18 +462,11 @@ class _ConversationListState extends State<_ConversationList> {
       });
     return Column(
       children: [
-        Container(
-          height: 68,
-          padding: const EdgeInsets.symmetric(horizontal: 18),
-          color: palette.primary.withValues(alpha: .08),
-          child: Row(
-            children: [
-              const Expanded(
-                child: Text('Conversas',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-              ),
-            ],
+        const Padding(
+          padding: EdgeInsets.fromLTRB(18, 10, 18, 0),
+          child: AppPageHeader(
+            title: 'Conversas',
+            icon: Icons.chat_bubble_outline,
           ),
         ),
         SingleChildScrollView(
@@ -523,31 +516,33 @@ class _ConversationListState extends State<_ConversationList> {
                       ),
                     )
                   : ListView.separated(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  itemCount: conversations.length,
-                  separatorBuilder: (_, __) =>
-                      Divider(height: 1, color: palette.border),
-                  itemBuilder: (context, index) {
-                    final conversation = conversations[index];
-                    final selected = widget.chat.active?.id == conversation.id;
-                    return _ConversationListItem(
-                      conversation: conversation,
-                      selected: selected,
-                      favorite: favorites.contains(conversation.id),
-                      onToggleFavorite: () => _toggleFavorite(conversation.id),
-                      onTap: () {
-                        final handler = widget.onConversationSelected;
-                        if (handler != null) {
-                          handler(conversation);
-                          return;
-                        }
-                        widget.chat
-                            .loadMessages(conversation)
-                            .catchError((error) => null);
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      itemCount: conversations.length,
+                      separatorBuilder: (_, __) =>
+                          Divider(height: 1, color: palette.border),
+                      itemBuilder: (context, index) {
+                        final conversation = conversations[index];
+                        final selected =
+                            widget.chat.active?.id == conversation.id;
+                        return _ConversationListItem(
+                          conversation: conversation,
+                          selected: selected,
+                          favorite: favorites.contains(conversation.id),
+                          onToggleFavorite: () =>
+                              _toggleFavorite(conversation.id),
+                          onTap: () {
+                            final handler = widget.onConversationSelected;
+                            if (handler != null) {
+                              handler(conversation);
+                              return;
+                            }
+                            widget.chat
+                                .loadMessages(conversation)
+                                .catchError((error) => null);
+                          },
+                        );
                       },
-                    );
-                  },
-                ),
+                    ),
         ),
       ],
     );

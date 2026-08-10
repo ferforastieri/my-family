@@ -44,12 +44,21 @@ class AppShell extends StatelessWidget {
           final wide = constraints.maxWidth >= 860;
           return Scaffold(
             appBar: wide ? _buildDesktopAppBar(context) : null,
-            body: AppHeaderActionsScope(
-              onNotifications: () => _openNotificationsSheet(context),
-              onTheme: () => _openThemeSheet(context),
-              notificationCount: notifications.badgeCount,
-              showMobileNotifications: currentLocation == '/',
-              child: child,
+            drawer: wide
+                ? null
+                : _MobileGlobalDrawer(
+                    auth: auth,
+                    currentLocation: currentLocation,
+                    onLogin: () => _openLogin(context),
+                  ),
+            body: Builder(
+              builder: (shellContext) => AppHeaderActionsScope(
+                onNotifications: () => _openNotificationsSheet(shellContext),
+                onTheme: () => _openThemeSheet(shellContext),
+                onNavigation: () => Scaffold.of(shellContext).openDrawer(),
+                notificationCount: notifications.badgeCount,
+                child: child,
+              ),
             ),
             bottomNavigationBar: wide
                 ? null
@@ -125,6 +134,173 @@ class AppShell extends StatelessWidget {
   }
 }
 
+class _MobileGlobalDrawer extends StatelessWidget {
+  const _MobileGlobalDrawer({
+    required this.auth,
+    required this.currentLocation,
+    required this.onLogin,
+  });
+
+  final AuthController auth;
+  final String currentLocation;
+  final VoidCallback onLogin;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final user = auth.user;
+    final hasMemories = user?.canAccess('memorias') == true ||
+        user?.canAccess('playlist') == true ||
+        user?.canAccess('cartas') == true ||
+        user?.canAccess('nossaHistoria') == true;
+    final hasMore = user?.canAccess('jogos') == true ||
+        user?.canAccess('listas') == true ||
+        user?.canAccess('notas') == true ||
+        user?.canAccess('localizacao') == true;
+
+    void navigate(String path) {
+      Navigator.of(context).pop();
+      context.openAppRoute(path);
+    }
+
+    void requireAccess(bool allowed, String path) {
+      if (user == null) {
+        Navigator.of(context).pop();
+        onLogin();
+      } else if (allowed) {
+        navigate(path);
+      }
+    }
+
+    return Drawer(
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 18, 14, 22),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: palette.card,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: palette.primary.withValues(alpha: .24),
+                      ),
+                    ),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/brand/family-logo.png',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Nossa Família',
+                      style: TextStyle(
+                        color: palette.foreground,
+                        fontSize: 19,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 22),
+              _MobileDrawerItem(
+                icon: Icons.home_outlined,
+                label: 'Início',
+                selected: currentLocation == '/',
+                onTap: () => navigate('/'),
+              ),
+              _MobileDrawerItem(
+                icon: Icons.photo_library_outlined,
+                label: 'Memórias',
+                selected: _isSelected('/atalhos/memorias', currentLocation),
+                enabled: user == null || hasMemories,
+                onTap: () => requireAccess(hasMemories, '/atalhos/memorias'),
+              ),
+              _MobileDrawerItem(
+                icon: Icons.chat_bubble_outline,
+                label: 'Conversas',
+                selected: _isSelected('/chat', currentLocation),
+                enabled: user == null || user.canAccess('chat'),
+                onTap: () =>
+                    requireAccess(user?.canAccess('chat') == true, '/chat'),
+              ),
+              _MobileDrawerItem(
+                icon: Icons.apps_outlined,
+                label: 'Mais',
+                selected: _isSelected('/atalhos/mais', currentLocation),
+                enabled: user == null || hasMore,
+                onTap: () => requireAccess(hasMore, '/atalhos/mais'),
+              ),
+              _MobileDrawerItem(
+                icon: Icons.person_outline,
+                label: 'Perfil',
+                selected: _isSelected('/perfil', currentLocation),
+                onTap: () => requireAccess(user != null, '/perfil'),
+              ),
+              if (user?.isAdmin == true) ...[
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 10),
+                  child: Divider(),
+                ),
+                _MobileDrawerItem(
+                  icon: Icons.admin_panel_settings_outlined,
+                  label: 'Administração',
+                  selected: _isSelected('/admin', currentLocation),
+                  onTap: () => navigate('/admin'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MobileDrawerItem extends StatelessWidget {
+  const _MobileDrawerItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.enabled = true,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final color = selected ? palette.primary : palette.foreground;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: ListTile(
+        enabled: enabled,
+        selected: selected,
+        selectedTileColor: palette.primary.withValues(alpha: .09),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        leading: Icon(icon, color: color),
+        title: Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
+        onTap: enabled ? onTap : null,
+      ),
+    );
+  }
+}
+
 class _DesktopMainNavigation extends StatelessWidget {
   const _DesktopMainNavigation({
     required this.auth,
@@ -142,13 +318,11 @@ class _DesktopMainNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     final user = auth.user;
-    final hasMemories =
-        user?.canAccess('memorias') == true ||
+    final hasMemories = user?.canAccess('memorias') == true ||
         user?.canAccess('playlist') == true ||
         user?.canAccess('cartas') == true ||
         user?.canAccess('nossaHistoria') == true;
-    final hasMore =
-        user?.canAccess('jogos') == true ||
+    final hasMore = user?.canAccess('jogos') == true ||
         user?.canAccess('listas') == true ||
         user?.canAccess('notas') == true ||
         user?.canAccess('localizacao') == true;
@@ -168,8 +342,7 @@ class _DesktopMainNavigation extends StatelessWidget {
             icon: Icons.photo_library_outlined,
             selectedIcon: Icons.photo_library,
             label: 'Memórias',
-            selected:
-                hasMemories &&
+            selected: hasMemories &&
                 (_isSelected('/atalhos/memorias', currentLocation) ||
                     currentLocation == '/galeria' ||
                     currentLocation == '/playlist' ||
@@ -230,8 +403,7 @@ class _DesktopMainNavigation extends StatelessWidget {
             icon: Icons.apps_outlined,
             selectedIcon: Icons.apps,
             label: 'Mais',
-            selected:
-                hasMore &&
+            selected: hasMore &&
                 (_isSelected('/atalhos/mais', currentLocation) ||
                     currentLocation == '/jogos' ||
                     currentLocation == '/listas' ||
@@ -249,8 +421,7 @@ class _DesktopMainNavigation extends StatelessWidget {
             icon: Icons.person_outline,
             selectedIcon: Icons.person,
             label: 'Perfil',
-            selected:
-                _isSelected('/perfil', currentLocation) ||
+            selected: _isSelected('/perfil', currentLocation) ||
                 _isSelected('/admin', currentLocation),
             onTap: () {
               if (auth.user == null) {
@@ -293,9 +464,8 @@ class _DesktopNavPill extends StatelessWidget {
         label: Text(label),
         style: TextButton.styleFrom(
           foregroundColor: color,
-          backgroundColor: selected
-              ? palette.primary.withValues(alpha: .08)
-              : null,
+          backgroundColor:
+              selected ? palette.primary.withValues(alpha: .08) : null,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
@@ -503,13 +673,11 @@ class _MobileBottomNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     final user = auth.user;
-    final hasMemories =
-        user?.canAccess('memorias') == true ||
+    final hasMemories = user?.canAccess('memorias') == true ||
         user?.canAccess('playlist') == true ||
         user?.canAccess('cartas') == true ||
         user?.canAccess('nossaHistoria') == true;
-    final hasMore =
-        user?.canAccess('jogos') == true ||
+    final hasMore = user?.canAccess('jogos') == true ||
         user?.canAccess('listas') == true ||
         user?.canAccess('notas') == true ||
         user?.canAccess('localizacao') == true;
@@ -542,8 +710,7 @@ class _MobileBottomNavigation extends StatelessWidget {
                 icon: Icons.photo_library_outlined,
                 selectedIcon: Icons.photo_library,
                 label: 'Memórias',
-                selected:
-                    hasMemories &&
+                selected: hasMemories &&
                     (_isSelected('/atalhos/memorias', currentLocation) ||
                         currentLocation == '/galeria' ||
                         currentLocation == '/playlist' ||
@@ -605,8 +772,7 @@ class _MobileBottomNavigation extends StatelessWidget {
                 icon: Icons.apps_outlined,
                 selectedIcon: Icons.apps,
                 label: 'Mais',
-                selected:
-                    hasMore &&
+                selected: hasMore &&
                     (_isSelected('/atalhos/mais', currentLocation) ||
                         currentLocation == '/jogos' ||
                         currentLocation == '/listas' ||
@@ -624,8 +790,7 @@ class _MobileBottomNavigation extends StatelessWidget {
                 icon: Icons.person_outline,
                 selectedIcon: Icons.person,
                 label: 'Perfil',
-                selected:
-                    _isSelected('/perfil', currentLocation) ||
+                selected: _isSelected('/perfil', currentLocation) ||
                     _isSelected('/admin', currentLocation),
                 onTap: () {
                   if (auth.user == null) {
