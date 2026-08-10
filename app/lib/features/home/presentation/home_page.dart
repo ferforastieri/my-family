@@ -127,11 +127,9 @@ class _HomePageState extends State<HomePage> {
                             else
                               Column(
                                 children: [
-                                  for (
-                                    var i = 0;
-                                    i < homeItems.length;
-                                    i++
-                                  ) ...[
+                                  for (var i = 0;
+                                      i < homeItems.length;
+                                      i++) ...[
                                     homeItems[i].build(context),
                                     if (i < homeItems.length - 1)
                                       const SizedBox(height: 14),
@@ -504,17 +502,50 @@ class _DesktopHomeLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth >= 1040 ? 3 : 2;
-        final sections = <Widget>[];
-        final cardItems = <_HomeLayoutItem>[];
+        final galleries = items.whereType<_HomeGalleryLayoutItem>();
+        final gallery = galleries.isEmpty ? null : galleries.first;
+        final cards = items.whereType<_HomeCounterLayoutItem>().toList();
 
+        // A lembrança principal ocupa uma moldura vertical e os marcos da
+        // família formam uma grade única ao lado. Isso evita que uma foto
+        // retrato vire uma faixa larga entre grupos de cards.
+        if (gallery != null &&
+            cards.isNotEmpty &&
+            constraints.maxWidth >= 940) {
+          const layoutHeight = 464.0;
+          final photoWidth = (constraints.maxWidth * .30).clamp(280.0, 350.0);
+          return SizedBox(
+            height: layoutHeight,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(width: photoWidth, child: gallery.build(context)),
+                const SizedBox(width: 22),
+                Expanded(
+                  child: GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    childAspectRatio: 1.82,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 14,
+                    children: cards.map((item) => item.build(context)).toList(),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final sections = <Widget>[];
+        final cardItems = <_HomeCounterLayoutItem>[];
         void addCards() {
           if (cardItems.isEmpty) return;
           sections.add(
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: crossAxisCount,
+              crossAxisCount: 2,
               childAspectRatio: 1.58,
               crossAxisSpacing: 16,
               mainAxisSpacing: 14,
@@ -528,12 +559,11 @@ class _DesktopHomeLayout extends StatelessWidget {
           if (item is _HomeGalleryLayoutItem) {
             addCards();
             sections.add(SizedBox(height: 408, child: item.build(context)));
-          } else {
+          } else if (item is _HomeCounterLayoutItem) {
             cardItems.add(item);
           }
         }
         addCards();
-
         return Column(
           children: [
             for (var index = 0; index < sections.length; index++) ...[
@@ -593,7 +623,7 @@ class _HomePhotoCarouselState extends State<_HomePhotoCarousel> {
       builder: (context, constraints) {
         final bounded = constraints.hasBoundedHeight;
         final photoHeight = bounded
-            ? (constraints.maxHeight - 20).clamp(150.0, 386.0)
+            ? (constraints.maxHeight - 20).clamp(150.0, 444.0)
             : (mobile ? 292.0 : 386.0);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -667,6 +697,7 @@ class _FloatingHomePhoto extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
+    final mobile = MediaQuery.sizeOf(context).width < 760;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       child: DecoratedBox(
@@ -676,13 +707,15 @@ class _FloatingHomePhoto extends StatelessWidget {
             color: palette.primary.withValues(alpha: .38),
             width: 1.4,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: .16),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          boxShadow: mobile
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: .12),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
