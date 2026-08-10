@@ -7,7 +7,6 @@ import { MongoModelsModule } from '@shared/infrastructure/database/database.prov
 import { NotificationsService } from './application/services/notifications.service';
 import { NotificationsController } from './interfaces/controllers/notifications.controller';
 import { NotificationsRepository } from './infrastructure/repositories/notifications.repository';
-import { NotificationsGateway } from './interfaces/gateways/notifications.gateway';
 import { NotificationsRealtimeGateway } from './interfaces/gateways/notifications-realtime.gateway';
 import { NotificationSchedulerService } from './application/services/notification-scheduler.service';
 import { ScheduledNotificationsRepository } from './infrastructure/repositories/scheduled-notifications.repository';
@@ -27,7 +26,6 @@ import { NotificationQueueProcessor } from './infrastructure/queues/notification
     NotificationSchedulerService,
     NotificationsRepository,
     ScheduledNotificationsRepository,
-    NotificationsGateway,
     NotificationsRealtimeGateway,
     NotificationQueueProcessor,
   ],

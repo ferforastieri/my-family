@@ -63,27 +63,6 @@ class _AdminPageState extends State<AdminPage> {
   String? loadError;
   _AdminSection selected = _AdminSection.users;
 
-  @override
-  void initState() {
-    super.initState();
-    for (final event in _adminRealtimeEvents) {
-      widget.repository.socket.on(event, _handleRealtimeChange);
-    }
-  }
-
-  @override
-  void dispose() {
-    for (final event in _adminRealtimeEvents) {
-      widget.repository.socket.off(event, _handleRealtimeChange);
-    }
-    super.dispose();
-  }
-
-  void _handleRealtimeChange(dynamic _) {
-    if (!mounted) return;
-    _invalidateAdmin();
-  }
-
   void _invalidateAdmin() {
     if (mounted) invalidateQueries(context, QueryKeys.admin);
   }
@@ -112,8 +91,8 @@ class _AdminPageState extends State<AdminPage> {
         );
       }, errors),
       _fetchPart('agendadas', () async {
-        nextScheduledNotifications =
-            await widget.repository.listScheduledNotifications();
+        nextScheduledNotifications = await widget.repository
+            .listScheduledNotifications();
       }, errors),
       _fetchPart('perguntas', () async {
         nextQuestions = await widget.repository.listQuizQuestionsAdminPage(
@@ -202,9 +181,7 @@ class _AdminPageState extends State<AdminPage> {
                 statsPage: statsPage,
               ),
               queryFn: _fetchAdminData,
-              loading: _AdminScaffold(
-                child: const _AdminLoadingState(),
-              ),
+              loading: _AdminScaffold(child: const _AdminLoadingState()),
               builder: (context, data, _) {
                 _applyAdminData(data);
                 return _AdminScaffold(
@@ -249,76 +226,70 @@ class _AdminPageState extends State<AdminPage> {
   Widget _sectionContent() {
     return switch (selected) {
       _AdminSection.users => _UsersAdminTab(
-          users: users,
-          loading: false,
-          onEdit: _openUserSheet,
-          onDelete: _deleteUser,
-          pagination: _pagination(
-            usersPagination,
-            (page) => usersPage = page,
-          ),
-        ),
+        users: users,
+        loading: false,
+        onEdit: _openUserSheet,
+        onDelete: _deleteUser,
+        pagination: _pagination(usersPagination, (page) => usersPage = page),
+      ),
       _AdminSection.notifications => _NotificationsAdminTab(
-          notifications: notifications,
-          scheduledNotifications: scheduledNotifications,
-          loading: false,
-          onAdd: () => _openNotificationSheet(),
-          onEdit: _openNotificationSheet,
-          onDelete: _deleteNotification,
-          onSend: _sendNotification,
-          onScheduleNew: () => _scheduleNotification(),
-          onDeleteScheduled: _deleteScheduledNotification,
-          pagination: _pagination(
-            notificationsPagination,
-            (page) => notificationsPage = page,
-          ),
+        notifications: notifications,
+        scheduledNotifications: scheduledNotifications,
+        loading: false,
+        onAdd: () => _openNotificationSheet(),
+        onEdit: _openNotificationSheet,
+        onDelete: _deleteNotification,
+        onSend: _sendNotification,
+        onScheduleNew: () => _scheduleNotification(),
+        onDeleteScheduled: _deleteScheduledNotification,
+        pagination: _pagination(
+          notificationsPagination,
+          (page) => notificationsPage = page,
         ),
+      ),
       _AdminSection.games => _GamesAdminTab(
-          questions: questions,
-          words: words,
-          miniGames: miniGames,
-          loading: false,
-          onAddQuestion: () => _openQuestionSheet(),
-          onEditQuestion: _openQuestionSheet,
-          onDeleteQuestion: _deleteQuestion,
-          onAddWord: () => _openWordSheet(),
-          onEditWord: _openWordSheet,
-          onDeleteWord: _deleteWord,
-          onAddMiniGame: () => _openMiniGameSheet(),
-          onEditMiniGame: _openMiniGameSheet,
-          onDeleteMiniGame: _deleteMiniGame,
-          questionsPagination: _pagination(
-            questionsPagination,
-            (page) => questionsPage = page,
-          ),
-          wordsPagination: _pagination(
-            wordsPagination,
-            (page) => wordsPage = page,
-          ),
-          miniGamesPagination: _pagination(
-            miniGamesPagination,
-            (page) => miniGamesPage = page,
-          ),
+        questions: questions,
+        words: words,
+        miniGames: miniGames,
+        loading: false,
+        onAddQuestion: () => _openQuestionSheet(),
+        onEditQuestion: _openQuestionSheet,
+        onDeleteQuestion: _deleteQuestion,
+        onAddWord: () => _openWordSheet(),
+        onEditWord: _openWordSheet,
+        onDeleteWord: _deleteWord,
+        onAddMiniGame: () => _openMiniGameSheet(),
+        onEditMiniGame: _openMiniGameSheet,
+        onDeleteMiniGame: _deleteMiniGame,
+        questionsPagination: _pagination(
+          questionsPagination,
+          (page) => questionsPage = page,
         ),
+        wordsPagination: _pagination(
+          wordsPagination,
+          (page) => wordsPage = page,
+        ),
+        miniGamesPagination: _pagination(
+          miniGamesPagination,
+          (page) => miniGamesPage = page,
+        ),
+      ),
       _AdminSection.stats => _StatsAdminTab(
-          stats: stats,
-          loading: false,
-          pagination: _pagination(
-            statsPagination,
-            (page) => statsPage = page,
-          ),
-        ),
+        stats: stats,
+        loading: false,
+        pagination: _pagination(statsPagination, (page) => statsPage = page),
+      ),
       _AdminSection.home => _HomeSettingsAdminTab(
-          events: homeEvents,
-          galleryImages: homeGalleryImages,
-          galleryOrder: homeGalleryOrder,
-          repository: widget.repository,
-          onSave: (settings) async {
-            await widget.repository.updateHomeSettings(settings);
-            widget.toast.backendSuccess(widget.repository.takeMessage());
-            _invalidateAdmin();
-          },
-        ),
+        events: homeEvents,
+        galleryImages: homeGalleryImages,
+        galleryOrder: homeGalleryOrder,
+        repository: widget.repository,
+        onSave: (settings) async {
+          await widget.repository.updateHomeSettings(settings);
+          widget.toast.backendSuccess(widget.repository.takeMessage());
+          _invalidateAdmin();
+        },
+      ),
     };
   }
 
@@ -414,26 +385,27 @@ class _AdminPageState extends State<AdminPage> {
       context: context,
       builder: (_) => _ScheduleNotificationSheet(
         notification: notification,
-        onSchedule: ({
-          required String title,
-          String? body,
-          String? url,
-          required DateTime scheduledAt,
-        }) async {
-          try {
-            await widget.repository.scheduleNotification(
-              title: title,
-              body: body,
-              url: url,
-              scheduledAt: scheduledAt,
-            );
-            widget.toast.backendSuccess(widget.repository.takeMessage());
-            _invalidateAdmin();
-          } catch (error) {
-            widget.toast.error(_friendlyError(error));
-            rethrow;
-          }
-        },
+        onSchedule:
+            ({
+              required String title,
+              String? body,
+              String? url,
+              required DateTime scheduledAt,
+            }) async {
+              try {
+                await widget.repository.scheduleNotification(
+                  title: title,
+                  body: body,
+                  url: url,
+                  scheduledAt: scheduledAt,
+                );
+                widget.toast.backendSuccess(widget.repository.takeMessage());
+                _invalidateAdmin();
+              } catch (error) {
+                widget.toast.error(_friendlyError(error));
+                rethrow;
+              }
+            },
       ),
     );
   }
@@ -544,10 +516,7 @@ class _AdminData {
 enum _AdminSection { users, notifications, games, stats, home }
 
 class _AdminScaffold extends StatelessWidget {
-  const _AdminScaffold({
-    required this.child,
-    this.error,
-  });
+  const _AdminScaffold({required this.child, this.error});
 
   final Widget child;
   final String? error;
@@ -741,44 +710,22 @@ IconData _gameStatIcon(String game) {
   };
 }
 
-const _adminRealtimeEvents = [
-  'users.created',
-  'users.updated',
-  'users.deleted',
-  'notifications.created',
-  'notifications.updated',
-  'notifications.deleted',
-  'notifications.cleared',
-  'notifications.scheduled.changed',
-  'games.quiz.created',
-  'games.quiz.updated',
-  'games.quiz.deleted',
-  'games.words.created',
-  'games.words.updated',
-  'games.words.deleted',
-  'games.mini.created',
-  'games.mini.updated',
-  'games.mini.deleted',
-  'games.stats.changed',
-  'home.settings.changed',
-];
-
 extension _AdminSectionView on _AdminSection {
   String get label => switch (this) {
-        _AdminSection.users => 'Usuários',
-        _AdminSection.notifications => 'Notificações',
-        _AdminSection.games => 'Jogos',
-        _AdminSection.stats => 'Estatísticas',
-        _AdminSection.home => 'Home',
-      };
+    _AdminSection.users => 'Usuários',
+    _AdminSection.notifications => 'Notificações',
+    _AdminSection.games => 'Jogos',
+    _AdminSection.stats => 'Estatísticas',
+    _AdminSection.home => 'Home',
+  };
 
   IconData get icon => switch (this) {
-        _AdminSection.users => Icons.people_outline,
-        _AdminSection.notifications => Icons.notifications_outlined,
-        _AdminSection.games => Icons.sports_esports_outlined,
-        _AdminSection.stats => Icons.query_stats_outlined,
-        _AdminSection.home => Icons.home_outlined,
-      };
+    _AdminSection.users => Icons.people_outline,
+    _AdminSection.notifications => Icons.notifications_outlined,
+    _AdminSection.games => Icons.sports_esports_outlined,
+    _AdminSection.stats => Icons.query_stats_outlined,
+    _AdminSection.home => Icons.home_outlined,
+  };
 }
 
 class _AdminErrorBanner extends StatelessWidget {
@@ -803,7 +750,9 @@ class _AdminErrorBanner extends StatelessWidget {
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                    color: Colors.redAccent, fontWeight: FontWeight.w700),
+                  color: Colors.redAccent,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],
@@ -840,8 +789,10 @@ class _AdminNavTile extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(section.icon,
-                  color: selected ? palette.primary : palette.muted),
+              Icon(
+                section.icon,
+                color: selected ? palette.primary : palette.muted,
+              ),
               const SizedBox(width: 10),
               Text(
                 section.label,
@@ -899,7 +850,9 @@ class _AdminToolbar extends StatelessWidget {
                       title,
                       textAlign: TextAlign.left,
                       style: const TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.w900),
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                     const SizedBox(height: 3),
                     Text(
@@ -1177,11 +1130,7 @@ class _NotificationsAdminTab extends StatelessWidget {
           action: _AdminActions(
             fullWidthOnCompact: true,
             children: [
-              AppButton(
-                onPressed: onAdd,
-                label: 'Nova',
-                icon: Icons.add,
-              ),
+              AppButton(onPressed: onAdd, label: 'Nova', icon: Icons.add),
               AppButton(
                 onPressed: onScheduleNew,
                 label: 'Agendar',
@@ -1194,13 +1143,13 @@ class _NotificationsAdminTab extends StatelessWidget {
           child: loading
               ? const _AdminListSkeleton()
               : items.isEmpty
-                  ? const _EmptyAdminState('Nenhuma notificação cadastrada.')
-                  : ListView.separated(
-                      padding: _adminListPadding,
-                      itemCount: items.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (_, index) => items[index],
-                    ),
+              ? const _EmptyAdminState('Nenhuma notificação cadastrada.')
+              : ListView.separated(
+                  padding: _adminListPadding,
+                  itemCount: items.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (_, index) => items[index],
+                ),
         ),
       ],
     );
@@ -1290,82 +1239,81 @@ class _GamesAdminTabState extends State<_GamesAdminTab> {
               ? const _AdminListSkeleton()
               : switch (section) {
                   _GamesAdminSection.quiz => _GameSection(
-                      title: 'Quiz do Amor',
-                      empty: 'Nenhuma pergunta cadastrada.',
-                      scrollable: true,
-                      pagination: widget.questionsPagination,
-                      children: [
-                        for (final question in widget.questions)
-                          _AdminTile(
-                            icon: Icons.favorite_outline,
-                            title: question.question,
-                            subtitle:
-                                '${question.options.length} opções • correta: ${_correctAnswerLabel(question)} • ${question.active ? 'ativa' : 'inativa'}',
-                            actions: [
-                              IconButton(
-                                onPressed: () =>
-                                    widget.onEditQuestion(question),
-                                icon: const Icon(Icons.edit_outlined),
-                                tooltip: 'Editar',
-                              ),
-                              IconButton(
-                                onPressed: () =>
-                                    widget.onDeleteQuestion(question),
-                                icon: const Icon(Icons.delete_outline),
-                                tooltip: 'Remover',
-                              ),
-                            ],
-                          ),
-                      ],
-                    ),
+                    title: 'Quiz do Amor',
+                    empty: 'Nenhuma pergunta cadastrada.',
+                    scrollable: true,
+                    pagination: widget.questionsPagination,
+                    children: [
+                      for (final question in widget.questions)
+                        _AdminTile(
+                          icon: Icons.favorite_outline,
+                          title: question.question,
+                          subtitle:
+                              '${question.options.length} opções • correta: ${_correctAnswerLabel(question)} • ${question.active ? 'ativa' : 'inativa'}',
+                          actions: [
+                            IconButton(
+                              onPressed: () => widget.onEditQuestion(question),
+                              icon: const Icon(Icons.edit_outlined),
+                              tooltip: 'Editar',
+                            ),
+                            IconButton(
+                              onPressed: () =>
+                                  widget.onDeleteQuestion(question),
+                              icon: const Icon(Icons.delete_outline),
+                              tooltip: 'Remover',
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
                   _GamesAdminSection.words => _GameSection(
-                      title: 'Caça Palavras',
-                      empty: 'Nenhuma palavra cadastrada.',
-                      scrollable: true,
-                      pagination: widget.wordsPagination,
-                      children: [
-                        for (final word in widget.words)
-                          _AdminTile(
-                            icon: Icons.grid_on_outlined,
-                            title: word.word,
-                            subtitle:
-                                '${word.word.length} letras • ${word.active ? 'ativa' : 'inativa'}',
-                            actions: [
-                              IconButton(
-                                onPressed: () => widget.onEditWord(word),
-                                icon: const Icon(Icons.edit_outlined),
-                                tooltip: 'Editar',
-                              ),
-                              IconButton(
-                                onPressed: () => widget.onDeleteWord(word),
-                                icon: const Icon(Icons.delete_outline),
-                                tooltip: 'Remover',
-                              ),
-                            ],
-                          ),
-                      ],
-                    ),
+                    title: 'Caça Palavras',
+                    empty: 'Nenhuma palavra cadastrada.',
+                    scrollable: true,
+                    pagination: widget.wordsPagination,
+                    children: [
+                      for (final word in widget.words)
+                        _AdminTile(
+                          icon: Icons.grid_on_outlined,
+                          title: word.word,
+                          subtitle:
+                              '${word.word.length} letras • ${word.active ? 'ativa' : 'inativa'}',
+                          actions: [
+                            IconButton(
+                              onPressed: () => widget.onEditWord(word),
+                              icon: const Icon(Icons.edit_outlined),
+                              tooltip: 'Editar',
+                            ),
+                            IconButton(
+                              onPressed: () => widget.onDeleteWord(word),
+                              icon: const Icon(Icons.delete_outline),
+                              tooltip: 'Remover',
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
                   _GamesAdminSection.memoryMatch => _MiniGameConfigSection(
-                      title: 'Memória da Família',
-                      empty: 'Nenhuma configuração de memória cadastrada.',
-                      games: _configsByType('memory_match'),
-                      onEdit: widget.onEditMiniGame,
-                      onDelete: widget.onDeleteMiniGame,
-                    ),
+                    title: 'Memória da Família',
+                    empty: 'Nenhuma configuração de memória cadastrada.',
+                    games: _configsByType('memory_match'),
+                    onEdit: widget.onEditMiniGame,
+                    onDelete: widget.onDeleteMiniGame,
+                  ),
                   _GamesAdminSection.loveOrder => _MiniGameConfigSection(
-                      title: 'Linha do Amor',
-                      empty: 'Nenhuma configuração de linha cadastrada.',
-                      games: _configsByType('love_order'),
-                      onEdit: widget.onEditMiniGame,
-                      onDelete: widget.onDeleteMiniGame,
-                    ),
+                    title: 'Linha do Amor',
+                    empty: 'Nenhuma configuração de linha cadastrada.',
+                    games: _configsByType('love_order'),
+                    onEdit: widget.onEditMiniGame,
+                    onDelete: widget.onDeleteMiniGame,
+                  ),
                   _GamesAdminSection.thisOrThat => _MiniGameConfigSection(
-                      title: 'Isso ou Aquilo',
-                      empty: 'Nenhuma configuração de escolhas cadastrada.',
-                      games: _configsByType('this_or_that'),
-                      onEdit: widget.onEditMiniGame,
-                      onDelete: widget.onDeleteMiniGame,
-                    ),
+                    title: 'Isso ou Aquilo',
+                    empty: 'Nenhuma configuração de escolhas cadastrada.',
+                    games: _configsByType('this_or_that'),
+                    onEdit: widget.onEditMiniGame,
+                    onDelete: widget.onDeleteMiniGame,
+                  ),
                 },
         ),
       ],
@@ -1583,7 +1531,9 @@ class _StatsAdminTab extends StatelessWidget {
                 trailing: Text(
                   '${stat.count}x${stat.bestScore == null ? '' : ' • melhor ${stat.bestScore}'}',
                   style: const TextStyle(
-                      fontWeight: FontWeight.w900, fontSize: 16),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                  ),
                 ),
               );
             },
@@ -1642,8 +1592,9 @@ class _HomeSettingsAdminTab extends StatelessWidget {
                       '${galleryImages.length} foto${galleryImages.length == 1 ? '' : 's'} • aparece como card flutuante na Home',
                   actions: [
                     IconButton(
-                      onPressed:
-                          item.order <= 0 ? null : () => _moveGallery(-1),
+                      onPressed: item.order <= 0
+                          ? null
+                          : () => _moveGallery(-1),
                       icon: const Icon(Icons.arrow_upward),
                       tooltip: 'Subir',
                     ),
@@ -1688,9 +1639,11 @@ class _HomeSettingsAdminTab extends StatelessWidget {
                   ),
                   IconButton(
                     onPressed: () => _toggleHidden(item.eventIndex!),
-                    icon: Icon(event.hidden
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined),
+                    icon: Icon(
+                      event.hidden
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                    ),
                     tooltip: event.hidden ? 'Mostrar' : 'Ocultar',
                   ),
                   IconButton(
@@ -1732,12 +1685,16 @@ class _HomeSettingsAdminTab extends StatelessWidget {
     int? nextGalleryOrder,
   }) {
     final eventsToSave = nextEvents ?? events;
-    return onSave(HomeSettingsConfig(
-      events: eventsToSave,
-      galleryImages: nextGalleryImages ?? galleryImages,
-      galleryOrder: (nextGalleryOrder ?? _normalizedGalleryOrder)
-          .clamp(0, eventsToSave.length),
-    ));
+    return onSave(
+      HomeSettingsConfig(
+        events: eventsToSave,
+        galleryImages: nextGalleryImages ?? galleryImages,
+        galleryOrder: (nextGalleryOrder ?? _normalizedGalleryOrder).clamp(
+          0,
+          eventsToSave.length,
+        ),
+      ),
+    );
   }
 
   Future<void> _openEventSheet(BuildContext context, {int? index}) async {
@@ -1767,10 +1724,8 @@ class _HomeSettingsAdminTab extends StatelessWidget {
   Future<void> _openGallerySheet(BuildContext context) async {
     final images = await showAppSheet<List<String>>(
       context: context,
-      builder: (_) => _HomeGallerySheet(
-        images: galleryImages,
-        repository: repository,
-      ),
+      builder: (_) =>
+          _HomeGallerySheet(images: galleryImages, repository: repository),
     );
     if (images == null) return;
     await _save(nextGalleryImages: images);
@@ -1883,15 +1838,19 @@ class _AdminTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w900)),
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w900),
+              ),
               const SizedBox(height: 4),
-              Text(subtitle,
-                  maxLines: compact ? 3 : 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: palette.muted)),
+              Text(
+                subtitle,
+                maxLines: compact ? 3 : 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: palette.muted),
+              ),
             ],
           ),
         );
@@ -1902,18 +1861,9 @@ class _AdminTile extends StatelessWidget {
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Row(
-                      children: [
-                        leading,
-                        const SizedBox(width: 14),
-                        text,
-                      ],
-                    ),
+                    Row(children: [leading, const SizedBox(width: 14), text]),
                     const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: actionBar,
-                    ),
+                    Align(alignment: Alignment.centerRight, child: actionBar),
                   ],
                 )
               : Row(
@@ -1942,11 +1892,7 @@ class _AdminTile extends StatelessWidget {
 }
 
 class _StatusPill extends StatelessWidget {
-  const _StatusPill({
-    required this.label,
-    required this.tone,
-    this.onDelete,
-  });
+  const _StatusPill({required this.label, required this.tone, this.onDelete});
 
   final String label;
   final String tone;
@@ -2207,18 +2153,17 @@ class _EmptyAdminState extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     return Center(
-      child: Text(message,
-          textAlign: TextAlign.center,
-          style: TextStyle(color: palette.muted, fontWeight: FontWeight.w700)),
+      child: Text(
+        message,
+        textAlign: TextAlign.center,
+        style: TextStyle(color: palette.muted, fontWeight: FontWeight.w700),
+      ),
     );
   }
 }
 
 class _HomeEventSheet extends StatefulWidget {
-  const _HomeEventSheet({
-    required this.draft,
-    required this.isNew,
-  });
+  const _HomeEventSheet({required this.draft, required this.isNew});
 
   final _HomeEventDraft draft;
   final bool isNew;
@@ -2344,10 +2289,7 @@ class _HomeEventSheetState extends State<_HomeEventSheet> {
 }
 
 class _HomeGallerySheet extends StatefulWidget {
-  const _HomeGallerySheet({
-    required this.images,
-    required this.repository,
-  });
+  const _HomeGallerySheet({required this.images, required this.repository});
 
   final List<String> images;
   final FamilyRepository repository;
@@ -2498,10 +2440,7 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
         ),
       );
       await widget.onSave(
-        HomeSettingsConfig(
-          events: events,
-          galleryImages: galleryImages,
-        ),
+        HomeSettingsConfig(events: events, galleryImages: galleryImages),
       );
       if (mounted) Navigator.pop(context);
     } catch (error) {
@@ -2653,8 +2592,9 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
                             child: TextField(
                               controller: draft.icon,
                               enabled: !saving,
-                              decoration:
-                                  const InputDecoration(labelText: 'Ícone'),
+                              decoration: const InputDecoration(
+                                labelText: 'Ícone',
+                              ),
                               textInputAction: TextInputAction.next,
                             ),
                           ),
@@ -2663,8 +2603,9 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
                             child: TextField(
                               controller: draft.title,
                               enabled: !saving,
-                              decoration:
-                                  const InputDecoration(labelText: 'Título'),
+                              decoration: const InputDecoration(
+                                labelText: 'Título',
+                              ),
                               textInputAction: TextInputAction.next,
                             ),
                           ),
@@ -2676,8 +2617,9 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
                         enabled: !saving,
                         minLines: 2,
                         maxLines: 3,
-                        decoration:
-                            const InputDecoration(labelText: 'Mensagem'),
+                        decoration: const InputDecoration(
+                          labelText: 'Mensagem',
+                        ),
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 10),
@@ -2706,8 +2648,8 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
                         onSelectionChanged: saving
                             ? null
                             : (value) => setState(
-                                  () => draft.countDirection = value.first,
-                                ),
+                                () => draft.countDirection = value.first,
+                              ),
                       ),
                       const SizedBox(height: 10),
                       _AdminSwitchRow(
@@ -2872,8 +2814,9 @@ class _HomeGalleryEditor extends StatelessWidget {
 
 String _adminHomeMediaUrl(String url) {
   if (url.startsWith('http')) return url;
-  return AppConfig.apiUri('/fotos/file?path=${Uri.encodeQueryComponent(url)}')
-      .toString();
+  return AppConfig.apiUri(
+    '/fotos/file?path=${Uri.encodeQueryComponent(url)}',
+  ).toString();
 }
 
 class _HomeEventDraft {
@@ -2887,22 +2830,22 @@ class _HomeEventDraft {
   });
 
   factory _HomeEventDraft.fromEvent(HomeEventConfig event) => _HomeEventDraft(
-        title: TextEditingController(text: event.title),
-        icon: TextEditingController(text: event.icon),
-        message: TextEditingController(text: event.message),
-        date: event.date,
-        countDirection: event.countDirection,
-        hidden: event.hidden,
-      );
+    title: TextEditingController(text: event.title),
+    icon: TextEditingController(text: event.icon),
+    message: TextEditingController(text: event.message),
+    date: event.date,
+    countDirection: event.countDirection,
+    hidden: event.hidden,
+  );
 
   factory _HomeEventDraft.empty() => _HomeEventDraft(
-        title: TextEditingController(),
-        icon: TextEditingController(text: '💗'),
-        message: TextEditingController(),
-        date: DateTime.now(),
-        countDirection: HomeCountDirection.forward,
-        hidden: false,
-      );
+    title: TextEditingController(),
+    icon: TextEditingController(text: '💗'),
+    message: TextEditingController(),
+    date: DateTime.now(),
+    countDirection: HomeCountDirection.forward,
+    hidden: false,
+  );
 
   final TextEditingController title;
   final TextEditingController icon;
@@ -2950,8 +2893,9 @@ class _UserSheetState extends State<_UserSheet> {
     name = TextEditingController(text: widget.user.name ?? '');
     password = TextEditingController();
     confirmPassword = TextEditingController();
-    role =
-        appUserRoles.contains(widget.user.role) ? widget.user.role : 'friends';
+    role = appUserRoles.contains(widget.user.role)
+        ? widget.user.role
+        : 'friends';
     access = widget.user.access.toSet();
   }
 
@@ -3023,9 +2967,11 @@ class _UserSheetState extends State<_UserSheet> {
               suffixIcon: IconButton(
                 onPressed: () =>
                     setState(() => obscurePassword = !obscurePassword),
-                icon: Icon(obscurePassword
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined),
+                icon: Icon(
+                  obscurePassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                ),
                 tooltip: obscurePassword ? 'Mostrar senha' : 'Ocultar senha',
               ),
             ),
@@ -3066,9 +3012,9 @@ class _UserSheetState extends State<_UserSheet> {
           const SizedBox(height: 18),
           Text(
             'Acessos',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w900,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 8),
           Text(
@@ -3233,7 +3179,8 @@ class _ScheduleNotificationSheet extends StatefulWidget {
     String? body,
     String? url,
     required DateTime scheduledAt,
-  }) onSchedule;
+  })
+  onSchedule;
 
   @override
   State<_ScheduleNotificationSheet> createState() =>
@@ -3269,12 +3216,12 @@ class _ScheduleNotificationSheetState
   }
 
   DateTime get scheduledAt => DateTime(
-        selectedDate.year,
-        selectedDate.month,
-        selectedDate.day,
-        selectedTime.hour,
-        selectedTime.minute,
-      );
+    selectedDate.year,
+    selectedDate.month,
+    selectedDate.day,
+    selectedTime.hour,
+    selectedTime.minute,
+  );
 
   void _setDateTime(DateTime value) {
     selectedDate = DateTime(value.year, value.month, value.day);
@@ -3401,14 +3348,16 @@ class _ScheduleNotificationSheetState
               ActionChip(
                 avatar: const Icon(Icons.schedule_outlined, size: 18),
                 label: const Text('Em 1 hora'),
-                onPressed:
-                    saving ? null : () => _setPreset(const Duration(hours: 1)),
+                onPressed: saving
+                    ? null
+                    : () => _setPreset(const Duration(hours: 1)),
               ),
               ActionChip(
                 avatar: const Icon(Icons.today_outlined, size: 18),
                 label: const Text('Amanhã'),
-                onPressed:
-                    saving ? null : () => _setPreset(const Duration(days: 1)),
+                onPressed: saving
+                    ? null
+                    : () => _setPreset(const Duration(days: 1)),
               ),
             ],
           ),
@@ -3420,7 +3369,8 @@ class _ScheduleNotificationSheetState
                   onPressed: saving ? null : _pickDate,
                   icon: const Icon(Icons.calendar_month_outlined),
                   label: Text(
-                      '${selectedDate.day.toString().padLeft(2, '0')}/${selectedDate.month.toString().padLeft(2, '0')}/${selectedDate.year}'),
+                    '${selectedDate.day.toString().padLeft(2, '0')}/${selectedDate.month.toString().padLeft(2, '0')}/${selectedDate.year}',
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
@@ -3439,14 +3389,15 @@ class _ScheduleNotificationSheetState
             decoration: BoxDecoration(
               color: palette.primary.withValues(alpha: .08),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: palette.primary.withValues(alpha: .16),
-              ),
+              border: Border.all(color: palette.primary.withValues(alpha: .16)),
             ),
             child: Row(
               children: [
-                Icon(Icons.event_available_outlined,
-                    color: palette.primary, size: 20),
+                Icon(
+                  Icons.event_available_outlined,
+                  color: palette.primary,
+                  size: 20,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -3508,9 +3459,10 @@ class _QuestionSheetState extends State<_QuestionSheet> {
     options = List.generate(
       4,
       (index) => TextEditingController(
-          text: index < (current?.options.length ?? 0)
-              ? current!.options[index]
-              : ''),
+        text: index < (current?.options.length ?? 0)
+            ? current!.options[index]
+            : '',
+      ),
     );
     correctIndex = current?.correctIndex ?? 0;
     active = current?.active ?? true;
@@ -3549,8 +3501,9 @@ class _QuestionSheetState extends State<_QuestionSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           AppSheetHeader(
-            title:
-                widget.question == null ? 'Nova pergunta' : 'Editar pergunta',
+            title: widget.question == null
+                ? 'Nova pergunta'
+                : 'Editar pergunta',
             subtitle: 'Monte as opções e marque qual resposta está correta.',
             icon: Icons.quiz_outlined,
           ),
@@ -4013,8 +3966,9 @@ class _MiniGameItemFields extends StatelessWidget {
                     children: [
                       TextField(
                         controller: fields[0],
-                        decoration:
-                            const InputDecoration(labelText: 'Pergunta'),
+                        decoration: const InputDecoration(
+                          labelText: 'Pergunta',
+                        ),
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 8),
@@ -4041,8 +3995,9 @@ class _MiniGameItemFields extends StatelessWidget {
             else
               TextField(
                 controller: fields.first,
-                decoration:
-                    InputDecoration(labelText: _miniGameItemLabel(type)),
+                decoration: InputDecoration(
+                  labelText: _miniGameItemLabel(type),
+                ),
                 textInputAction: TextInputAction.next,
               ),
           ],

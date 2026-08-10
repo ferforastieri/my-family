@@ -38,95 +38,62 @@ class _GamesPageState extends State<GamesPage> {
   int version = 0;
 
   @override
-  void initState() {
-    super.initState();
-    for (final event in _gameRealtimeEvents) {
-      widget.repository.socket.on(event, _handleRealtimeChange);
-    }
-  }
-
-  @override
-  void dispose() {
-    for (final event in _gameRealtimeEvents) {
-      widget.repository.socket.off(event, _handleRealtimeChange);
-    }
-    super.dispose();
-  }
-
-  void _handleRealtimeChange(dynamic _) {
-    if (!mounted) return;
-    setState(() => version++);
-  }
-
-  @override
   Widget build(BuildContext context) {
     return LoveBackground(
       child: switch (view) {
         _GameView.hub => _GamesHub(
-            key: ValueKey('hub-$version'),
-            repository: widget.repository,
-            onOpen: (next) => setState(() => view = next),
-          ),
+          key: ValueKey('hub-$version'),
+          repository: widget.repository,
+          onOpen: (next) => setState(() => view = next),
+        ),
         _GameView.quiz => _QuizGame(
-            key: ValueKey('quiz-$version'),
-            repository: widget.repository,
-            toast: widget.toast,
-            auth: widget.auth,
-            onBack: () => setState(() => view = _GameView.hub),
-          ),
+          key: ValueKey('quiz-$version'),
+          repository: widget.repository,
+          toast: widget.toast,
+          auth: widget.auth,
+          onBack: () => setState(() => view = _GameView.hub),
+        ),
         _GameView.wordSearch => _WordSearchGame(
-            key: ValueKey('words-$version'),
-            repository: widget.repository,
-            toast: widget.toast,
-            auth: widget.auth,
-            onBack: () => setState(() => view = _GameView.hub),
-          ),
+          key: ValueKey('words-$version'),
+          repository: widget.repository,
+          toast: widget.toast,
+          auth: widget.auth,
+          onBack: () => setState(() => view = _GameView.hub),
+        ),
         _GameView.memoryMatch => _MiniGameRoute(
-            key: ValueKey('memory-$version'),
-            type: 'memory_match',
-            repository: widget.repository,
-            toast: widget.toast,
-            auth: widget.auth,
-            onBack: () => setState(() => view = _GameView.hub),
-            builder: (config, common) =>
-                _MemoryMatchGame(config: config, common: common),
-          ),
+          key: ValueKey('memory-$version'),
+          type: 'memory_match',
+          repository: widget.repository,
+          toast: widget.toast,
+          auth: widget.auth,
+          onBack: () => setState(() => view = _GameView.hub),
+          builder: (config, common) =>
+              _MemoryMatchGame(config: config, common: common),
+        ),
         _GameView.loveOrder => _MiniGameRoute(
-            key: ValueKey('order-$version'),
-            type: 'love_order',
-            repository: widget.repository,
-            toast: widget.toast,
-            auth: widget.auth,
-            onBack: () => setState(() => view = _GameView.hub),
-            builder: (config, common) =>
-                _LoveOrderGame(config: config, common: common),
-          ),
+          key: ValueKey('order-$version'),
+          type: 'love_order',
+          repository: widget.repository,
+          toast: widget.toast,
+          auth: widget.auth,
+          onBack: () => setState(() => view = _GameView.hub),
+          builder: (config, common) =>
+              _LoveOrderGame(config: config, common: common),
+        ),
         _GameView.thisOrThat => _MiniGameRoute(
-            key: ValueKey('choice-$version'),
-            type: 'this_or_that',
-            repository: widget.repository,
-            toast: widget.toast,
-            auth: widget.auth,
-            onBack: () => setState(() => view = _GameView.hub),
-            builder: (config, common) =>
-                _ThisOrThatGame(config: config, common: common),
-          ),
+          key: ValueKey('choice-$version'),
+          type: 'this_or_that',
+          repository: widget.repository,
+          toast: widget.toast,
+          auth: widget.auth,
+          onBack: () => setState(() => view = _GameView.hub),
+          builder: (config, common) =>
+              _ThisOrThatGame(config: config, common: common),
+        ),
       },
     );
   }
 }
-
-const _gameRealtimeEvents = [
-  'games.quiz.created',
-  'games.quiz.updated',
-  'games.quiz.deleted',
-  'games.words.created',
-  'games.words.updated',
-  'games.words.deleted',
-  'games.mini.created',
-  'games.mini.updated',
-  'games.mini.deleted',
-];
 
 class _GamesHub extends StatelessWidget {
   const _GamesHub({super.key, required this.repository, required this.onOpen});
@@ -290,7 +257,8 @@ class _QuizGameState extends State<_QuizGame> {
             builder: (context, questions, _) {
               if (questions.isEmpty) {
                 return const _GameEmptyState(
-                    text: 'Nenhuma pergunta ativa no momento.');
+                  text: 'Nenhuma pergunta ativa no momento.',
+                );
               }
               if (index >= questions.length) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -352,13 +320,17 @@ class _QuizQuestionView extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            Text('${index + 1}/$total',
-                style: const TextStyle(fontWeight: FontWeight.w900)),
+            Text(
+              '${index + 1}/$total',
+              style: const TextStyle(fontWeight: FontWeight.w900),
+            ),
           ],
         ),
         const SizedBox(height: 18),
-        Text(question.question,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
+        Text(
+          question.question,
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+        ),
         const SizedBox(height: 18),
         if (showName) ...[
           TextField(
@@ -394,7 +366,9 @@ class _QuizQuestionView extends StatelessWidget {
                     ),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 12),
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                     ),
                   ),
               ],
@@ -508,8 +482,9 @@ class _WordSearchGameState extends State<_WordSearchGame> {
   Future<void> _endSelection() async {
     if (selectedCells.isEmpty) return;
     final selectedText = selectedCells
-        .map((index) =>
-            puzzle.letters[index ~/ puzzle.size][index % puzzle.size])
+        .map(
+          (index) => puzzle.letters[index ~/ puzzle.size][index % puzzle.size],
+        )
         .join();
     for (final word in words) {
       if (found.contains(word)) continue;
@@ -651,11 +626,7 @@ class _WordSearchContent extends StatelessWidget {
             if (!wide) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  board,
-                  const SizedBox(height: 18),
-                  side,
-                ],
+                children: [board, const SizedBox(height: 18), side],
               );
             }
             return Row(
@@ -737,8 +708,9 @@ class _WordSearchSidePanel extends StatelessWidget {
                     avatar: Icon(
                       found.contains(word) ? Icons.check_circle : Icons.search,
                       size: 18,
-                      color:
-                          found.contains(word) ? Colors.green : palette.primary,
+                      color: found.contains(word)
+                          ? Colors.green
+                          : palette.primary,
                     ),
                     label: Text(
                       word,
@@ -830,8 +802,9 @@ class _WordSearchBoard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: .72),
                 borderRadius: BorderRadius.circular(18),
-                border:
-                    Border.all(color: palette.primary.withValues(alpha: .22)),
+                border: Border.all(
+                  color: palette.primary.withValues(alpha: .22),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: palette.primary.withValues(alpha: .10),
@@ -860,15 +833,15 @@ class _WordSearchBoard extends StatelessWidget {
                       color: isFound
                           ? Colors.green.withValues(alpha: .20)
                           : isSelected
-                              ? palette.primary.withValues(alpha: .24)
-                              : palette.card,
+                          ? palette.primary.withValues(alpha: .24)
+                          : palette.card,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: isFound
                             ? Colors.green
                             : isSelected
-                                ? palette.primary
-                                : palette.border,
+                            ? palette.primary
+                            : palette.border,
                       ),
                     ),
                     child: Text(
@@ -893,10 +866,8 @@ class _WordSearchBoard extends StatelessWidget {
   }
 }
 
-typedef _MiniGameBuilder = Widget Function(
-  MiniGameConfig config,
-  _MiniGameCommon common,
-);
+typedef _MiniGameBuilder =
+    Widget Function(MiniGameConfig config, _MiniGameCommon common);
 
 class _MiniGameCommon {
   const _MiniGameCommon({
@@ -1027,11 +998,12 @@ class _MemoryMatchGameState extends State<_MemoryMatchGame> {
   }
 
   void _reset() {
-    final labels = (widget.config.items.isEmpty
-            ? ['Amor', 'Templo', 'Rudy', 'Shopping', 'Filme', 'Fernando']
-            : widget.config.items)
-        .take(8)
-        .toList();
+    final labels =
+        (widget.config.items.isEmpty
+                ? ['Amor', 'Templo', 'Rudy', 'Shopping', 'Filme', 'Fernando']
+                : widget.config.items)
+            .take(8)
+            .toList();
     cards = [
       for (final label in labels) ...[
         _MemoryCardData(label),
@@ -1371,14 +1343,13 @@ class _ThisOrThatGameState extends State<_ThisOrThatGame> {
             children: [
               Text(
                 current.prompt,
-                style:
-                    const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               const SizedBox(height: 14),
-              _ChoiceButtons(
-                options: current.options,
-                onChoose: _choose,
-              ),
+              _ChoiceButtons(options: current.options, onChoose: _choose),
             ],
           ),
       ],
@@ -1387,10 +1358,7 @@ class _ThisOrThatGameState extends State<_ThisOrThatGame> {
 }
 
 class _PreferenceRound {
-  const _PreferenceRound({
-    required this.prompt,
-    required this.options,
-  });
+  const _PreferenceRound({required this.prompt, required this.options});
 
   final String prompt;
   final List<String> options;
@@ -1420,11 +1388,7 @@ class _ChoiceButtons extends StatelessWidget {
         if (!wide) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              buttons[0],
-              const SizedBox(height: 10),
-              buttons[1],
-            ],
+            children: [buttons[0], const SizedBox(height: 10), buttons[1]],
           );
         }
         return Row(
@@ -1518,10 +1482,7 @@ class _GamePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final compact = MediaQuery.sizeOf(context).width < 520;
-    return LovePanel(
-      padding: EdgeInsets.all(compact ? 12 : 22),
-      child: child,
-    );
+    return LovePanel(padding: EdgeInsets.all(compact ? 12 : 22), child: child);
   }
 }
 
@@ -1561,8 +1522,10 @@ class _QuizFinished extends StatelessWidget {
       children: [
         Icon(Icons.celebration, size: 54, color: palette.primary),
         const SizedBox(height: 12),
-        Text('Você acertou $score de $total.',
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+        Text(
+          'Você acertou $score de $total.',
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+        ),
         const SizedBox(height: 14),
         FilledButton.icon(
           onPressed: onRestart,
@@ -1649,12 +1612,12 @@ class _WordPuzzle {
   final List<List<String>> letters;
 
   factory _WordPuzzle.empty() => _WordPuzzle(
-        size: _wordSearchSize,
-        letters: List.generate(
-          _wordSearchSize,
-          (_) => List.generate(_wordSearchSize, (_) => ''),
-        ),
-      );
+    size: _wordSearchSize,
+    letters: List.generate(
+      _wordSearchSize,
+      (_) => List.generate(_wordSearchSize, (_) => ''),
+    ),
+  );
 }
 
 class _WordDirection {

@@ -21,6 +21,7 @@ import { AccessGuard } from '@auth/guards/access.guard';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { UploadService, UploadContext } from '@shared/infrastructure/upload';
 import type { FotoWriteDto } from '../dto/foto.dto';
+import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 @Controller('fotos')
 export class FotosController {
@@ -30,8 +31,13 @@ export class FotosController {
   ) {}
 
   @Get()
-  async findAll() {
-    return this.fotosService.findAll();
+  async findAll(@Query() query: PaginationQuery) {
+    return this.fotosService.findAll(query);
+  }
+
+  @Get('albums')
+  async findAlbums() {
+    return this.fotosService.findAlbums();
   }
 
   @Get('file')

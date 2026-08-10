@@ -141,11 +141,13 @@ class _DesktopMainNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     final user = auth.user;
-    final hasMemories = user?.canAccess('memorias') == true ||
+    final hasMemories =
+        user?.canAccess('memorias') == true ||
         user?.canAccess('playlist') == true ||
         user?.canAccess('cartas') == true ||
         user?.canAccess('nossaHistoria') == true;
-    final hasMore = user?.canAccess('jogos') == true ||
+    final hasMore =
+        user?.canAccess('jogos') == true ||
         user?.canAccess('listas') == true ||
         user?.canAccess('notas') == true ||
         user?.canAccess('localizacao') == true;
@@ -165,7 +167,8 @@ class _DesktopMainNavigation extends StatelessWidget {
             icon: Icons.photo_library_outlined,
             selectedIcon: Icons.photo_library,
             label: 'Memórias',
-            selected: hasMemories &&
+            selected:
+                hasMemories &&
                 (_isSelected('/atalhos/memorias', currentLocation) ||
                     currentLocation == '/galeria' ||
                     currentLocation == '/playlist' ||
@@ -226,7 +229,8 @@ class _DesktopMainNavigation extends StatelessWidget {
             icon: Icons.apps_outlined,
             selectedIcon: Icons.apps,
             label: 'Mais',
-            selected: hasMore &&
+            selected:
+                hasMore &&
                 (_isSelected('/atalhos/mais', currentLocation) ||
                     currentLocation == '/jogos' ||
                     currentLocation == '/listas' ||
@@ -244,7 +248,8 @@ class _DesktopMainNavigation extends StatelessWidget {
             icon: Icons.person_outline,
             selectedIcon: Icons.person,
             label: 'Perfil',
-            selected: _isSelected('/perfil', currentLocation) ||
+            selected:
+                _isSelected('/perfil', currentLocation) ||
                 _isSelected('/admin', currentLocation),
             onTap: () {
               if (auth.user == null) {
@@ -287,16 +292,14 @@ class _DesktopNavPill extends StatelessWidget {
         label: Text(label),
         style: TextButton.styleFrom(
           foregroundColor: color,
-          backgroundColor:
-              selected ? palette.primary.withValues(alpha: .08) : null,
+          backgroundColor: selected
+              ? palette.primary.withValues(alpha: .08)
+              : null,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
-          textStyle: const TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 12,
-          ),
+          textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
         ),
       ),
     );
@@ -338,23 +341,26 @@ class _ThemeSheet extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _ColorChoice(
-                  theme: theme,
-                  toast: toast,
-                  value: ThemeColorChoice.rosa,
-                  color: const Color(0xffff69b4),
-                  label: 'Rosa'),
+                theme: theme,
+                toast: toast,
+                value: ThemeColorChoice.floral,
+                color: const Color(0xff9f4d4d),
+                label: 'Floral',
+              ),
               _ColorChoice(
-                  theme: theme,
-                  toast: toast,
-                  value: ThemeColorChoice.azul,
-                  color: const Color(0xff3b82f6),
-                  label: 'Azul'),
+                theme: theme,
+                toast: toast,
+                value: ThemeColorChoice.azul,
+                color: const Color(0xff3b82f6),
+                label: 'Azul',
+              ),
               _ColorChoice(
-                  theme: theme,
-                  toast: toast,
-                  value: ThemeColorChoice.vermelho,
-                  color: const Color(0xffef4444),
-                  label: 'Vermelho'),
+                theme: theme,
+                toast: toast,
+                value: ThemeColorChoice.vermelho,
+                color: const Color(0xffef4444),
+                label: 'Vermelho',
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -368,20 +374,24 @@ class _ThemeSheet extends StatelessWidget {
             child: SegmentedButton<ThemeMode>(
               segments: const [
                 ButtonSegment(
-                    value: ThemeMode.light,
-                    icon: Icon(Icons.light_mode_outlined),
-                    label: Text('Claro')),
+                  value: ThemeMode.light,
+                  icon: Icon(Icons.light_mode_outlined),
+                  label: Text('Claro'),
+                ),
                 ButtonSegment(
-                    value: ThemeMode.dark,
-                    icon: Icon(Icons.dark_mode_outlined),
-                    label: Text('Escuro')),
+                  value: ThemeMode.dark,
+                  icon: Icon(Icons.dark_mode_outlined),
+                  label: Text('Escuro'),
+                ),
               ],
               selected: {theme.mode},
               onSelectionChanged: (value) {
                 theme.setMode(value.first);
-                toast.success(value.first == ThemeMode.dark
-                    ? 'Modo escuro ativado.'
-                    : 'Modo claro ativado.');
+                toast.success(
+                  value.first == ThemeMode.dark
+                      ? 'Modo escuro ativado.'
+                      : 'Modo claro ativado.',
+                );
               },
             ),
           ),
@@ -392,12 +402,13 @@ class _ThemeSheet extends StatelessWidget {
 }
 
 class _ColorChoice extends StatelessWidget {
-  const _ColorChoice(
-      {required this.theme,
-      required this.toast,
-      required this.value,
-      required this.color,
-      required this.label});
+  const _ColorChoice({
+    required this.theme,
+    required this.toast,
+    required this.value,
+    required this.color,
+    required this.label,
+  });
 
   final ThemeController theme;
   final ToastController toast;
@@ -424,10 +435,11 @@ class _ColorChoice extends StatelessWidget {
               color: color,
               shape: BoxShape.circle,
               border: Border.all(
-                  color: selected
-                      ? Theme.of(context).extension<AppPalette>()!.foreground
-                      : Colors.transparent,
-                  width: 3),
+                color: selected
+                    ? Theme.of(context).extension<AppPalette>()!.foreground
+                    : Colors.transparent,
+                width: 3,
+              ),
             ),
           ),
         ),
@@ -453,11 +465,13 @@ class _MobileBottomNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     final user = auth.user;
-    final hasMemories = user?.canAccess('memorias') == true ||
+    final hasMemories =
+        user?.canAccess('memorias') == true ||
         user?.canAccess('playlist') == true ||
         user?.canAccess('cartas') == true ||
         user?.canAccess('nossaHistoria') == true;
-    final hasMore = user?.canAccess('jogos') == true ||
+    final hasMore =
+        user?.canAccess('jogos') == true ||
         user?.canAccess('listas') == true ||
         user?.canAccess('notas') == true ||
         user?.canAccess('localizacao') == true;
@@ -490,7 +504,8 @@ class _MobileBottomNavigation extends StatelessWidget {
                 icon: Icons.photo_library_outlined,
                 selectedIcon: Icons.photo_library,
                 label: 'Memórias',
-                selected: hasMemories &&
+                selected:
+                    hasMemories &&
                     (_isSelected('/atalhos/memorias', currentLocation) ||
                         currentLocation == '/galeria' ||
                         currentLocation == '/playlist' ||
@@ -552,7 +567,8 @@ class _MobileBottomNavigation extends StatelessWidget {
                 icon: Icons.apps_outlined,
                 selectedIcon: Icons.apps,
                 label: 'Mais',
-                selected: hasMore &&
+                selected:
+                    hasMore &&
                     (_isSelected('/atalhos/mais', currentLocation) ||
                         currentLocation == '/jogos' ||
                         currentLocation == '/listas' ||
@@ -570,7 +586,8 @@ class _MobileBottomNavigation extends StatelessWidget {
                 icon: Icons.person_outline,
                 selectedIcon: Icons.person,
                 label: 'Perfil',
-                selected: _isSelected('/perfil', currentLocation) ||
+                selected:
+                    _isSelected('/perfil', currentLocation) ||
                     _isSelected('/admin', currentLocation),
                 onTap: () {
                   if (auth.user == null) {
@@ -708,11 +725,7 @@ class _BadgeIcon extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         child,
-        Positioned(
-          right: -7,
-          top: -7,
-          child: _BadgeLabel(count: count),
-        ),
+        Positioned(right: -7, top: -7, child: _BadgeLabel(count: count)),
       ],
     );
   }

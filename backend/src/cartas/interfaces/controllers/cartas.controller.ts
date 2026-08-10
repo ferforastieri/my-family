@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   Req,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { Access } from '@auth/decorators/access.decorator';
@@ -15,6 +16,7 @@ import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { CartasService } from '../../application/services/cartas.service';
 import type { CartaWriteDto } from '../dto/carta.dto';
 import type { UserEntity } from '@auth/domain/entities/user.entity';
+import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 @Controller('cartas')
 @UseGuards(JwtAuthGuard, AccessGuard)
@@ -23,8 +25,8 @@ export class CartasController {
   constructor(private readonly cartasService: CartasService) {}
 
   @Get()
-  async findAll() {
-    return this.cartasService.findAll('letter');
+  async findAll(@Query() query: PaginationQuery) {
+    return this.cartasService.findAll('letter', query);
   }
 
   @Get(':id')

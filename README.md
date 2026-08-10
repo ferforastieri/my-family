@@ -122,6 +122,22 @@ Backend:
 - Emissao de evento em tempo real quando localizacao chega via HTTP.
 - Build do backend validado apos alteracoes.
 
+## API E Tempo Real
+
+HTTP REST e o transporte principal do aplicativo. Consultas, paginacao, CRUD,
+autenticacao, uploads, notificacoes administrativas, listas, jogos,
+localizacao e configuracoes usam controllers sob `/api`.
+
+Socket.IO fica restrito ao que depende de comunicacao imediata:
+
+- comandos e eventos do chat;
+- digitacao e recibos de leitura;
+- atualizacoes ao vivo de listas compartilhadas;
+- localizacao exibida em tempo real;
+- entrega instantanea de notificacoes.
+
+Uma indisponibilidade do Socket.IO nao impede o carregamento das demais telas.
+
 ## Configuracao
 
 Use arquivos reais de ambiente apenas localmente e nunca versionados. O repositorio deve conter somente exemplos e nomes de variaveis.
@@ -250,4 +266,3 @@ cd app
 flutter analyze
 flutter build apk --debug
 ```
-

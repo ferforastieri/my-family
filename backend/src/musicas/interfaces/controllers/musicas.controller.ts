@@ -7,12 +7,14 @@ import {
   Body,
   Param,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { Access } from '@auth/decorators/access.decorator';
 import { AccessGuard } from '@auth/guards/access.guard';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { MusicasService } from '../../application/services/musicas.service';
 import type { MusicaWriteDto } from '../dto/musica.dto';
+import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 
 @Controller('musicas')
 @UseGuards(JwtAuthGuard, AccessGuard)
@@ -21,8 +23,8 @@ export class MusicasController {
   constructor(private readonly musicasService: MusicasService) {}
 
   @Get()
-  async findAll() {
-    return this.musicasService.findAll();
+  async findAll(@Query() query: PaginationQuery) {
+    return this.musicasService.findAll(query);
   }
 
   @Get(':id')

@@ -7,6 +7,7 @@ import {
   Req,
   Body,
   Param,
+  Query,
   NotFoundException,
   UseGuards,
   BadRequestException,
@@ -23,6 +24,7 @@ import {
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@auth/guards/roles.guard';
 import { Roles } from '@auth/decorators/roles.decorator';
+import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 @Controller('notifications')
 export class NotificationsController {
   constructor(
@@ -31,8 +33,12 @@ export class NotificationsController {
   ) {}
 
   @Get()
-  async list() {
-    return this.notifications.list();
+  @UseGuards(JwtAuthGuard)
+  async list(
+    @Req() request: Request & { user: UserEntity },
+    @Query() query: PaginationQuery & { type?: string },
+  ) {
+    return this.notifications.list(query, request.user);
   }
 
   @Post('subscribe')
@@ -58,16 +64,35 @@ export class NotificationsController {
   }
 
   @Delete()
+  @UseGuards(JwtAuthGuard)
   async clear() {
     await this.notifications.clearAll();
     return { ok: true, message: 'Notificações limpas.' };
   }
 
+  @Patch('read-all')
+  @UseGuards(JwtAuthGuard)
+  async readAll(@Req() request: Request & { user: UserEntity }) {
+    const count = await this.notifications.markAllRead(request.user);
+    return { ok: true, count, message: 'Notificações lidas.' };
+  }
+
+  @Patch(':id/read')
+  @UseGuards(JwtAuthGuard)
+  async read(
+    @Req() request: Request & { user: UserEntity },
+    @Param('id') id: string,
+  ) {
+    const row = await this.notifications.markRead(id, request.user);
+    if (!row) throw new NotFoundException('Notificação não encontrada');
+    return { message: 'Notificação lida.', ...row };
+  }
+
   @Get('scheduled/list')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('husband', 'wife')
-  async scheduledList() {
-    return this.scheduler.list();
+  async scheduledList(@Query() query: PaginationQuery & { status?: string }) {
+    return this.scheduler.list(query);
   }
 
   @Get(':id')
