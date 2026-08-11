@@ -3,7 +3,7 @@ import {
   FotosRepository,
   FotoWrite,
 } from '../../infrastructure/repositories/fotos.repository';
-import { UploadContext, UploadService } from '@shared/infrastructure/upload';
+import { UploadService } from '@shared/infrastructure/upload';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 import { JobsService } from '@shared/infrastructure/queue';
 import { fotoFactory } from '../factories/foto.factory';
@@ -69,12 +69,4 @@ export class FotosService {
     });
   }
 
-  async cleanupOrphanUploads() {
-    const urls = new Set(await this.fotos.listUrls());
-    return this.upload.removeOrphanFiles(
-      UploadContext.Fotos,
-      urls,
-      24 * 60 * 60 * 1000,
-    );
-  }
 }

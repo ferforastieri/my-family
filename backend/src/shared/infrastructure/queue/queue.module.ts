@@ -31,7 +31,6 @@ import { JobsService } from './jobs.service';
       { name: QUEUE_NAMES.notifications },
       { name: QUEUE_NAMES.media },
       { name: QUEUE_NAMES.location },
-      { name: QUEUE_NAMES.cleanup },
     ),
   ],
   providers: [JobsService],

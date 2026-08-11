@@ -120,30 +120,6 @@ export class UploadService {
     } catch {}
   }
 
-  async removeOrphanFiles(
-    context: UploadContext,
-    referencedPaths: Set<string>,
-    olderThanMs: number,
-  ) {
-    const dir = path.join(this.basePath, context);
-    const removed: string[] = [];
-    const cutoff = Date.now() - olderThanMs;
-    for (const relativePath of await this.listRelativeFiles(dir, context)) {
-      if (
-        relativePath.endsWith('.meta.json') ||
-        relativePath.startsWith('thumbs/')
-      )
-        continue;
-      if (referencedPaths.has(relativePath)) continue;
-      const fullPath = this.resolvePath(relativePath);
-      const stat = await fs.stat(fullPath);
-      if (stat.mtimeMs > cutoff) continue;
-      await this.removeFile(relativePath);
-      removed.push(relativePath);
-    }
-    return removed;
-  }
-
   private thumbnailPath(relativePath: string) {
     const parsed = path.parse(relativePath);
     return path.join(
@@ -158,37 +134,6 @@ export class UploadService {
     return path.relative(this.basePath, fullPath).replace(/\\/g, '/');
   }
 
-  private async listRelativeFiles(
-    dir: string,
-    context: UploadContext,
-  ): Promise<string[]> {
-    let entries: Array<{ name: string; isDirectory(): boolean }>;
-    try {
-      entries = (await fs.readdir(dir, {
-        withFileTypes: true,
-      })) as unknown as Array<{
-        name: string;
-        isDirectory(): boolean;
-      }>;
-    } catch {
-      return [];
-    }
-    const files: string[] = [];
-    for (const entry of entries) {
-      const entryName = String(entry.name);
-      const entryPath = path.join(dir, entryName);
-      if (entry.isDirectory()) {
-        files.push(...(await this.listRelativeFiles(entryPath, context)));
-      } else {
-        files.push(
-          path
-            .relative(path.join(this.basePath, context, '..'), entryPath)
-            .replace(/\\/g, '/'),
-        );
-      }
-    }
-    return files;
-  }
 }
 
 function isImagePath(relativePath: string) {

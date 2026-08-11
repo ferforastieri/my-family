@@ -7,7 +7,6 @@ import { UploadModule } from '@shared/infrastructure/upload';
 import { AuthModule } from '@auth/auth.module';
 import { FotosRepository } from './infrastructure/repositories/fotos.repository';
 import { MediaQueueProcessor } from './infrastructure/queues/media-queue.processor';
-import { CleanupQueueProcessor } from './infrastructure/queues/cleanup-queue.processor';
 
 @Module({
   imports: [DatabaseModule, MongoModelsModule, UploadModule, AuthModule],
@@ -16,7 +15,6 @@ import { CleanupQueueProcessor } from './infrastructure/queues/cleanup-queue.pro
     FotosService,
     FotosRepository,
     MediaQueueProcessor,
-    CleanupQueueProcessor,
   ],
   exports: [FotosService],
 })
