@@ -1,5 +1,5 @@
 import { InjectQueue } from '@nestjs/bullmq';
-import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { QUEUE_NAMES } from './queue.constants';
 
@@ -22,7 +22,7 @@ export type LowBatteryJob = {
 };
 
 @Injectable()
-export class JobsService implements OnApplicationBootstrap {
+export class JobsService {
   constructor(
     @InjectQueue(QUEUE_NAMES.notifications)
     private notifications: Queue<NotificationJob>,
@@ -30,22 +30,7 @@ export class JobsService implements OnApplicationBootstrap {
     private media: Queue<MediaJob>,
     @InjectQueue(QUEUE_NAMES.location)
     private location: Queue<LowBatteryJob>,
-    @InjectQueue(QUEUE_NAMES.cleanup)
-    private cleanup: Queue,
   ) {}
-
-  async onApplicationBootstrap() {
-    await this.cleanup.add(
-      'upload-orphans',
-      {},
-      {
-        jobId: 'repeat-upload-orphans',
-        repeat: { pattern: '0 */6 * * *' },
-        removeOnComplete: true,
-        removeOnFail: 20,
-      },
-    );
-  }
 
   enqueueNotification(data: NotificationJob) {
     return this.notifications.add('send', data, {
