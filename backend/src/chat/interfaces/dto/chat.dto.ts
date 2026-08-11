@@ -95,6 +95,7 @@ export class ChatMessageResponseDto {
   replyToMessageId: string | null;
   replyToMessage: ChatMessageReplyResponseDto | null;
   readBy: string[];
+  deliveredBy: string[];
   editedAt: number | null;
   deletedAt: number | null;
   at: number;

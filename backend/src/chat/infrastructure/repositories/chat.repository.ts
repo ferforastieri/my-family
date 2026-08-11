@@ -27,6 +27,7 @@ export type ChatMessageWrite = {
   mediaType?: 'image' | 'video' | 'sticker';
   replyToMessageId?: string | null;
   readBy?: string[];
+  deliveredBy?: string[];
 };
 
 @Injectable()
@@ -67,6 +68,7 @@ export class ChatRepository {
       mediaType: doc.mediaType ?? null,
       replyToMessageId: doc.replyToMessageId ?? null,
       readBy: doc.readBy ?? [],
+      deliveredBy: doc.deliveredBy ?? [],
       editedAt: doc.editedAt ?? null,
       deletedAt: doc.deletedAt ?? null,
       createdAt: doc.createdAt,
@@ -270,5 +272,18 @@ export class ChatRepository {
         { $addToSet: { readBy: userId } },
       )
       .exec();
+  }
+
+  async markMessageDelivered(messageId: string, userIds: string[]) {
+    if (userIds.length === 0) return this.findMessage(messageId);
+    return this.toMessage(
+      await this.messages
+        .findByIdAndUpdate(
+          messageId,
+          { $addToSet: { deliveredBy: { $each: userIds } } },
+          { new: true },
+        )
+        .exec(),
+    );
   }
 }

@@ -20,6 +20,7 @@ export interface ChatMessageEntity {
   replyToMessageId?: string | null;
   replyToMessage?: ChatMessageReplyEntity | null;
   readBy: string[];
+  deliveredBy: string[];
   editedAt?: Date | null;
   deletedAt?: Date | null;
   createdAt: Date;

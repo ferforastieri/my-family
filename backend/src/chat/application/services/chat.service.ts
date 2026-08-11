@@ -201,7 +201,7 @@ export class ChatService {
       conversation.type === 'direct'
         ? conversation.participantIds
         : await this.chatNotificationRecipients();
-    await this.notifications.sendChatMessage({
+    const delivery = await this.notifications.sendChatMessage({
       conversationId: conversation.id,
       conversationTitle:
         conversation.type === 'global' ? 'Chat da família' : conversation.title,
@@ -212,7 +212,14 @@ export class ChatService {
       text: messageWithAvatar.text,
       mediaType: messageWithAvatar.mediaType,
     });
-    return chatMessageMapper.toDto(messageWithAvatar);
+    const delivered = await this.chat.markMessageDelivered(
+      message.id,
+      delivery.deliveredUserIds,
+    );
+    const [messageWithDelivery] = await this.withSenderAvatars([
+      delivered ?? message,
+    ]);
+    return chatMessageMapper.toDto(messageWithDelivery);
   }
 
   private async withSenderAvatars(messages: ChatMessageEntity[]) {
