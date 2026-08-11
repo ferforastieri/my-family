@@ -30,6 +30,9 @@ export class ChatMessageDocument {
   @Prop({ type: [String], default: [] })
   readBy: string[];
 
+  @Prop({ type: [String], default: [] })
+  deliveredBy: string[];
+
   @Prop()
   editedAt?: Date;
 

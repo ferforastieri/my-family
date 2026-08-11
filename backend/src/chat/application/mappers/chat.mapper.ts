@@ -54,6 +54,7 @@ export class ChatMessageMapper implements Mapper<
           }
         : null,
       readBy: source.readBy,
+      deliveredBy: source.deliveredBy,
       editedAt: source.editedAt ? new Date(source.editedAt).getTime() : null,
       deletedAt: source.deletedAt ? new Date(source.deletedAt).getTime() : null,
       at: new Date(source.createdAt).getTime(),

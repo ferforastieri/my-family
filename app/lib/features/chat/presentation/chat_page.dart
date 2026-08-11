@@ -1180,6 +1180,8 @@ class _MessageBubbleState extends State<_MessageBubble> {
     final isDeleted = widget.message.deletedAt != null;
     final wasRead =
         widget.message.readBy.any((id) => id != widget.message.senderId);
+    final wasDelivered = widget.message.deliveredBy
+        .any((id) => id != widget.message.senderId);
     final hasText = widget.message.text?.isNotEmpty == true;
     final hasMedia = !isSticker && widget.message.mediaUrl != null;
     final textOnly =
@@ -1189,6 +1191,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
       time: _timeLabel(widget.message.at),
       isMine: widget.isMine,
       wasRead: wasRead,
+      wasDelivered: wasDelivered,
     );
     final canManage = widget.isMine && !isDeleted;
     final replyProgress =
@@ -1382,8 +1385,11 @@ class _MessageBubbleContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    final maxWidth =
-        hasMedia ? (compact ? 340.0 : 680.0) : (compact ? 330.0 : 620.0);
+    final maxWidth = isDeleted
+        ? (compact ? 210.0 : 250.0)
+        : hasMedia
+            ? (compact ? 340.0 : 680.0)
+            : (compact ? 330.0 : 620.0);
     return ConstrainedBox(
       constraints: BoxConstraints(maxWidth: maxWidth),
       child: Padding(
@@ -1394,9 +1400,10 @@ class _MessageBubbleContent extends StatelessWidget {
           compact ? 7 : 12,
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (!isMine)
+            if (!isMine && !isDeleted)
               Text(
                 message.senderName,
                 maxLines: 1,
@@ -1413,12 +1420,23 @@ class _MessageBubbleContent extends StatelessWidget {
               const SizedBox(height: 6),
             ],
             if (isDeleted)
-              Text(
-                'Mensagem apagada',
-                style: TextStyle(
-                  color: palette.muted,
-                  fontStyle: FontStyle.italic,
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.block_outlined,
+                    size: 15,
+                    color: palette.muted,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Mensagem apagada',
+                    style: TextStyle(
+                      color: palette.muted,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
               )
             else if (isSticker && message.mediaUrl != null) ...[
               SizedBox(height: isMine ? 0 : 4),
@@ -1552,12 +1570,14 @@ class _MessageMeta extends StatelessWidget {
     required this.time,
     required this.isMine,
     required this.wasRead,
+    required this.wasDelivered,
   });
 
   final bool edited;
   final String time;
   final bool isMine;
   final bool wasRead;
+  final bool wasDelivered;
 
   @override
   Widget build(BuildContext context) {
@@ -1573,9 +1593,9 @@ class _MessageMeta extends StatelessWidget {
         if (isMine) ...[
           const SizedBox(width: 3),
           Icon(
-            wasRead ? Icons.done_all : Icons.done,
+            wasRead || wasDelivered ? Icons.done_all : Icons.done,
             size: 16,
-            color: wasRead ? palette.primary : palette.muted,
+            color: wasRead || wasDelivered ? palette.primary : palette.muted,
           ),
         ],
       ],

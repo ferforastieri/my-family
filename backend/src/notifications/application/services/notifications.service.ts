@@ -227,11 +227,15 @@ export class NotificationsService {
     return { sent };
   }
 
-  async sendChatMessage(push: ChatPush): Promise<{ sent: number }> {
+  async sendChatMessage(
+    push: ChatPush,
+  ): Promise<{ sent: number; deliveredUserIds: string[] }> {
     const recipientIds = Array.from(
       new Set(push.recipientUserIds.filter((id) => id !== push.senderId)),
     );
-    if (!this.fcmEnabled || recipientIds.length === 0) return { sent: 0 };
+    if (!this.fcmEnabled || recipientIds.length === 0) {
+      return { sent: 0, deliveredUserIds: [] };
+    }
 
     const subscriptions =
       await this.repository.listSubscriptionsForUsers(recipientIds);
@@ -241,6 +245,7 @@ export class NotificationsService {
         : push.senderName;
     const body = this.chatPreview(push);
     let sent = 0;
+    const deliveredUserIds = new Set<string>();
 
     for (const subscription of subscriptions) {
       if (!subscription.fcmToken) continue;
@@ -278,6 +283,7 @@ export class NotificationsService {
           },
         });
         sent++;
+        if (subscription.userId) deliveredUserIds.add(subscription.userId);
       } catch (error) {
         await this.handlePushError(
           subscription.id,
@@ -286,7 +292,7 @@ export class NotificationsService {
         );
       }
     }
-    return { sent };
+    return { sent, deliveredUserIds: [...deliveredUserIds] };
   }
 
   private chatPreview(push: ChatPush) {

@@ -276,7 +276,7 @@ class _ProfileHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -286,7 +286,7 @@ class _ProfileHero extends StatelessWidget {
             palette.primaryDark.withValues(alpha: .08),
           ],
         ),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
@@ -294,8 +294,8 @@ class _ProfileHero extends StatelessWidget {
             clipBehavior: Clip.none,
             children: [
               Container(
-                width: 82,
-                height: 82,
+                width: 62,
+                height: 62,
                 decoration: BoxDecoration(
                   color: palette.card,
                   shape: BoxShape.circle,
@@ -313,8 +313,8 @@ class _ProfileHero extends StatelessWidget {
                 child: avatarPath?.isNotEmpty == true
                     ? Image.network(
                         _avatarUrl(avatarPath!),
-                        width: 82,
-                        height: 82,
+                        width: 62,
+                        height: 62,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => _InitialAvatar(
                           initial: initial,
@@ -354,29 +354,29 @@ class _ProfileHero extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   displayName,
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: palette.foreground,
-                    fontSize: 24,
+                    fontSize: 20,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(height: 2),
                 Text(
                   email,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(color: palette.muted),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 6),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -384,7 +384,7 @@ class _ProfileHero extends StatelessWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: palette.card.withValues(alpha: .74),
                         borderRadius: BorderRadius.circular(999),

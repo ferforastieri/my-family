@@ -247,6 +247,7 @@ class ChatMessage {
     this.replyToMessageId,
     this.replyToMessage,
     this.readBy = const [],
+    this.deliveredBy = const [],
     this.editedAt,
     this.deletedAt,
   });
@@ -262,11 +263,16 @@ class ChatMessage {
   final String? replyToMessageId;
   final ChatMessageReply? replyToMessage;
   final List<String> readBy;
+  final List<String> deliveredBy;
   final DateTime? editedAt;
   final DateTime? deletedAt;
   final DateTime at;
 
-  ChatMessage copyWith({List<String>? readBy}) => ChatMessage(
+  ChatMessage copyWith({
+    List<String>? readBy,
+    List<String>? deliveredBy,
+  }) =>
+      ChatMessage(
         id: id,
         conversationId: conversationId,
         senderId: senderId,
@@ -278,6 +284,7 @@ class ChatMessage {
         replyToMessageId: replyToMessageId,
         replyToMessage: replyToMessage,
         readBy: readBy ?? this.readBy,
+        deliveredBy: deliveredBy ?? this.deliveredBy,
         editedAt: editedAt,
         deletedAt: deletedAt,
         at: at,
@@ -299,6 +306,9 @@ class ChatMessage {
               )
             : null,
         readBy: ((json['readBy'] as List?) ?? const [])
+            .map((id) => id.toString())
+            .toList(),
+        deliveredBy: ((json['deliveredBy'] as List?) ?? const [])
             .map((id) => id.toString())
             .toList(),
         editedAt: json['editedAt'] == null
