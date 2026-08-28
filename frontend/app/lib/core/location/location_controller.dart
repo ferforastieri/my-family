@@ -258,7 +258,7 @@ class LocationController with WidgetsBindingObserver {
     unawaited(_stopAndroidBackgroundService());
     _started = false;
     _starting = false;
-    _activeAndroidToken = null;
+    _activeAndroidCookie = null;
   }
 
   void dispose() {
