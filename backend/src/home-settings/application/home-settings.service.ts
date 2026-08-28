@@ -6,24 +6,24 @@ import {
 
 const defaultEvents: HomeEventWrite[] = [
   {
-    title: 'Começamos a Namorar',
-    icon: '💕',
+    title: 'Nossa história',
+    icon: '❤️',
     date: new Date('2026-01-01T12:00:00.000Z'),
-    message: 'Desde o primeiro olhar, sabia que você era especial',
+    message: 'Edite este cartão com um momento especial da sua família.',
     countDirection: 'forward',
   },
   {
-    title: 'Nosso Casamento',
-    icon: '💍',
+    title: 'Uma data especial',
+    icon: '✨',
     date: new Date('2026-01-01T12:00:00.000Z'),
-    message: 'O dia mais feliz da minha vida ao seu lado',
+    message: 'Escolha uma data que sua família queira recordar.',
     countDirection: 'forward',
   },
   {
-    title: 'Nascimento do Familia',
-    icon: '👶',
+    title: 'Próximo capítulo',
+    icon: '🌱',
     date: new Date('2026-12-31T12:00:00.000Z'),
-    message: 'Nosso maior presente de amor chegando',
+    message: 'Conte os dias para um novo momento em família.',
     countDirection: 'backward',
   },
 ];
@@ -100,7 +100,8 @@ export class HomeSettingsService {
           .filter((image): image is string => !!image)
       : [];
     const galleryOrder =
-      typeof input.galleryOrder === 'number' && Number.isFinite(input.galleryOrder)
+      typeof input.galleryOrder === 'number' &&
+      Number.isFinite(input.galleryOrder)
         ? Math.max(0, Math.min(events.length, Math.floor(input.galleryOrder)))
         : events.length;
     const galleryTitle = input.galleryTitle?.trim() || 'Nossas memórias';
@@ -151,7 +152,8 @@ export class HomeSettingsService {
       galleryOrder: normalizedGalleryOrder,
       galleryTitle: galleryTitle.trim() || 'Nossas memórias',
       galleryTitleVisible,
-      galleryTitleLayout: galleryTitleLayout === 'straight' ? 'straight' : 'arc',
+      galleryTitleLayout:
+        galleryTitleLayout === 'straight' ? 'straight' : 'arc',
     };
   }
 }

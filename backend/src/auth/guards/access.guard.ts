@@ -6,11 +6,11 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ACCESS_KEY } from '@auth/decorators/access.decorator';
+import { type UserAccessKey } from '@auth/domain/entities/user.entity';
 import {
-  isAdminRole,
-  type UserAccessKey,
-  type UserEntity,
-} from '@auth/domain/entities/user.entity';
+  isTenantAdmin,
+  type TenantPrincipal,
+} from '@tenancy/domain/tenant.entity';
 
 @Injectable()
 export class AccessGuard implements CanActivate {
@@ -23,9 +23,9 @@ export class AccessGuard implements CanActivate {
     );
     if (!accessKey) return true;
 
-    const req = context.switchToHttp().getRequest<{ user?: UserEntity }>();
+    const req = context.switchToHttp().getRequest<{ user?: TenantPrincipal }>();
     const user = req.user;
-    if (user && (isAdminRole(user.role) || user.access.includes(accessKey))) {
+    if (user && (isTenantAdmin(user) || user.access.includes(accessKey))) {
       return true;
     }
     throw new ForbiddenException('Acesso não liberado para este recurso.');

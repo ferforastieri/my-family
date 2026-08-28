@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { Access } from '@auth/decorators/access.decorator';
 import { AccessGuard } from '@auth/guards/access.guard';
+import { DemoRestrictedGuard } from '@tenancy/interfaces/demo-restricted.guard';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import type { UserEntity } from '@auth/domain/entities/user.entity';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
@@ -20,7 +21,7 @@ import { LocationGateway } from '../gateways/location.gateway';
 import { LocationPlaceWriteDto, LocationUpdateDto } from '../dto/location.dto';
 
 @Controller('location')
-@UseGuards(JwtAuthGuard, AccessGuard)
+@UseGuards(JwtAuthGuard, AccessGuard, DemoRestrictedGuard)
 @Access('localizacao')
 export class LocationController {
   constructor(

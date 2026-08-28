@@ -2,7 +2,7 @@ import type { Factory } from '@shared/application/mapper';
 import type { MusicaWrite } from '../../infrastructure/repositories/musicas.repository';
 import { MusicaWriteDto } from '../../interfaces/dto/musica.dto';
 
-export class MusicaFactory implements Factory<
+class MusicaFactory implements Factory<
   Partial<MusicaWriteDto>,
   Partial<MusicaWrite>
 > {

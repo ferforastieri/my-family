@@ -8,9 +8,16 @@ import { LocationRepository } from './infrastructure/repositories/location.repos
 import { LocationController } from './interfaces/controllers/location.controller';
 import { LocationGateway } from './interfaces/gateways/location.gateway';
 import { LocationQueueProcessor } from './infrastructure/queues/location-queue.processor';
+import { TenancyModule } from '@tenancy/tenancy.module';
 
 @Module({
-  imports: [DatabaseModule, MongoModelsModule, AuthModule, NotificationsModule],
+  imports: [
+    DatabaseModule,
+    MongoModelsModule,
+    AuthModule,
+    NotificationsModule,
+    TenancyModule,
+  ],
   providers: [
     LocationService,
     LocationRepository,

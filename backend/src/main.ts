@@ -3,12 +3,12 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
-import * as cookieParser from 'cookie-parser';
-import { doubleCsrf } from 'csrf-csrf';
 import { AppModule } from './app.module';
 import { Environment } from '@shared/infrastructure/environment/environment.module';
+import { RedisIoAdapter } from '@shared/infrastructure/realtime/redis-io.adapter';
 
 async function bootstrap() {
+  process.env.PROCESS_ROLE = 'api';
   EventEmitter.defaultMaxListeners = 50;
   const app = await NestFactory.create(AppModule, {
     cors: false,
@@ -16,6 +16,17 @@ async function bootstrap() {
   });
   app.useLogger(app.get(Logger));
   const environment = app.get(Environment);
+  app
+    .getHttpAdapter()
+    .getInstance()
+    .set('trust proxy', environment.security.trustProxyHops);
+  const realtimeAdapter = new RedisIoAdapter(
+    app,
+    environment.redis?.url,
+    parseCorsOrigins(environment.cors.origin),
+  );
+  await realtimeAdapter.connect();
+  app.useWebSocketAdapter(realtimeAdapter);
 
   app.getHttpAdapter().getInstance().disable('x-powered-by');
   app.use(
@@ -23,41 +34,16 @@ async function bootstrap() {
       crossOriginResourcePolicy: { policy: 'cross-origin' },
     }),
   );
-  app.use(cookieParser());
-  const { doubleCsrfProtection } = doubleCsrf({
-    getSecret: () => environment.security.csrfSecret,
-    getSessionIdentifier: (request) =>
-      request.headers.authorization ||
-      request.headers['x-forwarded-for']?.toString() ||
-      request.ip ||
-      'anonymous',
-    cookieName: environment.isProduction()
-      ? '__Host-fmf.x-csrf-token'
-      : 'fmf.x-csrf-token',
-    cookieOptions: {
-      httpOnly: true,
-      path: '/',
-      sameSite: environment.isProduction() ? 'none' : 'lax',
-      secure: environment.isProduction(),
-    },
-    getCsrfTokenFromRequest: (request) => request.headers['x-csrf-token'],
-    errorConfig: {
-      statusCode: 403,
-      message: 'Token CSRF inválido ou ausente.',
-      code: 'EBADCSRFTOKEN',
-    },
-    skipCsrfProtection: (request) =>
-      hasBearerToken(request.headers.authorization) ||
-      isAuthHttpEndpoint(request.path) ||
-      request.path.startsWith('/socket.io'),
-  });
-  app.use(doubleCsrfProtection);
   app.setGlobalPrefix('api');
   app.enableCors({
     origin: parseCorsOrigin(environment.cors.origin),
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
+
+  if (environment.isProduction() && environment.cors.origin.trim() === '*') {
+    throw new Error('CORS_ORIGIN não pode ser * em produção');
+  }
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -69,27 +55,20 @@ async function bootstrap() {
 
   await app.listen(environment.http.port);
 }
-bootstrap();
+void bootstrap().catch((error: unknown) => {
+  console.error('Falha ao iniciar a API.', error);
+  process.exitCode = 1;
+});
 
-function parseCorsOrigin(origin: string): string | string[] {
+function parseCorsOrigins(origin: string): string[] {
   const items = origin
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean);
+  return items;
+}
+
+function parseCorsOrigin(origin: string): string | string[] {
+  const items = parseCorsOrigins(origin);
   return items.length > 1 ? items : items[0];
-}
-
-function hasBearerToken(authorization?: string): boolean {
-  return authorization?.trim().toLowerCase().startsWith('bearer ') === true;
-}
-
-function isAuthHttpEndpoint(path: string): boolean {
-  const normalized = path.startsWith('/api/') ? path.substring(4) : path;
-  return (
-    normalized === '/auth/login' ||
-    normalized === '/auth/register' ||
-    normalized === '/auth/refresh' ||
-    normalized === '/auth/forgot-password' ||
-    normalized === '/auth/reset-password'
-  );
 }

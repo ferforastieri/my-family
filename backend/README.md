@@ -1,6 +1,8 @@
 # Backend NestJS
 
-Backend do projeto Nossa Familia. Ele foi criado como estudo pratico de arquitetura NestJS, WebSocket, MongoDB, filas, Firebase Admin, upload e seguranca em uma aplicacao real.
+API multi-tenant do SaaS Nossa Família, responsável por autenticação passwordless,
+isolamento entre famílias, WebSocket, filas, mídia privada, notificações e
+administração da plataforma.
 
 ## Tecnologias
 
@@ -11,8 +13,7 @@ Backend do projeto Nossa Familia. Ele foi criado como estudo pratico de arquitet
 - Redis e BullMQ
 - Firebase Admin SDK
 - JWT
-- Nest Schedule
-- Helmet, CORS, CSRF e rate limit
+- Helmet, CORS restrito e rate limit compartilhado no Redis
 
 ## Organizacao
 
@@ -25,7 +26,7 @@ Cada feature segue a separacao:
 
 ## Modulos
 
-- `auth`: login, cadastro, JWT, perfil, avatar, sessoes WebSocket e permissoes.
+- `auth`: OTP por celular, JWT, perfil, avatar, sessoes WebSocket e permissoes.
 - `fotos`: memorias, albuns, upload e arquivos.
 - `musicas`: playlist.
 - `cartas`: cartas de amor.
@@ -35,22 +36,20 @@ Cada feature segue a separacao:
 - `notifications`: historico, envio imediato, agendamento e push mobile.
 - `location`: localizacao, locais, presenca e alertas.
 - `health`: healthcheck.
+- `tenancy`: famílias, memberships, convites, sessões e administração da plataforma.
+- `demo`: tenants fictícios isolados e limpeza após 24 horas.
 
 ## Papeis E Acessos
 
-Roles internas:
+Papéis de membership:
 
-- `husband`
-- `wife`
-- `children`
-- `friends`
+- `owner`
+- `admin`
+- `member`
 
-Admins:
-
-- `husband`
-- `wife`
-
-O painel administrativo gerencia os acessos por area para usuarios nao administradores.
+`husband`, `wife`, `children` e `friends` representam somente parentesco. O
+painel administrativo gerencia acessos por módulo e o papel `super_admin` fica
+separado da família.
 
 ## Notificacoes
 
@@ -90,7 +89,7 @@ Filas BullMQ:
 - `notifications`: jobs de notificacao quando aplicavel.
 - `media`: processamento de midia.
 - `location`: alertas derivados de localizacao.
-- `cleanup`: limpeza recorrente de arquivos orfaos.
+- `maintenance`: expiração e remoção completa das demos.
 
 ## Desenvolvimento
 
@@ -120,17 +119,25 @@ Variaveis principais:
 - `UPLOAD_PATH`
 - `CORS_ORIGIN`
 - `REDIS_URL`
-- `CSRF_SECRET`
+- `TRUST_PROXY_HOPS` conforme a quantidade de proxies confiáveis até a API
+- `TURNSTILE_SECRET`
+- `PHONE_OTP_SECRET`
+- `DEFAULT_PHONE_COUNTRY_CODE`
+- `WHATSAPP_ACCESS_TOKEN` e `WHATSAPP_PHONE_NUMBER_ID`
+- `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` e `TWILIO_FROM_NUMBER`
 - `FIREBASE_SERVICE_ACCOUNT_PATH`
 - `FIREBASE_SERVICE_ACCOUNT_JSON`
 
 ## Seguranca
 
+- OTP de seis dígitos, uso único, expiração de cinco minutos e limite de tentativas.
 - JWT para usuarios autenticados.
 - Guards de admin e acesso por area.
-- CSRF em rotas sem bearer token.
-- Rate limit global.
+- Sessões em cookies `HttpOnly`, `Secure` em produção e proteção CSRF por double-submit cookie.
+- Rate limit global compartilhado no Redis, com limites adicionais por IP e
+  telefone no OTP, por IP na demo e por sessão no WebSocket.
+- Turnstile obrigatório no cadastro público e na demo em produção.
+- Redis protegido por senha no `docker-compose.yml`.
 - Helmet em HTTP.
 - Secrets somente por ambiente seguro.
 - Nenhum IP, senha, token ou chave deve aparecer na documentacao.
-

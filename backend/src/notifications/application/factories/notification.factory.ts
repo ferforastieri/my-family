@@ -13,7 +13,7 @@ export type NotificationWrite = {
   type?: NotificationType;
 };
 
-export class NotificationFactory implements Factory<
+class NotificationFactory implements Factory<
   NotificationCreateDto | NotificationSendDto,
   NotificationWrite
 > {

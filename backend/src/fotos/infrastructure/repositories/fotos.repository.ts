@@ -50,7 +50,7 @@ export class FotosRepository {
       this.model.countDocuments(filter).exec(),
     ]);
     return paginated(
-      docs.map((doc) => this.toEntity(doc)!),
+      docs.map((doc) => this.toEntity(doc)),
       total,
       page,
       limit,
@@ -106,7 +106,7 @@ export class FotosRepository {
         ...data,
         data: data.data ? new Date(data.data) : undefined,
       }),
-    )!;
+    );
   }
 
   async update(id: string, data: Partial<FotoWrite>) {

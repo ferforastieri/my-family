@@ -8,7 +8,7 @@ import {
   FamilyListResponseDto,
 } from '../../interfaces/dto/list.dto';
 
-export class FamilyListMapper implements Mapper<
+class FamilyListMapper implements Mapper<
   FamilyListEntity,
   FamilyListResponseDto
 > {
@@ -24,7 +24,7 @@ export class FamilyListMapper implements Mapper<
   }
 }
 
-export class FamilyListItemMapper implements Mapper<
+class FamilyListItemMapper implements Mapper<
   FamilyListItemEntity,
   FamilyListItemResponseDto
 > {

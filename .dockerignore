@@ -1,7 +1,10 @@
 .git
 .gitignore
-.gitea
-.docker-tmp
+.github
+frontend
+workers
+README.md
+docker-compose.yml
 
 **/node_modules
 **/dist
@@ -16,5 +19,4 @@
 
 .env
 backend/.env
-app/android/local.properties
 uploads

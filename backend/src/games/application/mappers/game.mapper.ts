@@ -13,7 +13,7 @@ import {
   QuizQuestionResponseDto,
 } from '../../interfaces/dto/game.dto';
 
-export class QuizQuestionMapper implements Mapper<
+class QuizQuestionMapper implements Mapper<
   QuizQuestionEntity,
   QuizQuestionResponseDto
 > {
@@ -30,10 +30,7 @@ export class QuizQuestionMapper implements Mapper<
   }
 }
 
-export class GameWordMapper implements Mapper<
-  GameWordEntity,
-  GameWordResponseDto
-> {
+class GameWordMapper implements Mapper<GameWordEntity, GameWordResponseDto> {
   toDto(source: GameWordEntity): GameWordResponseDto {
     return {
       id: source.id,
@@ -45,7 +42,7 @@ export class GameWordMapper implements Mapper<
   }
 }
 
-export class GameCompletionMapper implements Mapper<
+class GameCompletionMapper implements Mapper<
   GameCompletionEntity,
   GameCompletionResponseDto
 > {
@@ -62,7 +59,7 @@ export class GameCompletionMapper implements Mapper<
   }
 }
 
-export class MiniGameConfigMapper implements Mapper<
+class MiniGameConfigMapper implements Mapper<
   MiniGameConfigEntity,
   MiniGameConfigResponseDto
 > {
@@ -80,7 +77,7 @@ export class MiniGameConfigMapper implements Mapper<
   }
 }
 
-export class GameStatMapper implements Mapper<
+class GameStatMapper implements Mapper<
   GameStatResponseDto,
   GameStatResponseDto
 > {

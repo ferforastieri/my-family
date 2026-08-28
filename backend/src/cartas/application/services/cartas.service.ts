@@ -44,7 +44,7 @@ export class CartasService {
     );
     if (tipo === 'letter') {
       const authorName =
-        author?.name?.trim() || author?.email?.split('@')[0] || 'Alguém';
+        author?.name?.trim() || author?.phoneNumber || 'Alguém';
       await this.notifications.send(
         'Nova carta de amor',
         `${authorName} escreveu: ${row.titulo}`,

@@ -1,44 +1,35 @@
-import {
-  IsEmail,
-  IsString,
-  MinLength,
-  IsOptional,
-  IsIn,
-} from 'class-validator';
-import { userRoles } from '@auth/domain/entities/user.entity';
+import { IsIn, IsOptional, IsString, Length, MaxLength } from 'class-validator';
 
-export class RegisterDto {
-  @IsEmail()
-  email: string;
-
+export class RequestPhoneCodeDto {
   @IsString()
-  @MinLength(6)
-  password: string;
+  @MaxLength(32)
+  phone: string;
+
+  @IsIn(['whatsapp', 'sms'])
+  channel: 'whatsapp' | 'sms';
 
   @IsString()
   @IsOptional()
-  name?: string;
-
-  @IsString()
-  @IsOptional()
-  @IsIn(userRoles)
-  role?: (typeof userRoles)[number];
+  @MaxLength(2048)
+  turnstileToken?: string;
 }
 
-export class LoginDto {
-  @IsEmail()
-  email: string;
+export class VerifyPhoneCodeDto {
+  @IsString()
+  @MaxLength(32)
+  phone: string;
 
   @IsString()
-  password: string;
-}
-
-export class RefreshTokenDto {
-  @IsString()
-  @IsOptional()
-  refreshToken?: string;
+  @Length(6, 6)
+  code: string;
 
   @IsString()
   @IsOptional()
-  refresh_token?: string;
+  @MaxLength(128)
+  invitationToken?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(48)
+  tenantSlug?: string;
 }

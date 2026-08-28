@@ -14,11 +14,15 @@ export * from './location-presence.schema';
 export * from './musica.schema';
 export * from './nota.schema';
 export * from './notification.schema';
-export * from './password-reset.schema';
 export * from './push-subscription.schema';
 export * from './user.schema';
 export * from './quiz-question.schema';
 export * from './scheduled-notification.schema';
+export * from './tenant.schema';
+export * from './membership.schema';
+export * from './invitation.schema';
+export * from './auth-session.schema';
+export * from './phone-challenge.schema';
 
 import { CartaDocument, CartaSchema } from './carta.schema';
 import {
@@ -64,10 +68,6 @@ import {
   NotificationSchema,
 } from './notification.schema';
 import {
-  PasswordResetDocument,
-  PasswordResetSchema,
-} from './password-reset.schema';
-import {
   PushSubscriptionDocument,
   PushSubscriptionSchema,
 } from './push-subscription.schema';
@@ -80,10 +80,18 @@ import {
   ScheduledNotificationDocument,
   ScheduledNotificationSchema,
 } from './scheduled-notification.schema';
+import { TenantDocument, TenantSchema } from './tenant.schema';
+import { MembershipDocument, MembershipSchema } from './membership.schema';
+import { InvitationDocument, InvitationSchema } from './invitation.schema';
+import { AuthSessionDocument, AuthSessionSchema } from './auth-session.schema';
+import {
+  PhoneChallengeDocument,
+  PhoneChallengeSchema,
+} from './phone-challenge.schema';
+import { tenantScopePlugin } from '../tenant-context';
+import type { Schema } from 'mongoose';
 
-export const mongoModels = [
-  { name: UserDocument.name, schema: UserSchema },
-  { name: PasswordResetDocument.name, schema: PasswordResetSchema },
+const tenantScopedModels = [
   { name: ChatConversationDocument.name, schema: ChatConversationSchema },
   { name: ChatMessageDocument.name, schema: ChatMessageSchema },
   { name: FotoDocument.name, schema: FotoSchema },
@@ -106,4 +114,17 @@ export const mongoModels = [
     name: ScheduledNotificationDocument.name,
     schema: ScheduledNotificationSchema,
   },
+];
+for (const model of tenantScopedModels) {
+  (model.schema as unknown as Schema).plugin(tenantScopePlugin);
+}
+
+export const mongoModels = [
+  { name: UserDocument.name, schema: UserSchema },
+  { name: TenantDocument.name, schema: TenantSchema },
+  { name: MembershipDocument.name, schema: MembershipSchema },
+  { name: InvitationDocument.name, schema: InvitationSchema },
+  { name: AuthSessionDocument.name, schema: AuthSessionSchema },
+  { name: PhoneChallengeDocument.name, schema: PhoneChallengeSchema },
+  ...tenantScopedModels,
 ];

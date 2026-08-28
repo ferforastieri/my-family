@@ -8,7 +8,7 @@ import {
   LocationResponseDto,
 } from '../../interfaces/dto/location.dto';
 
-export class LocationMapper implements Mapper<
+class LocationMapper implements Mapper<
   LocationUpdateEntity,
   LocationResponseDto
 > {
@@ -33,7 +33,7 @@ export class LocationMapper implements Mapper<
 
 export const locationMapper = new LocationMapper();
 
-export class LocationPlaceMapper implements Mapper<
+class LocationPlaceMapper implements Mapper<
   LocationPlaceEntity,
   LocationPlaceResponseDto
 > {

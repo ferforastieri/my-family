@@ -45,3 +45,4 @@ export class ChatMessageDocument {
 export type ChatMessageMongoDocument = HydratedDocument<ChatMessageDocument>;
 export const ChatMessageSchema =
   SchemaFactory.createForClass(ChatMessageDocument);
+ChatMessageSchema.index({ tenantId: 1, conversationId: 1, createdAt: -1 });

@@ -1,10 +1,4 @@
-import {
-  IsArray,
-  IsIn,
-  IsOptional,
-  IsString,
-  MinLength,
-} from 'class-validator';
+import { IsArray, IsIn, IsOptional } from 'class-validator';
 import {
   userAccessKeys,
   userRoles,
@@ -14,8 +8,8 @@ import {
 
 export class UpdateUserDto {
   @IsOptional()
-  @IsString()
-  name?: string;
+  @IsIn(['admin', 'member'])
+  membershipRole?: 'admin' | 'member';
 
   @IsOptional()
   @IsIn(userRoles)
@@ -25,23 +19,4 @@ export class UpdateUserDto {
   @IsArray()
   @IsIn(userAccessKeys, { each: true })
   access?: UserAccessKey[];
-
-  @IsOptional()
-  @IsString()
-  avatarPath?: string;
-
-  @IsOptional()
-  @IsString()
-  @MinLength(8)
-  password?: string;
-}
-
-export class UserResponseDto {
-  id: string;
-  email: string;
-  name: string | null;
-  role: UserRole;
-  access: UserAccessKey[];
-  avatarPath: string | null;
-  createdAt: Date;
 }

@@ -30,4 +30,7 @@ export type LocationPresenceMongoDocument =
 export const LocationPresenceSchema = SchemaFactory.createForClass(
   LocationPresenceDocument,
 );
-LocationPresenceSchema.index({ userId: 1, placeId: 1 }, { unique: true });
+LocationPresenceSchema.index(
+  { tenantId: 1, userId: 1, placeId: 1 },
+  { unique: true },
+);

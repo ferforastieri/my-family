@@ -12,7 +12,7 @@ import type {
   QuizQuestionWriteDto,
 } from '../../interfaces/dto/game.dto';
 
-export class QuizQuestionFactory implements Factory<
+class QuizQuestionFactory implements Factory<
   Partial<QuizQuestionWriteDto>,
   Partial<QuizQuestionWrite>
 > {
@@ -27,7 +27,7 @@ export class QuizQuestionFactory implements Factory<
   }
 }
 
-export class GameWordFactory implements Factory<
+class GameWordFactory implements Factory<
   Partial<GameWordWriteDto>,
   Partial<GameWordWrite>
 > {
@@ -46,7 +46,7 @@ export class GameWordFactory implements Factory<
   }
 }
 
-export class GameCompletionFactory implements Factory<
+class GameCompletionFactory implements Factory<
   GameCompletionWriteDto & { userId?: string | null; playerName: string },
   GameCompletionWrite
 > {
@@ -66,7 +66,7 @@ export class GameCompletionFactory implements Factory<
   }
 }
 
-export class MiniGameConfigFactory implements Factory<
+class MiniGameConfigFactory implements Factory<
   Partial<MiniGameConfigWriteDto>,
   Partial<MiniGameConfigWrite>
 > {

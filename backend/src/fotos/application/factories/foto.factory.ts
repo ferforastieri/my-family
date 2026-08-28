@@ -2,7 +2,7 @@ import type { Factory } from '@shared/application/mapper';
 import type { FotoWrite } from '../../infrastructure/repositories/fotos.repository';
 import { FotoWriteDto } from '../../interfaces/dto/foto.dto';
 
-export class FotoFactory implements Factory<
+class FotoFactory implements Factory<
   Partial<FotoWriteDto>,
   Partial<FotoWrite>
 > {

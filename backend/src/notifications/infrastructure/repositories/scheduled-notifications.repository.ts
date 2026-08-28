@@ -44,7 +44,7 @@ export class ScheduledNotificationsRepository {
   }
 
   async create(data: ScheduledNotificationWrite) {
-    return this.toDto(await this.model.create({ ...data, status: 'pending' }))!;
+    return this.toDto(await this.model.create({ ...data, status: 'pending' }));
   }
 
   async list(query?: PaginationQuery & { status?: string }) {
@@ -68,7 +68,7 @@ export class ScheduledNotificationsRepository {
       this.model.countDocuments(match).exec(),
     ]);
     return paginated(
-      items.map((doc) => this.toDto(doc)!),
+      items.map((doc) => this.toDto(doc)),
       total,
       page,
       limit,
@@ -81,7 +81,7 @@ export class ScheduledNotificationsRepository {
         .find({ status: 'pending' })
         .sort({ scheduledAt: 1 })
         .exec()
-    ).map((doc) => this.toDto(doc)!);
+    ).map((doc) => this.toDto(doc));
   }
 
   async markSent(id: string) {

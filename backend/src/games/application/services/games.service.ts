@@ -137,7 +137,7 @@ export class GamesService {
 
   complete(body: GameCompletionWriteDto, user?: UserEntity | null) {
     const playerName =
-      user?.name || user?.email || body.playerName?.trim() || 'Visitante';
+      user?.name || user?.phoneNumber || body.playerName?.trim() || 'Visitante';
     return this.games
       .createCompletion(
         gameCompletionFactory.create({

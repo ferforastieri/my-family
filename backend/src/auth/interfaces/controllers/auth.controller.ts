@@ -10,50 +10,98 @@ import {
   UploadedFile,
   BadRequestException,
   Query,
+  Res,
+  Header,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthService } from '../../application/services/auth.service';
-import { RefreshTokenDto, RegisterDto } from '../dto/auth.dto';
-import { LocalAuthGuard } from '../../guards/local-auth.guard';
+import { RequestPhoneCodeDto, VerifyPhoneCodeDto } from '../dto/auth.dto';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { UploadService, UploadContext } from '@shared/infrastructure/upload';
-import { StreamableFile } from '@nestjs/common';
-import { createReadStream } from 'fs';
+import type { Request, Response } from 'express';
+import { TurnstileService } from '@shared/infrastructure/security/turnstile.service';
+import { DemoRestrictedGuard } from '@tenancy/interfaces/demo-restricted.guard';
+import {
+  AuthCookieService,
+  REFRESH_COOKIE,
+  cookieValue,
+} from '@shared/infrastructure/security/auth-cookies';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private auth: AuthService,
     private upload: UploadService,
+    private turnstile: TurnstileService,
+    private cookies: AuthCookieService,
   ) {}
 
-  @Post('register')
-  async register(@Body() dto: RegisterDto) {
-    const response = await this.auth.register(
-      dto.email,
-      dto.password,
-      dto.name,
-      dto.role,
-    );
-    return { message: 'Cadastro realizado com sucesso.', ...response };
-  }
-
-  @Post('login')
-  @UseGuards(LocalAuthGuard)
-  async login(
-    @Req() req: { user: { id: string; email: string; name: string | null } },
+  @Post('phone/request-code')
+  async requestPhoneCode(
+    @Body() dto: RequestPhoneCodeDto,
+    @Req() req: { ip?: string },
   ) {
+    await this.turnstile.verify(dto.turnstileToken, req.ip, {
+      required: false,
+      action: 'phone',
+    });
     return {
-      message: 'Login realizado com sucesso.',
-      ...this.auth.tokenResponse(req.user as any),
+      message: `Código enviado por ${dto.channel === 'whatsapp' ? 'WhatsApp' : 'SMS'}.`,
+      ...(await this.auth.requestCode(dto.phone, dto.channel)),
     };
   }
 
+  @Post('phone/verify-code')
+  @Header('Cache-Control', 'no-store')
+  async verifyPhoneCode(
+    @Body() dto: VerifyPhoneCodeDto,
+    @Req() req: { headers: Record<string, string | undefined> },
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const session = await this.auth.authenticateWithCode({
+      ...dto,
+      userAgent: req.headers['user-agent'],
+    });
+    const csrfToken = this.cookies.setSession(response, session);
+    return {
+      message: 'Celular confirmado.',
+      ...publicSession(session),
+      csrfToken,
+    };
+  }
+
+  @Get('csrf')
+  @Header('Cache-Control', 'no-store')
+  csrf(@Res({ passthrough: true }) response: Response) {
+    return { csrfToken: this.cookies.rotateCsrf(response) };
+  }
+
   @Post('refresh')
-  async refresh(@Body() dto: RefreshTokenDto) {
-    const token = dto.refreshToken ?? dto.refresh_token;
-    const response = await this.auth.refresh(token ?? '');
-    return { message: 'Sessão renovada.', ...response };
+  @Header('Cache-Control', 'no-store')
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const session = await this.auth.refresh(
+      cookieValue(req, REFRESH_COOKIE) ?? '',
+      req.headers['user-agent'],
+    );
+    const csrfToken = this.cookies.setSession(response, session);
+    return {
+      message: 'Sessão renovada.',
+      ...publicSession(session),
+      csrfToken,
+    };
+  }
+
+  @Post('logout')
+  async logout(
+    @Req() req: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    await this.auth.logout(cookieValue(req, REFRESH_COOKIE) ?? '');
+    this.cookies.clear(response);
+    return { message: 'Sessão encerrada.' };
   }
 
   @Get('me')
@@ -63,7 +111,7 @@ export class AuthController {
     req: {
       user: {
         id: string;
-        email: string;
+        phoneNumber: string;
         name: string | null;
         role: string;
         access: string[];
@@ -71,12 +119,41 @@ export class AuthController {
       };
     },
   ) {
-    const { id, email, name, role, access, avatarPath } = req.user;
-    return { user: { id, email, name, role, access, avatarPath } };
+    return {
+      user: req.user,
+      tenant: (req.user as { tenant?: unknown }).tenant ?? null,
+    };
+  }
+
+  @Get('tenants')
+  @UseGuards(JwtAuthGuard)
+  async tenants(@Req() req: { user: { id: string } }) {
+    return { items: await this.auth.listTenants(req.user.id) };
+  }
+
+  @Post('switch-tenant')
+  @UseGuards(JwtAuthGuard)
+  async switchTenant(
+    @Req()
+    req: {
+      user: { id: string };
+      headers: Record<string, string | undefined>;
+    },
+    @Body('tenantId') tenantId: string,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    if (!tenantId) throw new BadRequestException('tenantId é obrigatório');
+    const session = await this.auth.switchTenant(
+      req.user.id,
+      tenantId,
+      req.headers['user-agent'],
+    );
+    const csrfToken = this.cookies.setSession(response, session);
+    return { ...publicSession(session), csrfToken };
   }
 
   @Patch('me')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, DemoRestrictedGuard)
   async updateMe(
     @Req() req: { user: { id: string } },
     @Body() dto: { name?: string },
@@ -89,7 +166,7 @@ export class AuthController {
       user: user
         ? {
             id: user.id,
-            email: user.email,
+            phoneNumber: user.phoneNumber,
             name: user.name,
             role: user.role,
             access: user.access,
@@ -100,8 +177,10 @@ export class AuthController {
   }
 
   @Post('avatar')
-  @UseGuards(JwtAuthGuard)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseGuards(JwtAuthGuard, DemoRestrictedGuard)
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: 10_000_000, files: 1 } }),
+  )
   async uploadAvatar(
     @Req() req: { user: { id: string } },
     @UploadedFile() file: Express.Multer.File,
@@ -117,7 +196,7 @@ export class AuthController {
       user: user
         ? {
             id: user.id,
-            email: user.email,
+            phoneNumber: user.phoneNumber,
             name: user.name,
             role: user.role,
             avatarPath: user.avatarPath,
@@ -126,41 +205,30 @@ export class AuthController {
     };
   }
 
-  @Post('forgot-password')
-  async forgotPassword(@Body('email') email: string) {
-    if (!email) throw new BadRequestException('Email é obrigatório');
-    await this.auth.requestPasswordReset(email);
-    return {
-      message:
-        'Se o email existir, você receberá um token de recuperação por email.',
-    };
-  }
-
-  @Post('reset-password')
-  async resetPassword(@Body() body: { token: string; newPassword: string }) {
-    const { token, newPassword } = body;
-    if (!token || !newPassword)
-      throw new BadRequestException('Token e nova senha são obrigatórios');
-    await this.auth.resetPassword(token, newPassword);
-    return { message: 'Senha redefinida com sucesso.' };
-  }
-
   @Get('avatar')
-  getAvatar(@Query('path') relativePath: string) {
-    if (!relativePath || !relativePath.startsWith('avatar/')) {
-      throw new BadRequestException('Caminho inválido');
-    }
-    const fullPath = this.upload.resolvePath(relativePath);
-    const file = createReadStream(fullPath);
-    const ext = relativePath.split('.').pop()?.toLowerCase();
-    const type =
-      ext === 'png'
-        ? 'image/png'
-        : ext === 'gif'
-          ? 'image/gif'
-          : ext === 'webp'
-            ? 'image/webp'
-            : 'image/jpeg';
-    return new StreamableFile(file, { type });
+  @UseGuards(JwtAuthGuard)
+  async getAvatar(
+    @Query('path') relativePath: string,
+    @Res() response: Response,
+  ) {
+    if (!relativePath) throw new BadRequestException('Caminho inválido');
+    const signedUrl = await this.upload.createReadUrl(relativePath);
+    if (signedUrl) return response.redirect(302, signedUrl);
+    return response.sendFile(
+      this.upload.resolveTenantPath(relativePath, UploadContext.Avatar),
+    );
   }
+}
+
+function publicSession<T extends { accessToken: string; refreshToken: string }>(
+  session: T,
+): Omit<T, 'accessToken' | 'refreshToken'> {
+  const {
+    accessToken: _accessToken,
+    refreshToken: _refreshToken,
+    ...rest
+  } = session;
+  void _accessToken;
+  void _refreshToken;
+  return rest;
 }

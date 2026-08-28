@@ -35,6 +35,6 @@ export type NotificationMongoDocument = HydratedDocument<NotificationDocument>;
 export const NotificationSchema =
   SchemaFactory.createForClass(NotificationDocument);
 NotificationSchema.index(
-  { title: 1, body: 1, url: 1, type: 1 },
+  { tenantId: 1, title: 1, body: 1, url: 1, type: 1 },
   { unique: true },
 );

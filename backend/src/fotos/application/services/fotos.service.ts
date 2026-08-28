@@ -55,18 +55,22 @@ export class FotosService {
   async delete(id: string) {
     const foto = await this.fotos.findById(id);
     const deleted = await this.fotos.delete(id);
-    if (deleted && foto?.url?.startsWith('fotos/')) {
+    if (deleted && foto?.url?.startsWith('tenants/')) {
       await this.upload.removeFile(foto.url);
     }
     return deleted;
   }
 
   async processUpload(relativePath: string) {
-    await this.jobs.enqueueMediaProcessing({
+    const job = await this.jobs.enqueueMediaProcessing({
       relativePath,
       context: 'fotos',
       mediaType: /\.(mp4|webm)$/i.test(relativePath) ? 'video' : 'image',
     });
+    return { jobId: job.id };
   }
 
+  uploadStatus(jobId: string) {
+    return this.jobs.mediaStatus(jobId);
+  }
 }

@@ -3,8 +3,6 @@ import {
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
-import { UserService } from '@auth/application/services/user.service';
-import type { UserEntity } from '@auth/domain/entities/user.entity';
 import type { ChatMessageEntity } from '@chat/domain/entities/chat.entity';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 import { ChatRepository } from '../../infrastructure/repositories/chat.repository';
@@ -12,7 +10,8 @@ import { ListsService } from '../../../lists/application/services/lists.service'
 import { ListsRealtimeGateway } from '../../../lists/interfaces/gateways/lists-realtime.gateway';
 import { FotosService } from '../../../fotos/application/services/fotos.service';
 import { NotificationsService } from '../../../notifications/application/services/notifications.service';
-import { isAdminRole } from '@auth/domain/entities/user.entity';
+import { TenancyService } from '@tenancy/application/tenancy.service';
+import type { TenantPrincipal } from '@tenancy/domain/tenant.entity';
 import {
   chatConversationFactory,
   chatMessageFactory,
@@ -31,31 +30,32 @@ import type {
 export class ChatService {
   constructor(
     private chat: ChatRepository,
-    private users: UserService,
+    private tenancy: TenancyService,
     private lists: ListsService,
     private listsRealtime: ListsRealtimeGateway,
     private fotos: FotosService,
     private notifications: NotificationsService,
   ) {}
 
-  async usersForChat(currentUser: UserEntity) {
-    const page = await this.users.list({ page: 1, limit: 100 });
-    return page.items
-      .map(({ id, name, email, role, avatarPath }) => ({
+  async usersForChat(currentUser: TenantPrincipal) {
+    const members = await this.tenancy.members(currentUser.tenantId);
+    return members
+      .map(({ id, name, phoneNumber, role, avatarPath }) => ({
         id,
         name,
-        email,
+        phoneNumber,
         role,
         avatarPath,
       }))
       .filter((user) => user.id !== currentUser.id);
   }
 
-  async listConversations(user?: UserEntity | null, query?: PaginationQuery) {
+  async listConversations(
+    user?: TenantPrincipal | null,
+    query?: PaginationQuery,
+  ) {
     const result = await this.chat.listForUser(user?.id, query);
-    const users = user
-      ? (await this.users.list({ page: 1, limit: 100 })).items
-      : [];
+    const users = user ? await this.tenancy.members(user.tenantId) : [];
     const unreadCounts = user
       ? await this.chat.unreadCountsForUser(
           user.id,
@@ -87,7 +87,7 @@ export class ChatService {
   }
 
   async createDirectConversation(
-    currentUser: UserEntity,
+    currentUser: TenantPrincipal,
     body: ChatConversationCreateDto,
   ) {
     const ids = Array.from(
@@ -95,6 +95,10 @@ export class ChatService {
     );
     if (ids.length < 2)
       throw new ForbiddenException('Escolha pelo menos uma pessoa.');
+    const members = await this.tenancy.members(currentUser.tenantId);
+    if (ids.some((id) => !members.some((member) => member.id === id))) {
+      throw new ForbiddenException('Uma das pessoas não pertence à família.');
+    }
     const conversation = await this.chat.createDirectConversation(
       chatConversationFactory.create({
         ...body,
@@ -104,7 +108,7 @@ export class ChatService {
     );
     const participantId = ids.find((id) => id !== currentUser.id);
     const participant = participantId
-      ? await this.users.findOne(participantId)
+      ? members.find((member) => member.id === participantId)
       : null;
     return {
       ...chatConversationMapper.toDto(conversation),
@@ -115,38 +119,46 @@ export class ChatService {
   }
 
   private chatUserLabel(
-    user?: { name?: string | null; email?: string } | null,
+    user?: { name?: string | null; phoneNumber?: string } | null,
   ) {
     const name = user?.name?.trim();
     if (name) return name;
-    return user?.email ?? '';
+    return user?.phoneNumber ?? '';
   }
 
   async listMessages(
     conversationId: string,
-    user?: UserEntity | null,
+    user?: TenantPrincipal | null,
     query?: PaginationQuery,
   ) {
-    const conversation = await this.chat.findConversation(conversationId);
-    if (!conversation) return [];
-    if (
-      conversation.type === 'direct' &&
-      (!user || !conversation.participantIds.includes(user.id))
-    ) {
-      throw new ForbiddenException('Sem acesso a esta conversa.');
-    }
+    await this.assertConversationAccess(conversationId, user);
     const page = await this.chat.listMessages(conversationId, query);
-    const items = await this.withSenderAvatars(page.items);
+    const items = await this.withSenderAvatars(page.items, user?.tenantId);
     return {
       ...page,
       items: items.map((message) => chatMessageMapper.toDto(message)),
     };
   }
 
+  async assertConversationAccess(
+    conversationId: string,
+    user?: TenantPrincipal | null,
+  ) {
+    const conversation = await this.chat.findConversation(conversationId);
+    if (!conversation) throw new ForbiddenException('Conversa não encontrada.');
+    if (
+      conversation.type === 'direct' &&
+      (!user || !conversation.participantIds.includes(user.id))
+    ) {
+      throw new ForbiddenException('Sem acesso a esta conversa.');
+    }
+    return conversation;
+  }
+
   async sendMessage(
     conversationId: string,
     body: Omit<ChatMessageSendDto, 'conversationId'>,
-    user?: UserEntity | null,
+    user?: TenantPrincipal | null,
   ) {
     const conversation = await this.chat.findConversation(conversationId);
     if (!conversation) throw new ForbiddenException('Conversa não encontrada.');
@@ -157,7 +169,7 @@ export class ChatService {
       throw new ForbiddenException('Sem acesso a esta conversa.');
     }
     const senderName =
-      user?.name || user?.email || body.senderName?.trim() || 'Visitante';
+      user?.name || user?.phoneNumber || body.senderName?.trim() || 'Visitante';
     if (!body.text?.trim() && !body.mediaUrl) {
       throw new BadRequestException('Escreva uma mensagem.');
     }
@@ -178,7 +190,10 @@ export class ChatService {
         replyToMessageId: body.replyToMessageId,
       }),
     );
-    const [messageWithAvatar] = await this.withSenderAvatars([message]);
+    const [messageWithAvatar] = await this.withSenderAvatars(
+      [message],
+      user?.tenantId,
+    );
     if (body.text?.trim()) {
       const listResult = await this.lists.addFromChat(body.text, user);
       if (listResult) {
@@ -200,7 +215,7 @@ export class ChatService {
     const recipients =
       conversation.type === 'direct'
         ? conversation.participantIds
-        : await this.chatNotificationRecipients();
+        : await this.chatNotificationRecipients(user?.tenantId);
     const delivery = await this.notifications.sendChatMessage({
       conversationId: conversation.id,
       conversationTitle:
@@ -216,13 +231,17 @@ export class ChatService {
       message.id,
       delivery.deliveredUserIds,
     );
-    const [messageWithDelivery] = await this.withSenderAvatars([
-      delivered ?? message,
-    ]);
+    const [messageWithDelivery] = await this.withSenderAvatars(
+      [delivered ?? message],
+      user?.tenantId,
+    );
     return chatMessageMapper.toDto(messageWithDelivery);
   }
 
-  private async withSenderAvatars(messages: ChatMessageEntity[]) {
+  private async withSenderAvatars(
+    messages: ChatMessageEntity[],
+    tenantId?: string | null,
+  ) {
     const userIds = [
       ...new Set(
         messages
@@ -230,43 +249,48 @@ export class ChatService {
             message.senderId,
             message.replyToMessage?.senderId,
           ])
-          .filter((id): id is string => typeof id === 'string' && id.length > 0),
+          .filter(
+            (id): id is string => typeof id === 'string' && id.length > 0,
+          ),
       ),
     ];
-    if (userIds.length === 0) return messages;
-    const page = await this.users.list({ page: 1, limit: 100 });
+    if (userIds.length === 0 || !tenantId) return messages;
+    const members = await this.tenancy.members(tenantId);
     const avatars = new Map(
-      page.items
+      members
         .filter((user) => userIds.includes(user.id))
         .map((user) => [user.id, user.avatarPath ?? null]),
     );
     return messages.map((message) => ({
       ...message,
       senderAvatarPath: message.senderId
-        ? avatars.get(message.senderId) ?? null
+        ? (avatars.get(message.senderId) ?? null)
         : null,
       replyToMessage: message.replyToMessage
         ? {
             ...message.replyToMessage,
             senderAvatarPath: message.replyToMessage.senderId
-              ? avatars.get(message.replyToMessage.senderId) ?? null
+              ? (avatars.get(message.replyToMessage.senderId) ?? null)
               : null,
           }
         : message.replyToMessage,
     }));
   }
 
-  private async chatNotificationRecipients() {
-    const page = await this.users.list({ page: 1, limit: 100 });
-    return page.items
+  private async chatNotificationRecipients(tenantId?: string | null) {
+    if (!tenantId) return [];
+    const members = await this.tenancy.members(tenantId);
+    return members
       .filter(
         (candidate) =>
-          isAdminRole(candidate.role) || candidate.access.includes('chat'),
+          candidate.membershipRole === 'owner' ||
+          candidate.membershipRole === 'admin' ||
+          candidate.access.includes('chat'),
       )
       .map((candidate) => candidate.id);
   }
 
-  async editMessage(body: ChatMessageEditDto, user: UserEntity) {
+  async editMessage(body: ChatMessageEditDto, user: TenantPrincipal) {
     const message = await this.chat.findMessage(body.messageId);
     if (!message) throw new ForbiddenException('Mensagem não encontrada.');
     if (message.senderId !== user.id) {
@@ -282,7 +306,7 @@ export class ChatService {
     return chatMessageMapper.toDto(updated);
   }
 
-  async deleteMessage(messageId: string, user: UserEntity) {
+  async deleteMessage(messageId: string, user: TenantPrincipal) {
     const message = await this.chat.findMessage(messageId);
     if (!message) throw new ForbiddenException('Mensagem não encontrada.');
     if (message.senderId !== user.id) {
@@ -294,7 +318,7 @@ export class ChatService {
     return chatMessageMapper.toDto(deleted);
   }
 
-  async markMessagesRead(conversationId: string, user: UserEntity) {
+  async markMessagesRead(conversationId: string, user: TenantPrincipal) {
     const conversation = await this.chat.findConversation(conversationId);
     if (!conversation) throw new ForbiddenException('Conversa não encontrada.');
     if (

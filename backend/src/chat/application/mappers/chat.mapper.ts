@@ -8,7 +8,7 @@ import {
   ChatMessageResponseDto,
 } from '../../interfaces/dto/chat.dto';
 
-export class ChatConversationMapper implements Mapper<
+class ChatConversationMapper implements Mapper<
   ChatConversationEntity,
   ChatConversationResponseDto
 > {
@@ -27,7 +27,7 @@ export class ChatConversationMapper implements Mapper<
   }
 }
 
-export class ChatMessageMapper implements Mapper<
+class ChatMessageMapper implements Mapper<
   ChatMessageEntity,
   ChatMessageResponseDto
 > {

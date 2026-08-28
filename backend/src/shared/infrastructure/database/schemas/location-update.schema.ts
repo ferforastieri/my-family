@@ -47,3 +47,4 @@ export type LocationUpdateMongoDocument =
 export const LocationUpdateSchema = SchemaFactory.createForClass(
   LocationUpdateDocument,
 );
+LocationUpdateSchema.index({ tenantId: 1, userId: 1, createdAt: -1 });

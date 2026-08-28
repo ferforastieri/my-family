@@ -2,7 +2,7 @@ import type { Factory } from '@shared/application/mapper';
 import type { NotaWrite } from '../../infrastructure/repositories/notas.repository';
 import { NotaWriteDto } from '../../interfaces/dto/nota.dto';
 
-export class NotaFactory implements Factory<
+class NotaFactory implements Factory<
   Partial<NotaWriteDto>,
   Partial<NotaWrite>
 > {

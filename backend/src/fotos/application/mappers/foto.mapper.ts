@@ -2,7 +2,7 @@ import type { Mapper } from '@shared/application/mapper';
 import type { FotoEntity } from '@fotos/domain/entities/foto.entity';
 import { FotoResponseDto } from '../../interfaces/dto/foto.dto';
 
-export class FotoMapper implements Mapper<FotoEntity, FotoResponseDto> {
+class FotoMapper implements Mapper<FotoEntity, FotoResponseDto> {
   toDto(source: FotoEntity): FotoResponseDto {
     return {
       id: source.id,

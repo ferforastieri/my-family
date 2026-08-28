@@ -1,33 +1,18 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  OnModuleInit,
-} from '@nestjs/common';
-import { SchedulerRegistry } from '@nestjs/schedule';
-import { CronJob } from 'cron';
-import { NotificationsService } from './notifications.service';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ScheduledNotificationsRepository } from '../../infrastructure/repositories/scheduled-notifications.repository';
 import { NotificationsRealtimeGateway } from '../../interfaces/gateways/notifications-realtime.gateway';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
+import { JobsService } from '@shared/infrastructure/queue/jobs.service';
+import { TenantContextService } from '@shared/infrastructure/database/tenant-context';
 
 @Injectable()
-export class NotificationSchedulerService implements OnModuleInit {
-  private readonly logger = new Logger(NotificationSchedulerService.name);
-
+export class NotificationSchedulerService {
   constructor(
     private scheduled: ScheduledNotificationsRepository,
-    private notifications: NotificationsService,
-    private schedulerRegistry: SchedulerRegistry,
     private realtime: NotificationsRealtimeGateway,
+    private jobs: JobsService,
+    private context: TenantContextService,
   ) {}
-
-  async onModuleInit() {
-    const pending = await this.scheduled.pending();
-    for (const item of pending) {
-      this.registerJob(item);
-    }
-  }
 
   async schedule(body: {
     title: string;
@@ -48,7 +33,7 @@ export class NotificationSchedulerService implements OnModuleInit {
       url: body.url?.trim() || '/',
       scheduledAt,
     });
-    this.registerJob(row);
+    await this.registerJob(row);
     this.realtime.emitScheduledNotificationChanged(row);
     return {
       id: row.id,
@@ -62,10 +47,8 @@ export class NotificationSchedulerService implements OnModuleInit {
   }
 
   async delete(id: string) {
-    const name = this.jobName(id);
-    if (this.schedulerRegistry.doesExist('cron', name)) {
-      this.schedulerRegistry.deleteCronJob(name);
-    }
+    const tenantId = this.context.tenantId;
+    if (tenantId) await this.jobs.removeScheduledNotification(tenantId, id);
     const ok = await this.scheduled.delete(id);
     if (ok)
       this.realtime.emitScheduledNotificationChanged({ id, deleted: true });
@@ -79,46 +62,14 @@ export class NotificationSchedulerService implements OnModuleInit {
     url?: string;
     scheduledAt: Date;
   }) {
-    const name = this.jobName(row.id);
-    if (this.schedulerRegistry.doesExist('cron', name)) {
-      this.schedulerRegistry.deleteCronJob(name);
-    }
-    const scheduledAt = new Date(row.scheduledAt);
-    if (scheduledAt.getTime() <= Date.now()) {
-      void this.runJob(row.id, row.title, row.body, row.url);
-      return;
-    }
-    const job = new CronJob(scheduledAt, () => {
-      void this.runJob(row.id, row.title, row.body, row.url);
-    });
-    this.schedulerRegistry.addCronJob(name, job);
-    job.start();
-  }
-
-  private async runJob(id: string, title: string, body?: string, url?: string) {
-    const name = this.jobName(id);
-    try {
-      await this.notifications.send(title, body, url);
-      const row = await this.scheduled.markSent(id);
-      if (row) this.realtime.emitScheduledNotificationChanged(row);
-    } catch (error) {
-      const row = await this.scheduled.markFailed(
-        id,
-        error instanceof Error ? error.message : String(error),
-      );
-      if (row) this.realtime.emitScheduledNotificationChanged(row);
-      this.logger.error(
-        `Falha ao enviar notificação agendada ${id}`,
-        error instanceof Error ? error.stack : undefined,
-      );
-    } finally {
-      if (this.schedulerRegistry.doesExist('cron', name)) {
-        this.schedulerRegistry.deleteCronJob(name);
-      }
-    }
-  }
-
-  private jobName(id: string) {
-    return `notification:${id}`;
+    return this.jobs.scheduleNotification(
+      {
+        scheduledNotificationId: row.id,
+        title: row.title,
+        body: row.body,
+        url: row.url,
+      },
+      new Date(row.scheduledAt),
+    );
   }
 }

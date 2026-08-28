@@ -1,6 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { readFileSync } from 'node:fs';
-import * as admin from 'firebase-admin';
+import {
+  cert,
+  getApps,
+  initializeApp,
+  type ServiceAccount,
+} from 'firebase-admin/app';
+import { getMessaging } from 'firebase-admin/messaging';
 import { NotificationsRepository } from '../../infrastructure/repositories/notifications.repository';
 import { NotificationsRealtimeGateway } from '../../interfaces/gateways/notifications-realtime.gateway';
 import { Environment } from '@shared/infrastructure/environment/environment.module';
@@ -41,23 +47,23 @@ export class NotificationsService {
     private realtime: NotificationsRealtimeGateway,
   ) {
     const serviceAccount = this.loadFirebaseServiceAccount();
-    if (serviceAccount && admin.apps.length === 0) {
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
+    if (serviceAccount && getApps().length === 0) {
+      initializeApp({
+        credential: cert(serviceAccount),
       });
       this.fcmEnabled = true;
-    } else if (admin.apps.length > 0) {
+    } else if (getApps().length > 0) {
       this.fcmEnabled = true;
     }
   }
 
-  private loadFirebaseServiceAccount(): admin.ServiceAccount | null {
+  private loadFirebaseServiceAccount(): ServiceAccount | null {
     const rawJson = this.env.firebase?.serviceAccountJson;
-    if (rawJson) return JSON.parse(rawJson) as admin.ServiceAccount;
+    if (rawJson) return JSON.parse(rawJson) as ServiceAccount;
 
     const path = this.env.firebase?.serviceAccountPath;
     if (!path) return null;
-    return JSON.parse(readFileSync(path, 'utf8')) as admin.ServiceAccount;
+    return JSON.parse(readFileSync(path, 'utf8')) as ServiceAccount;
   }
 
   async list(
@@ -179,7 +185,7 @@ export class NotificationsService {
     for (const sub of subs) {
       if (!sub.fcmToken) continue;
       try {
-        await admin.messaging().send({
+        await getMessaging().send({
           token: sub.fcmToken,
           notification: {
             title: title ?? 'Nossa Família',
@@ -187,6 +193,9 @@ export class NotificationsService {
           },
           data: {
             url: url ?? '/',
+            type: options.type ?? 'push',
+            title: title ?? 'Nossa Família',
+            body: body ?? '',
           },
           webpush: {
             notification: {
@@ -197,9 +206,19 @@ export class NotificationsService {
             },
           },
           android: {
+            priority: 'normal',
             notification: {
               icon: 'ic_notification',
+              channelId: 'my_family_notifications',
+              sound: 'default',
               clickAction: 'FLUTTER_NOTIFICATION_CLICK',
+            },
+          },
+          apns: {
+            payload: {
+              aps: {
+                sound: 'default',
+              },
             },
           },
         });
@@ -250,7 +269,7 @@ export class NotificationsService {
     for (const subscription of subscriptions) {
       if (!subscription.fcmToken) continue;
       try {
-        await admin.messaging().send({
+        await getMessaging().send({
           token: subscription.fcmToken,
           data: {
             type: 'chat',

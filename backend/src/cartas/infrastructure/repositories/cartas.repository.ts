@@ -44,7 +44,7 @@ export class CartasRepository {
       this.model.countDocuments(filter).exec(),
     ]);
     return paginated(
-      docs.map((doc) => this.toEntity(doc)!),
+      docs.map((doc) => this.toEntity(doc)),
       total,
       page,
       limit,
@@ -58,7 +58,7 @@ export class CartasRepository {
   }
 
   async create(data: CartaWrite) {
-    return this.toEntity(await this.model.create(data))!;
+    return this.toEntity(await this.model.create(data));
   }
 
   async update(

@@ -24,3 +24,4 @@ export class FotoDocument {
 
 export type FotoMongoDocument = HydratedDocument<FotoDocument>;
 export const FotoSchema = SchemaFactory.createForClass(FotoDocument);
+FotoSchema.index({ tenantId: 1, data: -1, createdAt: -1 });

@@ -1,32 +1,38 @@
 import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server } from 'socket.io';
+import { TenantContextService } from '@shared/infrastructure/database/tenant-context';
 
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway()
 export class ListsRealtimeGateway {
   @WebSocketServer()
   private server?: Server;
+  constructor(private context: TenantContextService) {}
+  private room() {
+    const id = this.context.tenantId;
+    return id ? this.server?.to(`tenant:${id}`) : undefined;
+  }
 
   emitListCreated(row: unknown) {
-    this.server?.emit('lists.created', row);
+    this.room()?.emit('lists.created', row);
   }
 
   emitListUpdated(row: unknown) {
-    this.server?.emit('lists.updated', row);
+    this.room()?.emit('lists.updated', row);
   }
 
   emitListDeleted(id: string) {
-    this.server?.emit('lists.deleted', { id });
+    this.room()?.emit('lists.deleted', { id });
   }
 
   emitItemCreated(row: unknown) {
-    this.server?.emit('lists.items.created', row);
+    this.room()?.emit('lists.items.created', row);
   }
 
   emitItemUpdated(row: unknown) {
-    this.server?.emit('lists.items.updated', row);
+    this.room()?.emit('lists.items.updated', row);
   }
 
   emitItemDeleted(id: string, listId?: string) {
-    this.server?.emit('lists.items.deleted', { id, listId });
+    this.room()?.emit('lists.items.deleted', { id, listId });
   }
 }

@@ -1,8 +1,6 @@
 export const userRoles = ['husband', 'wife', 'children', 'friends'] as const;
 export type UserRole = (typeof userRoles)[number];
 
-export const adminRoles: UserRole[] = ['husband', 'wife'];
-
 export const userAccessKeys = [
   'memorias',
   'playlist',
@@ -16,10 +14,6 @@ export const userAccessKeys = [
 ] as const;
 export type UserAccessKey = (typeof userAccessKeys)[number];
 
-export function isAdminRole(role?: string | null): role is UserRole {
-  return role === 'husband' || role === 'wife';
-}
-
 export function normalizeAccessKeys(
   access?: readonly string[] | null,
 ): UserAccessKey[] {
@@ -31,21 +25,12 @@ export function normalizeAccessKeys(
 
 export interface UserEntity {
   id: string;
-  email: string;
-  passwordHash?: string | null;
+  phoneNumber: string;
   name?: string | null;
   role: UserRole;
   access: UserAccessKey[];
   avatarPath?: string | null;
+  platformRole?: 'super_admin' | null;
   createdAt: Date;
   updatedAt: Date;
-}
-
-export interface PasswordResetEntity {
-  id: string;
-  userId: string;
-  token: string;
-  expiresAt: Date;
-  used?: Date | null;
-  createdAt: Date;
 }

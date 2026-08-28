@@ -137,17 +137,16 @@ export class GamesRepository {
     await this.words.insertMany(
       [
         'FAMILIA',
-        'PESSOA',
-        'FAMILIA',
         'AMOR',
-        'TEMPLO',
-        'FE',
         'LAR',
-        'ETERNOS',
+        'UNIAO',
+        'MEMORIA',
+        'ALEGRIA',
         'CARINHO',
-        'FILHO',
-        'JESUS',
-        'ALIANCA',
+        'ABRACO',
+        'SORRISO',
+        'PASSEIO',
+        'FESTA',
       ].map((word) => ({ word, active: true })),
     );
   }
@@ -158,7 +157,7 @@ export class GamesRepository {
         type: 'memory_match',
         title: 'Memória da Família',
         instructions: 'Encontre os pares de lembranças iguais.',
-        items: ['Amor', 'Templo', 'Passeio', 'Shopping', 'Filme', 'Familia'],
+        items: ['Amor', 'Abraço', 'Passeio', 'Filme', 'Festa', 'Família'],
         active: true,
       },
       {
@@ -166,11 +165,11 @@ export class GamesRepository {
         title: 'Linha do Amor',
         instructions: 'Toque nos momentos na ordem certa da história.',
         items: [
-          'Mutual',
+          'Primeira conversa',
           'Primeiro encontro',
           'Namoro',
           'Casamento',
-          'Familia',
+          'Nossa família',
         ],
         active: true,
       },

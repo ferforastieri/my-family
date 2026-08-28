@@ -1,0 +1,1 @@
+{"name":"my-family-media","main":"src/index.ts","compatibility_date":"2026-08-28","r2_buckets":[{"binding":"MEDIA","bucket_name":"my-family-media"}],"vars":{"ALLOWED_ORIGIN":"https://app.example.com"}}

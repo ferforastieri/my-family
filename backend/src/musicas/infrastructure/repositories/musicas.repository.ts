@@ -48,7 +48,7 @@ export class MusicasRepository {
       this.model.countDocuments().exec(),
     ]);
     return paginated(
-      docs.map((doc) => this.toEntity(doc)!),
+      docs.map((doc) => this.toEntity(doc)),
       total,
       page,
       limit,
@@ -60,7 +60,7 @@ export class MusicasRepository {
   }
 
   async create(data: MusicaWrite) {
-    return this.toEntity(await this.model.create(data))!;
+    return this.toEntity(await this.model.create(data));
   }
 
   async update(id: string, data: Partial<MusicaWrite>) {

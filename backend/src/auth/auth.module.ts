@@ -7,19 +7,21 @@ import { EnvironmentModule } from '@shared/infrastructure/environment/environmen
 import { Environment } from '@shared/infrastructure/environment/environment.module';
 import { AuthService } from './application/services/auth.service';
 import { AuthController } from './interfaces/controllers/auth.controller';
-import { UserService } from './application/services/user.service';
 import { UsersController } from './interfaces/controllers/users.controller';
-import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { RolesGuard } from './guards/roles.guard';
 import { UserRepository } from './infrastructure/repositories/user.repository';
-import { PasswordResetRepository } from './infrastructure/repositories/password-reset.repository';
 import { WsSessionService } from './application/services/ws-session.service';
+import { TenancyModule } from '@tenancy/tenancy.module';
+import { TurnstileService } from '@shared/infrastructure/security/turnstile.service';
+import { PhoneChallengeRepository } from './infrastructure/repositories/phone-challenge.repository';
+import { PhoneMessagingService } from './application/services/phone-messaging.service';
+import { AuthCookieService } from '@shared/infrastructure/security/auth-cookies';
 
 @Module({
   imports: [
     DatabaseModule,
     MongoModelsModule,
+    TenancyModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [EnvironmentModule],
@@ -27,21 +29,26 @@ import { WsSessionService } from './application/services/ws-session.service';
       useFactory: (env: Environment) =>
         ({
           secret: env.jwt.secret,
-          signOptions: { expiresIn: env.jwt.expiresIn },
+          signOptions: {
+            algorithm: 'HS256',
+            issuer: 'nossa-familia-api',
+            audience: 'nossa-familia-app',
+            expiresIn: env.jwt.expiresIn,
+          },
         }) as any,
     }),
   ],
   controllers: [AuthController, UsersController],
   providers: [
     AuthService,
-    UserService,
     UserRepository,
-    PasswordResetRepository,
+    PhoneChallengeRepository,
+    PhoneMessagingService,
     WsSessionService,
-    LocalStrategy,
     JwtStrategy,
-    RolesGuard,
+    TurnstileService,
+    AuthCookieService,
   ],
-  exports: [AuthService, UserService, WsSessionService, RolesGuard],
+  exports: [AuthService, WsSessionService, AuthCookieService],
 })
 export class AuthModule {}

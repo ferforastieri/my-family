@@ -1,0 +1,63 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          {
+            node-version: 22,
+            cache: npm,
+            cache-dependency-path: backend/package-lock.json,
+          }
+      - run: npm ci
+        working-directory: backend
+      - run: npm run lint
+        working-directory: backend
+      - run: npm test -- --runInBand
+        working-directory: backend
+      - run: npm run build
+        working-directory: backend
+      - run: npm audit --audit-level=high
+        working-directory: backend
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dart-lang/setup-dart@65eb853c7ba17dde3be364c3d2858773e7144260
+        with: { sdk: stable }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: { node-version: 22 }
+      - name: Analyze and build SEO landing
+        working-directory: frontend/landing
+        run: |
+          dart pub get
+          dart analyze --fatal-infos
+          dart pub global activate jaspr_cli 0.23.4
+          export PATH="$HOME/.pub-cache/bin:$PATH"
+          jaspr build --port 8099 \
+            --sitemap-domain https://example.com \
+            --sitemap-exclude '^/cadastro' \
+            --dart-define SITE_URL=https://example.com \
+            --dart-define API_URL=https://api.example.com/api \
+            --dart-define APP_URL=https://app.example.com \
+            --dart-define PANEL_URL=https://panel.example.com
+          dart run tool/finalize.dart https://example.com https://api.example.com/api
+      - run: npm ci && npm run check && npm audit --audit-level=high
+        working-directory: workers/media
+      - name: Analyze and test Flutter projects
+        run: |
+          docker run --rm -v "$PWD:/workspace" -w /workspace/frontend/app ghcr.io/cirruslabs/flutter:stable sh -lc 'flutter pub get && flutter analyze && flutter test && flutter build web --release --no-wasm-dry-run && flutter build apk --debug'
+          docker run --rm -v "$PWD:/workspace" -w /workspace/frontend/panel ghcr.io/cirruslabs/flutter:stable sh -lc 'flutter pub get && flutter analyze && flutter test && flutter build web --release --no-wasm-dry-run'
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - run: docker build -f Dockerfile.backend .

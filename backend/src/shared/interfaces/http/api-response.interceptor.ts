@@ -62,8 +62,8 @@ export class ApiResponseInterceptor<T> implements NestInterceptor<
 function stripMessage<T>(body: T): T {
   if (!hasMessage(body)) return body;
   if (!isPlainObject(body)) return body;
-  const { message: _message, ...rest } = body as ApiMessage &
-    Record<string, unknown>;
+  const rest = { ...(body as ApiMessage & Record<string, unknown>) };
+  delete rest.message;
   return rest as T;
 }
 

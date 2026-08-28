@@ -7,15 +7,18 @@ import { UploadModule } from '@shared/infrastructure/upload';
 import { AuthModule } from '@auth/auth.module';
 import { FotosRepository } from './infrastructure/repositories/fotos.repository';
 import { MediaQueueProcessor } from './infrastructure/queues/media-queue.processor';
+import { TenancyModule } from '@tenancy/tenancy.module';
 
 @Module({
-  imports: [DatabaseModule, MongoModelsModule, UploadModule, AuthModule],
-  controllers: [FotosController],
-  providers: [
-    FotosService,
-    FotosRepository,
-    MediaQueueProcessor,
+  imports: [
+    DatabaseModule,
+    MongoModelsModule,
+    UploadModule,
+    AuthModule,
+    TenancyModule,
   ],
+  controllers: [FotosController],
+  providers: [FotosService, FotosRepository, MediaQueueProcessor],
   exports: [FotosService],
 })
 export class FotosModule {}

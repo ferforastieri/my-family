@@ -8,8 +8,8 @@
 !*.env.example
 !.env.example
 
-app/android/app/google-services.json
-app/ios/Runner/GoogleService-Info.plist
+frontend/app/android/app/google-services.json
+frontend/app/ios/Runner/GoogleService-Info.plist
 firebase-service-account*.json
 *service-account*.json
 
@@ -62,7 +62,3 @@ Thumbs.db
 *.sql
 build
 .cache
-
-deploy-local.sh
-entrypoint.sh
-nginx/nginx.conf

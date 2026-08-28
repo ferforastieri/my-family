@@ -1,11 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import type { UserEntity } from '@auth/domain/entities/user.entity';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
-import {
-  FamilyListItemWrite,
-  FamilyListWrite,
-  ListsRepository,
-} from '../../infrastructure/repositories/lists.repository';
+import { ListsRepository } from '../../infrastructure/repositories/lists.repository';
 import {
   familyListFactory,
   familyListItemFactory,

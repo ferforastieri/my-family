@@ -12,7 +12,7 @@ export type NotificationMapperSource = {
   createdAt: Date;
 };
 
-export class NotificationMapper implements Mapper<
+class NotificationMapper implements Mapper<
   NotificationMapperSource,
   NotificationResponseDto
 > {

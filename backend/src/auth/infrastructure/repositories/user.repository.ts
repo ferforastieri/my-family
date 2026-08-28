@@ -7,9 +7,6 @@ import {
 } from '@shared/infrastructure/database/schemas';
 import {
   cleanUndefined,
-  normalizePagination,
-  paginated,
-  PaginationQuery,
   toId,
 } from '@shared/infrastructure/database/mongo.utils';
 import {
@@ -20,11 +17,11 @@ import {
 } from '@auth/domain/entities/user.entity';
 
 export type CreateUserData = {
-  email: string;
-  passwordHash: string;
+  phoneNumber: string;
   name?: string;
   role?: UserRole;
   access?: UserAccessKey[];
+  platformRole?: 'super_admin';
 };
 
 @Injectable()
@@ -37,48 +34,28 @@ export class UserRepository {
     if (!doc) return null;
     return {
       id: toId(doc),
-      email: doc.email,
-      passwordHash: doc.passwordHash ?? null,
+      phoneNumber: doc.phoneNumber,
       name: doc.name ?? null,
       role: doc.role,
       access: normalizeAccessKeys(doc.access),
       avatarPath: doc.avatarPath ?? null,
+      platformRole: doc.platformRole ?? null,
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
     };
-  }
-
-  async list(query?: PaginationQuery) {
-    const { page, limit, skip } = normalizePagination(query, {
-      page: 1,
-      limit: 20,
-      maxLimit: 100,
-    });
-    const [docs, total] = await Promise.all([
-      this.model.find().sort({ createdAt: -1 }).skip(skip).limit(limit).exec(),
-      this.model.countDocuments().exec(),
-    ]);
-    return paginated(
-      docs.map((doc) => this.toEntity(doc)!),
-      total,
-      page,
-      limit,
-    );
   }
 
   async findById(id: string): Promise<UserEntity | null> {
     return this.toEntity(await this.model.findById(id).exec());
   }
 
-  async findByEmail(email: string): Promise<UserEntity | null> {
-    return this.toEntity(
-      await this.model.findOne({ email: email.toLowerCase() }).exec(),
-    );
+  async findByPhoneNumber(phoneNumber: string): Promise<UserEntity | null> {
+    return this.toEntity(await this.model.findOne({ phoneNumber }).exec());
   }
 
   async create(data: CreateUserData): Promise<UserEntity> {
     const doc = await this.model.create(data);
-    return this.toEntity(doc)!;
+    return this.toEntity(doc);
   }
 
   async update(
@@ -88,7 +65,7 @@ export class UserRepository {
       role?: UserRole;
       access?: UserAccessKey[];
       avatarPath?: string;
-      passwordHash?: string;
+      platformRole?: 'super_admin';
     },
   ): Promise<UserEntity | null> {
     const doc = await this.model

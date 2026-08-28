@@ -11,11 +11,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Access } from '@auth/decorators/access.decorator';
-import { Roles } from '@auth/decorators/roles.decorator';
 import type { UserEntity } from '@auth/domain/entities/user.entity';
 import { AccessGuard } from '@auth/guards/access.guard';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
-import { RolesGuard } from '@auth/guards/roles.guard';
+import { TenantAdminGuard } from '@tenancy/interfaces/tenant-admin.guard';
 import type { PaginationQuery } from '@shared/infrastructure/database/mongo.utils';
 import { GamesService } from '../../application/services/games.service';
 import {
@@ -37,23 +36,20 @@ export class GamesController {
   }
 
   @Get('quiz/admin')
-  @UseGuards(RolesGuard)
-  @Roles('husband', 'wife')
+  @UseGuards(TenantAdminGuard)
   quizAdmin(@Query() query: PaginationQuery) {
     return this.games.quizAdmin(query);
   }
 
   @Post('quiz')
-  @UseGuards(RolesGuard)
-  @Roles('husband', 'wife')
+  @UseGuards(TenantAdminGuard)
   async createQuestion(@Body() data: QuizQuestionWriteDto) {
     const row = await this.games.createQuestion(data);
     return { message: 'Pergunta salva.', ...row };
   }
 
   @Put('quiz/:id')
-  @UseGuards(RolesGuard)
-  @Roles('husband', 'wife')
+  @UseGuards(TenantAdminGuard)
   async updateQuestion(
     @Param('id') id: string,
     @Body() data: Partial<QuizQuestionWriteDto>,
@@ -63,8 +59,7 @@ export class GamesController {
   }
 
   @Delete('quiz/:id')
-  @UseGuards(RolesGuard)
-  @Roles('husband', 'wife')
+  @UseGuards(TenantAdminGuard)
   async deleteQuestion(@Param('id') id: string) {
     return {
       ok: await this.games.deleteQuestion(id),
@@ -78,23 +73,20 @@ export class GamesController {
   }
 
   @Get('words/admin')
-  @UseGuards(RolesGuard)
-  @Roles('husband', 'wife')
+  @UseGuards(TenantAdminGuard)
   wordsAdmin(@Query() query: PaginationQuery) {
     return this.games.wordsAdmin(query);
   }
 
   @Post('words')
-  @UseGuards(RolesGuard)
-  @Roles('husband', 'wife')
+  @UseGuards(TenantAdminGuard)
   async createWord(@Body() data: GameWordWriteDto) {
     const row = await this.games.createWord(data);
     return { message: 'Palavra salva.', ...row };
   }
 
   @Put('words/:id')
-  @UseGuards(RolesGuard)
-  @Roles('husband', 'wife')
+  @UseGuards(TenantAdminGuard)
   async updateWord(
     @Param('id') id: string,
     @Body() data: Partial<GameWordWriteDto>,
@@ -104,8 +96,7 @@ export class GamesController {
   }
 
   @Delete('words/:id')
-  @UseGuards(RolesGuard)
-  @Roles('husband', 'wife')
+  @UseGuards(TenantAdminGuard)
   async deleteWord(@Param('id') id: string) {
     return {
       ok: await this.games.deleteWord(id),
@@ -119,23 +110,20 @@ export class GamesController {
   }
 
   @Get('mini/admin')
-  @UseGuards(RolesGuard)
-  @Roles('husband', 'wife')
+  @UseGuards(TenantAdminGuard)
   miniAdmin(@Query() query: PaginationQuery) {
     return this.games.miniGamesAdmin(query);
   }
 
   @Post('mini')
-  @UseGuards(RolesGuard)
-  @Roles('husband', 'wife')
+  @UseGuards(TenantAdminGuard)
   async createMini(@Body() data: MiniGameConfigWriteDto) {
     const row = await this.games.createMiniGame(data);
     return { message: 'Mini jogo salvo.', ...row };
   }
 
   @Put('mini/:id')
-  @UseGuards(RolesGuard)
-  @Roles('husband', 'wife')
+  @UseGuards(TenantAdminGuard)
   async updateMini(
     @Param('id') id: string,
     @Body() data: Partial<MiniGameConfigWriteDto>,
@@ -145,8 +133,7 @@ export class GamesController {
   }
 
   @Delete('mini/:id')
-  @UseGuards(RolesGuard)
-  @Roles('husband', 'wife')
+  @UseGuards(TenantAdminGuard)
   async deleteMini(@Param('id') id: string) {
     return {
       ok: await this.games.deleteMiniGame(id),
@@ -164,8 +151,7 @@ export class GamesController {
   }
 
   @Get('stats')
-  @UseGuards(RolesGuard)
-  @Roles('husband', 'wife')
+  @UseGuards(TenantAdminGuard)
   stats(@Query() query: PaginationQuery) {
     return this.games.stats(query);
   }

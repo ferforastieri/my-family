@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ScheduleModule } from '@nestjs/schedule';
 import { DatabaseModule } from '@shared/infrastructure/database/database.module';
 import { EnvironmentModule } from '@shared/infrastructure/environment/environment.module';
 import { AuthModule } from '@auth/auth.module';
@@ -11,6 +10,7 @@ import { NotificationsRealtimeGateway } from './interfaces/gateways/notification
 import { NotificationSchedulerService } from './application/services/notification-scheduler.service';
 import { ScheduledNotificationsRepository } from './infrastructure/repositories/scheduled-notifications.repository';
 import { NotificationQueueProcessor } from './infrastructure/queues/notification-queue.processor';
+import { TenancyModule } from '@tenancy/tenancy.module';
 
 @Module({
   imports: [
@@ -18,7 +18,7 @@ import { NotificationQueueProcessor } from './infrastructure/queues/notification
     MongoModelsModule,
     EnvironmentModule,
     AuthModule,
-    ScheduleModule.forRoot(),
+    TenancyModule,
   ],
   controllers: [NotificationsController],
   providers: [

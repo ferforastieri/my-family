@@ -1,28 +1,34 @@
 import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server } from 'socket.io';
+import { TenantContextService } from '@shared/infrastructure/database/tenant-context';
 
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway()
 export class NotificationsRealtimeGateway {
   @WebSocketServer()
   private server?: Server;
+  constructor(private context: TenantContextService) {}
+  private room() {
+    const id = this.context.tenantId;
+    return id ? this.server?.to(`tenant:${id}`) : undefined;
+  }
 
   emitNotificationCreated(notification: unknown) {
-    this.server?.emit('notifications.created', notification);
+    this.room()?.emit('notifications.created', notification);
   }
 
   emitNotificationUpdated(notification: unknown) {
-    this.server?.emit('notifications.updated', notification);
+    this.room()?.emit('notifications.updated', notification);
   }
 
   emitNotificationDeleted(id: string) {
-    this.server?.emit('notifications.deleted', { id });
+    this.room()?.emit('notifications.deleted', { id });
   }
 
   emitNotificationsCleared() {
-    this.server?.emit('notifications.cleared');
+    this.room()?.emit('notifications.cleared');
   }
 
   emitScheduledNotificationChanged(notification: unknown) {
-    this.server?.emit('notifications.scheduled.changed', notification);
+    this.room()?.emit('notifications.scheduled.changed', notification);
   }
 }

@@ -11,7 +11,7 @@ export type ChatConversationWrite = {
   createdBy: string;
 };
 
-export class ChatConversationFactory implements Factory<
+class ChatConversationFactory implements Factory<
   ChatConversationCreateDto & { createdBy: string },
   ChatConversationWrite
 > {
@@ -26,7 +26,7 @@ export class ChatConversationFactory implements Factory<
   }
 }
 
-export class ChatMessageFactory implements Factory<
+class ChatMessageFactory implements Factory<
   ChatMessageSendDto & { senderId?: string | null; senderName: string },
   ChatMessageWrite
 > {

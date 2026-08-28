@@ -81,7 +81,7 @@ export class LocationRepository {
   }
 
   async create(data: LocationUpdateWrite) {
-    return this.toEntity(await this.model.create(cleanUndefined(data)))!;
+    return this.toEntity(await this.model.create(cleanUndefined(data)));
   }
 
   private toPlaceEntity(
@@ -151,7 +151,7 @@ export class LocationRepository {
     const rows = result?.items ?? [];
     const total = result?.total?.[0]?.count ?? 0;
     return paginated(
-      rows.map((row: LocationUpdateMongoDocument) => this.toEntity(row)!),
+      rows.map((row: LocationUpdateMongoDocument) => this.toEntity(row)),
       total,
       page,
       limit,
@@ -163,7 +163,7 @@ export class LocationRepository {
       .find()
       .sort({ name: 1, createdAt: -1 })
       .exec();
-    return docs.map((doc) => this.toPlaceEntity(doc)!);
+    return docs.map((doc) => this.toPlaceEntity(doc));
   }
 
   async listActivePlaces() {
@@ -171,13 +171,13 @@ export class LocationRepository {
       .find({ active: true })
       .sort({ name: 1 })
       .exec();
-    return docs.map((doc) => this.toPlaceEntity(doc)!);
+    return docs.map((doc) => this.toPlaceEntity(doc));
   }
 
   async createPlace(data: LocationPlaceWrite) {
     return this.toPlaceEntity(
       await this.placeModel.create(cleanUndefined(data)),
-    )!;
+    );
   }
 
   async updatePlace(id: string, data: Partial<LocationPlaceWrite>) {
@@ -221,6 +221,6 @@ export class LocationRepository {
           { upsert: true, new: true },
         )
         .exec(),
-    )!;
+    );
   }
 }

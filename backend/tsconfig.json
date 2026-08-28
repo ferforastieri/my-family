@@ -6,6 +6,7 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "target": "ES2021",
     "sourceMap": true,
     "outDir": "./dist",
@@ -22,7 +23,8 @@
       "@musicas/*": ["src/musicas/*"],
       "@cartas/*": ["src/cartas/*"],
       "@notas/*": ["src/notas/*"],
-      "@notifications/*": ["src/notifications/*"]
+      "@notifications/*": ["src/notifications/*"],
+      "@tenancy/*": ["src/tenancy/*"]
     },
     "incremental": true,
     "skipLibCheck": true,

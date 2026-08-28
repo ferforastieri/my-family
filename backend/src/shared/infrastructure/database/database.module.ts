@@ -2,10 +2,9 @@ import { Global, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Environment } from '@shared/infrastructure/environment/environment.module';
 import { EnvironmentModule } from '@shared/infrastructure/environment/environment.module';
+import { TenantContextService } from './tenant-context';
 
-export const DATABASE_CONNECTION = 'DATABASE_CONNECTION';
-
-export const MongoDatabaseModule = MongooseModule.forRootAsync({
+const MongoDatabaseModule = MongooseModule.forRootAsync({
   imports: [EnvironmentModule],
   inject: [Environment],
   useFactory: (env: Environment) => ({
@@ -17,6 +16,7 @@ export const MongoDatabaseModule = MongooseModule.forRootAsync({
 @Global()
 @Module({
   imports: [MongoDatabaseModule],
-  exports: [MongoDatabaseModule],
+  providers: [TenantContextService],
+  exports: [MongoDatabaseModule, TenantContextService],
 })
 export class DatabaseModule {}

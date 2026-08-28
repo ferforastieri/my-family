@@ -5,7 +5,6 @@ import { HydratedDocument } from 'mongoose';
 export class MiniGameConfigDocument {
   @Prop({
     required: true,
-    unique: true,
     enum: ['memory_match', 'love_order', 'this_or_that'],
   })
   type: 'memory_match' | 'love_order' | 'this_or_that';
@@ -31,3 +30,4 @@ export type MiniGameConfigMongoDocument =
 export const MiniGameConfigSchema = SchemaFactory.createForClass(
   MiniGameConfigDocument,
 );
+MiniGameConfigSchema.index({ tenantId: 1, type: 1 }, { unique: true });

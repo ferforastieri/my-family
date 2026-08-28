@@ -1,0 +1,9 @@
+name: family_ui
+description: Shared SaaS theme primitives for Nossa Familia.
+version: 1.0.0
+environment:
+  sdk: ^3.8.0
+dependencies:
+  flutter:
+    sdk: flutter
+  google_fonts: ^6.3.0

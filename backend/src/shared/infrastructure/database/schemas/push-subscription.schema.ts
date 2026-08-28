@@ -28,7 +28,7 @@ export const PushSubscriptionSchema = SchemaFactory.createForClass(
 );
 
 PushSubscriptionSchema.index(
-  { fcmToken: 1 },
+  { tenantId: 1, fcmToken: 1 },
   {
     name: 'fcmToken_unique_string',
     unique: true,

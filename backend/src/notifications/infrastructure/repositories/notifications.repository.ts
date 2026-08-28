@@ -113,7 +113,7 @@ export class NotificationsRepository {
     const docs = result?.items ?? [];
     const total = result?.total?.[0]?.count ?? 0;
     return paginated(
-      docs.map((doc) => this.toNotification(doc)!),
+      docs.map((doc) => this.toNotification(doc)),
       total,
       page,
       limit,
@@ -133,7 +133,7 @@ export class NotificationsRepository {
         icon: data.icon ?? null,
         type: data.type ?? 'manual',
       }),
-    )!;
+    );
   }
 
   async upsertByContent(data: NotificationWrite) {
@@ -157,7 +157,7 @@ export class NotificationsRepository {
           { upsert: true, new: true },
         )
         .exec(),
-    )!;
+    );
   }
 
   async update(id: string, data: Partial<NotificationWrite>) {
@@ -214,8 +214,8 @@ export class NotificationsRepository {
   }
 
   async listSubscriptions() {
-    return (await this.subscriptions.find().exec()).map(
-      (doc) => this.toSubscription(doc)!,
+    return (await this.subscriptions.find().exec()).map((doc) =>
+      this.toSubscription(doc),
     );
   }
 
@@ -223,7 +223,7 @@ export class NotificationsRepository {
     if (userIds.length === 0) return [];
     return (
       await this.subscriptions.find({ userId: { $in: userIds } }).exec()
-    ).map((doc) => this.toSubscription(doc)!);
+    ).map((doc) => this.toSubscription(doc));
   }
 
   async deleteSubscription(id: string) {

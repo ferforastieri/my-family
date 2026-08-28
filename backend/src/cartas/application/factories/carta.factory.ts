@@ -2,7 +2,7 @@ import type { Factory } from '@shared/application/mapper';
 import type { CartaWrite } from '../../infrastructure/repositories/cartas.repository';
 import { CartaWriteDto } from '../../interfaces/dto/carta.dto';
 
-export class CartaFactory implements Factory<
+class CartaFactory implements Factory<
   Partial<CartaWriteDto>,
   Partial<CartaWrite>
 > {

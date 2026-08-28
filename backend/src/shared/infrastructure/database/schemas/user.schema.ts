@@ -7,11 +7,8 @@ import type {
 
 @Schema({ timestamps: true, collection: 'users' })
 export class UserDocument {
-  @Prop({ required: true, unique: true, lowercase: true, trim: true })
-  email: string;
-
-  @Prop()
-  passwordHash?: string;
+  @Prop({ required: true, unique: true, trim: true })
+  phoneNumber: string;
 
   @Prop()
   name?: string;
@@ -24,6 +21,9 @@ export class UserDocument {
 
   @Prop()
   avatarPath?: string;
+
+  @Prop({ enum: ['super_admin'] })
+  platformRole?: 'super_admin';
 
   createdAt: Date;
   updatedAt: Date;

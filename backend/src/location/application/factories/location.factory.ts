@@ -15,7 +15,7 @@ export type LocationFactoryInput = {
   user?: UserEntity | null;
 };
 
-export class LocationUpdateFactory implements Factory<
+class LocationUpdateFactory implements Factory<
   LocationFactoryInput,
   LocationUpdateWrite
 > {
@@ -38,14 +38,14 @@ export class LocationUpdateFactory implements Factory<
         typeof dto.isCharging === 'boolean' ? dto.isCharging : undefined,
       platform: dto.platform ?? 'unknown',
       userId: user?.id ?? dto.userId ?? null,
-      userName: user?.name || user?.email || dto.userName || null,
+      userName: user?.name || user?.phoneNumber || dto.userName || null,
     };
   }
 }
 
 export const locationUpdateFactory = new LocationUpdateFactory();
 
-export class LocationPlaceFactory implements Factory<
+class LocationPlaceFactory implements Factory<
   LocationPlaceWriteDto,
   LocationPlaceWrite
 > {

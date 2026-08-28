@@ -1,0 +1,92 @@
+name: Deploy production
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+permissions:
+  contents: read
+  packages: write
+concurrency: { group: production, cancel-in-progress: false }
+jobs:
+  publish-backend:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: { ref: "${{ github.event.workflow_run.head_sha }}" }
+      - run: echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+        env: { GHCR_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
+      - name: Build and publish immutable backend image
+        run: |
+          IMAGE_BASE="ghcr.io/${GITHUB_REPOSITORY,,}/backend"
+          docker build -f Dockerfile.backend -t "$IMAGE_BASE:${{ github.event.workflow_run.head_sha }}" -t "$IMAGE_BASE:main" .
+          docker push "$IMAGE_BASE:${{ github.event.workflow_run.head_sha }}"
+          docker push "$IMAGE_BASE:main"
+      - name: Trigger Coolify redeploy
+        run: >-
+          curl --fail --show-error --silent -X POST
+          -H "Authorization: Bearer $COOLIFY_TOKEN"
+          "$COOLIFY_WEBHOOK"
+        env:
+          COOLIFY_TOKEN: "${{ secrets.COOLIFY_TOKEN }}"
+          COOLIFY_WEBHOOK: "${{ secrets.COOLIFY_WEBHOOK }}"
+  publish-frontends:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: { ref: "${{ github.event.workflow_run.head_sha }}" }
+      - uses: dart-lang/setup-dart@65eb853c7ba17dde3be364c3d2858773e7144260
+        with: { sdk: stable }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: { node-version: 22 }
+      - name: Build landing
+        working-directory: frontend/landing
+        run: |
+          dart pub get
+          dart pub global activate jaspr_cli 0.23.4
+          export PATH="$HOME/.pub-cache/bin:$PATH"
+          jaspr build --port 8099 \
+            --sitemap-domain "${{ vars.PUBLIC_SITE_URL }}" \
+            --sitemap-exclude '^/cadastro' \
+            --dart-define SITE_URL="${{ vars.PUBLIC_SITE_URL }}" \
+            --dart-define API_URL="${{ vars.API_BASE_URL }}" \
+            --dart-define APP_URL="${{ vars.PUBLIC_APP_URL }}" \
+            --dart-define PANEL_URL="${{ vars.PUBLIC_PANEL_URL }}" \
+            --dart-define TURNSTILE_SITE_KEY="${{ vars.TURNSTILE_SITE_KEY }}"
+          dart run tool/finalize.dart "${{ vars.PUBLIC_SITE_URL }}" "${{ vars.API_BASE_URL }}"
+      - name: Build Flutter app and panel
+        run: |
+          docker run --rm -v "$PWD:/workspace" -w /workspace/frontend/app \
+            -e FIREBASE_API_KEY -e FIREBASE_APP_ID -e FIREBASE_MESSAGING_SENDER_ID \
+            -e FIREBASE_PROJECT_ID -e FIREBASE_AUTH_DOMAIN -e FIREBASE_STORAGE_BUCKET \
+            -e FIREBASE_WEB_PUSH_CERTIFICATE_KEY \
+            ghcr.io/cirruslabs/flutter:stable sh -lc 'dart run tool/generate_web_config.dart && flutter pub get && flutter build web --release --no-wasm-dry-run --dart-define=API_BASE_URL=${{ vars.API_BASE_URL }} --dart-define=SOCKET_URL=${{ vars.SOCKET_URL }} --dart-define=LANDING_URL=${{ vars.PUBLIC_SITE_URL }} --dart-define=FIREBASE_API_KEY=$FIREBASE_API_KEY --dart-define=FIREBASE_APP_ID=$FIREBASE_APP_ID --dart-define=FIREBASE_MESSAGING_SENDER_ID=$FIREBASE_MESSAGING_SENDER_ID --dart-define=FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID --dart-define=FIREBASE_AUTH_DOMAIN=$FIREBASE_AUTH_DOMAIN --dart-define=FIREBASE_STORAGE_BUCKET=$FIREBASE_STORAGE_BUCKET --dart-define=FIREBASE_WEB_PUSH_CERTIFICATE_KEY=$FIREBASE_WEB_PUSH_CERTIFICATE_KEY'
+          docker run --rm -v "$PWD:/workspace" -w /workspace/frontend/panel ghcr.io/cirruslabs/flutter:stable sh -lc 'flutter pub get && flutter build web --release --no-wasm-dry-run --dart-define=API_BASE_URL=${{ vars.API_BASE_URL }} --dart-define=APP_BASE_URL=${{ vars.PUBLIC_APP_URL }}'
+        env:
+          FIREBASE_API_KEY: "${{ vars.FIREBASE_API_KEY }}"
+          FIREBASE_APP_ID: "${{ vars.FIREBASE_APP_ID }}"
+          FIREBASE_MESSAGING_SENDER_ID: "${{ vars.FIREBASE_MESSAGING_SENDER_ID }}"
+          FIREBASE_PROJECT_ID: "${{ vars.FIREBASE_PROJECT_ID }}"
+          FIREBASE_AUTH_DOMAIN: "${{ vars.FIREBASE_AUTH_DOMAIN }}"
+          FIREBASE_STORAGE_BUCKET: "${{ vars.FIREBASE_STORAGE_BUCKET }}"
+          FIREBASE_WEB_PUSH_CERTIFICATE_KEY: "${{ vars.FIREBASE_WEB_PUSH_CERTIFICATE_KEY }}"
+      - name: Publish Cloudflare Pages
+        run: |
+          npx --yes wrangler@4.127.1 pages deploy frontend/landing/build/jaspr --project-name "$CF_LANDING_PROJECT" --branch main
+          npx --yes wrangler@4.127.1 pages deploy frontend/app/build/web --project-name "$CF_APP_PROJECT" --branch main
+          npx --yes wrangler@4.127.1 pages deploy frontend/panel/build/web --project-name "$CF_PANEL_PROJECT" --branch main
+        env:
+          CLOUDFLARE_API_TOKEN: "${{ secrets.CLOUDFLARE_API_TOKEN }}"
+          CLOUDFLARE_ACCOUNT_ID: "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
+          CF_LANDING_PROJECT: "${{ vars.CF_LANDING_PROJECT }}"
+          CF_APP_PROJECT: "${{ vars.CF_APP_PROJECT }}"
+          CF_PANEL_PROJECT: "${{ vars.CF_PANEL_PROJECT }}"
+      - name: Deploy media Worker
+        working-directory: workers/media
+        run: npm ci && npm run deploy -- --var "ALLOWED_ORIGIN:${{ vars.PUBLIC_APP_URL }}"
+        env:
+          CLOUDFLARE_API_TOKEN: "${{ secrets.CLOUDFLARE_API_TOKEN }}"
+          CLOUDFLARE_ACCOUNT_ID: "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"

@@ -5,6 +5,7 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
+import { UseGuards } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { WsSessionService } from '@auth/application/services/ws-session.service';
 import { ChatService } from '../../application/services/chat.service';
@@ -17,8 +18,10 @@ import type {
   ChatMessagesReadDto,
   ChatTypingDto,
 } from '../dto/chat.dto';
+import { WsRateLimitGuard } from '@shared/infrastructure/security/ws-rate-limit.guard';
 
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway()
+@UseGuards(WsRateLimitGuard)
 export class ChatGateway {
   @WebSocketServer()
   private server?: Server;
@@ -50,7 +53,9 @@ export class ChatGateway {
   ) {
     const user = await this.session.requireAccess(client, 'chat');
     const conversation = await this.chat.createDirectConversation(user, body);
-    this.server?.emit('chat.conversation.created', conversation);
+    this.server
+      ?.to(`tenant:${user.tenantId}`)
+      .emit('chat.conversation.created', conversation);
     return { message: 'Conversa criada.', ...conversation };
   }
 
@@ -60,7 +65,13 @@ export class ChatGateway {
     @MessageBody() body: { conversationId: string } & PaginationQuery,
   ) {
     const user = await this.session.requireAccess(client, 'chat');
-    return this.chat.listMessages(body.conversationId, user, body);
+    const messages = await this.chat.listMessages(
+      body.conversationId,
+      user,
+      body,
+    );
+    await client.join(`conversation:${body.conversationId}`);
+    return messages;
   }
 
   @SubscribeMessage('chat.message.send')
@@ -74,7 +85,9 @@ export class ChatGateway {
       body,
       user,
     );
-    this.server?.emit('chat.message.created', message);
+    this.server
+      ?.to(`conversation:${body.conversationId}`)
+      .emit('chat.message.created', message);
     return { message: 'Mensagem enviada.', ...message };
   }
 
@@ -85,7 +98,9 @@ export class ChatGateway {
   ) {
     const user = await this.session.requireAccess(client, 'chat');
     const message = await this.chat.editMessage(body, user);
-    this.server?.emit('chat.message.updated', message);
+    this.server
+      ?.to(`tenant:${user.tenantId}`)
+      .emit('chat.message.updated', message);
     return { message: 'Mensagem editada.', ...message };
   }
 
@@ -96,7 +111,9 @@ export class ChatGateway {
   ) {
     const user = await this.session.requireAccess(client, 'chat');
     const message = await this.chat.deleteMessage(body.messageId, user);
-    this.server?.emit('chat.message.updated', message);
+    this.server
+      ?.to(`tenant:${user.tenantId}`)
+      .emit('chat.message.updated', message);
     return { message: 'Mensagem apagada.', ...message };
   }
 
@@ -107,7 +124,9 @@ export class ChatGateway {
   ) {
     const user = await this.session.requireAccess(client, 'chat');
     const receipt = await this.chat.markMessagesRead(body.conversationId, user);
-    this.server?.emit('chat.messages.read', receipt);
+    this.server
+      ?.to(`conversation:${body.conversationId}`)
+      .emit('chat.messages.read', receipt);
     return receipt;
   }
 
@@ -117,14 +136,20 @@ export class ChatGateway {
     @MessageBody() body: ChatTypingDto,
   ) {
     const user = await this.session.requireAccess(client, 'chat');
+    await this.chat.assertConversationAccess(body.conversationId, user);
     const payload = {
       conversationId: body.conversationId,
       userId: user.id,
       senderName:
-        user.name?.trim() || body.senderName?.trim() || user.email || 'Pessoa',
+        user.name?.trim() ||
+        body.senderName?.trim() ||
+        user.phoneNumber ||
+        'Pessoa',
       isTyping: body.isTyping,
     };
-    client.broadcast.emit('chat.typing', payload);
+    client
+      .to(`conversation:${body.conversationId}`)
+      .emit('chat.typing', payload);
     return payload;
   }
 }

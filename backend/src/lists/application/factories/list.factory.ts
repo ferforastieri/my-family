@@ -8,7 +8,7 @@ import type {
   FamilyListWriteDto,
 } from '../../interfaces/dto/list.dto';
 
-export class FamilyListFactory implements Factory<
+class FamilyListFactory implements Factory<
   Partial<FamilyListWriteDto>,
   Partial<FamilyListWrite>
 > {
@@ -20,7 +20,7 @@ export class FamilyListFactory implements Factory<
   }
 }
 
-export class FamilyListItemFactory implements Factory<
+class FamilyListItemFactory implements Factory<
   Partial<FamilyListItemWriteDto>,
   Partial<FamilyListItemWrite>
 > {

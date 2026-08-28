@@ -79,14 +79,14 @@ export class ChatRepository {
     const existing = await this.conversations
       .findOne({ type: 'global' })
       .exec();
-    if (existing) return this.toConversation(existing)!;
+    if (existing) return this.toConversation(existing);
     return this.toConversation(
       await this.conversations.create({
         type: 'global',
         title: 'Chat global',
         participantIds: [],
       }),
-    )!;
+    );
   }
 
   async listForUser(userId?: string | null, query?: PaginationQuery) {
@@ -107,7 +107,7 @@ export class ChatRepository {
       .countDocuments({ type: 'direct', participantIds: userId })
       .exec();
     return paginated(
-      [global, ...rows.map((doc) => this.toConversation(doc)!)],
+      [global, ...rows.map((doc) => this.toConversation(doc))],
       totalDirect + 1,
       page,
       limit,
@@ -143,7 +143,7 @@ export class ChatRepository {
   }) {
     return this.toConversation(
       await this.conversations.create({ type: 'direct', ...data }),
-    )!;
+    );
   }
 
   async listMessages(conversationId: string, query?: PaginationQuery) {
@@ -164,7 +164,7 @@ export class ChatRepository {
     ]);
     return paginated(
       await this.withReplyMessages(
-        docs.reverse().map((doc) => this.toMessage(doc)!),
+        docs.reverse().map((doc) => this.toMessage(doc)),
       ),
       total,
       page,
@@ -175,7 +175,7 @@ export class ChatRepository {
   async createMessage(data: ChatMessageWrite) {
     const message = (
       await this.withReplyMessages([
-        this.toMessage(await this.messages.create(data))!,
+        this.toMessage(await this.messages.create(data)),
       ])
     )[0];
     await this.conversations

@@ -7,13 +7,11 @@ import {
   EnvironmentModule,
 } from '@shared/infrastructure/environment/environment.module';
 import { DatabaseModule } from '@shared/infrastructure/database/database.module';
-import { EmailModule } from '@shared/infrastructure/email/email.module';
 import { UploadModule } from '@shared/infrastructure/upload';
 import { QueueModule } from '@shared/infrastructure/queue';
 import {
   ApiExceptionFilter,
   ApiResponseInterceptor,
-  CsrfController,
 } from '@shared/interfaces/http';
 import { AuthModule } from '@auth/auth.module';
 import { FotosModule } from '@fotos/fotos.module';
@@ -26,7 +24,13 @@ import { GamesModule } from './games/games.module';
 import { ListsModule } from './lists/lists.module';
 import { LocationModule } from './location/location.module';
 import { HomeSettingsModule } from './home-settings/home-settings.module';
+import { TenancyModule } from './tenancy/tenancy.module';
+import { TenantContextInterceptor } from './tenancy/interfaces/tenant-context.interceptor';
+import { DemoModule } from './demo/demo.module';
 import { NotasModule } from './notas/notas.module';
+import { RedisThrottlerStorage } from '@shared/infrastructure/security/redis-throttler.storage';
+import { buildRateLimiters } from '@shared/infrastructure/security/rate-limit.config';
+import { CsrfGuard } from '@shared/infrastructure/security/csrf.guard';
 
 @Module({
   imports: [
@@ -36,18 +40,20 @@ import { NotasModule } from './notas/notas.module';
       useFactory: (environment: Environment) => ({
         pinoHttp: {
           level: environment.log.level,
-          transport: {
-            target: 'pino-pretty',
-            options: {
-              colorize: true,
-              levelFirst: true,
-              singleLine: true,
-              translateTime: 'SYS:yyyy-mm-dd HH:MM:ss.l o',
-              ignore: 'pid,hostname,context,env',
-              messageFormat: '[{context}] {msg}',
-              errorLikeObjectKeys: ['err', 'error'],
-            },
-          },
+          transport: environment.isDevelopment()
+            ? {
+                target: 'pino-pretty',
+                options: {
+                  colorize: true,
+                  levelFirst: true,
+                  singleLine: true,
+                  translateTime: 'SYS:yyyy-mm-dd HH:MM:ss.l o',
+                  ignore: 'pid,hostname,context,env',
+                  messageFormat: '[{context}] {msg}',
+                  errorLikeObjectKeys: ['err', 'error'],
+                },
+              }
+            : undefined,
           customProps: () => ({
             env: environment.type,
           }),
@@ -60,8 +66,14 @@ import { NotasModule } from './notas/notas.module';
               return {
                 id: request.id,
                 method: request.method,
-                url: request.url,
-                query: request.query,
+                url: String(request.url ?? '').replace(
+                  /([?&]token=)[^&]+/g,
+                  '$1[REDACTED]',
+                ),
+                query:
+                  request.query && typeof request.query === 'object'
+                    ? { ...request.query, token: undefined }
+                    : request.query,
                 params: request.params,
                 remoteAddress: request.remoteAddress,
                 remotePort: request.remotePort,
@@ -84,10 +96,9 @@ import { NotasModule } from './notas/notas.module';
             paths: [
               'req.headers.authorization',
               'req.headers.cookie',
-              'req.body.password',
-              'req.body.newPassword',
+              'req.body.code',
               'req.body.token',
-              'req.body.refreshToken',
+              'req.body.password',
               'req.body.subscription.token',
               'req.body.firebaseServiceAccountJson',
               'req.body.FIREBASE_SERVICE_ACCOUNT_JSON',
@@ -101,18 +112,14 @@ import { NotasModule } from './notas/notas.module';
       inject: [Environment],
       useFactory: (environment: Environment) => ({
         errorMessage: 'Muitas tentativas. Aguarde um pouco e tente novamente.',
-        throttlers: [
-          {
-            name: 'default',
-            ttl: environment.security.throttleTtlMs,
-            limit: environment.security.throttleLimit,
-          },
-        ],
+        ...(environment.redis?.url
+          ? { storage: new RedisThrottlerStorage(environment.redis.url) }
+          : {}),
+        throttlers: buildRateLimiters(environment),
       }),
     }),
     DatabaseModule,
     QueueModule,
-    EmailModule,
     UploadModule,
     HealthModule,
     AuthModule,
@@ -126,12 +133,15 @@ import { NotasModule } from './notas/notas.module';
     NotasModule,
     LocationModule,
     HomeSettingsModule,
+    TenancyModule,
+    DemoModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: CsrfGuard },
     { provide: APP_INTERCEPTOR, useClass: ApiResponseInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: TenantContextInterceptor },
     { provide: APP_FILTER, useClass: ApiExceptionFilter },
   ],
-  controllers: [CsrfController],
 })
 export class AppModule {}

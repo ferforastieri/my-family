@@ -79,7 +79,7 @@ export class ListsRepository {
       this.lists.countDocuments().exec(),
     ]);
     return paginated(
-      docs.map((doc) => this.toList(doc)!),
+      docs.map((doc) => this.toList(doc)),
       total,
       page,
       limit,
@@ -99,7 +99,7 @@ export class ListsRepository {
   }
 
   async createList(data: FamilyListWrite) {
-    return this.toList(await this.lists.create(cleanUndefined(data)))!;
+    return this.toList(await this.lists.create(cleanUndefined(data)));
   }
 
   async updateList(id: string, data: Partial<FamilyListWrite>) {
@@ -132,7 +132,7 @@ export class ListsRepository {
       this.items.countDocuments(filter).exec(),
     ]);
     return paginated(
-      docs.map((doc) => this.toItem(doc)!),
+      docs.map((doc) => this.toItem(doc)),
       total,
       page,
       limit,
@@ -140,7 +140,7 @@ export class ListsRepository {
   }
 
   async createItem(data: FamilyListItemWrite) {
-    const item = this.toItem(await this.items.create(cleanUndefined(data)))!;
+    const item = this.toItem(await this.items.create(cleanUndefined(data)));
     await this.lists
       .findByIdAndUpdate(data.listId, { $set: { updatedAt: new Date() } })
       .exec();

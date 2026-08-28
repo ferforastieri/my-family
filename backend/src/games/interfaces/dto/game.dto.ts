@@ -7,11 +7,7 @@ import {
   IsString,
 } from 'class-validator';
 
-export const miniGameTypes = [
-  'memory_match',
-  'love_order',
-  'this_or_that',
-] as const;
+const miniGameTypes = ['memory_match', 'love_order', 'this_or_that'] as const;
 
 export type MiniGameType = (typeof miniGameTypes)[number];
 
