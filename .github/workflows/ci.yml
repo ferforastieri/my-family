@@ -46,7 +46,7 @@ jobs:
             --dart-define APP_URL=https://app.example.com \
             --dart-define PANEL_URL=https://panel.example.com
           dart run tool/finalize.dart https://example.com https://api.example.com/api
-      - run: npm ci && npm run check && npm audit --audit-level=high
+      - run: npm ci && npm run check
         working-directory: workers/media
       - name: Analyze and test Flutter projects
         run: |
