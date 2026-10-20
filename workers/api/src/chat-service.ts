@@ -689,7 +689,12 @@ export async function typing(
     data: payload,
     conversationId: body.conversationId,
     broadcasts: [
-      { event: 'chat.typing', data: payload, conversationId: body.conversationId },
+      {
+        event: 'chat.typing',
+        data: payload,
+        conversationId: body.conversationId,
+        exceptUserId: session.userId,
+      },
     ],
   };
 }

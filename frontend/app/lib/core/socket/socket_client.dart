@@ -87,6 +87,7 @@ class SocketClient {
       if (_connectCompleter?.isCompleted == false) {
         _connectCompleter!.complete();
       }
+      _emitLocal('connect', null);
     } catch (error) {
       _connected = false;
       _lastConnectError = error.toString();
@@ -157,6 +158,7 @@ class SocketClient {
   void _onDone() {
     _connected = false;
     _subscription = null;
+    _emitLocal('disconnect', null);
     final error = Exception(
       _lastConnectError ?? 'Conexão encerrada com ${AppConfig.socketUrl}.',
     );
@@ -242,6 +244,14 @@ class SocketClient {
 
   void on(String event, void Function(dynamic data) handler) {
     _handlers.putIfAbsent(event, () => []).add(handler);
+  }
+
+  void _emitLocal(String event, dynamic data) {
+    final handlers = _handlers[event];
+    if (handlers == null) return;
+    for (final handler in List.of(handlers)) {
+      handler(data);
+    }
   }
 
   void off(String event, [void Function(dynamic data)? handler]) {

@@ -26,6 +26,7 @@ export interface RealtimeBroadcast {
   event: string;
   data: unknown;
   conversationId?: string;
+  exceptUserId?: string;
 }
 
 export interface RealtimeResult {

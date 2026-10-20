@@ -11,8 +11,9 @@ export class TenantRealtime extends DurableObject<Env> {
         event: string;
         data: unknown;
         conversationId?: string;
+        exceptUserId?: string;
       };
-      this.broadcast(body.event, body.data, body.conversationId);
+      this.broadcast(body.event, body.data, body.conversationId, body.exceptUserId);
       return new Response(null, { status: 204 });
     }
 
@@ -63,7 +64,12 @@ export class TenantRealtime extends DurableObject<Env> {
         ws.serializeAttachment(session);
       }
       for (const broadcast of result.broadcasts ?? []) {
-        this.broadcast(broadcast.event, broadcast.data, broadcast.conversationId);
+        this.broadcast(
+          broadcast.event,
+          broadcast.data,
+          broadcast.conversationId,
+          broadcast.exceptUserId,
+        );
       }
       ws.send(
         JSON.stringify({
@@ -92,13 +98,17 @@ export class TenantRealtime extends DurableObject<Env> {
     }
   }
 
-  private broadcast(event: string, data: unknown, conversationId?: string): void {
+  private broadcast(
+    event: string,
+    data: unknown,
+    conversationId?: string,
+    exceptUserId?: string,
+  ): void {
     const encoded = JSON.stringify({ event, data });
     for (const ws of this.ctx.getWebSockets()) {
-      if (conversationId) {
-        const session = (ws.deserializeAttachment() ?? {}) as RealtimeSession;
-        if (!session.conversationIds?.includes(conversationId)) continue;
-      }
+      const session = (ws.deserializeAttachment() ?? {}) as RealtimeSession;
+      if (exceptUserId && session.userId === exceptUserId) continue;
+      if (conversationId && !session.conversationIds?.includes(conversationId)) continue;
       try {
         ws.send(encoded);
       } catch {
