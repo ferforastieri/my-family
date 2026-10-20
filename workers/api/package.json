@@ -7,8 +7,8 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit",
-    "db:migrate": "wrangler d1 migrations apply my-family --remote",
-    "db:migrate:local": "wrangler d1 migrations apply my-family --local"
+    "db:migrate": "wrangler d1 migrations apply my-family-v2 --remote",
+    "db:migrate:local": "wrangler d1 migrations apply my-family-v2 --local"
   },
   "dependencies": {
     "hono": "^4.6.14",
