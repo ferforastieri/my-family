@@ -13,7 +13,7 @@ mais de uma família e alternar entre elas sem criar outra conta.
 - Montar listas compartilhadas e marcar itens.
 - Conversar no chat da família, com mensagens, fotos, respostas e indicadores de
   leitura.
-- Compartilhar a localização dos aparelhos e criar locais seguros.
+- Compartilhar a localização em tempo real, com locais seguros, alertas de chegada/saída, bateria baixa, SOS e check-in.
 - Criar playlists de músicas que marcaram momentos.
 - Jogar quizzes e mini jogos em família.
 - Receber notificações no aplicativo e no navegador.
