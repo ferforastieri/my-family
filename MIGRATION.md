@@ -25,6 +25,16 @@ referência e rollback.
 - `workers/api/wrangler.jsonc` com D1, R2, Queue, DOs e Cron.
 - Workflow `.github/workflows/android.yml` para gerar o APK release.
 
+## Estado do deploy
+
+- API: `https://my-family-api.vira-ia-br.workers.dev`
+- D1: `my-family` (`9182fca4-3f7f-4cde-97b2-e1a077d8c20d`)
+- R2: `my-family-media`
+- Queue: `my-family-jobs`
+- Frontends: ainda sem projetos Pages neste repositório; o workflow antigo
+  depende das variáveis `CF_*` e `API_BASE_URL`/`SOCKET_URL`.
+- Backend NestJS/Coolify: intocado, ainda pode ser usado para rollback.
+
 ## O que falta / diferenças conhecidas
 
 1. **Push FCM**: implementado em `src/push.ts` (FCM HTTP v1 com JWT RS256).
