@@ -165,7 +165,7 @@ export async function requestCode(env: Env, phone: string, channel: PhoneChannel
     ],
   );
 
-  if (channelConfigured(env, channel)) {
+  if (channelConfigured(env)) {
     await sendOtp(env, phoneNumber, code, channel);
     return { phoneNumber, expiresIn: 300 };
   }

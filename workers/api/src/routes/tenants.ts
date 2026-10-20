@@ -82,7 +82,7 @@ tenantRoutes.post('/invitations', requireTenantAdmin, demoRestricted, async (c) 
     c,
     z.object({
       phone: z.string().max(32),
-      channel: z.enum(['whatsapp', 'sms']).optional(),
+      channel: z.enum(['sms']).optional(),
       role: z.enum(['admin', 'member']).optional(),
       relationship: z.enum(['husband', 'wife', 'children', 'friends']).optional(),
       access: z.array(z.string()).optional(),

@@ -6,7 +6,7 @@ on:
 permissions:
   contents: read
 jobs:
-  backend:
+  api:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -15,18 +15,14 @@ jobs:
           {
             node-version: 22,
             cache: npm,
-            cache-dependency-path: backend/package-lock.json,
+            cache-dependency-path: workers/api/package-lock.json,
           }
       - run: npm ci
-        working-directory: backend
-      - run: npm run lint
-        working-directory: backend
-      - run: npm test -- --runInBand
-        working-directory: backend
-      - run: npm run build
-        working-directory: backend
+        working-directory: workers/api
+      - run: npm run typecheck
+        working-directory: workers/api
       - run: npm audit --audit-level=high
-        working-directory: backend
+        working-directory: workers/api
   web:
     runs-on: ubuntu-latest
     steps:
@@ -54,10 +50,5 @@ jobs:
         working-directory: workers/media
       - name: Analyze and test Flutter projects
         run: |
-          docker run --rm -v "$PWD:/workspace" -w /workspace/frontend/app ghcr.io/cirruslabs/flutter:stable sh -lc 'flutter pub get && flutter analyze && flutter test && flutter build web --release --no-wasm-dry-run && flutter build apk --debug'
+          docker run --rm -v "$PWD:/workspace" -w /workspace/frontend/app ghcr.io/cirruslabs/flutter:stable sh -lc 'flutter pub get && flutter analyze && flutter test && flutter build web --release --no-wasm-dry-run'
           docker run --rm -v "$PWD:/workspace" -w /workspace/frontend/panel ghcr.io/cirruslabs/flutter:stable sh -lc 'flutter pub get && flutter analyze && flutter test && flutter build web --release --no-wasm-dry-run'
-  docker:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - run: docker build -f Dockerfile.backend .

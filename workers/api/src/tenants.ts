@@ -430,7 +430,7 @@ export async function invite(
       id,
       tenantId,
       phoneNumber,
-      input.channel ?? 'whatsapp',
+      input.channel ?? 'sms',
       input.role ?? 'member',
       input.relationship ?? 'friends',
       JSON.stringify(normalizeAccessKeys(input.access)),
@@ -448,7 +448,7 @@ export async function invite(
       phoneNumber,
       tenant?.name ?? 'uma família',
       token,
-      input.channel ?? 'whatsapp',
+      input.channel ?? 'sms',
     );
   } catch {
     // O convite continua válido e pode ser reenviado.
@@ -456,7 +456,7 @@ export async function invite(
   return {
     id,
     phoneNumber,
-    channel: input.channel ?? 'whatsapp',
+    channel: input.channel ?? 'sms',
     role: input.role ?? 'member',
     expiresAt: new Date(expiresAt).toISOString(),
     token,

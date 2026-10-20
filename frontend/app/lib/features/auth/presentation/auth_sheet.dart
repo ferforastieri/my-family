@@ -20,7 +20,6 @@ class AuthSheet extends StatefulWidget {
 class _AuthSheetState extends State<AuthSheet> {
   final phone = TextEditingController();
   final code = TextEditingController();
-  String channel = 'whatsapp';
   bool codeSent = false;
   bool loading = false;
   String? error;
@@ -43,8 +42,8 @@ class _AuthSheetState extends State<AuthSheet> {
           AppSheetHeader(
             title: codeSent ? 'Digite o código' : 'Entrar com celular',
             subtitle: codeSent
-                ? 'Enviamos um código de 6 números. Ele vale por 5 minutos.'
-                : 'Sem senha: escolha WhatsApp ou SMS e confirme seu número.',
+                ? 'Enviamos um código de 6 números por SMS. Ele vale por 5 minutos.'
+                : 'Sem senha: confirme seu número e receba um código por SMS.',
             icon: codeSent
                 ? Icons.password_outlined
                 : Icons.phone_android_outlined,
@@ -65,24 +64,6 @@ class _AuthSheetState extends State<AuthSheet> {
           ),
           if (!codeSent) ...[
             const SizedBox(height: 12),
-            SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(
-                  value: 'whatsapp',
-                  icon: Icon(Icons.chat_outlined),
-                  label: Text('WhatsApp'),
-                ),
-                ButtonSegment(
-                  value: 'sms',
-                  icon: Icon(Icons.sms_outlined),
-                  label: Text('SMS'),
-                ),
-              ],
-              selected: {channel},
-              onSelectionChanged: (value) {
-                setState(() => channel = value.first);
-              },
-            ),
           ] else ...[
             const SizedBox(height: 12),
             TextField(
@@ -134,7 +115,7 @@ class _AuthSheetState extends State<AuthSheet> {
 
   Future<void> _requestCode() async {
     await _run(() async {
-      final devCode = await widget.auth.requestPhoneCode(phone.text, channel);
+      final devCode = await widget.auth.requestPhoneCode(phone.text, 'sms');
       setState(() {
         codeSent = true;
         if (devCode != null) code.text = devCode;

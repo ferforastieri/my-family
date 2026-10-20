@@ -29,7 +29,7 @@ const authRoutes = new Hono<AppEnv>();
 
 const requestCodeSchema = z.object({
   phone: z.string().max(32),
-  channel: z.enum(['whatsapp', 'sms']),
+  channel: z.enum(['sms']),
   turnstileToken: z.string().max(2048).optional(),
 });
 
@@ -55,7 +55,7 @@ authRoutes.post('/phone/request-code', async (c) => {
   });
   const result = await requestCode(c.env, dto.phone, dto.channel);
   return envelope(c, {
-    message: `Código enviado por ${dto.channel === 'whatsapp' ? 'WhatsApp' : 'SMS'}.`,
+    message: 'Código enviado por SMS.',
     ...result,
   });
 });

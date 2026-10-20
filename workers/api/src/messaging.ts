@@ -1,7 +1,7 @@
 import type { Env } from './env';
 import { badRequest, unavailable } from './http';
 
-export type PhoneChannel = 'whatsapp' | 'sms';
+export type PhoneChannel = 'sms';
 
 export function normalizePhoneNumber(env: Env, value: string): string {
   const raw = value?.trim() ?? '';
@@ -27,34 +27,22 @@ export function invalidPhoneNumber(env: Env, value: string): string | null {
   }
 }
 
-export function whatsappConfigured(env: Env): boolean {
-  return Boolean(
-    env.WHATSAPP_ACCESS_TOKEN &&
-      env.WHATSAPP_PHONE_NUMBER_ID &&
-      env.WHATSAPP_OTP_TEMPLATE,
-  );
-}
-
 export function smsConfigured(env: Env): boolean {
   return Boolean(
     env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_FROM_NUMBER,
   );
 }
 
-export function channelConfigured(env: Env, channel: PhoneChannel): boolean {
-  return channel === 'whatsapp' ? whatsappConfigured(env) : smsConfigured(env);
+export function channelConfigured(env: Env): boolean {
+  return smsConfigured(env);
 }
 
 export async function sendOtp(
   env: Env,
   phoneNumber: string,
   code: string,
-  channel: PhoneChannel,
+  _channel: PhoneChannel,
 ): Promise<void> {
-  if (channel === 'whatsapp') {
-    await sendWhatsAppTemplate(env, phoneNumber, env.WHATSAPP_OTP_TEMPLATE, code);
-    return;
-  }
   await sendSms(
     env,
     phoneNumber,
@@ -67,24 +55,11 @@ export async function sendInvitation(
   phoneNumber: string,
   familyName: string,
   token: string,
-  channel: PhoneChannel,
+  _channel: PhoneChannel,
 ): Promise<void> {
   const url = env.INVITATION_URL
     ? `${env.INVITATION_URL}?invitation=${encodeURIComponent(token)}`
     : token;
-  if (channel === 'whatsapp') {
-    if (!env.WHATSAPP_INVITATION_TEMPLATE) {
-      throw unavailable('Template de convite do WhatsApp não configurado.');
-    }
-    await sendWhatsAppTemplate(
-      env,
-      phoneNumber,
-      env.WHATSAPP_INVITATION_TEMPLATE,
-      familyName,
-      url,
-    );
-    return;
-  }
   await sendSms(
     env,
     phoneNumber,
@@ -115,54 +90,14 @@ async function sendSms(env: Env, phoneNumber: string, body: string): Promise<voi
     },
   );
   if (!response.ok) {
-    console.error(JSON.stringify({ level: 'error', message: 'Falha ao enviar SMS', status: response.status }));
-    throw unavailable('Não foi possível enviar o SMS.');
-  }
-}
-
-async function sendWhatsAppTemplate(
-  env: Env,
-  phoneNumber: string,
-  template: string | undefined,
-  ...parameters: string[]
-): Promise<void> {
-  if (!whatsappConfigured(env) || !template) {
-    throw unavailable('Envio por WhatsApp não configurado.');
-  }
-  const response = await fetch(
-    `https://graph.facebook.com/${env.WHATSAPP_API_VERSION ?? 'v23.0'}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        to: phoneNumber.substring(1),
-        type: 'template',
-        template: {
-          name: template,
-          language: { code: 'pt_BR' },
-          components: [
-            {
-              type: 'body',
-              parameters: parameters.map((text) => ({ type: 'text', text })),
-            },
-          ],
-        },
-      }),
-    },
-  );
-  if (!response.ok) {
     console.error(
       JSON.stringify({
         level: 'error',
-        message: 'Falha ao enviar WhatsApp',
+        message: 'Falha ao enviar SMS',
         status: response.status,
-        body: await response.text(),
+        body: (await response.text()).substring(0, 200),
       }),
     );
-    throw unavailable('Não foi possível enviar a mensagem pelo WhatsApp.');
+    throw unavailable('Não foi possível enviar o SMS.');
   }
 }

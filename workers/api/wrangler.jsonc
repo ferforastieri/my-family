@@ -40,7 +40,7 @@
   "triggers": { "crons": ["* * * * *"] },
   "vars": {
     "APP_ENV": "production",
-    "CORS_ORIGIN": "http://localhost:8080",
+    "CORS_ORIGIN": "https://my-family-web.vira-ia-br.workers.dev,https://my-family-panel.vira-ia-br.workers.dev,https://my-family-landing.vira-ia-br.workers.dev",
     "COOKIE_SECURE": "true",
     "COOKIE_SAME_SITE": "lax",
     "DEFAULT_PHONE_COUNTRY_CODE": "55",

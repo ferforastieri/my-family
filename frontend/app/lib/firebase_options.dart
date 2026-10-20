@@ -28,9 +28,13 @@ class DefaultFirebaseOptions {
     storageBucket: AppConfig.firebaseStorageBucket,
   );
 
-  static const FirebaseOptions android = FirebaseOptions(
-    apiKey: AppConfig.firebaseApiKey,
-    appId: AppConfig.firebaseAppId,
+  static final FirebaseOptions android = FirebaseOptions(
+    apiKey: AppConfig.firebaseAndroidApiKey.isNotEmpty
+        ? AppConfig.firebaseAndroidApiKey
+        : AppConfig.firebaseApiKey,
+    appId: AppConfig.firebaseAndroidAppId.isNotEmpty
+        ? AppConfig.firebaseAndroidAppId
+        : AppConfig.firebaseAppId,
     messagingSenderId: AppConfig.firebaseMessagingSenderId,
     projectId: AppConfig.firebaseProjectId,
     storageBucket: AppConfig.firebaseStorageBucket,

@@ -22,12 +22,6 @@ export interface Env {
   PLATFORM_ADMIN_PHONE?: string;
   INVITATION_URL?: string;
 
-  WHATSAPP_ACCESS_TOKEN?: string;
-  WHATSAPP_PHONE_NUMBER_ID?: string;
-  WHATSAPP_API_VERSION?: string;
-  WHATSAPP_OTP_TEMPLATE?: string;
-  WHATSAPP_INVITATION_TEMPLATE?: string;
-
   TWILIO_ACCOUNT_SID?: string;
   TWILIO_AUTH_TOKEN?: string;
   TWILIO_FROM_NUMBER?: string;

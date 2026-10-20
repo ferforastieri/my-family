@@ -1,1 +1,1 @@
-self.firebaseConfig = null;
+self.firebaseConfig = {"apiKey":"AIzaSyAdzcp6WxQEm7mKArNthR2OidbjvbPH91w","appId":"1:177457768602:web:ecb14c8366741618439723","messagingSenderId":"177457768602","projectId":"my-family-76986","authDomain":"my-family-76986.firebaseapp.com","storageBucket":"my-family-76986.firebasestorage.app"};

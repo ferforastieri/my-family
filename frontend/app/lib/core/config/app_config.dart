@@ -11,6 +11,10 @@ class AppConfig {
 
   static const firebaseApiKey = String.fromEnvironment('FIREBASE_API_KEY');
   static const firebaseAppId = String.fromEnvironment('FIREBASE_APP_ID');
+  static const firebaseAndroidApiKey =
+      String.fromEnvironment('FIREBASE_ANDROID_API_KEY');
+  static const firebaseAndroidAppId =
+      String.fromEnvironment('FIREBASE_ANDROID_APP_ID');
   static const firebaseMessagingSenderId =
       String.fromEnvironment('FIREBASE_MESSAGING_SENDER_ID');
   static const firebaseProjectId =

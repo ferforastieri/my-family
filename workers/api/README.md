@@ -17,9 +17,6 @@ npx wrangler secret put JWT_SECRET
 npx wrangler secret put PHONE_OTP_SECRET
 # opcionais
 npx wrangler secret put TURNSTILE_SECRET
-npx wrangler secret put WHATSAPP_ACCESS_TOKEN
-npx wrangler secret put WHATSAPP_PHONE_NUMBER_ID
-npx wrangler secret put WHATSAPP_OTP_TEMPLATE
 npx wrangler secret put TWILIO_ACCOUNT_SID
 npx wrangler secret put TWILIO_AUTH_TOKEN
 npx wrangler secret put TWILIO_FROM_NUMBER

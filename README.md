@@ -1,98 +1,119 @@
 # Nossa Família
 
-SaaS privado multi-tenant para memórias e rotina familiar. O monorepo mantém a
-stack original: Flutter/Dart nos aplicativos, Dart/Jaspr na landing e
-NestJS/TypeScript no backend.
+SaaS privado multi-tenant para memórias e rotina familiar, 100% na Cloudflare.
+
+## Stack
+
+- **API**: Hono em Workers (`workers/api`), D1, R2, Durable Objects, Queues e Cron.
+- **App**: Flutter Web e Android (`frontend/app`).
+- **Painel**: Flutter Web (`frontend/panel`).
+- **Landing**: Jaspr/Dart (`frontend/landing`).
+- **Web Workers**: `workers/web` serve os assets e fazem proxy de `/api/*` e `/ws`
+  para a API. Assim app, painel e landing ficam na mesma origem da API, sem CORS
+  e sem cookies de terceiros.
+- **Push**: Firebase Cloud Messaging no projeto `my-family-76986`.
+- **APK**: GitHub Actions (`.github/workflows/android.yml`).
+
+## URLs
+
+- App: https://my-family-web.vira-ia-br.workers.dev
+- Painel: https://my-family-panel.vira-ia-br.workers.dev
+- Landing: https://my-family-landing.vira-ia-br.workers.dev
+- API: https://my-family-api.vira-ia-br.workers.dev
 
 ## Estrutura
 
-- `frontend/app`: aplicativo familiar Web e Android existente.
-- `frontend/panel`: painel Flutter Web para clientes e super-admin.
-- `frontend/landing`: site estático indexável e cadastro público.
-- `frontend/packages/family_ui`: tema e componentes Dart compartilhados.
-- `backend`: API/WebSocket NestJS e processo BullMQ worker.
-- `workers/media`: Cloudflare Worker que entrega objetos privados do R2.
-- `.github/workflows`: validação e deploy.
-
-## Modelo de acesso
-
-Usuários são globais e podem participar de várias famílias. Toda requisição de
-conteúdo executa com um `tenantId` obtido da sessão, nunca do corpo da requisição.
-Os papéis familiares são `owner`, `admin` e `member`; parentesco é apenas um
-atributo. `super_admin` é um papel separado da plataforma e não concede leitura
-do conteúdo privado.
-
-O acesso é passwordless: a pessoa informa o celular, escolhe WhatsApp ou SMS e
-confirma um código de seis dígitos válido por cinco minutos. No primeiro acesso,
-o mesmo fluxo cria automaticamente “Minha Família” no plano `early_access`, com
-um endereço aleatório que pode ser personalizado depois no painel. Nos acessos
-seguintes, apenas abre uma nova sessão curta e renovável. A demo cria um tenant
-fictício isolado por 24 horas, com upload, localização, push e convites
-bloqueados.
-
-Access e refresh tokens nunca são entregues ao Dart ou gravados no armazenamento
-do navegador. A API usa cookies `HttpOnly`, `Secure` em produção e `SameSite`,
-com CSRF double-submit nas operações de escrita. WebSocket também autentica pelo
-cookie do handshake; o cabeçalho Bearer não é aceito pela API do produto.
+```
+workers/api       API Hono + D1 + DO + Queue + Cron
+workers/web       script de assets/proxy usado pelos três web Workers
+workers/media     entrega privada de mídia no R2
+frontend/app      aplicativo Flutter
+frontend/panel    painel Flutter
+frontend/landing  landing Jaspr
+```
 
 ## Desenvolvimento
 
-Backend:
+API:
 
 ```bash
-cd backend
-cp .env.example .env
+cd workers/api
+cp .dev.vars.example .dev.vars
 npm install
-npm run start:dev
+npm run db:migrate:local
+npm run dev
 ```
 
-Aplicativo e painel:
+App:
 
 ```bash
-cd frontend/app # ou frontend/panel
+cd frontend/app
 flutter pub get
 flutter run -d chrome \
-  --dart-define=API_BASE_URL=http://localhost:3001/api \
-  --dart-define=SOCKET_URL=http://localhost:3001
+  --dart-define=API_BASE_URL=http://localhost:8787/api \
+  --dart-define=SOCKET_URL=http://localhost:8787
 ```
 
-Landing:
+## Deploy (Cloudflare Workers Builds)
+
+Cada Worker é conectado ao repositório no dashboard, com o root indicado:
+
+| Worker | Root | Build | Deploy |
+|---|---|---|---|
+| `my-family-api` | `workers/api` | `npm ci` | `npx wrangler deploy` |
+| `my-family-web` | `frontend/app` | baixa Flutter + `flutter build web` | `npx wrangler deploy` |
+| `my-family-panel` | `frontend/panel` | baixa Flutter + `flutter build web` | `npx wrangler deploy` |
+| `my-family-landing` | `frontend/landing` | baixa Dart + `jaspr build` | `npx wrangler deploy` |
+| `my-family-media` | `workers/media` | `npm ci` | `npm run deploy` |
+
+Build do app/painel (Workers Builds não tem Flutter instalado):
 
 ```bash
-cd frontend/landing
-dart pub get
-dart pub global activate jaspr_cli 0.23.4
-jaspr serve
+git clone --depth 1 -b stable https://github.com/flutter/flutter.git /tmp/flutter
+export PATH="/tmp/flutter/bin:$PATH"
+flutter config --no-analytics
+flutter pub get
+flutter build web --release --no-wasm-dry-run \
+  --dart-define=API_BASE_URL=$API_BASE_URL \
+  --dart-define=SOCKET_URL=$SOCKET_URL
+npx --yes wrangler@4.151.3 deploy
 ```
 
-O build estático gera HTML real e indexável em `build/jaspr`:
+O build da landing baixa o Dart SDK 3.13.6 e ativa `jaspr_cli 0.23.4` antes do
+`jaspr build`.
+
+## Secrets do Worker `my-family-api`
 
 ```bash
-jaspr build --sitemap-domain https://dominio.com \
-  --sitemap-exclude '^/cadastro' \
-  --dart-define SITE_URL=https://dominio.com \
-  --dart-define API_URL=https://api.dominio.com/api \
-  --dart-define APP_URL=https://app.dominio.com \
-  --dart-define PANEL_URL=https://painel.dominio.com
+npx wrangler secret put JWT_SECRET
+npx wrangler secret put PHONE_OTP_SECRET
+npx wrangler secret put TWILIO_ACCOUNT_SID
+npx wrangler secret put TWILIO_AUTH_TOKEN
+npx wrangler secret put TWILIO_FROM_NUMBER
+npx wrangler secret put FIREBASE_SERVICE_ACCOUNT_JSON
+# opcionais
+npx wrangler secret put TURNSTILE_SECRET
+npx wrangler secret put MEDIA_SIGNING_SECRET
 ```
 
-`TURNSTILE_SITE_KEY` pode ser adicionado como outro `--dart-define`. O código
-fonte da landing é Dart; Jaspr gera HTML semântico, canonical, JSON-LD e sitemap.
+## Autenticação
 
-## Autenticação por celular
+Passwordless por celular, com código de 6 dígitos por **SMS (Twilio)**. O
+WhatsApp foi removido. Sem `TWILIO_*`, o login em produção retorna 503; a demo
+e o ambiente local (`APP_ENV=development`) continuam funcionando.
 
-Configure `PHONE_OTP_SECRET` e pelo menos um transporte em `backend/.env`.
-WhatsApp usa a Cloud API da Meta com templates aprovados; SMS usa Twilio. Em
-desenvolvimento, quando o canal não está configurado, a API devolve `devCode`
-para permitir testes locais. Em produção, a ausência do provedor é um erro.
+## Banco
 
-## Entrega
+D1 `my-family`. Migrações:
 
-Pull requests validam backend, landing, Worker, os dois projetos Flutter e a
-imagem Docker. Após a CI de `main`, GitHub Actions publica a imagem API/worker no
-GHCR, os três frontends na Cloudflare e aciona o Coolify. Produção usa MongoDB,
-Redis, API e worker separados, R2 privado para mídia e health checks em
-`/api/health/live` e `/api/health/ready`.
+```bash
+cd workers/api
+npm run db:migrate        # remoto
+npm run db:migrate:local  # local
+```
 
-Nenhum secret, credencial Firebase, token ou arquivo `.env` real deve ser
-versionado.
+## Android
+
+O workflow `android.yml` gera o APK release em pushes na `main`, tags ou
+manualmente. Ele usa o secret `GOOGLE_SERVICES_JSON` e as vars
+`FIREBASE_ANDROID_API_KEY`/`FIREBASE_ANDROID_APP_ID`.

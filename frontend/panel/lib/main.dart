@@ -89,12 +89,13 @@ class PanelSession extends ChangeNotifier {
     );
     var raw = await response.stream.bytesToString();
     if (response.statusCode == 401 && retryAuth && path != '/auth/refresh') {
+      final refreshHeaders = <String, String>{
+        'content-type': 'application/json',
+      };
+      if (csrfToken != null) refreshHeaders['x-csrf-token'] = csrfToken!;
       final refreshResponse = await client.post(
         Uri.parse('$apiBase/auth/refresh'),
-        headers: {
-          'content-type': 'application/json',
-          if (csrfToken != null) 'x-csrf-token': csrfToken!,
-        },
+        headers: refreshHeaders,
         body: '{}',
       );
       if (refreshResponse.statusCode < 400) {
@@ -215,7 +216,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final phone = TextEditingController(), code = TextEditingController();
-  String channel = 'whatsapp';
+  String channel = 'sms';
   bool codeSent = false;
   String? error;
   bool busy = false;
@@ -262,24 +263,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   if (!codeSent) ...[
                     const SizedBox(height: 12),
-                    SegmentedButton<String>(
-                      segments: const [
-                        ButtonSegment(
-                          value: 'whatsapp',
-                          icon: Icon(Icons.chat_outlined),
-                          label: Text('WhatsApp'),
-                        ),
-                        ButtonSegment(
-                          value: 'sms',
-                          icon: Icon(Icons.sms_outlined),
-                          label: Text('SMS'),
-                        ),
-                      ],
-                      selected: {channel},
-                      onSelectionChanged: (value) {
-                        setState(() => channel = value.first);
-                      },
-                    ),
                   ] else ...[
                     const SizedBox(height: 12),
                     TextField(
@@ -578,7 +561,7 @@ class _MembersState extends State<Members> {
   Future<void> _invite() async {
     final phone = TextEditingController();
     var role = 'member';
-    var channel = 'whatsapp';
+    var channel = 'sms';
     final accepted = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -596,15 +579,6 @@ class _MembersState extends State<Members> {
                 ),
               ),
               const SizedBox(height: 12),
-              SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(value: 'whatsapp', label: Text('WhatsApp')),
-                  ButtonSegment(value: 'sms', label: Text('SMS')),
-                ],
-                selected: {channel},
-                onSelectionChanged: (value) =>
-                    setDialogState(() => channel = value.first),
-              ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: role,
@@ -703,7 +677,7 @@ class _MembersState extends State<Members> {
                       leading: const Icon(Icons.sms_outlined),
                       title: Text(item['phoneNumber'] ?? ''),
                       subtitle: Text(
-                        '${item['role'] ?? 'member'} • ${item['channel'] ?? 'whatsapp'}',
+                        '${item['role'] ?? 'member'} • ${item['channel'] ?? 'sms'}',
                       ),
                     ),
                   )

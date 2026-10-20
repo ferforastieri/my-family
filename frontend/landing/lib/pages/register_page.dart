@@ -57,7 +57,7 @@ class PhoneRegistrationForm extends StatefulComponent {
 class _PhoneRegistrationFormState extends State<PhoneRegistrationForm> {
   String phone = '';
   String code = '';
-  String channel = 'whatsapp';
+  String channel = 'sms';
   String? invitationToken;
   String? status;
   bool acceptedTerms = false;
@@ -81,29 +81,6 @@ class _PhoneRegistrationFormState extends State<PhoneRegistrationForm> {
         placeholder: '(11) 99999-9999',
         onInput: (value) => phone = value,
       ),
-      fieldset(classes: 'channel-picker', [
-        legend([.text('Receber código por')]),
-        label([
-          input<bool>(
-            type: InputType.radio,
-            name: 'channel',
-            value: 'whatsapp',
-            checked: channel == 'whatsapp',
-            onChange: (_) => setState(() => channel = 'whatsapp'),
-          ),
-          .text(' WhatsApp'),
-        ]),
-        label([
-          input<bool>(
-            type: InputType.radio,
-            name: 'channel',
-            value: 'sms',
-            checked: channel == 'sms',
-            onChange: (_) => setState(() => channel = 'sms'),
-          ),
-          .text(' SMS'),
-        ]),
-      ]),
       label([
         span([
           input<bool>(

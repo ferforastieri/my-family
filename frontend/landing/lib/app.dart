@@ -51,7 +51,7 @@ class App extends StatelessComponent {
           sections: [
             (
               '1. Confirme seu celular',
-              'Informe o número, receba um código por WhatsApp ou SMS e entre sem criar senha.',
+              'Informe o número, receba um código por SMS e entre sem criar senha.',
             ),
             (
               '2. A família já está pronta',
@@ -108,7 +108,7 @@ class App extends StatelessComponent {
           sections: [
             (
               'Preciso criar uma senha?',
-              'Não. Você entra com um código enviado ao seu WhatsApp ou por SMS.',
+              'Não. Você entra com um código enviado por SMS.',
             ),
             (
               'Outras famílias veem meus dados?',
