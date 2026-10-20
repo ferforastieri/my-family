@@ -1,9 +1,13 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/api/query_keys.dart';
 import '../../../core/auth/auth_controller.dart';
+import '../../../core/location/location_controller.dart';
 import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
@@ -20,11 +24,13 @@ class LocationPage extends StatefulWidget {
     super.key,
     required this.auth,
     required this.repository,
+    required this.location,
     required this.toast,
   });
 
   final AuthController auth;
   final FamilyRepository repository;
+  final LocationController location;
   final ToastController toast;
 
   @override
@@ -44,6 +50,7 @@ class _LocationPageState extends State<LocationPage> {
     widget.repository.socket.on('location.updated', _handleLocationUpdated);
     widget.repository.socket
         .on('location.places.changed', _handleLocationPlaceChanged);
+    widget.repository.socket.on('location.settings', _handleLocationSettings);
   }
 
   @override
@@ -55,6 +62,7 @@ class _LocationPageState extends State<LocationPage> {
     widget.repository.socket.off('location.updated', _handleLocationUpdated);
     widget.repository.socket
         .off('location.places.changed', _handleLocationPlaceChanged);
+    widget.repository.socket.off('location.settings', _handleLocationSettings);
     super.dispose();
   }
 
@@ -64,6 +72,13 @@ class _LocationPageState extends State<LocationPage> {
 
   void _handleLocationPlaceChanged(dynamic _) {
     if (mounted) invalidateQueries(context, QueryKeys.locationPlaces);
+  }
+
+  void _handleLocationSettings(dynamic _) {
+    if (!mounted) return;
+    unawaited(widget.auth.refreshMe());
+    invalidateQueries(context, QueryKeys.locations);
+    invalidateQueries(context, QueryKeys.locationPlaces);
   }
 
   @override
@@ -110,15 +125,27 @@ class _LocationPageState extends State<LocationPage> {
                 }
                 return Column(
                   children: [
-                    _LocationActions(
-                      currentLocation: currentLocation,
-                      onSos: _sendSos,
-                      onCheckIn: _sendCheckIn,
-                    ),
-                    const SizedBox(height: 16),
+                    if (!kIsWeb) ...[
+                      _LocationSharingCard(
+                        auth: widget.auth,
+                        onMySharingChanged: _setMySharing,
+                        onFamilySharingChanged: _setFamilySharing,
+                      ),
+                      const SizedBox(height: 16),
+                      _LocationActions(
+                        currentLocation: currentLocation,
+                        onSos: _sendSos,
+                        onCheckIn: _sendCheckIn,
+                      ),
+                      const SizedBox(height: 16),
+                    ] else ...[
+                      const _LocationReadOnlyNote(),
+                      const SizedBox(height: 16),
+                    ],
                     _LocationMapPanel(
                       locations: locations,
                       places: places,
+                      canManage: !kIsWeb,
                       onCenterChanged: (center) => mapCenter = center,
                       onCreatePlace: () => _openPlaceSheet(locations),
                       onEditPlace: (place) => _openPlaceSheet(
@@ -175,6 +202,33 @@ class _LocationPageState extends State<LocationPage> {
     widget.toast.backendSuccess(widget.repository.takeMessage());
   }
 
+  Future<void> _setMySharing(bool enabled) async {
+    await widget.repository.setLocationSharing(enabled);
+    await widget.auth.refreshMe();
+    if (enabled) {
+      await widget.location.bootstrap();
+    } else {
+      widget.location.stop();
+    }
+    widget.toast.backendSuccess(widget.repository.takeMessage());
+    if (mounted) invalidateQueries(context, QueryKeys.locations);
+  }
+
+  Future<void> _setFamilySharing(bool enabled) async {
+    await widget.repository.setFamilyLocation(enabled);
+    await widget.auth.refreshMe();
+    if (enabled) {
+      await widget.location.bootstrap();
+    } else {
+      widget.location.stop();
+    }
+    widget.toast.backendSuccess(widget.repository.takeMessage());
+    if (mounted) {
+      invalidateQueries(context, QueryKeys.locations);
+      invalidateQueries(context, QueryKeys.locationPlaces);
+    }
+  }
+
   void _openPlaceSheet(
     List<LocationSnapshot> locations, {
     LocationPlace? place,
@@ -216,6 +270,7 @@ class _LocationMapPanel extends StatelessWidget {
   const _LocationMapPanel({
     required this.locations,
     required this.places,
+    required this.canManage,
     required this.onCenterChanged,
     required this.onCreatePlace,
     required this.onEditPlace,
@@ -223,6 +278,7 @@ class _LocationMapPanel extends StatelessWidget {
 
   final List<LocationSnapshot> locations;
   final List<LocationPlace> places;
+  final bool canManage;
   final ValueChanged<LatLng> onCenterChanged;
   final VoidCallback onCreatePlace;
   final ValueChanged<LocationPlace> onEditPlace;
@@ -245,6 +301,7 @@ class _LocationMapPanel extends StatelessWidget {
           _LocationMapHeader(
             locationsCount: locations.length,
             onCreatePlace: onCreatePlace,
+            canManage: canManage,
           ),
           const SizedBox(height: 14),
           ClipRRect(
@@ -348,11 +405,14 @@ class _LocationMapPanel extends StatelessWidget {
               runSpacing: 8,
               children: [
                 for (final place in places)
-                  OutlinedButton.icon(
-                    onPressed: () => onEditPlace(place),
-                    icon: const Icon(Icons.edit_location_alt_outlined),
-                    label: Text(place.name),
-                  ),
+                  if (canManage)
+                    OutlinedButton.icon(
+                      onPressed: () => onEditPlace(place),
+                      icon: const Icon(Icons.edit_location_alt_outlined),
+                      label: Text(place.name),
+                    )
+                  else
+                    Chip(label: Text(place.name)),
               ],
             ),
           ],
@@ -445,10 +505,12 @@ class _LocationMapHeader extends StatelessWidget {
   const _LocationMapHeader({
     required this.locationsCount,
     required this.onCreatePlace,
+    required this.canManage,
   });
 
   final int locationsCount;
   final VoidCallback onCreatePlace;
+  final bool canManage;
 
   @override
   Widget build(BuildContext context) {
@@ -459,6 +521,7 @@ class _LocationMapHeader extends StatelessWidget {
           : '$locationsCount pessoas no mapa.',
       icon: Icons.map_outlined,
     );
+    if (!canManage) return title;
     final action = FilledButton.icon(
       onPressed: onCreatePlace,
       icon: const Icon(Icons.add_location_alt_outlined),
@@ -486,6 +549,95 @@ class _LocationMapHeader extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _LocationSharingCard extends StatelessWidget {
+  const _LocationSharingCard({
+    required this.auth,
+    required this.onMySharingChanged,
+    required this.onFamilySharingChanged,
+  });
+
+  final AuthController auth;
+  final Future<void> Function(bool) onMySharingChanged;
+  final Future<void> Function(bool) onFamilySharingChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: auth,
+      builder: (context, _) {
+        final user = auth.user;
+        final familyEnabled = user?.locationEnabled ?? true;
+        final sharing = user?.locationSharing ?? true;
+        return LovePanel(
+          maxWidth: 1200,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _LocationPanelTitle(
+                title: 'Compartilhamento',
+                description: 'Você decide quem vê sua localização.',
+                icon: Icons.share_location_outlined,
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: sharing && familyEnabled,
+                onChanged: familyEnabled
+                    ? (value) => onMySharingChanged(value)
+                    : null,
+                title: const Text('Compartilhar minha localização'),
+                subtitle: Text(
+                  !familyEnabled
+                      ? 'A localização está desativada para a família.'
+                      : sharing
+                          ? 'A família pode ver você.'
+                          : 'Sua localização está pausada.',
+                ),
+              ),
+              if (user?.isAdmin == true)
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: familyEnabled,
+                  onChanged: (value) => onFamilySharingChanged(value),
+                  title: const Text('Localização da família'),
+                  subtitle: const Text(
+                    'Desliga o mapa e o compartilhamento para todos.',
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _LocationReadOnlyNote extends StatelessWidget {
+  const _LocationReadOnlyNote();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return LovePanel(
+      maxWidth: 1200,
+      child: Row(
+        children: [
+          Icon(Icons.visibility_outlined, color: palette.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'No navegador, a localização é apenas para consulta. O compartilhamento acontece pelo aplicativo Android.',
+              style: TextStyle(
+                color: palette.muted,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

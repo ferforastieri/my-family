@@ -11,6 +11,8 @@ class AppUser {
     this.primaryColor,
     this.tenantFont,
     this.tenantKey,
+    this.locationEnabled = true,
+    this.locationSharing = true,
   });
 
   final String id;
@@ -24,6 +26,8 @@ class AppUser {
   final String? primaryColor;
   final String? tenantFont;
   final String? tenantKey;
+  final bool locationEnabled;
+  final bool locationSharing;
 
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
         id: json['id'].toString(),
@@ -45,6 +49,9 @@ class AppUser {
             as String?,
         tenantKey:
             ((json['tenant'] as Map?)?['slug'] ?? json['tenantId'])?.toString(),
+        locationEnabled:
+            ((json['tenant'] as Map?)?['locationEnabled']) != false,
+        locationSharing: json['locationSharing'] != false,
       );
 
   bool get isAdmin => membershipRole == 'owner' || membershipRole == 'admin';

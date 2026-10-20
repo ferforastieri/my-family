@@ -509,6 +509,20 @@ class FamilyRepository {
     await api.post<Map<String, dynamic>>('/location/check-in', data: const {});
   }
 
+  Future<void> setLocationSharing(bool enabled) async {
+    await api.post<Map<String, dynamic>>(
+      '/location/sharing',
+      data: {'enabled': enabled},
+    );
+  }
+
+  Future<void> setFamilyLocation(bool enabled) async {
+    await api.patch<Map<String, dynamic>>(
+      '/tenant/location',
+      data: {'enabled': enabled},
+    );
+  }
+
   Future<List<LocationPlace>> listLocationPlaces() async {
     final data = await api.get<List<dynamic>>('/location/places');
     return data

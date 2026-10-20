@@ -12,6 +12,7 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.os.BatteryManager
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import androidx.core.app.NotificationCompat
@@ -169,7 +170,13 @@ class BackgroundLocationService : Service() {
             OutputStreamWriter(connection.outputStream).use { writer ->
                 writer.write(body.toString())
             }
-            val ok = connection.responseCode in 200..299
+            val code = connection.responseCode
+            val ok = code in 200..299
+            if (code == 401 || code == 403) {
+                Handler(Looper.getMainLooper()).post { stopTracking() }
+                clearConfig(this)
+                return false
+            }
             val stream = if (ok) connection.inputStream else connection.errorStream
             stream?.use { it.readBytes() }
             ok

@@ -21,6 +21,7 @@ import {
 } from '../tenants';
 import { badRequest, envelope, notFound, paginated, parseBody, queryInt } from '../http';
 import { queryAll, queryOne } from '../db';
+import { broadcastToTenant } from '../realtime-service';
 
 const tenantRoutes = new Hono<AppEnv>();
 tenantRoutes.use('*', authMiddleware);
@@ -65,6 +66,36 @@ tenantRoutes.patch('/theme', requireTenantAdmin, async (c) => {
       },
     }),
   );
+});
+
+tenantRoutes.patch('/location', requireTenantAdmin, demoRestricted, async (c) => {
+  const body = await parseBody(c, z.object({ enabled: z.boolean() }));
+  const principal = c.get('principal');
+  const tenant = await updateTenant(c.env, principal.tenantId, {
+    locationEnabled: body.enabled,
+  });
+  if (!body.enabled) {
+    await c.env.DB.batch([
+      c.env.DB.prepare('DELETE FROM location_latest WHERE tenant_id = ?').bind(
+        principal.tenantId,
+      ),
+      c.env.DB.prepare(
+        'DELETE FROM location_presences WHERE tenant_id = ?',
+      ).bind(principal.tenantId),
+      c.env.DB.prepare('DELETE FROM location_tokens WHERE tenant_id = ?').bind(
+        principal.tenantId,
+      ),
+    ]);
+  }
+  await broadcastToTenant(c.env, principal.tenantId, 'location.settings', {
+    enabled: body.enabled,
+  });
+  return envelope(c, {
+    message: body.enabled
+      ? 'Localização ativada para a família.'
+      : 'Localização desativada para a família.',
+    ...(tenant ?? {}),
+  });
 });
 
 tenantRoutes.get('/members', requireTenantAdmin, async (c) => {

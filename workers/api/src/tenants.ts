@@ -36,6 +36,7 @@ export interface TenantRow {
   subscription_status: string;
   theme: string;
   is_demo: number;
+  location_enabled: number;
   expires_at: number | null;
   created_at: number;
   updated_at: number;
@@ -48,6 +49,7 @@ export interface MembershipRow {
   role: string;
   relationship: string;
   access: string;
+  location_sharing: number;
   created_at: number;
   updated_at: number;
 }
@@ -68,6 +70,7 @@ export function tenantFromRow(row: TenantRow): TenantEntity {
     subscriptionStatus: row.subscription_status as TenantEntity['subscriptionStatus'],
     theme,
     isDemo: row.is_demo === 1,
+    locationEnabled: row.location_enabled !== 0,
     expiresAt: row.expires_at ? new Date(row.expires_at).toISOString() : null,
     createdAt: new Date(row.created_at).toISOString(),
     updatedAt: new Date(row.updated_at).toISOString(),
@@ -122,7 +125,12 @@ export async function createTenant(
 export async function updateTenant(
   env: Env,
   id: string,
-  data: { name?: string; status?: string; theme?: { primaryColor: string; fontFamily: string } },
+  data: {
+    name?: string;
+    status?: string;
+    theme?: { primaryColor: string; fontFamily: string };
+    locationEnabled?: boolean;
+  },
 ): Promise<TenantEntity | null> {
   const sets: string[] = [];
   const params: unknown[] = [];
@@ -137,6 +145,10 @@ export async function updateTenant(
   if (data.theme !== undefined) {
     sets.push('theme = ?');
     params.push(JSON.stringify(data.theme));
+  }
+  if (data.locationEnabled !== undefined) {
+    sets.push('location_enabled = ?');
+    params.push(data.locationEnabled ? 1 : 0);
   }
   if (sets.length) {
     sets.push('updated_at = ?');
@@ -312,6 +324,7 @@ export async function members(env: Env, tenantId: string) {
     role: row.relationship as UserRole,
     membershipRole: row.role as MembershipRole,
     access: normalizeAccessKeys(jsonArray(row.access)),
+    locationSharing: row.location_sharing === 1,
     createdAt: new Date(row.created_at).toISOString(),
   }));
 }

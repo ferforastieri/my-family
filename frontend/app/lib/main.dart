@@ -46,6 +46,7 @@ void main() {
         chat: chat,
         theme: theme,
         toast: toast,
+        location: location,
         repository: repository),
   ));
 
@@ -99,6 +100,7 @@ class MyFamilyApp extends StatelessWidget {
     required this.chat,
     required this.theme,
     required this.toast,
+    required this.location,
     required this.repository,
   });
 
@@ -107,6 +109,7 @@ class MyFamilyApp extends StatelessWidget {
   final ChatController chat;
   final ThemeController theme;
   final ToastController toast;
+  final LocationController location;
   final FamilyRepository repository;
 
   @override
@@ -143,7 +146,15 @@ class MyFamilyApp extends StatelessWidget {
             primary: theme.primary,
           ),
           routerConfig:
-              buildRouter(auth, notifications, chat, theme, toast, repository),
+              buildRouter(
+                auth,
+                notifications,
+                chat,
+                theme,
+                toast,
+                repository,
+                location,
+              ),
           builder: (context, child) => _AppTextScale(
             child: ToastOverlay(
               controller: toast,

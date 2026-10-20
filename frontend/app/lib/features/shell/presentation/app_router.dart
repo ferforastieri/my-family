@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/chat/chat_controller.dart';
+import '../../../core/location/location_controller.dart';
 import '../../../core/notifications/notifications_controller.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../core/theme/theme_controller.dart';
@@ -27,6 +28,7 @@ GoRouter buildRouter(
   ThemeController theme,
   ToastController toast,
   FamilyRepository repository,
+  LocationController location,
 ) {
   return GoRouter(
     navigatorKey: notifications.navigatorKey,
@@ -231,6 +233,7 @@ GoRouter buildRouter(
             pageBuilder: (context, state) => _page(LocationPage(
               auth: auth,
               repository: repository,
+              location: location,
               toast: toast,
             )),
           ),

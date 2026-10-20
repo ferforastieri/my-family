@@ -1,0 +1,2 @@
+ALTER TABLE tenants ADD COLUMN location_enabled INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE memberships ADD COLUMN location_sharing INTEGER NOT NULL DEFAULT 1;

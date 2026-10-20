@@ -42,6 +42,7 @@ export interface TenantEntity {
   subscriptionStatus: 'active' | 'past_due' | 'cancelled';
   theme: { primaryColor: string; fontFamily: string };
   isDemo: boolean;
+  locationEnabled: boolean;
   expiresAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -58,6 +59,7 @@ export interface Principal {
   membershipId: string;
   membershipRole: MembershipRole;
   role: UserRole;
+  locationSharing: boolean;
   access: UserAccessKey[];
   isDemo: boolean;
   createdAt: string;
@@ -203,6 +205,8 @@ interface PrincipalRow {
   subscription_status: string;
   theme: string;
   is_demo: number;
+  location_enabled: number;
+  location_sharing: number;
   expires_at: number | null;
   tenant_created_at: number;
   tenant_updated_at: number;
@@ -223,10 +227,10 @@ export async function loadPrincipal(
             u.created_at AS user_created_at, u.updated_at AS user_updated_at,
             t.id AS tenant_id, t.name AS tenant_name, t.slug,
             t.status AS tenant_status, t.plan_code, t.subscription_status,
-            t.theme, t.is_demo, t.expires_at,
+            t.theme, t.is_demo, t.location_enabled, t.expires_at,
             t.created_at AS tenant_created_at, t.updated_at AS tenant_updated_at,
             m.id AS membership_id, m.role AS membership_role,
-            m.relationship, m.access AS membership_access
+            m.relationship, m.access AS membership_access, m.location_sharing
        FROM users u
        JOIN memberships m ON m.user_id = u.id
        JOIN tenants t ON t.id = m.tenant_id
@@ -269,6 +273,7 @@ export async function loadPrincipal(
       subscriptionStatus: row.subscription_status as TenantEntity['subscriptionStatus'],
       theme,
       isDemo: row.is_demo === 1,
+      locationEnabled: row.location_enabled !== 0,
       expiresAt: row.expires_at ? new Date(row.expires_at).toISOString() : null,
       createdAt: new Date(row.tenant_created_at).toISOString(),
       updatedAt: new Date(row.tenant_updated_at).toISOString(),
@@ -277,6 +282,7 @@ export async function loadPrincipal(
     membershipRole: row.membership_role as MembershipRole,
     role: row.relationship as UserRole,
     access: normalizeAccessKeys(accessRaw),
+    locationSharing: row.location_sharing === 1,
     isDemo: row.is_demo === 1,
     createdAt: new Date(row.user_created_at).toISOString(),
     updatedAt: new Date(row.user_updated_at).toISOString(),

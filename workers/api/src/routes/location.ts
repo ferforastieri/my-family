@@ -8,6 +8,7 @@ import {
   envelope,
   paginated,
   parseBody,
+  forbidden,
   queryInt,
   unauthorized,
 } from '../http';
@@ -283,6 +284,12 @@ locationRoutes.use('*', locationAuth, requireAccess('localizacao'), demoRestrict
 
 locationRoutes.post('/update', async (c) => {
   const principal = c.get('principal');
+  if (!principal.tenant.locationEnabled) {
+    throw forbidden('A localização está desativada para esta família.');
+  }
+  if (!principal.locationSharing) {
+    throw forbidden('Seu compartilhamento de localização está pausado.');
+  }
   const body = await parseBody(c, updateSchema);
   if (!Number.isFinite(body.latitude) || !Number.isFinite(body.longitude)) {
     throw badRequest('Localização inválida.');
@@ -335,6 +342,41 @@ locationRoutes.post('/update', async (c) => {
     await notifyLowBattery(c.env, principal.tenantId, row);
   }
   return envelope(c, { id: userId, message: 'Localização atualizada.' });
+});
+
+locationRoutes.post('/sharing', async (c) => {
+  const principal = c.get('principal');
+  const body = await parseBody(c, z.object({ enabled: z.boolean() }));
+  await execute(
+    c.env.DB,
+    `UPDATE memberships SET location_sharing = ?, updated_at = ?
+      WHERE tenant_id = ? AND user_id = ?`,
+    [body.enabled ? 1 : 0, now(), principal.tenantId, principal.id],
+  );
+  if (!body.enabled) {
+    await c.env.DB.batch([
+      c.env.DB.prepare(
+        'DELETE FROM location_latest WHERE tenant_id = ? AND user_id = ?',
+      ).bind(principal.tenantId, principal.id),
+      c.env.DB.prepare(
+        'DELETE FROM location_presences WHERE tenant_id = ? AND user_id = ?',
+      ).bind(principal.tenantId, principal.id),
+      c.env.DB.prepare('DELETE FROM location_tokens WHERE user_id = ?').bind(
+        principal.id,
+      ),
+    ]);
+  }
+  await broadcastToTenant(c.env, principal.tenantId, 'location.settings', {
+    enabled: body.enabled,
+    userId: principal.id,
+  });
+  return envelope(c, {
+    ok: true,
+    enabled: body.enabled,
+    message: body.enabled
+      ? 'Compartilhamento ativado.'
+      : 'Compartilhamento pausado.',
+  });
 });
 
 locationRoutes.get('/latest', async (c) => {
@@ -483,6 +525,9 @@ locationRoutes.delete('/places/:id', async (c) => {
 
 locationRoutes.post('/sos', async (c) => {
   const principal = c.get('principal');
+  if (!principal.tenant.locationEnabled) {
+    throw forbidden('A localização está desativada para esta família.');
+  }
   const latest = await getLatestRow(c.env, principal.tenantId, principal.id);
   const place = await currentPlaceName(c.env, principal.tenantId, latest);
   const name = principal.name?.trim() || principal.email;
@@ -498,6 +543,9 @@ locationRoutes.post('/sos', async (c) => {
 
 locationRoutes.post('/check-in', async (c) => {
   const principal = c.get('principal');
+  if (!principal.tenant.locationEnabled) {
+    throw forbidden('A localização está desativada para esta família.');
+  }
   const latest = await getLatestRow(c.env, principal.tenantId, principal.id);
   const place = await currentPlaceName(c.env, principal.tenantId, latest);
   const name = principal.name?.trim() || principal.email;

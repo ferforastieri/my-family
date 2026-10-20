@@ -45,34 +45,14 @@ class LocationController with WidgetsBindingObserver {
     _bindAuthListener();
     _bindLifecycleListener();
     if (kIsWeb) {
-      if (auth.user == null || _started || _starting) return;
-      _starting = true;
-      try {
-        final position = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-          ),
-        );
-        await _sendPosition(position);
-        _positionSubscription = Geolocator.getPositionStream(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-            distanceFilter: 50,
-          ),
-        ).listen((position) => unawaited(_sendPosition(position)));
-        _timer = Timer.periodic(
-          const Duration(minutes: 2),
-          (_) => unawaited(_sendCurrentPosition()),
-        );
-        _started = true;
-      } catch (_) {
-        // Permissão negada ou geolocalização indisponível.
-      } finally {
-        _starting = false;
-      }
+      stop();
       return;
     }
     if (auth.user == null) return;
+    if (!auth.user!.locationEnabled || !auth.user!.locationSharing) {
+      stop();
+      return;
+    }
     if (_started) {
       if (defaultTargetPlatform == TargetPlatform.android) {
         await _startAndroidBackgroundService();
