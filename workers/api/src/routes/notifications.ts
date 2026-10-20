@@ -279,7 +279,7 @@ notificationsRoutes.post('/send', requireTenantAdmin, demoRestricted, async (c) 
   return envelope(c, {
     message: 'Notificação enviada.',
     ...notificationDto(row, principal.id),
-    sent: 0,
+    sent: row.sent,
   });
 });
 

@@ -1,6 +1,7 @@
 import type { Env, JobMessage } from './env';
 import { execute, now, queryAll, queryOne } from './db';
 import { broadcastToTenant } from './realtime-service';
+import { sendPushToTenant } from './push';
 
 interface NotificationRow {
   id: string;
@@ -65,7 +66,19 @@ export async function sendNotification(
     readBy: [],
     createdAt: new Date(row.created_at).toISOString(),
   });
-  return row;
+  const push = await sendPushToTenant(
+    env,
+    tenantId,
+    {
+      title: row.title,
+      body: row.body,
+      url: row.url,
+      type: row.type,
+      includeNotification: true,
+    },
+    input.excludeUserIds ?? [],
+  );
+  return { ...row, sent: push.sent };
 }
 
 export async function handleJob(env: Env, message: JobMessage): Promise<void> {

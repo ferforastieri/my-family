@@ -27,9 +27,9 @@ referência e rollback.
 
 ## O que falta / diferenças conhecidas
 
-1. **Push FCM**: `POST /notifications/send` grava e entrega em tempo real, mas
-   ainda não envia para o FCM (`sent: 0`). Implementar FCM HTTP v1 com JWT
-   RS256 via `jose` + `fetch` (sem `firebase-admin`).
+1. **Push FCM**: implementado em `src/push.ts` (FCM HTTP v1 com JWT RS256).
+   Basta configurar `FIREBASE_SERVICE_ACCOUNT_JSON` no Worker. Sem o secret, o
+   envio retorna `sent: 0` e o app continua recebendo em tempo real.
 2. **Cloudflare Images**: as fotos são servidas no original. Não há thumbnail
    nem conversão para WebP. Opções: transformar na leitura com
    `/cdn-cgi/image/...` ou usar o binding de Images.

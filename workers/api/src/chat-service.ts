@@ -3,6 +3,7 @@ import { execute, iso, jsonArray, now, queryAll, queryOne } from './db';
 import type { RealtimeBroadcast, RealtimeSession } from './realtime-service';
 import { forbidden, badRequest } from './http';
 import { members } from './tenants';
+import { sendPushToUsers } from './push';
 
 export interface ConversationRow {
   id: string;
@@ -483,6 +484,44 @@ export async function sendMessage(
     'UPDATE chat_conversations SET updated_at = ? WHERE tenant_id = ? AND id = ?',
     [timestamp, session.tenantId, conversationId],
   );
+  const recipients =
+    conversation.type === 'direct'
+      ? jsonArray(conversation.participant_ids).filter((id) => id !== session.userId)
+      : (await members(env, session.tenantId))
+          .filter(
+            (member) =>
+              member.id !== session.userId &&
+              (member.membershipRole === 'owner' ||
+                member.membershipRole === 'admin' ||
+                member.access.includes('chat')),
+          )
+          .map((member) => member.id);
+  const preview = text
+    ? text.length > 120
+      ? `${text.slice(0, 117)}...`
+      : text
+    : body.mediaType === 'image'
+      ? 'Foto'
+      : body.mediaType === 'video'
+        ? 'Vídeo'
+        : 'Mensagem';
+  const push = await sendPushToUsers(env, session.tenantId, recipients, {
+    title: senderName,
+    body: preview,
+    type: 'chat',
+    conversationId,
+    senderId: session.userId,
+    senderName,
+    url: `/chat?conversationId=${conversationId}`,
+    channelId: 'chat_messages',
+    includeNotification: false,
+  });
+  if (push.deliveredUserIds.length) {
+    await execute(env.DB, 'UPDATE chat_messages SET delivered_by = ? WHERE id = ?', [
+      JSON.stringify(push.deliveredUserIds),
+      id,
+    ]);
+  }
   const row = (await queryOne<MessageRow>(
     env.DB,
     'SELECT * FROM chat_messages WHERE id = ?',
