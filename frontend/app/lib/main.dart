@@ -13,7 +13,6 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
 import 'core/toast/toast_controller.dart';
 import 'core/toast/toast_overlay.dart';
-import 'core/widgets/skeleton.dart';
 import 'data/family_repository.dart';
 import 'features/shell/presentation/app_router.dart';
 
@@ -130,7 +129,7 @@ class MyFamilyApp extends StatelessWidget {
             ),
             home: ToastOverlay(
               controller: toast,
-              child: const _SystemSafeArea(child: PageSkeleton(cards: 3)),
+              child: const _SystemSafeArea(child: _BootSplash()),
             ),
           );
         }
@@ -153,6 +152,28 @@ class MyFamilyApp extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _BootSplash extends StatelessWidget {
+  const _BootSplash();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return ColoredBox(
+      color: palette.bgStart,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset('assets/brand/family-logo.png', width: 96),
+            const SizedBox(height: 20),
+            CircularProgressIndicator(color: palette.primary),
+          ],
+        ),
+      ),
     );
   }
 }

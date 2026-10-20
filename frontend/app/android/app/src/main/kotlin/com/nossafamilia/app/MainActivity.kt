@@ -13,14 +13,13 @@ class MainActivity : FlutterActivity() {
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "start" -> {
-                        val cookie = call.argument<String>("cookie")
-                        val csrfToken = call.argument<String>("csrfToken")
+                        val token = call.argument<String>("token")
                         val apiBaseUrl = call.argument<String>("apiBaseUrl")
-                        if (cookie.isNullOrBlank() || csrfToken.isNullOrBlank() || apiBaseUrl.isNullOrBlank()) {
-                            result.error("invalid_args", "Sessão e API base são obrigatórias.", null)
+                        if (token.isNullOrBlank() || apiBaseUrl.isNullOrBlank()) {
+                            result.error("invalid_args", "Token e API base são obrigatórios.", null)
                             return@setMethodCallHandler
                         }
-                        BackgroundLocationService.saveConfig(this, cookie, csrfToken, apiBaseUrl)
+                        BackgroundLocationService.saveConfig(this, token, apiBaseUrl)
                         val intent = Intent(this, BackgroundLocationService::class.java)
                             .setAction(BackgroundLocationService.ACTION_START)
                         try {

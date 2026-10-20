@@ -549,18 +549,26 @@ class LocationSnapshot {
     required this.latitude,
     required this.longitude,
     required this.at,
+    this.userId,
     this.userName,
+    this.email,
+    this.avatarPath,
     this.accuracy,
+    this.speed,
     this.batteryLevel,
     this.isCharging,
     this.platform,
   });
 
   final String id;
+  final String? userId;
   final String? userName;
+  final String? email;
+  final String? avatarPath;
   final double latitude;
   final double longitude;
   final double? accuracy;
+  final double? speed;
   final int? batteryLevel;
   final bool? isCharging;
   final String? platform;
@@ -569,16 +577,21 @@ class LocationSnapshot {
   factory LocationSnapshot.fromJson(Map<String, dynamic> json) =>
       LocationSnapshot(
         id: json['id'].toString(),
+        userId: json['userId']?.toString() ?? json['id']?.toString(),
         userName: json['userName']?.toString(),
+        email: json['email']?.toString(),
+        avatarPath: json['avatarPath']?.toString(),
         latitude: (json['latitude'] as num).toDouble(),
         longitude: (json['longitude'] as num).toDouble(),
         accuracy: (json['accuracy'] as num?)?.toDouble(),
+        speed: (json['speed'] as num?)?.toDouble(),
         batteryLevel: (json['batteryLevel'] as num?)?.toInt(),
         isCharging: json['isCharging'] as bool?,
         platform: json['platform']?.toString(),
-        at: json['createdAt'] is String
-            ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
-            : DateTime.now(),
+        at: DateTime.tryParse(
+              (json['updatedAt'] ?? json['createdAt'] ?? '').toString(),
+            ) ??
+            DateTime.now(),
       );
 }
 
@@ -591,6 +604,8 @@ class LocationPlace {
     required this.radiusMeters,
     required this.active,
     this.description,
+    this.notifyOnArrive = true,
+    this.notifyOnLeave = true,
   });
 
   final String id;
@@ -600,6 +615,8 @@ class LocationPlace {
   final double longitude;
   final int radiusMeters;
   final bool active;
+  final bool notifyOnArrive;
+  final bool notifyOnLeave;
 
   factory LocationPlace.fromJson(Map<String, dynamic> json) => LocationPlace(
         id: json['id'].toString(),
@@ -609,6 +626,8 @@ class LocationPlace {
         longitude: (json['longitude'] as num).toDouble(),
         radiusMeters: (json['radiusMeters'] as num?)?.toInt() ?? 120,
         active: json['active'] != false,
+        notifyOnArrive: json['notifyOnArrive'] != false,
+        notifyOnLeave: json['notifyOnLeave'] != false,
       );
 }
 

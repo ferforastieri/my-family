@@ -155,6 +155,7 @@ export async function purgeExpired(env: Env): Promise<void> {
       `DELETE FROM notifications WHERE created_at < ?`,
     ).bind(timestamp - 180 * 24 * 60 * 60 * 1000),
     env.DB.prepare('DELETE FROM ws_tickets WHERE expires_at < ?').bind(timestamp),
+    env.DB.prepare('DELETE FROM location_tokens WHERE expires_at < ?').bind(timestamp),
   ]);
 }
 
@@ -195,7 +196,8 @@ const tenantTables = [
   'mini_game_configs',
   'quiz_questions',
   'home_settings',
-  'location_updates',
+  'location_latest',
+  'location_tokens',
   'location_places',
   'location_presences',
   'notifications',

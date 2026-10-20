@@ -67,6 +67,12 @@ app.use('/api/*', async (c, next) => {
   if (['GET', 'HEAD', 'OPTIONS'].includes(c.req.method)) return next();
   if (publicPosts.has(c.req.path)) return next();
   if (c.req.path.startsWith('/api/uploads/')) return next();
+  if (
+    c.req.path === '/api/location/update' &&
+    c.req.header('authorization')?.toLowerCase().startsWith('bearer ')
+  ) {
+    return next();
+  }
   const cookie = getCookie(c, CSRF_COOKIE);
   const header = c.req.header('x-csrf-token');
   if (!cookie || !header || !constantTimeEqual(cookie, header)) {

@@ -7,7 +7,6 @@ import 'package:battery_plus/battery_plus.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../auth/auth_controller.dart';
-import '../auth/cookie_transport.dart';
 import '../api/http_api_client.dart';
 import '../config/app_config.dart';
 import '../socket/socket_client.dart';
@@ -30,7 +29,7 @@ class LocationController with WidgetsBindingObserver {
   bool _lifecycleListenerBound = false;
   bool _openedBackgroundSettings = false;
   bool _openedLocationSettings = false;
-  String? _activeAndroidCookie;
+  String? _activeLocationToken;
 
   Future<void> requestStartupPermissions() async {
     _bindLifecycleListener();
@@ -46,7 +45,31 @@ class LocationController with WidgetsBindingObserver {
     _bindAuthListener();
     _bindLifecycleListener();
     if (kIsWeb) {
-      stop();
+      if (auth.user == null || _started || _starting) return;
+      _starting = true;
+      try {
+        final position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+          ),
+        );
+        await _sendPosition(position);
+        _positionSubscription = Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 50,
+          ),
+        ).listen((position) => unawaited(_sendPosition(position)));
+        _timer = Timer.periodic(
+          const Duration(minutes: 2),
+          (_) => unawaited(_sendCurrentPosition()),
+        );
+        _started = true;
+      } catch (_) {
+        // Permissão negada ou geolocalização indisponível.
+      } finally {
+        _starting = false;
+      }
       return;
     }
     if (auth.user == null) return;
@@ -113,10 +136,6 @@ class LocationController with WidgetsBindingObserver {
   }
 
   void _handleAuthChanged() {
-    if (kIsWeb) {
-      stop();
-      return;
-    }
     if (auth.user != null) {
       unawaited(bootstrap());
     } else {
@@ -158,17 +177,19 @@ class LocationController with WidgetsBindingObserver {
   }
 
   Future<bool> _startAndroidBackgroundService() async {
-    final cookie = (await sessionCookies.headers(AppConfig.apiUri('/')))['Cookie'];
-    final csrfToken = socket.csrfToken;
-    if (cookie == null || csrfToken == null) return false;
-    if (_activeAndroidCookie == cookie && _started) return true;
     try {
+      final data = await api.post<Map<String, dynamic>>(
+        '/auth/location-token',
+        data: const {},
+      );
+      final token = data['token']?.toString();
+      if (token == null || token.isEmpty) return false;
+      if (_activeLocationToken == token && _started) return true;
       await _backgroundChannel.invokeMethod<bool>('start', {
-        'cookie': cookie,
-        'csrfToken': csrfToken,
+        'token': token,
         'apiBaseUrl': AppConfig.apiBaseUrl,
       });
-      _activeAndroidCookie = cookie;
+      _activeLocationToken = token;
       return true;
     } catch (_) {
       unawaited(_sendCurrentPosition());
@@ -186,7 +207,6 @@ class LocationController with WidgetsBindingObserver {
   }
 
   Future<void> _sendCurrentPosition() async {
-    if (kIsWeb) return;
     if (auth.user == null) return;
     try {
       final position = await Geolocator.getCurrentPosition(
@@ -201,7 +221,6 @@ class LocationController with WidgetsBindingObserver {
   }
 
   Future<void> _sendPosition(Position position) async {
-    if (kIsWeb) return;
     if (auth.user == null) return;
     try {
       final batteryLevel = await _safeBatteryLevel();
@@ -258,7 +277,7 @@ class LocationController with WidgetsBindingObserver {
     unawaited(_stopAndroidBackgroundService());
     _started = false;
     _starting = false;
-    _activeAndroidCookie = null;
+    _activeLocationToken = null;
   }
 
   void dispose() {

@@ -142,7 +142,7 @@ class BackgroundLocationService : Service() {
 
             var delayMs = 1_000L
             repeat(MAX_SEND_ATTEMPTS) { attempt ->
-                if (postLocation(endpoint, config.cookie, config.csrfToken, body)) return@execute
+                if (postLocation(endpoint, config.token, body)) return@execute
                 if (attempt < MAX_SEND_ATTEMPTS - 1) {
                     try {
                         Thread.sleep(delayMs)
@@ -155,7 +155,7 @@ class BackgroundLocationService : Service() {
         }
     }
 
-    private fun postLocation(endpoint: String, cookie: String, csrfToken: String, body: JSONObject): Boolean {
+    private fun postLocation(endpoint: String, token: String, body: JSONObject): Boolean {
         var connection: HttpURLConnection? = null
         return try {
             connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
@@ -163,8 +163,7 @@ class BackgroundLocationService : Service() {
                 connectTimeout = 10_000
                 readTimeout = 10_000
                 doOutput = true
-                setRequestProperty("Cookie", cookie)
-                setRequestProperty("X-CSRF-Token", csrfToken)
+                setRequestProperty("Authorization", "Bearer $token")
                 setRequestProperty("Content-Type", "application/json")
             }
             OutputStreamWriter(connection.outputStream).use { writer ->
@@ -262,28 +261,26 @@ class BackgroundLocationService : Service() {
             .build()
     }
 
-    data class ServiceConfig(val cookie: String, val csrfToken: String, val apiBaseUrl: String)
+    data class ServiceConfig(val token: String, val apiBaseUrl: String)
 
     companion object {
         const val CHANNEL = "com.nossafamilia.app/background_location"
         const val ACTION_START = "com.nossafamilia.app.background_location.START"
         const val ACTION_STOP = "com.nossafamilia.app.background_location.STOP"
         private const val PREFS = "background_location_secure"
-        private const val KEY_COOKIE = "cookie"
-        private const val KEY_CSRF_TOKEN = "csrf_token"
+        private const val KEY_TOKEN = "location_token"
         private const val KEY_API_BASE_URL = "api_base_url"
         private const val CHANNEL_ID = "my_family_location_tracking"
         private const val NOTIFICATION_ID = 4201
-        private const val UPDATE_INTERVAL_MS = 60_000L
-        private const val FASTEST_INTERVAL_MS = 30_000L
-        private const val MIN_DISTANCE_METERS = 25f
+        private const val UPDATE_INTERVAL_MS = 30_000L
+        private const val FASTEST_INTERVAL_MS = 15_000L
+        private const val MIN_DISTANCE_METERS = 20f
         private const val MAX_SEND_ATTEMPTS = 3
 
-        fun saveConfig(context: Context, cookie: String, csrfToken: String, apiBaseUrl: String) {
+        fun saveConfig(context: Context, token: String, apiBaseUrl: String) {
             securePreferences(context)
                 .edit()
-                .putString(KEY_COOKIE, cookie)
-                .putString(KEY_CSRF_TOKEN, csrfToken)
+                .putString(KEY_TOKEN, token)
                 .putString(KEY_API_BASE_URL, apiBaseUrl)
                 .apply()
         }
@@ -297,11 +294,10 @@ class BackgroundLocationService : Service() {
 
         fun readConfig(context: Context): ServiceConfig? {
             val prefs = securePreferences(context)
-            val cookie = prefs.getString(KEY_COOKIE, null)?.takeIf { it.isNotBlank() }
-            val csrfToken = prefs.getString(KEY_CSRF_TOKEN, null)?.takeIf { it.isNotBlank() }
+            val token = prefs.getString(KEY_TOKEN, null)?.takeIf { it.isNotBlank() }
             val apiBaseUrl = prefs.getString(KEY_API_BASE_URL, null)?.takeIf { it.isNotBlank() }
-            return if (cookie != null && csrfToken != null && apiBaseUrl != null) {
-                ServiceConfig(cookie, csrfToken, apiBaseUrl)
+            return if (token != null && apiBaseUrl != null) {
+                ServiceConfig(token, apiBaseUrl)
             } else null
         }
 

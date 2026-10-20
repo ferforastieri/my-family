@@ -9,6 +9,7 @@ import '../../../core/theme/theme_controller.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../data/family_repository.dart';
 import '../../admin/presentation/admin_page.dart';
+import '../../auth/presentation/login_page.dart';
 import '../../chat/presentation/chat_page.dart';
 import '../../content/presentation/editable_text_collection_page.dart';
 import '../../games/presentation/games_page.dart';
@@ -33,15 +34,20 @@ GoRouter buildRouter(
     refreshListenable: auth,
     redirect: (context, state) {
       final path = state.uri.path;
+      if (auth.user == null) {
+        if (path == '/login') return null;
+        final query = <String, String>{...state.uri.queryParameters};
+        final segments = state.uri.pathSegments;
+        final slug = state.pathParameters['slug'] ??
+            (segments.length >= 2 && segments.first == 'f' ? segments[1] : null);
+        if (slug != null && slug.isNotEmpty) query['tenantSlug'] = slug;
+        return Uri(
+          path: '/login',
+          queryParameters: query.isEmpty ? null : query,
+        ).toString();
+      }
+      if (path == '/login') return '/';
       final accessKey = _accessForPath(path);
-      if ((_requiresAuth(path) || accessKey != null) && auth.user == null) {
-        return '/perfil';
-      }
-      if (path == '/perfil' &&
-          auth.user != null &&
-          state.uri.queryParameters.containsKey('tenantSlug')) {
-        return '/';
-      }
       if (path == '/admin' && auth.user?.isAdmin != true) return '/';
       if (accessKey != null && auth.user?.canAccess(accessKey) != true) {
         return '/';
@@ -49,6 +55,12 @@ GoRouter buildRouter(
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/login',
+        pageBuilder: (context, state) => _page(
+          LoginPage(auth: auth, toast: toast),
+        ),
+      ),
       ShellRoute(
         builder: (context, state, child) => AppShell(
           auth: auth,
@@ -217,6 +229,7 @@ GoRouter buildRouter(
           GoRoute(
             path: '/localizacao',
             pageBuilder: (context, state) => _page(LocationPage(
+              auth: auth,
               repository: repository,
               toast: toast,
             )),
@@ -239,11 +252,7 @@ GoRouter buildRouter(
   );
 }
 
-bool _requiresAuth(String path) {
-  return path == '/atalhos/memorias' ||
-      path == '/atalhos/mais' ||
-      path == '/admin';
-}
+
 
 String? _accessForPath(String path) {
   return switch (path) {

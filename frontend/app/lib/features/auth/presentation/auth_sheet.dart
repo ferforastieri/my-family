@@ -8,10 +8,16 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_sheet.dart';
 
 class AuthSheet extends StatefulWidget {
-  const AuthSheet({super.key, required this.auth, required this.toast});
+  const AuthSheet({
+    super.key,
+    required this.auth,
+    required this.toast,
+    this.onAuthenticated,
+  });
 
   final AuthController auth;
   final ToastController toast;
+  final VoidCallback? onAuthenticated;
 
   @override
   State<AuthSheet> createState() => _AuthSheetState();
@@ -165,7 +171,11 @@ class _AuthSheetState extends State<AuthSheet> {
         await widget.auth.login(emailValue, passwordValue);
       }
       widget.toast.backendSuccess(widget.auth.takeMessage());
-      if (mounted) Navigator.pop(context);
+      if (widget.onAuthenticated != null) {
+        widget.onAuthenticated!();
+      } else if (mounted) {
+        Navigator.pop(context);
+      }
     } catch (exception) {
       final message = authErrorMessage(exception);
       widget.toast.error(message);

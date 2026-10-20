@@ -1,15 +1,24 @@
 import { Hono } from 'hono';
+import { createMiddleware } from 'hono/factory';
 import { z } from 'zod';
 import type { AppEnv } from '../env';
 import { authMiddleware, demoRestricted, requireAccess } from '../auth';
-import { badRequest, envelope, paginated, parseBody, queryInt } from '../http';
+import {
+  badRequest,
+  envelope,
+  paginated,
+  parseBody,
+  queryInt,
+  unauthorized,
+} from '../http';
 import { execute, iso, now, queryAll, queryOne } from '../db';
 import { broadcastToTenant } from '../realtime-service';
 import { sendNotification } from '../jobs';
+import { principalFromLocationToken } from '../location-token';
 
-interface LocationRow {
-  id: string;
-  user_id: string | null;
+interface LatestRow {
+  tenant_id: string;
+  user_id: string;
   user_name: string | null;
   latitude: number;
   longitude: number;
@@ -20,7 +29,11 @@ interface LocationRow {
   battery_level: number | null;
   is_charging: number | null;
   platform: string;
-  created_at: number;
+  last_battery_alert_at: number | null;
+  updated_at: number;
+  email: string | null;
+  name: string | null;
+  avatar_path: string | null;
 }
 
 interface PlaceRow {
@@ -31,15 +44,19 @@ interface PlaceRow {
   longitude: number;
   radius_meters: number;
   active: number;
+  notify_on_arrive: number;
+  notify_on_leave: number;
   created_at: number;
   updated_at: number;
 }
 
-function locationDto(row: LocationRow) {
+function locationDto(row: LatestRow) {
   return {
-    id: row.id,
+    id: row.user_id,
     userId: row.user_id,
-    userName: row.user_name,
+    userName: row.name ?? row.user_name ?? row.email ?? null,
+    email: row.email,
+    avatarPath: row.avatar_path,
     latitude: row.latitude,
     longitude: row.longitude,
     accuracy: row.accuracy,
@@ -49,7 +66,8 @@ function locationDto(row: LocationRow) {
     batteryLevel: row.battery_level,
     isCharging: row.is_charging === null ? null : row.is_charging === 1,
     platform: row.platform,
-    createdAt: iso(row.created_at),
+    createdAt: iso(row.updated_at),
+    updatedAt: iso(row.updated_at),
   };
 }
 
@@ -62,6 +80,8 @@ function placeDto(row: PlaceRow) {
     longitude: row.longitude,
     radiusMeters: row.radius_meters,
     active: row.active === 1,
+    notifyOnArrive: row.notify_on_arrive === 1,
+    notifyOnLeave: row.notify_on_leave === 1,
     createdAt: iso(row.created_at),
     updatedAt: iso(row.updated_at),
   };
@@ -89,8 +109,6 @@ const updateSchema = z.object({
   heading: z.number().optional(),
   batteryLevel: z.number().min(0).max(100).optional(),
   isCharging: z.boolean().optional(),
-  userId: z.string().optional(),
-  userName: z.string().optional(),
   platform: z.enum(['android', 'ios', 'web', 'unknown']).optional(),
 });
 
@@ -101,194 +119,68 @@ const placeSchema = z.object({
   longitude: z.number(),
   radiusMeters: z.number().min(20).max(5000),
   active: z.boolean().optional(),
+  notifyOnArrive: z.boolean().optional(),
+  notifyOnLeave: z.boolean().optional(),
 });
 
-const locationRoutes = new Hono<AppEnv>();
-locationRoutes.use('*', authMiddleware, requireAccess('localizacao'), demoRestricted);
-
-locationRoutes.post('/update', async (c) => {
-  const principal = c.get('principal');
-  const body = await parseBody(c, updateSchema);
-  if (body.platform === 'web') throw badRequest('Localização web não é rastreada.');
-  if (!Number.isFinite(body.latitude) || !Number.isFinite(body.longitude)) {
-    throw badRequest('Localização inválida.');
-  }
-  const id = crypto.randomUUID();
-  const timestamp = now();
-  const userId = principal.id;
-  const userName = principal.name || principal.email || body.userName || null;
-  await execute(
-    c.env.DB,
-    `INSERT INTO location_updates (id, tenant_id, user_id, user_name, latitude, longitude, accuracy, altitude, speed, heading, battery_level, is_charging, platform, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      id,
-      principal.tenantId,
-      userId,
-      userName,
-      body.latitude,
-      body.longitude,
-      body.accuracy ?? null,
-      body.altitude ?? null,
-      body.speed ?? null,
-      body.heading ?? null,
-      body.batteryLevel ?? null,
-      body.isCharging === undefined ? null : body.isCharging ? 1 : 0,
-      body.platform ?? 'unknown',
-      timestamp,
-    ],
+async function getLatestRows(env: AppEnv['Bindings'], tenantId: string) {
+  return queryAll<LatestRow>(
+    env.DB,
+    `SELECT l.*, u.email, u.name, u.avatar_path
+       FROM location_latest l
+       LEFT JOIN users u ON u.id = l.user_id
+      WHERE l.tenant_id = ?
+      ORDER BY l.updated_at DESC`,
+    [tenantId],
   );
-  const row = (await queryOne<LocationRow>(
-    c.env.DB,
-    'SELECT * FROM location_updates WHERE id = ?',
-    [id],
-  ))!;
-  const dto = locationDto(row);
-  await broadcastToTenant(c.env, principal.tenantId, 'location.updated', dto);
-  await notifyPlaceTransitions(c.env, principal.tenantId, row);
-  return envelope(c, { id, message: 'Localização atualizada.' });
-});
+}
 
-locationRoutes.get('/latest', async (c) => {
-  const principal = c.get('principal');
-  const page = queryInt(c.req.query('page'), 1, 100000);
-  const limit = Math.min(100, queryInt(c.req.query('limit'), 50, 100));
-  const offset = (page - 1) * limit;
-  const rows = await queryAll<LocationRow>(
-    c.env.DB,
-    `SELECT * FROM (
-       SELECT *, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC) AS rn
-         FROM location_updates
-        WHERE tenant_id = ? AND user_id IS NOT NULL AND user_id <> ''
-          AND platform IN ('android', 'ios')
-     ) WHERE rn = 1 ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-    [principal.tenantId, limit, offset],
+async function getLatestRow(
+  env: AppEnv['Bindings'],
+  tenantId: string,
+  userId: string,
+) {
+  return queryOne<LatestRow>(
+    env.DB,
+    `SELECT l.*, u.email, u.name, u.avatar_path
+       FROM location_latest l
+       LEFT JOIN users u ON u.id = l.user_id
+      WHERE l.tenant_id = ? AND l.user_id = ?`,
+    [tenantId, userId],
   );
-  const total = await queryOne<{ count: number }>(
-    c.env.DB,
-    `SELECT COUNT(DISTINCT user_id) AS count FROM location_updates
-      WHERE tenant_id = ? AND user_id IS NOT NULL AND user_id <> ''
-        AND platform IN ('android', 'ios')`,
-    [principal.tenantId],
-  );
-  return envelope(c, paginated(rows.map(locationDto), total?.count ?? 0, page, limit));
-});
+}
 
-locationRoutes.get('/places', async (c) => {
-  const principal = c.get('principal');
-  const rows = await queryAll<PlaceRow>(
-    c.env.DB,
-    'SELECT * FROM location_places WHERE tenant_id = ? ORDER BY name ASC, created_at DESC',
-    [principal.tenantId],
+async function currentPlaceName(
+  env: AppEnv['Bindings'],
+  tenantId: string,
+  row: LatestRow | null,
+) {
+  if (!row) return null;
+  const places = await queryAll<PlaceRow>(
+    env.DB,
+    'SELECT * FROM location_places WHERE tenant_id = ? AND active = 1',
+    [tenantId],
   );
-  return envelope(c, rows.map(placeDto));
-});
-
-locationRoutes.post('/places', async (c) => {
-  const principal = c.get('principal');
-  const body = await parseBody(c, placeSchema);
-  const name = body.name.trim();
-  if (!name) throw badRequest('Nome do local é obrigatório.');
-  const id = crypto.randomUUID();
-  const timestamp = now();
-  await execute(
-    c.env.DB,
-    `INSERT INTO location_places (id, tenant_id, name, description, latitude, longitude, radius_meters, active, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      id,
-      principal.tenantId,
-      name,
-      body.description?.trim() ?? null,
-      body.latitude,
-      body.longitude,
-      Math.max(20, Math.min(5000, Math.round(body.radiusMeters))),
-      body.active === false ? 0 : 1,
-      timestamp,
-      timestamp,
-    ],
-  );
-  const row = (await queryOne<PlaceRow>(c.env.DB, 'SELECT * FROM location_places WHERE id = ?', [
-    id,
-  ]))!;
-  const dto = placeDto(row);
-  await broadcastToTenant(c.env, principal.tenantId, 'location.places.changed', dto);
-  return envelope(c, { message: 'Local salvo.', ...dto });
-});
-
-locationRoutes.put('/places/:id', async (c) => {
-  const principal = c.get('principal');
-  const body = await parseBody(c, placeSchema.partial());
-  const sets: string[] = [];
-  const params: unknown[] = [];
-  if (body.name !== undefined) {
-    const value = body.name.trim();
-    if (!value) throw badRequest('Nome do local é obrigatório.');
-    sets.push('name = ?');
-    params.push(value);
-  }
-  if (body.description !== undefined) {
-    sets.push('description = ?');
-    params.push(body.description?.trim() || null);
-  }
-  for (const [field, column] of [
-    ['latitude', 'latitude'],
-    ['longitude', 'longitude'],
-  ] as const) {
-    if (body[field] !== undefined) {
-      sets.push(`${column} = ?`);
-      params.push(body[field]);
+  for (const place of places) {
+    if (
+      distanceMeters(row.latitude, row.longitude, place.latitude, place.longitude) <=
+      place.radius_meters
+    ) {
+      return place.name;
     }
   }
-  if (body.radiusMeters !== undefined) {
-    sets.push('radius_meters = ?');
-    params.push(Math.max(20, Math.min(5000, Math.round(body.radiusMeters))));
-  }
-  if (body.active !== undefined) {
-    sets.push('active = ?');
-    params.push(body.active ? 1 : 0);
-  }
-  if (sets.length) {
-    sets.push('updated_at = ?');
-    params.push(now(), principal.tenantId, c.req.param('id'));
-    await execute(
-      c.env.DB,
-      `UPDATE location_places SET ${sets.join(', ')} WHERE tenant_id = ? AND id = ?`,
-      params,
-    );
-  }
-  const row = await queryOne<PlaceRow>(
-    c.env.DB,
-    'SELECT * FROM location_places WHERE tenant_id = ? AND id = ?',
-    [principal.tenantId, c.req.param('id')],
-  );
-  if (!row) return envelope(c, null);
-  const dto = placeDto(row);
-  await broadcastToTenant(c.env, principal.tenantId, 'location.places.changed', dto);
-  return envelope(c, { message: 'Local atualizado.', ...dto });
-});
+  return null;
+}
 
-locationRoutes.delete('/places/:id', async (c) => {
-  const principal = c.get('principal');
-  const id = c.req.param('id');
-  const result = await c.env.DB.batch([
-    c.env.DB.prepare('DELETE FROM location_presences WHERE tenant_id = ? AND place_id = ?').bind(
-      principal.tenantId,
-      id,
-    ),
-    c.env.DB.prepare('DELETE FROM location_places WHERE tenant_id = ? AND id = ?').bind(
-      principal.tenantId,
-      id,
-    ),
-  ]);
-  const ok = (result[1]?.meta.changes ?? 0) === 1;
-  if (ok) {
-    await broadcastToTenant(c.env, principal.tenantId, 'location.places.changed', { id });
-  }
-  return envelope(c, { ok, message: 'Local removido.' });
-});
+function displayName(row: LatestRow) {
+  return row.name?.trim() || row.user_name?.trim() || row.email || 'Alguém';
+}
 
-async function notifyPlaceTransitions(env: AppEnv['Bindings'], tenantId: string, row: LocationRow) {
+async function notifyPlaceTransitions(
+  env: AppEnv['Bindings'],
+  tenantId: string,
+  row: LatestRow,
+) {
   if (!row.user_id) return;
   const places = await queryAll<PlaceRow>(
     env.DB,
@@ -328,14 +220,295 @@ async function notifyPlaceTransitions(env: AppEnv['Bindings'], tenantId: string,
       ],
     );
     if (!previous) continue;
-    const name = row.user_name || 'Alguém';
+    const notify = inside
+      ? place.notify_on_arrive === 1
+      : place.notify_on_leave === 1;
+    if (!notify) continue;
+    const name = displayName(row);
     await sendNotification(env, tenantId, {
       title: 'Localização da família',
       body: inside ? `${name} chegou em ${place.name}.` : `${name} saiu de ${place.name}.`,
       url: '/localizacao',
       type: 'location',
+      excludeUserIds: [row.user_id],
     });
   }
 }
+
+async function notifyLowBattery(
+  env: AppEnv['Bindings'],
+  tenantId: string,
+  row: LatestRow,
+) {
+  if (
+    row.battery_level === null ||
+    row.battery_level > 20 ||
+    row.is_charging === 1
+  ) {
+    return;
+  }
+  const timestamp = now();
+  if (row.last_battery_alert_at && timestamp - row.last_battery_alert_at < 3_600_000) {
+    return;
+  }
+  await execute(
+    env.DB,
+    'UPDATE location_latest SET last_battery_alert_at = ? WHERE tenant_id = ? AND user_id = ?',
+    [timestamp, tenantId, row.user_id],
+  );
+  await sendNotification(env, tenantId, {
+    title: 'Bateria baixa',
+    body: `${displayName(row)} está com ${row.battery_level}% de bateria.`,
+    url: '/localizacao',
+    type: 'location',
+    excludeUserIds: [row.user_id],
+  });
+}
+
+const locationAuth = createMiddleware<AppEnv>(async (c, next) => {
+  const header = c.req.header('authorization') ?? '';
+  const bearer = /^Bearer\s+(.+)$/i.exec(header)?.[1];
+  if (bearer && c.req.method === 'POST' && c.req.path === '/api/location/update') {
+    const principal = await principalFromLocationToken(c.env, bearer);
+    if (!principal) throw unauthorized('Token de localização inválido.');
+    c.set('principal', principal);
+    await next();
+    return;
+  }
+  await authMiddleware(c, next);
+});
+
+const locationRoutes = new Hono<AppEnv>();
+locationRoutes.use('*', locationAuth, requireAccess('localizacao'), demoRestricted);
+
+locationRoutes.post('/update', async (c) => {
+  const principal = c.get('principal');
+  const body = await parseBody(c, updateSchema);
+  if (!Number.isFinite(body.latitude) || !Number.isFinite(body.longitude)) {
+    throw badRequest('Localização inválida.');
+  }
+  const userId = principal.id;
+  const userName = principal.name?.trim() || principal.email;
+  await execute(
+    c.env.DB,
+    `INSERT INTO location_latest (
+       tenant_id, user_id, user_name, latitude, longitude, accuracy, altitude,
+       speed, heading, battery_level, is_charging, platform, updated_at
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(tenant_id, user_id) DO UPDATE SET
+       user_name = excluded.user_name,
+       latitude = excluded.latitude,
+       longitude = excluded.longitude,
+       accuracy = excluded.accuracy,
+       altitude = excluded.altitude,
+       speed = excluded.speed,
+       heading = excluded.heading,
+       battery_level = excluded.battery_level,
+       is_charging = excluded.is_charging,
+       platform = excluded.platform,
+       updated_at = excluded.updated_at`,
+    [
+      principal.tenantId,
+      userId,
+      userName,
+      body.latitude,
+      body.longitude,
+      body.accuracy ?? null,
+      body.altitude ?? null,
+      body.speed ?? null,
+      body.heading ?? null,
+      body.batteryLevel ?? null,
+      body.isCharging === undefined ? null : body.isCharging ? 1 : 0,
+      body.platform ?? 'unknown',
+      now(),
+    ],
+  );
+  const row = await getLatestRow(c.env, principal.tenantId, userId);
+  if (row) {
+    await broadcastToTenant(
+      c.env,
+      principal.tenantId,
+      'location.updated',
+      locationDto(row),
+    );
+    await notifyPlaceTransitions(c.env, principal.tenantId, row);
+    await notifyLowBattery(c.env, principal.tenantId, row);
+  }
+  return envelope(c, { id: userId, message: 'Localização atualizada.' });
+});
+
+locationRoutes.get('/latest', async (c) => {
+  const principal = c.get('principal');
+  const page = queryInt(c.req.query('page'), 1, 100000);
+  const limit = Math.min(100, queryInt(c.req.query('limit'), 50, 100));
+  const rows = await getLatestRows(c.env, principal.tenantId);
+  const start = (page - 1) * limit;
+  return envelope(
+    c,
+    paginated(
+      rows.slice(start, start + limit).map(locationDto),
+      rows.length,
+      page,
+      limit,
+    ),
+  );
+});
+
+locationRoutes.get('/places', async (c) => {
+  const principal = c.get('principal');
+  const rows = await queryAll<PlaceRow>(
+    c.env.DB,
+    'SELECT * FROM location_places WHERE tenant_id = ? ORDER BY name ASC, created_at DESC',
+    [principal.tenantId],
+  );
+  return envelope(c, rows.map(placeDto));
+});
+
+locationRoutes.post('/places', async (c) => {
+  const principal = c.get('principal');
+  const body = await parseBody(c, placeSchema);
+  const name = body.name.trim();
+  if (!name) throw badRequest('Nome do local é obrigatório.');
+  const id = crypto.randomUUID();
+  const timestamp = now();
+  await execute(
+    c.env.DB,
+    `INSERT INTO location_places (
+       id, tenant_id, name, description, latitude, longitude, radius_meters,
+       active, notify_on_arrive, notify_on_leave, created_at, updated_at
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      principal.tenantId,
+      name,
+      body.description?.trim() || null,
+      body.latitude,
+      body.longitude,
+      Math.max(20, Math.min(5000, Math.round(body.radiusMeters))),
+      body.active === false ? 0 : 1,
+      body.notifyOnArrive === false ? 0 : 1,
+      body.notifyOnLeave === false ? 0 : 1,
+      timestamp,
+      timestamp,
+    ],
+  );
+  const row = (await queryOne<PlaceRow>(
+    c.env.DB,
+    'SELECT * FROM location_places WHERE id = ?',
+    [id],
+  ))!;
+  const dto = placeDto(row);
+  await broadcastToTenant(c.env, principal.tenantId, 'location.places.changed', dto);
+  return envelope(c, { message: 'Local salvo.', ...dto });
+});
+
+locationRoutes.put('/places/:id', async (c) => {
+  const principal = c.get('principal');
+  const body = await parseBody(c, placeSchema.partial());
+  const sets: string[] = [];
+  const params: unknown[] = [];
+  if (body.name !== undefined) {
+    const value = body.name.trim();
+    if (!value) throw badRequest('Nome do local é obrigatório.');
+    sets.push('name = ?');
+    params.push(value);
+  }
+  if (body.description !== undefined) {
+    sets.push('description = ?');
+    params.push(body.description?.trim() || null);
+  }
+  if (body.latitude !== undefined) {
+    sets.push('latitude = ?');
+    params.push(body.latitude);
+  }
+  if (body.longitude !== undefined) {
+    sets.push('longitude = ?');
+    params.push(body.longitude);
+  }
+  if (body.radiusMeters !== undefined) {
+    sets.push('radius_meters = ?');
+    params.push(Math.max(20, Math.min(5000, Math.round(body.radiusMeters))));
+  }
+  if (body.active !== undefined) {
+    sets.push('active = ?');
+    params.push(body.active ? 1 : 0);
+  }
+  if (body.notifyOnArrive !== undefined) {
+    sets.push('notify_on_arrive = ?');
+    params.push(body.notifyOnArrive ? 1 : 0);
+  }
+  if (body.notifyOnLeave !== undefined) {
+    sets.push('notify_on_leave = ?');
+    params.push(body.notifyOnLeave ? 1 : 0);
+  }
+  if (sets.length) {
+    sets.push('updated_at = ?');
+    params.push(now(), principal.tenantId, c.req.param('id'));
+    await execute(
+      c.env.DB,
+      `UPDATE location_places SET ${sets.join(', ')} WHERE tenant_id = ? AND id = ?`,
+      params,
+    );
+  }
+  const row = await queryOne<PlaceRow>(
+    c.env.DB,
+    'SELECT * FROM location_places WHERE tenant_id = ? AND id = ?',
+    [principal.tenantId, c.req.param('id')],
+  );
+  if (!row) return envelope(c, null);
+  const dto = placeDto(row);
+  await broadcastToTenant(c.env, principal.tenantId, 'location.places.changed', dto);
+  return envelope(c, { message: 'Local atualizado.', ...dto });
+});
+
+locationRoutes.delete('/places/:id', async (c) => {
+  const principal = c.get('principal');
+  const id = c.req.param('id');
+  const result = await c.env.DB.batch([
+    c.env.DB.prepare(
+      'DELETE FROM location_presences WHERE tenant_id = ? AND place_id = ?',
+    ).bind(principal.tenantId, id),
+    c.env.DB.prepare(
+      'DELETE FROM location_places WHERE tenant_id = ? AND id = ?',
+    ).bind(principal.tenantId, id),
+  ]);
+  const ok = (result[1]?.meta.changes ?? 0) === 1;
+  if (ok) {
+    await broadcastToTenant(c.env, principal.tenantId, 'location.places.changed', {
+      id,
+    });
+  }
+  return envelope(c, { ok, message: 'Local removido.' });
+});
+
+locationRoutes.post('/sos', async (c) => {
+  const principal = c.get('principal');
+  const latest = await getLatestRow(c.env, principal.tenantId, principal.id);
+  const place = await currentPlaceName(c.env, principal.tenantId, latest);
+  const name = principal.name?.trim() || principal.email;
+  await sendNotification(c.env, principal.tenantId, {
+    title: `SOS de ${name}`,
+    body: place ? `Pedido de ajuda em ${place}.` : 'Pedido de ajuda.',
+    url: '/localizacao',
+    type: 'location',
+    excludeUserIds: [principal.id],
+  });
+  return envelope(c, { ok: true, message: 'SOS enviado para a família.' });
+});
+
+locationRoutes.post('/check-in', async (c) => {
+  const principal = c.get('principal');
+  const latest = await getLatestRow(c.env, principal.tenantId, principal.id);
+  const place = await currentPlaceName(c.env, principal.tenantId, latest);
+  const name = principal.name?.trim() || principal.email;
+  await sendNotification(c.env, principal.tenantId, {
+    title: `Check-in de ${name}`,
+    body: place ? `Está bem em ${place}.` : 'Está bem e por aqui.',
+    url: '/localizacao',
+    type: 'location',
+    excludeUserIds: [principal.id],
+  });
+  return envelope(c, { ok: true, message: 'Check-in enviado para a família.' });
+});
 
 export { locationRoutes };

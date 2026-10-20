@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/api/query_keys.dart';
+import '../../../core/auth/auth_controller.dart';
 import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
@@ -17,10 +18,12 @@ import '../../../data/models.dart';
 class LocationPage extends StatefulWidget {
   const LocationPage({
     super.key,
+    required this.auth,
     required this.repository,
     required this.toast,
   });
 
+  final AuthController auth;
   final FamilyRepository repository;
   final ToastController toast;
 
@@ -98,8 +101,21 @@ class _LocationPageState extends State<LocationPage> {
                   );
                   return true;
                 }());
+                LocationSnapshot? currentLocation;
+                for (final item in locations) {
+                  if (item.userId == widget.auth.user?.id) {
+                    currentLocation = item;
+                    break;
+                  }
+                }
                 return Column(
                   children: [
+                    _LocationActions(
+                      currentLocation: currentLocation,
+                      onSos: _sendSos,
+                      onCheckIn: _sendCheckIn,
+                    ),
+                    const SizedBox(height: 16),
                     _LocationMapPanel(
                       locations: locations,
                       places: places,
@@ -111,7 +127,11 @@ class _LocationPageState extends State<LocationPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _LocationList(locations: locations),
+                    _LocationList(
+                      locations: locations,
+                      places: places,
+                      currentLocation: currentLocation,
+                    ),
                   ],
                 );
               },
@@ -120,6 +140,39 @@ class _LocationPageState extends State<LocationPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _sendSos() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Enviar SOS?'),
+        content: const Text(
+          'A família receberá uma notificação de ajuda com a sua localização.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red.shade700,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Enviar SOS'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await widget.repository.sendLocationSos();
+    widget.toast.backendSuccess(widget.repository.takeMessage());
+  }
+
+  Future<void> _sendCheckIn() async {
+    await widget.repository.sendLocationCheckIn();
+    widget.toast.backendSuccess(widget.repository.takeMessage());
   }
 
   void _openPlaceSheet(
@@ -437,10 +490,99 @@ class _LocationMapHeader extends StatelessWidget {
   }
 }
 
+class _LocationActions extends StatelessWidget {
+  const _LocationActions({
+    required this.currentLocation,
+    required this.onSos,
+    required this.onCheckIn,
+  });
+
+  final LocationSnapshot? currentLocation;
+  final Future<void> Function() onSos;
+  final Future<void> Function() onCheckIn;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final updated =
+        currentLocation == null ? null : _relative(currentLocation!.at);
+    return LovePanel(
+      maxWidth: 1200,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: palette.primary.withValues(alpha: .14),
+                foregroundColor: palette.primary,
+                child: const Icon(Icons.shield_outlined),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Sua segurança',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      currentLocation == null
+                          ? 'Permita o acesso à localização para compartilhar com a família.'
+                          : 'Sua localização foi atualizada $updated.',
+                      style: TextStyle(
+                        color: palette.muted,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.red.shade700,
+                  ),
+                  onPressed: () => onSos(),
+                  icon: const Icon(Icons.sos_outlined),
+                  label: const Text('SOS'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => onCheckIn(),
+                  icon: const Icon(Icons.check_circle_outline),
+                  label: const Text('Check-in'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _LocationList extends StatelessWidget {
-  const _LocationList({required this.locations});
+  const _LocationList({
+    required this.locations,
+    required this.places,
+    required this.currentLocation,
+  });
 
   final List<LocationSnapshot> locations;
+  final List<LocationPlace> places;
+  final LocationSnapshot? currentLocation;
 
   @override
   Widget build(BuildContext context) {
@@ -453,7 +595,7 @@ class _LocationList extends StatelessWidget {
             title: 'Pessoas',
             description: locations.isEmpty
                 ? 'Aguardando atualizações.'
-                : '${locations.length} localizações recentes.',
+                : '${locations.length} pessoas compartilhando.',
             icon: Icons.people_alt_outlined,
           ),
           const SizedBox(height: 12),
@@ -461,10 +603,16 @@ class _LocationList extends StatelessWidget {
             const Padding(
               padding: EdgeInsets.all(18),
               child: Text(
-                  'Quando alguém abrir o app e permitir localização, aparece aqui.'),
+                'Quando alguém abrir o app e permitir localização, aparece aqui.',
+              ),
             )
           else
-            for (final location in locations) _LocationTile(location: location),
+            for (final location in locations)
+              _LocationTile(
+                location: location,
+                places: places,
+                currentLocation: currentLocation,
+              ),
         ],
       ),
     );
@@ -512,13 +660,37 @@ class _LocationPanelTitle extends StatelessWidget {
 }
 
 class _LocationTile extends StatelessWidget {
-  const _LocationTile({required this.location});
+  const _LocationTile({
+    required this.location,
+    required this.places,
+    required this.currentLocation,
+  });
 
   final LocationSnapshot location;
+  final List<LocationPlace> places;
+  final LocationSnapshot? currentLocation;
 
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
+    final isMe = location.userId != null &&
+        location.userId == currentLocation?.userId;
+    final place = _placeFor(location, places);
+    final stale = DateTime.now().difference(location.at).inMinutes > 10;
+    final status = place != null
+        ? 'Em ${place.name}'
+        : (location.speed ?? 0) > 1.5
+            ? 'Em movimento'
+            : 'Sem local';
+    final distance = (!isMe && currentLocation != null)
+        ? _distanceLabel(
+            const Distance().as(
+              LengthUnit.Meter,
+              LatLng(currentLocation!.latitude, currentLocation!.longitude),
+              LatLng(location.latitude, location.longitude),
+            ),
+          )
+        : null;
     final battery = location.batteryLevel;
     final batteryColor = battery == null
         ? palette.muted
@@ -527,30 +699,103 @@ class _LocationTile extends StatelessWidget {
             : battery <= 45
                 ? Colors.orange
                 : Colors.green;
+    final platform = switch (location.platform) {
+      'android' => 'Android',
+      'ios' => 'iPhone',
+      'web' => 'Navegador',
+      _ => null,
+    };
+    final details = [
+      _relative(location.at),
+      if (distance != null) distance,
+      if (location.accuracy != null) '±${location.accuracy!.round()} m',
+      if (platform != null) platform,
+    ].join(' • ');
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            backgroundColor: palette.primary.withValues(alpha: .14),
-            foregroundColor: palette.primary,
-            child: const Icon(Icons.person_pin_circle_outlined),
+          _MemberAvatar(
+            name: _shortName(location),
+            online: !stale,
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_shortName(location),
-                    style: const TextStyle(fontWeight: FontWeight.w900)),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        _shortName(location),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                    ),
+                    if (isMe) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: palette.primary.withValues(alpha: .12),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          'Você',
+                          style: TextStyle(
+                            color: palette.primary,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Icon(
+                      place != null
+                          ? Icons.home_work_outlined
+                          : (location.speed ?? 0) > 1.5
+                              ? Icons.directions_car_outlined
+                              : Icons.location_off_outlined,
+                      size: 14,
+                      color: place != null ? palette.primary : palette.muted,
+                    ),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        status,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: place != null ? palette.primary : palette.muted,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
                 Text(
-                  '${location.latitude.toStringAsFixed(5)}, ${location.longitude.toStringAsFixed(5)}',
-                  style: TextStyle(color: palette.muted),
+                  details,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: palette.muted, fontSize: 12),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -563,8 +808,10 @@ class _LocationTile extends StatelessWidget {
               ),
               Text(
                 battery == null ? '--%' : '$battery%',
-                style:
-                    TextStyle(color: batteryColor, fontWeight: FontWeight.w900),
+                style: TextStyle(
+                  color: batteryColor,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
             ],
           ),
@@ -572,6 +819,78 @@ class _LocationTile extends StatelessWidget {
       ),
     );
   }
+}
+
+class _MemberAvatar extends StatelessWidget {
+  const _MemberAvatar({required this.name, required this.online});
+
+  final String name;
+  final bool online;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    final parts = name.trim().split(RegExp(r'\s+'));
+    final first = parts.isNotEmpty && parts.first.isNotEmpty ? parts.first[0] : '';
+    final last = parts.length >= 2 && parts.last.isNotEmpty ? parts.last[0] : '';
+    final initials = (first + last).isEmpty ? '?' : (first + last);
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        CircleAvatar(
+          backgroundColor: palette.primary.withValues(alpha: .14),
+          foregroundColor: palette.primary,
+          child: Text(
+            initials.toUpperCase(),
+            style: const TextStyle(fontWeight: FontWeight.w900),
+          ),
+        ),
+        Positioned(
+          right: -1,
+          bottom: -1,
+          child: Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: online ? Colors.green : palette.muted,
+              border: Border.all(color: palette.card, width: 2),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+LocationPlace? _placeFor(
+  LocationSnapshot location,
+  List<LocationPlace> places,
+) {
+  const distance = Distance();
+  for (final place in places) {
+    if (!place.active) continue;
+    final meters = distance.as(
+      LengthUnit.Meter,
+      LatLng(location.latitude, location.longitude),
+      LatLng(place.latitude, place.longitude),
+    );
+    if (meters <= place.radiusMeters) return place;
+  }
+  return null;
+}
+
+String _relative(DateTime at) {
+  final diff = DateTime.now().difference(at);
+  if (diff.inSeconds < 60) return 'agora';
+  if (diff.inMinutes < 60) return 'há ${diff.inMinutes} min';
+  if (diff.inHours < 24) return 'há ${diff.inHours} h';
+  return 'há ${diff.inDays} d';
+}
+
+String _distanceLabel(double meters) {
+  if (meters < 1000) return '${meters.round()} m';
+  return '${(meters / 1000).toStringAsFixed(1)} km';
 }
 
 class _LocationPlaceSheet extends StatefulWidget {
@@ -597,6 +916,8 @@ class _LocationPlaceSheetState extends State<_LocationPlaceSheet> {
   late final TextEditingController radius;
   late LatLng selected;
   bool saving = false;
+  bool notifyOnArrive = true;
+  bool notifyOnLeave = true;
 
   @override
   void initState() {
@@ -608,6 +929,8 @@ class _LocationPlaceSheetState extends State<_LocationPlaceSheet> {
     name = TextEditingController(text: place?.name ?? '');
     description = TextEditingController(text: place?.description ?? '');
     radius = TextEditingController(text: '${place?.radiusMeters ?? 120}');
+    notifyOnArrive = place?.notifyOnArrive ?? true;
+    notifyOnLeave = place?.notifyOnLeave ?? true;
   }
 
   @override
@@ -704,7 +1027,25 @@ class _LocationPlaceSheetState extends State<_LocationPlaceSheet> {
             onChanged: (_) => setState(() {}),
             onSubmitted: (_) => _save(),
           ),
-          const SizedBox(height: 16),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: notifyOnArrive,
+            onChanged: saving
+                ? null
+                : (value) => setState(() => notifyOnArrive = value),
+            title: const Text('Avisar quando chegar'),
+            subtitle: const Text('Notifica a família ao entrar neste local.'),
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: notifyOnLeave,
+            onChanged: saving
+                ? null
+                : (value) => setState(() => notifyOnLeave = value),
+            title: const Text('Avisar quando sair'),
+            subtitle: const Text('Notifica a família ao sair deste local.'),
+          ),
+          const SizedBox(height: 8),
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -741,6 +1082,8 @@ class _LocationPlaceSheetState extends State<_LocationPlaceSheet> {
         'longitude': selected.longitude,
         'radiusMeters': int.tryParse(radius.text.trim()),
         'active': true,
+        'notifyOnArrive': notifyOnArrive,
+        'notifyOnLeave': notifyOnLeave,
       });
       if (mounted) Navigator.pop(context);
     } finally {

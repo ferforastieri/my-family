@@ -24,6 +24,7 @@ import { badRequest, envelope, parseBody } from '../http';
 import { verifyTurnstile } from '../turnstile';
 import { signedMediaUrl, serveMedia } from '../media';
 import { createWsTicket } from '../ws-ticket';
+import { createLocationToken } from '../location-token';
 
 const authRoutes = new Hono<AppEnv>();
 
@@ -124,6 +125,12 @@ authRoutes.post('/ws-ticket', authMiddleware, async (c) => {
   const principal = c.get('principal');
   const ticket = await createWsTicket(c.env, principal.id, principal.tenantId);
   return envelope(c, { ticket, expiresIn: 60 });
+});
+
+authRoutes.post('/location-token', authMiddleware, async (c) => {
+  const principal = c.get('principal');
+  const token = await createLocationToken(c.env, principal.id, principal.tenantId);
+  return envelope(c, { token, expiresIn: 30 * 24 * 60 * 60 });
 });
 
 authRoutes.post('/switch-tenant', authMiddleware, async (c) => {

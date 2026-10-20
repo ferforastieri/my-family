@@ -218,7 +218,19 @@ export async function refresh(env: Env, token: string, userAgent?: string) {
 }
 
 export async function logout(env: Env, refreshToken: string): Promise<void> {
-  if (refreshToken) await revokeSession(env, await hashToken(refreshToken));
+  if (!refreshToken) return;
+  const tokenHash = await hashToken(refreshToken);
+  const session = await queryOne<{ user_id: string }>(
+    env.DB,
+    'SELECT user_id FROM auth_sessions WHERE token_hash = ?',
+    [tokenHash],
+  );
+  await revokeSession(env, tokenHash);
+  if (session) {
+    await execute(env.DB, 'DELETE FROM location_tokens WHERE user_id = ?', [
+      session.user_id,
+    ]);
+  }
 }
 
 export async function switchTenant(

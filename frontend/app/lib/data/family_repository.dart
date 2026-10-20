@@ -501,6 +501,14 @@ class FamilyRepository {
     ).items;
   }
 
+  Future<void> sendLocationSos() async {
+    await api.post<Map<String, dynamic>>('/location/sos', data: const {});
+  }
+
+  Future<void> sendLocationCheckIn() async {
+    await api.post<Map<String, dynamic>>('/location/check-in', data: const {});
+  }
+
   Future<List<LocationPlace>> listLocationPlaces() async {
     final data = await api.get<List<dynamic>>('/location/places');
     return data
