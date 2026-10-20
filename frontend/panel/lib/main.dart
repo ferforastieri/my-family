@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:family_ui/family_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'credentialed_client.dart';
@@ -544,12 +545,44 @@ class _MembersState extends State<Members> {
       ),
     );
     if (accepted != true || email.text.trim().isEmpty) return;
-    await widget.session.request(
+    final response = await widget.session.request(
       '/tenant/invitations',
       method: 'POST',
       body: {'email': email.text.trim(), 'role': role},
     );
     setState(_reload);
+    if (!mounted) return;
+    final token = response is Map ? response['token']?.toString() : null;
+    if (token == null || token.isEmpty) return;
+    final link = '$familyAppBase/?invitation=${Uri.encodeComponent(token)}';
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Convite criado'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Compartilhe este link com a pessoa convidada:'),
+            const SizedBox(height: 12),
+            SelectableText(link),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: link));
+              Navigator.pop(context);
+            },
+            child: const Text('Copiar link'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

@@ -76,8 +76,8 @@ app.use('/api/*', async (c, next) => {
 });
 
 app.use('/api/*', async (c, next) => {
-  const isOtp = c.req.path === '/api/auth/login' || c.req.path === '/api/auth/register';
-  const limit = isOtp ? 10 : Number(c.env.THROTTLE_LIMIT ?? 120);
+  const isAuth = c.req.path === '/api/auth/login' || c.req.path === '/api/auth/register';
+  const limit = isAuth ? 10 : Number(c.env.THROTTLE_LIMIT ?? 120);
   const windowMs = Number(c.env.THROTTLE_TTL_MS ?? 60000);
   if (!Number.isFinite(limit) || limit <= 0 || !Number.isFinite(windowMs) || windowMs <= 0) {
     return next();
