@@ -62,3 +62,8 @@ Thumbs.db
 *.sql
 build
 .cache
+
+# Cloudflare Workers
+.dev.vars
+.wrangler
+!workers/api/migrations/*.sql

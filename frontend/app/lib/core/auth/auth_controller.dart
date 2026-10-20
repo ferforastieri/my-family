@@ -36,6 +36,7 @@ class AuthController extends ChangeNotifier {
       await _loadCsrf();
       socket.onAuthError = _refreshSession;
       socket.onBeforeRequest = _ensureSession;
+      socket.onTicket = _createWsTicket;
       await _reconnectSocket();
       await _loadCurrentUser(retry: true);
     } catch (_) {
@@ -148,6 +149,15 @@ class AuthController extends ChangeNotifier {
   Future<String?> _ensureSession() async {
     if (user == null) return null;
     return null;
+  }
+
+  Future<String?> _createWsTicket() async {
+    try {
+      final response = await _post('/auth/ws-ticket', const {}, retry: false);
+      return response['ticket']?.toString();
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> _acceptSession(Map<String, dynamic> response) async {

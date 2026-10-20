@@ -1,21 +1,29 @@
 import 'dart:async';
+import 'dart:convert';
 
-import 'package:socket_io_client/socket_io_client.dart' as io;
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../config/app_config.dart';
 
 class SocketClient {
-  io.Socket? _socket;
-  String? _cookieHeader;
+  WebSocketChannel? _channel;
+  StreamSubscription<dynamic>? _subscription;
   Completer<void>? _connectCompleter;
   String? _lastConnectError;
   final Map<String, List<void Function(dynamic data)>> _handlers = {};
+  final Map<int, Completer<dynamic>> _pending = {};
+  int _sequence = 0;
+  bool _manualClose = false;
+  int _attempt = 0;
   String? _lastMessage;
-  Future<bool> Function()? onAuthError;
-  Future<String?> Function()? onBeforeRequest;
 
-  bool get isConnected => _socket?.connected ?? false;
+  Future<bool> Function()? onAuthError;
+  Future<String?> Function()? onTicket;
+  Future<String?> Function()? onBeforeRequest;
   String? csrfToken;
+
+  bool get isConnected => _connected;
+  bool _connected = false;
   String? get lastMessage => _lastMessage;
 
   void rememberMessage(String? message) {
@@ -29,67 +37,148 @@ class SocketClient {
   }
 
   void connect({String? cookieHeader, bool force = false}) {
-    if (!force && _cookieHeader == cookieHeader && _socket != null) {
-      if (_socket!.connected) return;
-      if (_connectCompleter?.isCompleted == false) return;
+    if (!force && _connected) return;
+    if (!force && _connectCompleter != null && !_connectCompleter!.isCompleted) {
+      return;
     }
-    _cookieHeader = cookieHeader;
-    _socket?.dispose();
-    _connectCompleter = Completer<void>();
-    _lastConnectError = null;
-    final headers = cookieHeader == null
-        ? <String, dynamic>{}
-        : {'Cookie': cookieHeader};
-    _socket = io.io(
-      _normalizeSocketIoUrl(AppConfig.socketUrl),
-      io.OptionBuilder()
-          .enableForceNew()
-          .disableMultiplex()
-          // Mobile browsers are more reliable with the Socket.IO upgrade
-          // skipped entirely. The proxy exposes this exact path to the API.
-          .setTransports(['websocket'])
-          .setPath('/socket.io/')
-          .disableAutoConnect()
-          .enableReconnection()
-          .setReconnectionAttempts(20)
-          .setReconnectionDelay(800)
-          .setReconnectionDelayMax(4000)
-          .setTimeout(5000)
-          .setExtraHeaders(headers)
-          .build(),
-    );
-    for (final entry in _handlers.entries) {
-      for (final handler in entry.value) {
-        _socket!.on(entry.key, handler);
-      }
-    }
-    _socket!.onConnect((_) {
-      _lastConnectError = null;
-      if (_connectCompleter?.isCompleted == false) {
-        _connectCompleter!.complete();
-      }
-    });
-    _socket!.onConnectError((dynamic error) {
-      _lastConnectError =
-          'Erro ao conectar em ${AppConfig.socketUrl}: ${_socketErrorMessage(error)}';
-    });
-    _socket!.onError((dynamic error) {
-      _lastConnectError =
-          'Erro no socket em ${AppConfig.socketUrl}: ${_socketErrorMessage(error)}';
-    });
-    _socket!.connect();
+    _manualClose = false;
+    _attempt = 0;
+    unawaited(_open(force: force));
   }
 
   Future<void> ensureConnected({String? cookieHeader}) async {
-    connect(cookieHeader: cookieHeader ?? _cookieHeader);
-    if (_socket?.connected == true) return;
-    await (_connectCompleter?.future ?? Future<void>.value()).timeout(
-      const Duration(seconds: 8),
+    if (_connected) return;
+    connect(cookieHeader: cookieHeader);
+    final completer = _connectCompleter;
+    if (completer == null) return;
+    await completer.future.timeout(
+      const Duration(seconds: 10),
       onTimeout: () {
-        throw TimeoutException(_lastConnectError ??
-            'Tempo esgotado conectando em ${AppConfig.socketUrl}.');
+        throw TimeoutException(
+          _lastConnectError ??
+              'Tempo esgotado conectando em ${AppConfig.socketUrl}.',
+        );
       },
     );
+  }
+
+  Future<void> _open({bool force = false}) async {
+    if (_connecting) return;
+    _connecting = true;
+    _connectCompleter = Completer<void>();
+    _lastConnectError = null;
+    try {
+      final ticket = await onTicket?.call();
+      final uri = _socketUri(ticket);
+      final channel = WebSocketChannel.connect(uri);
+      _channel = channel;
+      await channel.ready.timeout(const Duration(seconds: 10));
+      _connected = true;
+      _attempt = 0;
+      _subscription = channel.stream.listen(
+        _onData,
+        onError: (Object error) {
+          _lastConnectError = error.toString();
+          _connected = false;
+        },
+        onDone: _onDone,
+        cancelOnError: false,
+      );
+      if (_connectCompleter?.isCompleted == false) {
+        _connectCompleter!.complete();
+      }
+    } catch (error) {
+      _connected = false;
+      _lastConnectError = error.toString();
+      if (_connectCompleter?.isCompleted == false) {
+        _connectCompleter!.completeError(error);
+      }
+      _connecting = false;
+      final recovered = await _tryRefreshAuth();
+      if (!recovered && !_manualClose) {
+        _scheduleReconnect();
+      }
+    } finally {
+      _connecting = false;
+    }
+  }
+
+  bool _connecting = false;
+
+  Future<bool> _tryRefreshAuth() async {
+    if (onAuthError == null) return false;
+    if (!_looksLikeAuthError(_lastConnectError ?? '')) return false;
+    try {
+      final ok = await onAuthError!();
+      if (ok) {
+        await _sleep(const Duration(milliseconds: 200));
+        await _open(force: true);
+        return true;
+      }
+    } catch (_) {
+      // ignore
+    }
+    return false;
+  }
+
+  void _onData(dynamic raw) {
+    if (raw is! String) return;
+    late Map<String, dynamic> payload;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return;
+      payload = Map<String, dynamic>.from(decoded);
+    } catch (_) {
+      return;
+    }
+    final id = payload['id'];
+    if (id is int && _pending.containsKey(id)) {
+      final completer = _pending.remove(id)!;
+      if (payload['ok'] == false) {
+        completer.completeError(
+          payload['message'] ?? 'Erro no servidor',
+        );
+      } else {
+        final data = payload['data'];
+        completer.complete(data ?? payload);
+      }
+      return;
+    }
+    final event = payload['event'];
+    if (event is! String) return;
+    final data = payload['data'];
+    final handlers = _handlers[event];
+    if (handlers == null) return;
+    for (final handler in List.of(handlers)) {
+      handler(data);
+    }
+  }
+
+  void _onDone() {
+    _connected = false;
+    _subscription = null;
+    final error = Exception(
+      _lastConnectError ?? 'Conexão encerrada com ${AppConfig.socketUrl}.',
+    );
+    for (final completer in _pending.values) {
+      if (!completer.isCompleted) completer.completeError(error);
+    }
+    _pending.clear();
+    if (!_manualClose) _scheduleReconnect();
+  }
+
+  void _scheduleReconnect() {
+    if (_manualClose || _attempt >= 20) return;
+    _attempt += 1;
+    final delay = Duration(milliseconds: (800 * _attempt).clamp(800, 4000));
+    Timer(delay, () {
+      if (_manualClose || _connected) return;
+      unawaited(_open(force: true));
+    });
+  }
+
+  Future<void> _sleep(Duration duration) {
+    return Future<void>.delayed(duration);
   }
 
   Future<T> emitAck<T>(String event, [Object? payload]) async {
@@ -108,39 +197,33 @@ class SocketClient {
   Future<T> _emitAckOnce<T>(String event, [Object? payload]) async {
     await onBeforeRequest?.call();
     await ensureConnected();
-    final completer = Completer<T>();
-    _socket!.emitWithAck(
-      event,
-      payload,
-      ack: (dynamic data) {
-        if (completer.isCompleted) return;
-        try {
-          if (data is Map &&
-              (data['status'] == 'error' || data['ok'] == false)) {
-            completer.completeError(data['message'] ?? 'Erro no servidor');
-            return;
-          }
-          if (data is Map) {
-            final message = data['message'];
-            if (message is String) _lastMessage = message;
-          }
-          if (data is Map &&
-              data.containsKey('ok') &&
-              data.containsKey('data')) {
-            completer.complete(data['data'] as T);
-            return;
-          }
-          completer.complete(data as T);
-        } catch (error, stackTrace) {
-          completer.completeError(error, stackTrace);
-        }
+    final channel = _channel;
+    if (channel == null) {
+      throw StateError('Conexão não iniciada.');
+    }
+    final id = ++_sequence;
+    final completer = Completer<dynamic>();
+    _pending[id] = completer;
+    channel.sink.add(
+      jsonEncode({
+        'id': id,
+        'event': event,
+        if (payload != null) 'data': payload,
+      }),
+    );
+    final data = await completer.future.timeout(
+      const Duration(seconds: 20),
+      onTimeout: () {
+        _pending.remove(id);
+        throw TimeoutException(
+          'Tempo esgotado aguardando resposta de "$event". Verifique a conexão com ${AppConfig.socketUrl}.',
+        );
       },
     );
-    return completer.future.timeout(
-      const Duration(seconds: 20),
-      onTimeout: () => throw TimeoutException(
-          'Tempo esgotado aguardando resposta de "$event". Verifique a conexão com ${AppConfig.socketUrl}.'),
-    );
+    if (data is Map && data['message'] is String) {
+      _lastMessage = data['message'] as String;
+    }
+    return data as T;
   }
 
   bool _looksLikeAuthError(Object error) {
@@ -153,44 +236,55 @@ class SocketClient {
         message.contains('invalid token') ||
         message.contains('token inválido') ||
         message.contains('token invalido') ||
-        message.contains('jwt');
-  }
-
-  String _socketErrorMessage(dynamic error) {
-    if (error is Map) {
-      final message = error['message'] ?? error['error'];
-      if (message is List && message.isNotEmpty) return message.join(', ');
-      if (message != null) return message.toString();
-    }
-    return error?.toString() ?? 'Erro no servidor';
+        message.contains('jwt') ||
+        message.contains('401');
   }
 
   void on(String event, void Function(dynamic data) handler) {
     _handlers.putIfAbsent(event, () => []).add(handler);
-    _socket?.on(event, handler);
   }
 
   void off(String event, [void Function(dynamic data)? handler]) {
     if (handler == null) {
       _handlers.remove(event);
-      _socket?.off(event);
       return;
     }
     final handlers = _handlers[event];
     handlers?.remove(handler);
     if (handlers != null && handlers.isEmpty) _handlers.remove(event);
-    _socket?.off(event, handler);
   }
 
   void disconnect() {
-    _socket?.disconnect();
-    _socket?.dispose();
-    _socket = null;
+    _manualClose = true;
+    for (final completer in _pending.values) {
+      if (!completer.isCompleted) {
+        completer.completeError(StateError('Conexão encerrada.'));
+      }
+    }
+    _pending.clear();
+    _subscription?.cancel();
+    _subscription = null;
+    _channel?.sink.close();
+    _channel = null;
+    _connected = false;
+    _connectCompleter = null;
   }
 
-  String _normalizeSocketIoUrl(String url) {
-    if (url.startsWith('ws://')) return 'http://${url.substring(5)}';
-    if (url.startsWith('wss://')) return 'https://${url.substring(6)}';
-    return url;
+  Uri _socketUri(String? ticket) {
+    final raw = AppConfig.socketUrl.trim();
+    final base = Uri.parse(raw);
+    final scheme = base.scheme == 'https'
+        ? 'wss'
+        : base.scheme == 'http'
+            ? 'ws'
+            : base.scheme;
+    final path = base.path.endsWith('/ws')
+        ? base.path
+        : '${base.path.replaceFirst(RegExp(r'/$'), '')}/ws';
+    return base.replace(
+      scheme: scheme,
+      path: path,
+      queryParameters: ticket == null || ticket.isEmpty ? null : {'ticket': ticket},
+    );
   }
 }

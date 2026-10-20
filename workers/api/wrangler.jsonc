@@ -1,0 +1,50 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "my-family-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "observability": { "enabled": true },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "my-family",
+      "database_id": "9182fca4-3f7f-4cde-97b2-e1a077d8c20d"
+    }
+  ],
+  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "my-family-media" }],
+  "queues": {
+    "producers": [{ "binding": "JOBS", "queue": "my-family-jobs" }],
+    "consumers": [
+      {
+        "queue": "my-family-jobs",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 5
+      }
+    ]
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "REALTIME", "class_name": "TenantRealtime" },
+      { "name": "RATE_LIMITER", "class_name": "RateLimiter" }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["TenantRealtime", "RateLimiter"]
+    }
+  ],
+  "triggers": { "crons": ["* * * * *"] },
+  "vars": {
+    "APP_ENV": "production",
+    "CORS_ORIGIN": "http://localhost:8080",
+    "COOKIE_SECURE": "true",
+    "COOKIE_SAME_SITE": "lax",
+    "DEFAULT_PHONE_COUNTRY_CODE": "55",
+    "THROTTLE_TTL_MS": "60000",
+    "THROTTLE_LIMIT": "120"
+  }
+}
