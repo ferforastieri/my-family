@@ -18,16 +18,19 @@ class AuthSheet extends StatefulWidget {
 }
 
 class _AuthSheetState extends State<AuthSheet> {
-  final phone = TextEditingController();
-  final code = TextEditingController();
-  bool codeSent = false;
+  final name = TextEditingController();
+  final email = TextEditingController();
+  final password = TextEditingController();
+  bool registerMode = false;
   bool loading = false;
+  bool obscurePassword = true;
   String? error;
 
   @override
   void dispose() {
-    phone.dispose();
-    code.dispose();
+    name.dispose();
+    email.dispose();
+    password.dispose();
     super.dispose();
   }
 
@@ -40,42 +43,54 @@ class _AuthSheetState extends State<AuthSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           AppSheetHeader(
-            title: codeSent ? 'Digite o código' : 'Entrar com celular',
-            subtitle: codeSent
-                ? 'Enviamos um código de 6 números por SMS. Ele vale por 5 minutos.'
-                : 'Sem senha: confirme seu número e receba um código por SMS.',
-            icon: codeSent
-                ? Icons.password_outlined
-                : Icons.phone_android_outlined,
+            title: registerMode ? 'Criar conta' : 'Entrar',
+            subtitle: registerMode
+                ? 'Crie sua conta e comece a guardar as memórias da família.'
+                : 'Acesse com seu email e senha.',
+            icon: registerMode
+                ? Icons.person_add_alt_1_outlined
+                : Icons.lock_open_outlined,
           ),
           const SizedBox(height: 16),
-          TextField(
-            controller: phone,
-            enabled: !codeSent,
-            keyboardType: TextInputType.phone,
-            autofillHints: const [AutofillHints.telephoneNumber],
-            decoration: const InputDecoration(
-              labelText: 'Celular com DDD',
-              hintText: '(11) 99999-9999',
-            ),
-            textInputAction:
-                codeSent ? TextInputAction.next : TextInputAction.done,
-            onSubmitted: (_) => codeSent ? null : _requestCode(),
-          ),
-          if (!codeSent) ...[
-            const SizedBox(height: 12),
-          ] else ...[
-            const SizedBox(height: 12),
+          if (registerMode) ...[
             TextField(
-              controller: code,
-              autofocus: true,
-              keyboardType: TextInputType.number,
-              autofillHints: const [AutofillHints.oneTimeCode],
-              maxLength: 6,
-              decoration: const InputDecoration(labelText: 'Código'),
-              onSubmitted: (_) => _verifyCode(),
+              controller: name,
+              textInputAction: TextInputAction.next,
+              autofillHints: const [AutofillHints.name],
+              decoration: const InputDecoration(labelText: 'Seu nome'),
             ),
+            const SizedBox(height: 12),
           ],
+          TextField(
+            controller: email,
+            keyboardType: TextInputType.emailAddress,
+            autofillHints: const [AutofillHints.email],
+            textInputAction: TextInputAction.next,
+            decoration: const InputDecoration(labelText: 'Email'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: password,
+            obscureText: obscurePassword,
+            autofillHints: [
+              registerMode ? AutofillHints.newPassword : AutofillHints.password,
+            ],
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _submit(),
+            decoration: InputDecoration(
+              labelText: 'Senha',
+              helperText: registerMode ? 'Mínimo de 8 caracteres' : null,
+              suffixIcon: IconButton(
+                onPressed: () =>
+                    setState(() => obscurePassword = !obscurePassword),
+                icon: Icon(
+                  obscurePassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                ),
+              ),
+            ),
+          ),
           if (error != null) ...[
             const SizedBox(height: 12),
             Text(
@@ -85,22 +100,22 @@ class _AuthSheetState extends State<AuthSheet> {
           ],
           const SizedBox(height: 20),
           AppButton(
-            onPressed: codeSent ? _verifyCode : _requestCode,
+            onPressed: _submit,
             loading: loading,
-            icon: codeSent ? Icons.login : Icons.send_to_mobile_outlined,
-            label: codeSent ? 'Confirmar e entrar' : 'Receber código',
+            icon: registerMode ? Icons.person_add_alt : Icons.login,
+            label: registerMode ? 'Criar conta' : 'Entrar',
           ),
-          if (codeSent)
-            TextButton(
-              onPressed: loading
-                  ? null
-                  : () => setState(() {
-                        codeSent = false;
-                        code.clear();
-                        error = null;
-                      }),
-              child: const Text('Alterar número'),
+          TextButton(
+            onPressed: loading
+                ? null
+                : () => setState(() {
+                      registerMode = !registerMode;
+                      error = null;
+                    }),
+            child: Text(
+              registerMode ? 'Já tenho conta' : 'Criar uma conta',
             ),
+          ),
           TextButton(
             onPressed: () => launchUrl(
               Uri.parse('${AppConfig.landingUrl}/cadastro'),
@@ -108,37 +123,49 @@ class _AuthSheetState extends State<AuthSheet> {
             ),
             child: const Text('Criar uma família'),
           ),
+          TextButton(
+            onPressed: () => launchUrl(
+              Uri.parse(AppConfig.downloadUrl),
+              mode: LaunchMode.externalApplication,
+            ),
+            child: const Text('Baixar app para Android'),
+          ),
         ],
       ),
     );
   }
 
-  Future<void> _requestCode() async {
-    await _run(() async {
-      final devCode = await widget.auth.requestPhoneCode(phone.text, 'sms');
-      setState(() {
-        codeSent = true;
-        if (devCode != null) code.text = devCode;
-      });
-      widget.toast.backendSuccess(widget.auth.takeMessage());
-    });
-  }
-
-  Future<void> _verifyCode() async {
-    await _run(() async {
-      await widget.auth.verifyPhoneCode(phone.text, code.text);
-      widget.toast.backendSuccess(widget.auth.takeMessage());
-      if (mounted) Navigator.pop(context);
-    });
-  }
-
-  Future<void> _run(Future<void> Function() action) async {
+  Future<void> _submit() async {
+    final emailValue = email.text.trim();
+    final passwordValue = password.text;
+    if (!emailValue.contains('@') || !emailValue.contains('.')) {
+      setState(() => error = 'Informe um email válido.');
+      return;
+    }
+    if (registerMode && passwordValue.length < 8) {
+      setState(() => error = 'A senha deve ter pelo menos 8 caracteres.');
+      return;
+    }
+    if (passwordValue.isEmpty) {
+      setState(() => error = 'Informe sua senha.');
+      return;
+    }
+    if (registerMode && name.text.trim().isEmpty) {
+      setState(() => error = 'Informe seu nome.');
+      return;
+    }
     setState(() {
       loading = true;
       error = null;
     });
     try {
-      await action();
+      if (registerMode) {
+        await widget.auth.register(name.text, emailValue, passwordValue);
+      } else {
+        await widget.auth.login(emailValue, passwordValue);
+      }
+      widget.toast.backendSuccess(widget.auth.takeMessage());
+      if (mounted) Navigator.pop(context);
     } catch (exception) {
       final message = authErrorMessage(exception);
       widget.toast.error(message);

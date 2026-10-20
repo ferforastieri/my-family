@@ -9,8 +9,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "my-family",
-      "database_id": "9182fca4-3f7f-4cde-97b2-e1a077d8c20d"
+      "database_name": "my-family-v2",
+      "database_id": "3dbad783-9c04-41fc-a769-cd459a0752dd"
     }
   ],
   "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "my-family-media" }],
@@ -43,8 +43,9 @@
     "CORS_ORIGIN": "https://my-family-web.vira-ia-br.workers.dev,https://my-family-panel.vira-ia-br.workers.dev,https://my-family-landing.vira-ia-br.workers.dev",
     "COOKIE_SECURE": "true",
     "COOKIE_SAME_SITE": "lax",
-    "DEFAULT_PHONE_COUNTRY_CODE": "55",
     "THROTTLE_TTL_MS": "60000",
-    "THROTTLE_LIMIT": "120"
+    "THROTTLE_LIMIT": "120",
+    "VAPID_PUBLIC_KEY": "BOBoIEseHEO5B1xE25Y8RBBr7n9vkfk8Be1UGF1hQEZD_5CPu9oM40JASU_58ji6p_YiFp5LdLe_VI0TTRbD0ts",
+    "VAPID_SUBJECT": "mailto:ffnephew@hotmail.com"
   }
 }

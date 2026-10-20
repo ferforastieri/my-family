@@ -942,8 +942,8 @@ class _UsersAdminTab extends StatelessWidget {
                 icon: Icons.person_outline,
                 title: user.name?.isNotEmpty == true
                     ? user.name!
-                    : user.phoneNumber,
-                subtitle: '${user.phoneNumber} • ${_roleLabel(user.role)}',
+                    : user.email,
+                subtitle: '${user.email} • ${_roleLabel(user.role)}',
                 onTap: () => onEdit(user),
                 actions: [
                   IconButton(
@@ -2946,8 +2946,8 @@ class _UserSheetState extends State<_UserSheet> {
             icon: Icons.person_outline,
           ),
           const SizedBox(height: 14),
-          Text(widget.user.name ?? widget.user.phoneNumber),
-          Text(widget.user.phoneNumber),
+          Text(widget.user.name ?? widget.user.email),
+          Text(widget.user.email),
           if (errorText != null) ...[
             const SizedBox(height: 10),
             Text(

@@ -16,6 +16,7 @@ import '../api/socket_api_client.dart';
 import '../auth/cookie_transport.dart';
 import '../config/app_config.dart';
 import '../socket/socket_client.dart';
+import 'web_push.dart';
 
 const _chatNotificationCategory = 'chat_message_actions';
 const _replyActionId = 'chat_reply';
@@ -434,6 +435,16 @@ class NotificationsController extends ChangeNotifier {
         }
       }
 
+      if (kIsWeb) {
+        final subscription = await subscribeWebPush(AppConfig.webPushPublicKey);
+        if (subscription != null) {
+          await _subscribeWebPush(subscription);
+          pushReady = true;
+          notifyListeners();
+          return;
+        }
+      }
+
       if (kIsWeb && !AppConfig.hasFirebaseConfig) return;
 
       await _initializeFirebase();
@@ -506,6 +517,16 @@ class NotificationsController extends ChangeNotifier {
       data: {
         'subscription': {'token': token, 'platform': _platform},
       },
+    );
+    pushReady = true;
+    pushError = null;
+    notifyListeners();
+  }
+
+  Future<void> _subscribeWebPush(Map<String, dynamic> subscription) async {
+    await api.post<Map<String, dynamic>>(
+      '/notifications/subscribe',
+      data: {'webPush': subscription},
     );
     pushReady = true;
     pushError = null;

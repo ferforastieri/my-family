@@ -172,7 +172,7 @@ class _ChatPageState extends State<ChatPage> {
     final user = widget.auth.user;
     if (user != null) {
       final displayName = user.name?.trim();
-      return displayName?.isNotEmpty == true ? displayName! : user.phoneNumber;
+      return displayName?.isNotEmpty == true ? displayName! : user.email;
     }
     return name.text.trim();
   }
@@ -1296,7 +1296,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
       name: widget.isMine
           ? (widget.currentUser?.name?.trim().isNotEmpty == true
               ? widget.currentUser!.name!
-              : widget.currentUser?.phoneNumber ?? widget.message.senderName)
+              : widget.currentUser?.email ?? widget.message.senderName)
           : widget.message.senderName,
       avatarPath: widget.message.senderAvatarPath ??
           (widget.isMine ? widget.currentUser?.avatarPath : null),
@@ -2111,7 +2111,7 @@ bool _isMine(ChatMessage message, AppUser? user) {
   if (message.senderId == user.id) return true;
   final displayName = user.name?.trim();
   final expected =
-      displayName?.isNotEmpty == true ? displayName! : user.phoneNumber;
+      displayName?.isNotEmpty == true ? displayName! : user.email;
   return message.senderId == null && message.senderName == expected;
 }
 

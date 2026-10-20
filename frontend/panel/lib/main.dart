@@ -126,26 +126,12 @@ class PanelSession extends ChangeNotifier {
         : decoded;
   }
 
-  Future<String?> requestPhoneCode(String phone, String channel) async {
+  Future<void> login(String email, String password) async {
     final data = await request(
-      '/auth/phone/request-code',
+      '/auth/login',
       method: 'POST',
-      body: {'phone': phone, 'channel': channel},
+      body: {'email': email, 'password': password},
     );
-    return data['devCode']?.toString();
-  }
-
-  Future<void> verifyPhoneCode(String phone, String code) async {
-    final data = await request(
-      '/auth/phone/verify-code',
-      method: 'POST',
-      body: {
-        'phone': phone,
-        'code': code,
-        if (pendingInvitation != null) 'invitationToken': pendingInvitation,
-      },
-    );
-    pendingInvitation = null;
     csrfToken = (data as Map)['csrfToken']?.toString() ?? csrfToken;
     authenticated = true;
     await loadContext();
@@ -215,17 +201,30 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final phone = TextEditingController(), code = TextEditingController();
-  String channel = 'sms';
-  bool codeSent = false;
+  final email = TextEditingController();
+  final password = TextEditingController();
   String? error;
   bool busy = false;
 
   @override
   void dispose() {
-    phone.dispose();
-    code.dispose();
+    email.dispose();
+    password.dispose();
     super.dispose();
+  }
+
+  Future<void> _login() async {
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    try {
+      await widget.session.login(email.text.trim(), password.text);
+    } catch (e) {
+      setState(() => error = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
   }
 
   @override
@@ -247,33 +246,22 @@ class _LoginPageState extends State<LoginPage> {
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Confirme seu celular para cuidar do espaço que pertence a vocês.',
-                  ),
+                  const Text('Entre com seu email e senha.'),
                   const SizedBox(height: 24),
                   TextField(
-                    controller: phone,
-                    enabled: !codeSent,
-                    keyboardType: TextInputType.phone,
-                    autofillHints: const [AutofillHints.telephoneNumber],
-                    decoration: const InputDecoration(
-                      labelText: 'Celular com DDD',
-                      hintText: '(11) 99999-9999',
-                    ),
+                    controller: email,
+                    keyboardType: TextInputType.emailAddress,
+                    autofillHints: const [AutofillHints.email],
+                    decoration: const InputDecoration(labelText: 'Email'),
                   ),
-                  if (!codeSent) ...[
-                    const SizedBox(height: 12),
-                  ] else ...[
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: code,
-                      autofocus: true,
-                      maxLength: 6,
-                      keyboardType: TextInputType.number,
-                      autofillHints: const [AutofillHints.oneTimeCode],
-                      decoration: const InputDecoration(labelText: 'Código'),
-                    ),
-                  ],
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: password,
+                    obscureText: true,
+                    autofillHints: const [AutofillHints.password],
+                    onSubmitted: (_) => _login(),
+                    decoration: const InputDecoration(labelText: 'Senha'),
+                  ),
                   const SizedBox(height: 16),
                   if (error != null)
                     Text(
@@ -283,57 +271,9 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   FilledButton(
-                    onPressed: busy
-                        ? null
-                        : () async {
-                            setState(() {
-                              busy = true;
-                              error = null;
-                            });
-                            try {
-                              if (codeSent) {
-                                await widget.session.verifyPhoneCode(
-                                  phone.text,
-                                  code.text,
-                                );
-                              } else {
-                                final devCode = await widget.session
-                                    .requestPhoneCode(phone.text, channel);
-                                setState(() {
-                                  codeSent = true;
-                                  if (devCode != null) code.text = devCode;
-                                });
-                              }
-                            } catch (e) {
-                              setState(
-                                () => error = e.toString().replaceFirst(
-                                  'Exception: ',
-                                  '',
-                                ),
-                              );
-                            } finally {
-                              if (mounted) setState(() => busy = false);
-                            }
-                          },
-                    child: Text(
-                      busy
-                          ? 'Aguarde…'
-                          : codeSent
-                          ? 'Confirmar e entrar'
-                          : 'Receber código',
-                    ),
+                    onPressed: busy ? null : _login,
+                    child: Text(busy ? 'Aguarde…' : 'Entrar'),
                   ),
-                  if (codeSent)
-                    TextButton(
-                      onPressed: busy
-                          ? null
-                          : () => setState(() {
-                              codeSent = false;
-                              code.clear();
-                              error = null;
-                            }),
-                      child: const Text('Alterar número'),
-                    ),
                 ],
               ),
             ),
@@ -559,9 +499,8 @@ class _MembersState extends State<Members> {
   }
 
   Future<void> _invite() async {
-    final phone = TextEditingController();
+    final email = TextEditingController();
     var role = 'member';
-    var channel = 'sms';
     final accepted = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -571,14 +510,10 @@ class _MembersState extends State<Members> {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                controller: phone,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: 'Celular com DDD',
-                  hintText: '(11) 99999-9999',
-                ),
+                controller: email,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(labelText: 'Email'),
               ),
-              const SizedBox(height: 12),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: role,
@@ -608,11 +543,11 @@ class _MembersState extends State<Members> {
         ],
       ),
     );
-    if (accepted != true || phone.text.trim().isEmpty) return;
+    if (accepted != true || email.text.trim().isEmpty) return;
     await widget.session.request(
       '/tenant/invitations',
       method: 'POST',
-      body: {'phone': phone.text.trim(), 'channel': channel, 'role': role},
+      body: {'email': email.text.trim(), 'role': role},
     );
     setState(_reload);
   }
@@ -647,9 +582,9 @@ class _MembersState extends State<Members> {
                         child: Icon(Icons.person_outline),
                       ),
                       title: Text(
-                        item['name'] ?? item['phoneNumber'] ?? 'Membro',
+                        item['name'] ?? item['email'] ?? 'Membro',
                       ),
-                      subtitle: Text(item['phoneNumber'] ?? ''),
+                      subtitle: Text(item['email'] ?? ''),
                       trailing: Text(item['membershipRole'] ?? 'member'),
                     ),
                   )
@@ -674,10 +609,10 @@ class _MembersState extends State<Members> {
               children: snapshot.data!
                   .map(
                     (item) => ListTile(
-                      leading: const Icon(Icons.sms_outlined),
-                      title: Text(item['phoneNumber'] ?? ''),
+                      leading: const Icon(Icons.mail_outlined),
+                      title: Text(item['email'] ?? ''),
                       subtitle: Text(
-                        '${item['role'] ?? 'member'} • ${item['channel'] ?? 'sms'}',
+                        item['role'] ?? 'member',
                       ),
                     ),
                   )

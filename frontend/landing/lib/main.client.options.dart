@@ -34,7 +34,7 @@ ClientOptions get defaultClientOptions => ClientOptions(
       loader: _demo_button.loadLibrary,
     ),
     'register_page': ClientLoader(
-      (p) => _register_page.PhoneRegistrationForm(),
+      (p) => _register_page.EmailRegistrationForm(),
       loader: _register_page.loadLibrary,
     ),
   },

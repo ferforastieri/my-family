@@ -66,7 +66,7 @@ class _EditProfileSheetState extends State<EditProfileSheet> {
           ),
           const SizedBox(height: 10),
           if (user != null)
-            Text(user.phoneNumber,
+            Text(user.email,
                 style: TextStyle(color: Theme.of(context).hintColor)),
           const SizedBox(height: 18),
           AppSheetActions(

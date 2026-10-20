@@ -1,7 +1,7 @@
 class AppUser {
   const AppUser({
     required this.id,
-    required this.phoneNumber,
+    required this.email,
     required this.role,
     required this.access,
     this.name,
@@ -14,7 +14,7 @@ class AppUser {
   });
 
   final String id;
-  final String phoneNumber;
+  final String email;
   final String role;
   final List<String> access;
   final String? name;
@@ -27,7 +27,7 @@ class AppUser {
 
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
         id: json['id'].toString(),
-        phoneNumber: (json['phoneNumber'] ?? '').toString(),
+        email: (json['email'] ?? '').toString(),
         role: (json['role'] ?? 'friends') as String,
         access: ((json['access'] as List?) ?? const [])
             .map((key) => key.toString())
@@ -382,21 +382,21 @@ class ChatUser {
   const ChatUser({
     required this.id,
     required this.name,
-    required this.phoneNumber,
+    required this.email,
     this.avatarPath,
   });
 
   final String id;
   final String? name;
-  final String phoneNumber;
+  final String email;
   final String? avatarPath;
 
-  String get label => name?.isNotEmpty == true ? name! : phoneNumber;
+  String get label => name?.isNotEmpty == true ? name! : email;
 
   factory ChatUser.fromJson(Map<String, dynamic> json) => ChatUser(
         id: json['id'].toString(),
         name: json['name']?.toString(),
-        phoneNumber: (json['phoneNumber'] ?? '').toString(),
+        email: (json['email'] ?? '').toString(),
         avatarPath: json['avatarPath']?.toString(),
       );
 }

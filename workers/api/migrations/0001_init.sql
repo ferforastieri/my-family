@@ -1,7 +1,8 @@
 -- Global tables
 CREATE TABLE users (
   id TEXT PRIMARY KEY,
-  phone_number TEXT NOT NULL UNIQUE,
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
   name TEXT,
   role TEXT NOT NULL DEFAULT 'friends',
   access TEXT NOT NULL DEFAULT '[]',
@@ -44,8 +45,7 @@ CREATE INDEX idx_memberships_tenant ON memberships(tenant_id, created_at);
 CREATE TABLE invitations (
   id TEXT PRIMARY KEY,
   tenant_id TEXT NOT NULL,
-  phone_number TEXT NOT NULL,
-  channel TEXT NOT NULL,
+  email TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'member',
   relationship TEXT NOT NULL DEFAULT 'friends',
   access TEXT NOT NULL DEFAULT '[]',
@@ -58,7 +58,7 @@ CREATE TABLE invitations (
   updated_at INTEGER NOT NULL
 );
 CREATE INDEX idx_invitations_tenant ON invitations(tenant_id, status, expires_at);
-CREATE INDEX idx_invitations_phone ON invitations(phone_number);
+CREATE INDEX idx_invitations_email ON invitations(email);
 
 CREATE TABLE auth_sessions (
   id TEXT PRIMARY KEY,
@@ -72,19 +72,6 @@ CREATE TABLE auth_sessions (
 );
 CREATE INDEX idx_sessions_user ON auth_sessions(user_id);
 CREATE INDEX idx_sessions_expiry ON auth_sessions(expires_at);
-
-CREATE TABLE phone_challenges (
-  id TEXT PRIMARY KEY,
-  phone_number TEXT NOT NULL,
-  code_hash TEXT NOT NULL,
-  channel TEXT NOT NULL,
-  attempts INTEGER NOT NULL DEFAULT 0,
-  expires_at INTEGER NOT NULL,
-  consumed_at INTEGER,
-  created_at INTEGER NOT NULL
-);
-CREATE INDEX idx_challenges_phone ON phone_challenges(phone_number, created_at DESC);
-CREATE INDEX idx_challenges_expiry ON phone_challenges(expires_at);
 
 -- Tenant-scoped tables
 CREATE TABLE fotos (

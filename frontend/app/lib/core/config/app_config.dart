@@ -5,6 +5,11 @@ class AppConfig {
     'LANDING_URL',
     defaultValue: 'http://localhost:3000',
   );
+  static const downloadUrl = String.fromEnvironment(
+    'DOWNLOAD_URL',
+    defaultValue:
+        'https://github.com/ferforastieri/my-family/releases/latest/download/app-release.apk',
+  );
 
   static String get apiBaseUrl => _requiredEnv('API_BASE_URL', _apiBaseUrl);
   static String get socketUrl => _requiredEnv('SOCKET_URL', _socketUrl);
@@ -25,6 +30,11 @@ class AppConfig {
       String.fromEnvironment('FIREBASE_STORAGE_BUCKET');
   static const firebaseWebPushCertificateKey =
       String.fromEnvironment('FIREBASE_WEB_PUSH_CERTIFICATE_KEY');
+  static const webPushPublicKey = String.fromEnvironment(
+    'WEB_PUSH_PUBLIC_KEY',
+    defaultValue:
+        'BOBoIEseHEO5B1xE25Y8RBBr7n9vkfk8Be1UGF1hQEZD_5CPu9oM40JASU_58ji6p_YiFp5LdLe_VI0TTRbD0ts',
+  );
 
   static bool get hasFirebaseConfig {
     return firebaseApiKey.isNotEmpty &&

@@ -580,7 +580,7 @@ gamesRoutes.post('/complete', async (c) => {
   const principal = c.get('principal');
   const body = await parseBody(c, completionSchema);
   if (!body.game?.trim()) throw badRequest('Jogo inválido.');
-  const playerName = principal.name || principal.phoneNumber || body.playerName?.trim() || 'Visitante';
+  const playerName = principal.name || principal.email || body.playerName?.trim() || 'Visitante';
   const id = crypto.randomUUID();
   const timestamp = now();
   await execute(

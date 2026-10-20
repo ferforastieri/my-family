@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/navigation/app_navigation.dart';
 import 'package:image_picker/image_picker.dart';
@@ -116,9 +117,9 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
       children: [
         _ProfileHero(
           displayName: displayName,
-          phoneNumber: user.phoneNumber,
+          email: user.email,
           role: _roleLabel(user.role),
-          initial: _initialFor(user.name ?? user.phoneNumber),
+          initial: _initialFor(user.name ?? user.email),
           avatarPath: user.avatarPath,
           uploadingAvatar: uploadingAvatar,
           onChangeAvatar: _changeAvatar,
@@ -159,6 +160,16 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
                   onTap: widget.onAdmin,
                 ),
               ],
+              const SizedBox(height: 10),
+              _ProfileActionTile(
+                icon: Icons.download_outlined,
+                label: 'Baixar versão mais atual',
+                description: 'Instale a versão mais recente do aplicativo.',
+                onTap: () => launchUrl(
+                  Uri.parse(AppConfig.downloadUrl),
+                  mode: LaunchMode.externalApplication,
+                ),
+              ),
               const SizedBox(height: 18),
               Text(
                 'Sessão',
@@ -257,7 +268,7 @@ class _GuestProfileCard extends StatelessWidget {
 class _ProfileHero extends StatelessWidget {
   const _ProfileHero({
     required this.displayName,
-    required this.phoneNumber,
+    required this.email,
     required this.role,
     required this.initial,
     required this.avatarPath,
@@ -266,7 +277,7 @@ class _ProfileHero extends StatelessWidget {
   });
 
   final String displayName;
-  final String phoneNumber;
+  final String email;
   final String role;
   final String initial;
   final String? avatarPath;
@@ -373,7 +384,7 @@ class _ProfileHero extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  phoneNumber,
+                  email,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(color: palette.muted),

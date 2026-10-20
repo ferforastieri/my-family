@@ -23,7 +23,9 @@ demoRoutes.post('/', async (c) => {
   });
 
   const suffix = crypto.randomUUID().slice(0, 8);
-  const user = await createUser(c.env, `+999${Date.now().toString().slice(-9)}${Math.floor(Math.random() * 10)}`, {
+  const user = await createUser(c.env, {
+    email: `demo-${suffix}@nossafamilia.local`,
+    password: crypto.randomUUID(),
     name: 'Visitante da demo',
   });
   const tenant = await createTenant(c.env, {

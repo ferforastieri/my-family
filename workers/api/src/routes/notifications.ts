@@ -89,56 +89,126 @@ notificationsRoutes.post('/subscribe', demoRestricted, async (c) => {
   const body = await parseBody(
     c,
     z.object({
-      subscription: z.object({
-        token: z.string(),
-        platform: z.enum(['web', 'android', 'ios', 'unknown']).optional(),
-      }),
+      subscription: z
+        .object({
+          token: z.string(),
+          platform: z.enum(['web', 'android', 'ios', 'unknown']).optional(),
+        })
+        .optional(),
+      webPush: z
+        .object({
+          endpoint: z.string().url(),
+          keys: z.object({ p256dh: z.string(), auth: z.string() }),
+        })
+        .optional(),
       userAgent: z.string().optional(),
     }),
   );
-  const token = body.subscription.token;
-  const existing = await queryOne<{ id: string }>(
-    c.env.DB,
-    'SELECT id FROM push_subscriptions WHERE tenant_id = ? AND fcm_token = ?',
-    [principal.tenantId, token],
-  );
-  if (existing) {
-    await execute(
+  const userAgent = body.userAgent ?? c.req.header('user-agent') ?? null;
+  if (body.webPush) {
+    const { endpoint, keys } = body.webPush;
+    if (
+      !endpoint.startsWith('https://') ||
+      endpoint.length > 1000 ||
+      !keys.p256dh ||
+      keys.p256dh.length > 200 ||
+      !keys.auth ||
+      keys.auth.length > 200
+    ) {
+      throw badRequest('Inscrição inválida.');
+    }
+    const existing = await queryOne<{ id: string }>(
       c.env.DB,
-      'UPDATE push_subscriptions SET user_id = ?, platform = ?, user_agent = ? WHERE id = ?',
-      [
-        principal.id,
-        body.subscription.platform ?? 'unknown',
-        body.userAgent ?? c.req.header('user-agent') ?? null,
-        existing.id,
-      ],
+      'SELECT id FROM push_subscriptions WHERE endpoint = ?',
+      [endpoint],
     );
-  } else {
-    await execute(
-      c.env.DB,
-      `INSERT INTO push_subscriptions (id, tenant_id, fcm_token, user_id, platform, user_agent, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [
-        crypto.randomUUID(),
-        principal.tenantId,
-        token,
-        principal.id,
-        body.subscription.platform ?? 'unknown',
-        body.userAgent ?? c.req.header('user-agent') ?? null,
-        now(),
-      ],
-    );
+    if (existing) {
+      await execute(
+        c.env.DB,
+        `UPDATE push_subscriptions
+            SET tenant_id = ?, user_id = ?, p256dh = ?, auth = ?, kind = 'webpush',
+                platform = 'web', user_agent = ?
+          WHERE id = ?`,
+        [principal.tenantId, principal.id, keys.p256dh, keys.auth, userAgent, existing.id],
+      );
+    } else {
+      await execute(
+        c.env.DB,
+        `INSERT INTO push_subscriptions (id, tenant_id, endpoint, p256dh, auth, kind, user_id, platform, user_agent, created_at)
+         VALUES (?, ?, ?, ?, ?, 'webpush', ?, 'web', ?, ?)`,
+        [
+          crypto.randomUUID(),
+          principal.tenantId,
+          endpoint,
+          keys.p256dh,
+          keys.auth,
+          principal.id,
+          userAgent,
+          now(),
+        ],
+      );
+    }
   }
+  if (body.subscription) {
+    const token = body.subscription.token;
+    const existing = await queryOne<{ id: string }>(
+      c.env.DB,
+      'SELECT id FROM push_subscriptions WHERE tenant_id = ? AND fcm_token = ?',
+      [principal.tenantId, token],
+    );
+    if (existing) {
+      await execute(
+        c.env.DB,
+        `UPDATE push_subscriptions
+            SET user_id = ?, platform = ?, user_agent = ?, kind = 'fcm'
+          WHERE id = ?`,
+        [
+          principal.id,
+          body.subscription.platform ?? 'unknown',
+          userAgent,
+          existing.id,
+        ],
+      );
+    } else {
+      await execute(
+        c.env.DB,
+        `INSERT INTO push_subscriptions (id, tenant_id, fcm_token, kind, user_id, platform, user_agent, created_at)
+         VALUES (?, ?, ?, 'fcm', ?, ?, ?, ?)`,
+        [
+          crypto.randomUUID(),
+          principal.tenantId,
+          token,
+          principal.id,
+          body.subscription.platform ?? 'unknown',
+          userAgent,
+          now(),
+        ],
+      );
+    }
+  }
+  if (!body.webPush && !body.subscription) throw badRequest('Inscrição inválida.');
   return envelope(c, { ok: true, message: 'Notificações ativadas.' });
 });
 
 notificationsRoutes.post('/unsubscribe', async (c) => {
   const principal = c.get('principal');
-  const body = await parseBody(c, z.object({ token: z.string() }));
-  await execute(c.env.DB, 'DELETE FROM push_subscriptions WHERE tenant_id = ? AND fcm_token = ?', [
-    principal.tenantId,
-    body.token,
-  ]);
+  const body = await parseBody(
+    c,
+    z.object({ token: z.string().optional(), endpoint: z.string().optional() }),
+  );
+  if (body.endpoint) {
+    await execute(
+      c.env.DB,
+      'DELETE FROM push_subscriptions WHERE tenant_id = ? AND endpoint = ?',
+      [principal.tenantId, body.endpoint],
+    );
+  } else if (body.token) {
+    await execute(
+      c.env.DB,
+      'DELETE FROM push_subscriptions WHERE tenant_id = ? AND fcm_token = ?',
+      [principal.tenantId, body.token],
+    );
+  }
   return envelope(c, { ok: true, message: 'Notificações desativadas.' });
 });
 

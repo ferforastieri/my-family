@@ -13,7 +13,7 @@ import {
   type UserRole,
 } from './auth';
 import { badRequest, conflict, forbidden, notFound } from './http';
-import { invalidPhoneNumber, sendInvitation, type PhoneChannel } from './messaging';
+import { normalizeEmail } from './email';
 
 const reservedSlugs = new Set([
   'api',
@@ -290,12 +290,12 @@ export async function tenantIdForSlug(
 
 export async function members(env: Env, tenantId: string) {
   const rows = await queryAll<MembershipRow & {
-    phone_number: string;
+    email: string;
     name: string | null;
     avatar_path: string | null;
   }>(
     env.DB,
-    `SELECT m.*, u.phone_number, u.name, u.avatar_path
+    `SELECT m.*, u.email, u.name, u.avatar_path
        FROM memberships m
        JOIN users u ON u.id = m.user_id
       WHERE m.tenant_id = ?
@@ -305,7 +305,7 @@ export async function members(env: Env, tenantId: string) {
   return rows.map((row) => ({
     id: row.user_id,
     membershipId: row.id,
-    phoneNumber: row.phone_number,
+    email: row.email,
     name: row.name,
     avatarPath: row.avatar_path,
     role: row.relationship as UserRole,
@@ -391,8 +391,7 @@ export async function removeMember(
 export interface InvitationRow {
   id: string;
   tenant_id: string;
-  phone_number: string;
-  channel: string;
+  email: string;
   role: string;
   relationship: string;
   access: string;
@@ -408,15 +407,13 @@ export async function invite(
   tenantId: string,
   invitedBy: string,
   input: {
-    phone: string;
-    channel?: PhoneChannel;
+    email: string;
     role?: MembershipRole;
     relationship?: UserRole;
     access?: string[];
   },
 ) {
-  const phoneNumber = invalidPhoneNumber(env, input.phone);
-  if (!phoneNumber) throw badRequest('Celular inválido.');
+  const email = normalizeEmail(input.email);
   if (input.role === 'owner') throw badRequest('O papel owner não pode ser convidado.');
   const token = randomToken(32);
   const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000;
@@ -424,13 +421,12 @@ export async function invite(
   const timestamp = now();
   await execute(
     env.DB,
-    `INSERT INTO invitations (id, tenant_id, phone_number, channel, role, relationship, access, token_hash, expires_at, status, invited_by, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`,
+    `INSERT INTO invitations (id, tenant_id, email, role, relationship, access, token_hash, expires_at, status, invited_by, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`,
     [
       id,
       tenantId,
-      phoneNumber,
-      input.channel ?? 'sms',
+      email,
       input.role ?? 'member',
       input.relationship ?? 'friends',
       JSON.stringify(normalizeAccessKeys(input.access)),
@@ -441,22 +437,9 @@ export async function invite(
       timestamp,
     ],
   );
-  const tenant = await findTenantById(env, tenantId);
-  try {
-    await sendInvitation(
-      env,
-      phoneNumber,
-      tenant?.name ?? 'uma família',
-      token,
-      input.channel ?? 'sms',
-    );
-  } catch {
-    // O convite continua válido e pode ser reenviado.
-  }
   return {
     id,
-    phoneNumber,
-    channel: input.channel ?? 'sms',
+    email,
     role: input.role ?? 'member',
     expiresAt: new Date(expiresAt).toISOString(),
     token,
@@ -473,8 +456,7 @@ export async function listInvitations(env: Env, tenantId: string) {
   );
   return rows.map((row) => ({
     id: row.id,
-    phoneNumber: row.phone_number,
-    channel: row.channel,
+    email: row.email,
     role: row.role,
     relationship: row.relationship,
     access: normalizeAccessKeys(jsonArray(row.access)),
@@ -501,13 +483,13 @@ export async function acceptInvitation(env: Env, userId: string, rawToken: strin
     [await hashToken(rawToken), now()],
   );
   if (!invitation) throw badRequest('Convite inválido ou expirado.');
-  const user = await queryOne<{ phone_number: string }>(
+  const user = await queryOne<{ email: string }>(
     env.DB,
-    'SELECT phone_number FROM users WHERE id = ?',
+    'SELECT email FROM users WHERE id = ?',
     [userId],
   );
-  if (!user || user.phone_number !== invitation.phone_number) {
-    throw forbidden('Este convite pertence a outro celular.');
+  if (!user || user.email !== invitation.email) {
+    throw forbidden('Este convite pertence a outro email.');
   }
   const existing = await findMembership(env, invitation.tenant_id, userId);
   if (!existing) {
@@ -587,7 +569,7 @@ export async function tokenResponse(
   env: Env,
   user: {
     id: string;
-    phoneNumber: string;
+    email: string;
     name: string | null;
     role: UserRole;
     access: UserAccessKey[];
@@ -617,7 +599,7 @@ export async function tokenResponse(
     refreshToken,
     user: principal ?? {
       id: user.id,
-      phoneNumber: user.phoneNumber,
+      email: user.email,
       name: user.name,
       role: user.role,
       access: user.access,

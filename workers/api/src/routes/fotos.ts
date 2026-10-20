@@ -5,7 +5,7 @@ import { authMiddleware, requireAccess } from '../auth';
 import { badRequest, envelope, notFound, paginated, parseBody, queryInt } from '../http';
 import { execute, iso, now, queryAll, queryOne } from '../db';
 import { serveMedia, signedMediaUrl } from '../media';
-import { hmacHex } from '../otp';
+import { hmacHex } from '../hmac';
 
 interface FotoRow {
   id: string;

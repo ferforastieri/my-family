@@ -1,5 +1,5 @@
 import type { Env } from './env';
-import { hmacHex } from './otp';
+import { hmacHex } from './hmac';
 
 export function canSignMedia(env: Env): boolean {
   return Boolean(env.MEDIA_BASE_URL && env.MEDIA_SIGNING_SECRET);

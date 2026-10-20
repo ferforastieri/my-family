@@ -11,11 +11,11 @@ import {
   clearSessionCookies,
 } from '../auth';
 import {
-  authenticateWithCode,
   listTenants,
+  login,
   logout,
   refresh,
-  requestCode,
+  register,
   switchTenant,
   updateAvatar,
   updateProfile,
@@ -27,17 +27,20 @@ import { createWsTicket } from '../ws-ticket';
 
 const authRoutes = new Hono<AppEnv>();
 
-const requestCodeSchema = z.object({
-  phone: z.string().max(32),
-  channel: z.enum(['sms']),
+const registerSchema = z.object({
+  name: z.string().min(1).max(120),
+  email: z.string().email().max(200),
+  password: z.string().min(8).max(200),
+  invitationToken: z.string().max(128).optional(),
+  tenantSlug: z.string().max(48).optional(),
   turnstileToken: z.string().max(2048).optional(),
 });
 
-const verifyCodeSchema = z.object({
-  phone: z.string().max(32),
-  code: z.string().length(6),
-  invitationToken: z.string().max(128).optional(),
+const loginSchema = z.object({
+  email: z.string().email().max(200),
+  password: z.string().min(1).max(200),
   tenantSlug: z.string().max(48).optional(),
+  turnstileToken: z.string().max(2048).optional(),
 });
 
 function publicSession<T extends { accessToken: string; refreshToken: string }>(session: T) {
@@ -47,29 +50,39 @@ function publicSession<T extends { accessToken: string; refreshToken: string }>(
   return rest;
 }
 
-authRoutes.post('/phone/request-code', async (c) => {
-  const dto = await parseBody(c, requestCodeSchema);
+authRoutes.post('/register', async (c) => {
+  const dto = await parseBody(c, registerSchema);
   await verifyTurnstile(c.env, dto.turnstileToken, c.req.header('cf-connecting-ip'), {
     required: false,
-    action: 'phone',
+    action: 'auth',
   });
-  const result = await requestCode(c.env, dto.phone, dto.channel);
-  return envelope(c, {
-    message: 'Código enviado por SMS.',
-    ...result,
-  });
-});
-
-authRoutes.post('/phone/verify-code', async (c) => {
-  const dto = await parseBody(c, verifyCodeSchema);
-  const session = await authenticateWithCode(c.env, {
+  const session = await register(c.env, {
     ...dto,
     userAgent: c.req.header('user-agent'),
   });
   const csrfToken = setSessionCookies(c, c.env, session.accessToken, session.refreshToken);
   c.header('Cache-Control', 'no-store');
   return envelope(c, {
-    message: 'Celular confirmado.',
+    message: 'Conta criada.',
+    ...publicSession(session),
+    csrfToken,
+  });
+});
+
+authRoutes.post('/login', async (c) => {
+  const dto = await parseBody(c, loginSchema);
+  await verifyTurnstile(c.env, dto.turnstileToken, c.req.header('cf-connecting-ip'), {
+    required: false,
+    action: 'auth',
+  });
+  const session = await login(c.env, {
+    ...dto,
+    userAgent: c.req.header('user-agent'),
+  });
+  const csrfToken = setSessionCookies(c, c.env, session.accessToken, session.refreshToken);
+  c.header('Cache-Control', 'no-store');
+  return envelope(c, {
+    message: 'Login realizado.',
     ...publicSession(session),
     csrfToken,
   });
@@ -139,7 +152,7 @@ authRoutes.patch('/me', authMiddleware, demoRestricted, async (c) => {
     user: user
       ? {
           id: user.id,
-          phoneNumber: user.phoneNumber,
+          email: user.email,
           name: user.name,
           role: user.role,
           access: user.access,
@@ -175,7 +188,7 @@ authRoutes.post('/avatar', authMiddleware, demoRestricted, async (c) => {
     user: user
       ? {
           id: user.id,
-          phoneNumber: user.phoneNumber,
+          email: user.email,
           name: user.name,
           role: user.role,
           avatarPath: user.avatarPath,

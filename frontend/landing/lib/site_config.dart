@@ -15,3 +15,8 @@ const panelUrl = String.fromEnvironment(
   defaultValue: 'http://localhost:8081',
 );
 const turnstileSiteKey = String.fromEnvironment('TURNSTILE_SITE_KEY');
+const downloadUrl = String.fromEnvironment(
+  'DOWNLOAD_URL',
+  defaultValue:
+      'https://github.com/ferforastieri/my-family/releases/latest/download/app-release.apk',
+);

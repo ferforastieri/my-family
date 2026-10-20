@@ -1,40 +1,83 @@
 # Nossa Família
 
-SaaS privado multi-tenant para memórias e rotina familiar, 100% na Cloudflare.
+Um espaço privado para a família guardar memórias, organizar a rotina e conversar.
 
-## Stack
+O Nossa Família é um aplicativo multi-família: cada família tem seu próprio espaço,
+seus membros, suas permissões e seu conteúdo. A mesma pessoa pode participar de
+mais de uma família e alternar entre elas sem criar outra conta.
 
-- **API**: Hono em Workers (`workers/api`), D1, R2, Durable Objects, Queues e Cron.
-- **App**: Flutter Web e Android (`frontend/app`).
-- **Painel**: Flutter Web (`frontend/panel`).
-- **Landing**: Jaspr/Dart (`frontend/landing`).
-- **Web Workers**: `workers/web` serve os assets e fazem proxy de `/api/*` e `/ws`
-  para a API. Assim app, painel e landing ficam na mesma origem da API, sem CORS
-  e sem cookies de terceiros.
-- **Push**: Firebase Cloud Messaging no projeto `my-family-76986`.
-- **APK**: GitHub Actions (`.github/workflows/android.yml`).
+## O que dá para fazer
 
-## URLs
+- Guardar fotos e vídeos em álbuns privados.
+- Escrever notas, cartas e capítulos da história da família.
+- Montar listas compartilhadas e marcar itens.
+- Conversar no chat da família, com mensagens, fotos, respostas e indicadores de
+  leitura.
+- Compartilhar a localização dos aparelhos e criar locais seguros.
+- Criar playlists de músicas que marcaram momentos.
+- Jogar quizzes e mini jogos em família.
+- Receber notificações no aplicativo e no navegador.
+- Convidar pessoas e definir o que cada uma pode acessar.
 
-- App: https://my-family-web.vira-ia-br.workers.dev
-- Painel: https://my-family-panel.vira-ia-br.workers.dev
-- Landing: https://my-family-landing.vira-ia-br.workers.dev
-- API: https://my-family-api.vira-ia-br.workers.dev
-
-## Estrutura
+## Arquitetura
 
 ```
-workers/api       API Hono + D1 + DO + Queue + Cron
-workers/web       script de assets/proxy usado pelos três web Workers
-workers/media     entrega privada de mídia no R2
-frontend/app      aplicativo Flutter
-frontend/panel    painel Flutter
-frontend/landing  landing Jaspr
+Aplicativo (Flutter Web/Android)   Painel (Flutter Web)   Site (Jaspr)
+                    │                      │                  │
+                    └──────────── HTTPS e WebSocket ──────────┘
+                                       │
+                              Cloudflare Workers
+                              API Hono na borda
+                                       │
+        ┌──────────────┬───────────────┼──────────────┬─────────────┐
+        │              │               │              │             │
+     Banco D1       Mídia R2      Tempo real      Filas/Cron    Firebase
+     (dados)        (fotos)      (Durable Objects) (rotinas)     (push)
 ```
 
-## Desenvolvimento
+- **Aplicativo, painel e site** rodam na Cloudflare e conversam com a API pela
+  mesma origem, o que mantém cookies, sessões e WebSocket simples e seguros.
+- **API** concentra autenticação, permissões, regras de negócio e acesso aos dados.
+- **Banco** guarda usuários, famílias, membros e todo o conteúdo textual.
+- **Mídia** fica em armazenamento privado; o acesso é sempre temporário e assinado.
+- **Tempo real** mantém o chat, as listas e as notificações sincronizados entre os
+  aparelhos da mesma família.
+- **Rotinas** cuidam de notificações agendadas, limpeza de sessões e remoção de
+  demonstrações expiradas.
+- **Push** usa Web Push no navegador e Firebase no Android.
 
-API:
+## Segurança e privacidade
+
+- Login por **email e senha**. Não há telefone, SMS ou WhatsApp no fluxo.
+- Senhas são protegidas por hash; nunca são armazenadas em texto puro.
+- A sessão usa cookies seguros e tokens de curta duração.
+- Toda operação é limitada à família da sessão. O identificador da família nunca
+  vem do corpo da requisição.
+- Cada membro tem um papel (`owner`, `admin` ou `member`) e permissões por área.
+- Uploads e leituras de mídia usam URLs temporárias.
+- Acesso à plataforma administrativa é separado do acesso ao conteúdo das famílias.
+
+## Estrutura do repositório
+
+```
+frontend/app       aplicativo Flutter (Web e Android)
+frontend/panel     painel para administradores das famílias
+frontend/landing   site público de apresentação e cadastro
+workers/api        API, banco, tempo real, filas e notificações
+workers/web        camada que entrega os sites e encaminha a API
+workers/media      entrega privada de mídia
+```
+
+## Como rodar
+
+### Pré-requisitos
+
+- Node.js 22 ou superior
+- Flutter estável
+- Dart 3.13 ou superior
+- Conta Cloudflare com Workers, D1 e R2 para o ambiente completo
+
+### API
 
 ```bash
 cd workers/api
@@ -44,7 +87,10 @@ npm run db:migrate:local
 npm run dev
 ```
 
-App:
+A API sobe em `http://localhost:8787`. O arquivo `.dev.vars` contém apenas as
+configurações locais; os valores de produção ficam no painel da Cloudflare.
+
+### Aplicativo
 
 ```bash
 cd frontend/app
@@ -54,125 +100,44 @@ flutter run -d chrome \
   --dart-define=SOCKET_URL=http://localhost:8787
 ```
 
-## Deploy (Cloudflare Workers Builds)
+Para Android, use o mesmo comando com um dispositivo ou emulador conectado.
 
-Os cinco Workers já estão publicados. Para ativar o build automático, conecte
-cada root no dashboard (**Workers & Pages → Worker → Settings → Builds**).
-
-| Worker | Root | Build | Deploy |
-|---|---|---|---|
-| `my-family-api` | `workers/api` | `npm ci` | `npx wrangler deploy` |
-| `my-family-web` | `frontend/app` | Flutter + `flutter build web` | `npx wrangler deploy` |
-| `my-family-panel` | `frontend/panel` | Flutter + `flutter build web` | `npx wrangler deploy` |
-| `my-family-landing` | `frontend/landing` | Dart + `jaspr build` | `npx wrangler deploy` |
-| `my-family-media` | `workers/media` | `npm ci` | `npm run deploy` |
-
-### Variáveis de build
-
-`my-family-web`:
-
-```
-API_BASE_URL=https://my-family-web.vira-ia-br.workers.dev/api
-SOCKET_URL=https://my-family-api.vira-ia-br.workers.dev
-FIREBASE_API_KEY=AIzaSyAdzcp6WxQEm7mKArNthR2OidbjvbPH91w
-FIREBASE_APP_ID=1:177457768602:web:ecb14c8366741618439723
-FIREBASE_MESSAGING_SENDER_ID=177457768602
-FIREBASE_PROJECT_ID=my-family-76986
-FIREBASE_AUTH_DOMAIN=my-family-76986.firebaseapp.com
-FIREBASE_STORAGE_BUCKET=my-family-76986.firebasestorage.app
-```
-
-`my-family-panel`:
-
-```
-API_BASE_URL=https://my-family-panel.vira-ia-br.workers.dev/api
-APP_BASE_URL=https://my-family-web.vira-ia-br.workers.dev
-```
-
-`my-family-landing`:
-
-```
-SITE_URL=https://my-family-landing.vira-ia-br.workers.dev
-API_URL=https://my-family-landing.vira-ia-br.workers.dev/api
-APP_URL=https://my-family-web.vira-ia-br.workers.dev
-PANEL_URL=https://my-family-panel.vira-ia-br.workers.dev
-```
-
-### Build command — app e painel
+### Painel
 
 ```bash
-git clone --depth 1 -b stable https://github.com/flutter/flutter.git /tmp/flutter
-export PATH="/tmp/flutter/bin:$PATH"
-flutter config --no-analytics
+cd frontend/panel
 flutter pub get
-flutter build web --release --no-wasm-dry-run \
-  --dart-define=API_BASE_URL=$API_BASE_URL \
-  --dart-define=SOCKET_URL=$SOCKET_URL \
-  --dart-define=FIREBASE_API_KEY=$FIREBASE_API_KEY \
-  --dart-define=FIREBASE_APP_ID=$FIREBASE_APP_ID \
-  --dart-define=FIREBASE_MESSAGING_SENDER_ID=$FIREBASE_MESSAGING_SENDER_ID \
-  --dart-define=FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID \
-  --dart-define=FIREBASE_AUTH_DOMAIN=$FIREBASE_AUTH_DOMAIN \
-  --dart-define=FIREBASE_STORAGE_BUCKET=$FIREBASE_STORAGE_BUCKET
-npx --yes wrangler@4.151.3 deploy
+flutter run -d chrome \
+  --dart-define=API_BASE_URL=http://localhost:8787/api \
+  --dart-define=APP_BASE_URL=http://localhost:8080
 ```
 
-No painel, troque as defines de Firebase por
-`--dart-define=APP_BASE_URL=$APP_BASE_URL` (o painel não usa push).
-
-### Build command — landing
+### Site
 
 ```bash
-curl -sSL https://storage.googleapis.com/dart-archive/channels/stable/release/3.13.6/sdk/dartsdk-linux-x64-release.zip -o /tmp/dart.zip
-unzip -q /tmp/dart.zip -d /tmp
-export PATH="/tmp/dart-sdk/bin:$PATH"
+cd frontend/landing
 dart pub get
 dart pub global activate jaspr_cli 0.23.4
-export PATH="$HOME/.pub-cache/bin:$PATH"
-jaspr build --port 8099 \
-  --sitemap-domain $SITE_URL \
-  --sitemap-exclude '^/cadastro' \
-  --dart-define SITE_URL=$SITE_URL \
-  --dart-define API_URL=$API_URL \
-  --dart-define APP_URL=$APP_URL \
-  --dart-define PANEL_URL=$PANEL_URL
-dart run tool/finalize.dart $SITE_URL $API_URL
-npx --yes wrangler@4.151.3 deploy
+jaspr serve
 ```
 
+## Deploy
 
-## Secrets do Worker `my-family-api`
+- **API, aplicativo, painel e site** são publicados na Cloudflare. Cada projeto
+  tem seu próprio build automático conectado ao repositório.
+- **Aplicativo Android** é gerado pelo GitHub Actions e publicado na página de
+  releases.
+- Configurações e credenciais ficam nos painéis da Cloudflare e do GitHub; nada
+  sensível é versionado.
 
-```bash
-npx wrangler secret put JWT_SECRET
-npx wrangler secret put PHONE_OTP_SECRET
-npx wrangler secret put TWILIO_ACCOUNT_SID
-npx wrangler secret put TWILIO_AUTH_TOKEN
-npx wrangler secret put TWILIO_FROM_NUMBER
-npx wrangler secret put FIREBASE_SERVICE_ACCOUNT_JSON
-# opcionais
-npx wrangler secret put TURNSTILE_SECRET
-npx wrangler secret put MEDIA_SIGNING_SECRET
-```
+## Links
 
-## Autenticação
+- Aplicativo: https://my-family-web.vira-ia-br.workers.dev
+- Painel: https://my-family-panel.vira-ia-br.workers.dev
+- Site: https://my-family-landing.vira-ia-br.workers.dev
+- API: https://my-family-api.vira-ia-br.workers.dev
+- Baixar o aplicativo: https://github.com/ferforastieri/my-family/releases/latest/download/app-release.apk
 
-Passwordless por celular, com código de 6 dígitos por **SMS (Twilio)**. O
-WhatsApp foi removido. Sem `TWILIO_*`, o login em produção retorna 503; a demo
-e o ambiente local (`APP_ENV=development`) continuam funcionando.
+## Licença
 
-## Banco
-
-D1 `my-family`. Migrações:
-
-```bash
-cd workers/api
-npm run db:migrate        # remoto
-npm run db:migrate:local  # local
-```
-
-## Android
-
-O workflow `android.yml` gera o APK release em pushes na `main`, tags ou
-manualmente. Ele usa o secret `GOOGLE_SERVICES_JSON` e as vars
-`FIREBASE_ANDROID_API_KEY`/`FIREBASE_ANDROID_APP_ID`.
+Projeto privado da família. Todos os direitos reservados.

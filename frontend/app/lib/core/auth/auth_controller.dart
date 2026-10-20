@@ -47,22 +47,29 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  Future<String?> requestPhoneCode(String phone, String channel) async {
-    final response = await _post('/auth/phone/request-code', {
-      'phone': phone,
-      'channel': channel,
-    }, retry: false);
-    return response['devCode']?.toString();
-  }
-
-  Future<void> verifyPhoneCode(String phone, String code) async {
+  Future<void> login(String email, String password) async {
     final path = Uri.base.pathSegments;
     final tenantSlug = Uri.base.queryParameters['tenantSlug'] ??
         (path.length >= 2 && path.first == 'f' ? path[1] : null);
-    final response = await _post('/auth/phone/verify-code', {
-      'phone': phone,
-      'code': code,
+    final response = await _post('/auth/login', {
+      'email': email.trim(),
+      'password': password,
       if (tenantSlug != null) 'tenantSlug': tenantSlug,
+    }, retry: false);
+    await _acceptSession(response);
+  }
+
+  Future<void> register(String name, String email, String password) async {
+    final path = Uri.base.pathSegments;
+    final tenantSlug = Uri.base.queryParameters['tenantSlug'] ??
+        (path.length >= 2 && path.first == 'f' ? path[1] : null);
+    final invitationToken = Uri.base.queryParameters['invitation'];
+    final response = await _post('/auth/register', {
+      'name': name.trim(),
+      'email': email.trim(),
+      'password': password,
+      if (tenantSlug != null) 'tenantSlug': tenantSlug,
+      if (invitationToken != null) 'invitationToken': invitationToken,
     }, retry: false);
     await _acceptSession(response);
   }

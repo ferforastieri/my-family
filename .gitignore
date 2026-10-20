@@ -67,3 +67,7 @@ build
 .dev.vars
 .wrangler
 !workers/api/migrations/*.sql
+
+# Android signing
+*.jks
+*.keystore

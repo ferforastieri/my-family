@@ -116,7 +116,7 @@ locationRoutes.post('/update', async (c) => {
   const id = crypto.randomUUID();
   const timestamp = now();
   const userId = principal.id;
-  const userName = principal.name || principal.phoneNumber || body.userName || null;
+  const userName = principal.name || principal.email || body.userName || null;
   await execute(
     c.env.DB,
     `INSERT INTO location_updates (id, tenant_id, user_id, user_name, latitude, longitude, accuracy, altitude, speed, heading, battery_level, is_charging, platform, created_at)

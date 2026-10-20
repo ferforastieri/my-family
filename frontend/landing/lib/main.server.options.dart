@@ -31,8 +31,8 @@ ServerOptions get defaultServerOptions => ServerOptions(
       'demo_button',
       params: __demo_buttonDemoButton,
     ),
-    _register_page.PhoneRegistrationForm:
-        ClientTarget<_register_page.PhoneRegistrationForm>('register_page'),
+    _register_page.EmailRegistrationForm:
+        ClientTarget<_register_page.EmailRegistrationForm>('register_page'),
   },
 );
 

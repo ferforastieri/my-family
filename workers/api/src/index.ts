@@ -58,8 +58,8 @@ app.use('/api/*', async (c, next) => {
 });
 
 const publicPosts = new Set([
-  '/api/auth/phone/request-code',
-  '/api/auth/phone/verify-code',
+  '/api/auth/register',
+  '/api/auth/login',
   '/api/public/demo-sessions',
 ]);
 
@@ -76,7 +76,7 @@ app.use('/api/*', async (c, next) => {
 });
 
 app.use('/api/*', async (c, next) => {
-  const isOtp = c.req.path.startsWith('/api/auth/phone/');
+  const isOtp = c.req.path === '/api/auth/login' || c.req.path === '/api/auth/register';
   const limit = isOtp ? 10 : Number(c.env.THROTTLE_LIMIT ?? 120);
   const windowMs = Number(c.env.THROTTLE_TTL_MS ?? 60000);
   if (!Number.isFinite(limit) || limit <= 0 || !Number.isFinite(windowMs) || windowMs <= 0) {
@@ -154,7 +154,7 @@ app.get('/ws', async (c) => {
   const forward = new Request(c.req.raw);
   forward.headers.set('x-user-id', principal.id);
   forward.headers.set('x-tenant-id', principal.tenantId);
-  forward.headers.set('x-user-name', encodeURIComponent(principal.name ?? principal.phoneNumber));
+  forward.headers.set('x-user-name', encodeURIComponent(principal.name ?? principal.email));
   forward.headers.set('x-user-role', principal.role);
   forward.headers.set('x-user-access', principal.access.join(','));
   forward.headers.set('x-user-admin', principal.membershipRole === 'owner' || principal.membershipRole === 'admin' ? '1' : '0');

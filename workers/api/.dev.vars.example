@@ -1,9 +1,8 @@
 APP_ENV=development
 JWT_SECRET=replace-with-a-32-byte-secret
-PHONE_OTP_SECRET=replace-with-a-32-byte-secret
 CORS_ORIGIN=http://localhost:8080
 COOKIE_SECURE=false
 COOKIE_SAME_SITE=lax
-DEFAULT_PHONE_COUNTRY_CODE=55
 THROTTLE_TTL_MS=60000
 THROTTLE_LIMIT=120
+# PLATFORM_ADMIN_EMAIL=voce@exemplo.com

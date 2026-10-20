@@ -222,7 +222,7 @@ function cartaRoutes(tipo: 'letter' | 'journey', accessKey: 'cartas' | 'nossaHis
     );
     const row = await find(c, id);
     if (tipo === 'letter') {
-      const authorName = principal.name?.trim() || principal.phoneNumber || 'Alguém';
+      const authorName = principal.name?.trim() || principal.email || 'Alguém';
       await sendNotification(c.env, principal.tenantId, {
         title: 'Nova carta de amor',
         body: `${authorName} escreveu: ${titulo}`,

@@ -49,7 +49,7 @@ export interface TenantEntity {
 
 export interface Principal {
   id: string;
-  phoneNumber: string;
+  email: string;
   name: string | null;
   avatarPath: string | null;
   platformRole: 'super_admin' | null;
@@ -189,7 +189,7 @@ export function clearSessionCookies(
 
 interface PrincipalRow {
   id: string;
-  phone_number: string;
+  email: string;
   name: string | null;
   avatar_path: string | null;
   platform_role: string | null;
@@ -219,7 +219,7 @@ export async function loadPrincipal(
 ): Promise<Principal | null> {
   const row = await queryOne<PrincipalRow>(
     env.DB,
-    `SELECT u.id, u.phone_number, u.name, u.avatar_path, u.platform_role,
+    `SELECT u.id, u.email, u.name, u.avatar_path, u.platform_role,
             u.created_at AS user_created_at, u.updated_at AS user_updated_at,
             t.id AS tenant_id, t.name AS tenant_name, t.slug,
             t.status AS tenant_status, t.plan_code, t.subscription_status,
@@ -255,7 +255,7 @@ export async function loadPrincipal(
   })();
   return {
     id: row.id,
-    phoneNumber: row.phone_number,
+    email: row.email,
     name: row.name,
     avatarPath: row.avatar_path,
     platformRole: row.platform_role === 'super_admin' ? 'super_admin' : null,

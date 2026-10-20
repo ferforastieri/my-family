@@ -18,7 +18,7 @@ class RegisterPage extends StatelessComponent {
     child: div([
       const SeoHead(
         title: 'Criar minha família — Nossa Família',
-        description: 'Crie o espaço privado da sua família usando seu celular.',
+        description: 'Crie o espaço privado da sua família com email e senha.',
         path: '/cadastro',
         noIndex: true,
       ),
@@ -34,34 +34,33 @@ class RegisterPage extends StatelessComponent {
         ),
       section(classes: 'section content', [
         p(classes: 'eyebrow', [.text('Sua casa digital')]),
-        h1([.text('Comece pelo celular.')]),
+        h1([.text('Comece pela sua conta.')]),
         p(classes: 'lede', [
           .text(
-            'Sem senha e sem formulário longo. Receba um código, confirme o número e entre.',
+            'Crie sua conta com email e senha. Em poucos passos o espaço da sua família está pronto.',
           ),
         ]),
-        const PhoneRegistrationForm(),
+        const EmailRegistrationForm(),
       ]),
     ]),
   );
 }
 
 @client
-class PhoneRegistrationForm extends StatefulComponent {
-  const PhoneRegistrationForm({super.key});
+class EmailRegistrationForm extends StatefulComponent {
+  const EmailRegistrationForm({super.key});
 
   @override
-  State<PhoneRegistrationForm> createState() => _PhoneRegistrationFormState();
+  State<EmailRegistrationForm> createState() => _EmailRegistrationFormState();
 }
 
-class _PhoneRegistrationFormState extends State<PhoneRegistrationForm> {
-  String phone = '';
-  String code = '';
-  String channel = 'sms';
+class _EmailRegistrationFormState extends State<EmailRegistrationForm> {
+  String name = '';
+  String email = '';
+  String password = '';
   String? invitationToken;
   String? status;
   bool acceptedTerms = false;
-  bool codeSent = false;
   bool busy = false;
 
   @override
@@ -74,137 +73,111 @@ class _PhoneRegistrationFormState extends State<PhoneRegistrationForm> {
 
   @override
   Component build(BuildContext context) => form(classes: 'form', [
-    if (!codeSent) ...[
-      _field(
-        'Celular com DDD',
-        'tel',
-        placeholder: '(11) 99999-9999',
-        onInput: (value) => phone = value,
-      ),
-      label([
-        span([
-          input<bool>(
-            type: InputType.checkbox,
-            checked: acceptedTerms,
-            onChange: (value) => acceptedTerms = value,
-          ),
-          .text(' Li os '),
-          a(href: '/termos', [.text('termos')]),
-          .text(' e a '),
-          a(href: '/privacidade', [.text('política de privacidade')]),
-          .text('.'),
-        ]),
-      ]),
-      if (turnstileSiteKey.isNotEmpty)
-        div(
-          classes: 'cf-turnstile',
-          attributes: const {
-            'data-sitekey': turnstileSiteKey,
-            'data-action': 'phone',
-            'data-theme': 'light',
-          },
-          [],
+    _field(
+      'Seu nome',
+      'text',
+      placeholder: 'Como podemos chamar você?',
+      autocomplete: 'name',
+      onInput: (value) => name = value,
+    ),
+    _field(
+      'Email',
+      'email',
+      placeholder: 'voce@exemplo.com',
+      autocomplete: 'email',
+      onInput: (value) => email = value,
+    ),
+    _field(
+      'Senha',
+      'password',
+      placeholder: 'Mínimo de 8 caracteres',
+      autocomplete: 'new-password',
+      onInput: (value) => password = value,
+    ),
+    label([
+      span([
+        input<bool>(
+          type: InputType.checkbox,
+          checked: acceptedTerms,
+          onChange: (value) => acceptedTerms = value,
         ),
-    ] else ...[
-      p([.text('Enviamos um código de 6 números para $phone.')]),
-      _field(
-        'Código',
-        'text',
-        placeholder: '000000',
-        maxLength: 6,
-        onInput: (value) => code = value,
+        .text(' Li os '),
+        a(href: '/termos', [.text('termos')]),
+        .text(' e a '),
+        a(href: '/privacidade', [.text('política de privacidade')]),
+        .text('.'),
+      ]),
+    ]),
+    if (turnstileSiteKey.isNotEmpty)
+      div(
+        classes: 'cf-turnstile',
+        attributes: const {
+          'data-sitekey': turnstileSiteKey,
+          'data-action': 'auth',
+          'data-theme': 'light',
+        },
+        [],
       ),
-    ],
     button(
       type: ButtonType.button,
       classes: 'button primary',
       disabled: busy,
-      onClick: codeSent ? _verify : _request,
-      [
-        .text(
-          busy
-              ? 'Aguarde…'
-              : codeSent
-              ? 'Confirmar e entrar'
-              : 'Receber código',
-        ),
-      ],
+      onClick: _register,
+      [.text(busy ? 'Aguarde…' : 'Criar conta')],
     ),
-    if (codeSent)
-      button(
-        type: ButtonType.button,
-        classes: 'text-button',
-        disabled: busy,
-        onClick: () => setState(() {
-          codeSent = false;
-          code = '';
-          status = null;
-        }),
-        [.text('Alterar número')],
-      ),
     p(
       attributes: const {'role': 'status', 'aria-live': 'polite'},
       [if (status != null) .text(status!)],
     ),
+    p([
+      .text('Já tem uma conta? '),
+      a(href: appUrl, [.text('Entrar no aplicativo')]),
+    ]),
   ]);
 
   Component _field(
     String labelText,
     String type, {
     String? placeholder,
-    int? maxLength,
+    String? autocomplete,
     required void Function(String) onInput,
   }) => label([
     .text(labelText),
     input<String>(
-      type: type == 'tel' ? InputType.tel : InputType.text,
+      type: switch (type) {
+        'email' => InputType.email,
+        'password' => InputType.password,
+        _ => InputType.text,
+      },
       onInput: onInput,
       attributes: {
         'placeholder': ?placeholder,
-        if (maxLength != null) 'maxlength': '$maxLength',
-        'autocomplete': type == 'tel' ? 'tel' : 'on',
+        'autocomplete': ?autocomplete,
       },
     ),
   ]);
 
-  Future<void> _request() async {
-    if (phone.trim().isEmpty || !acceptedTerms) {
-      setState(() => status = 'Informe o celular e aceite os termos.');
-      return;
-    }
-    await _run(() async {
-      final response = await credentialedClient.post(
-        Uri.parse('$apiUrl/auth/phone/request-code'),
-        headers: {'content-type': 'application/json'},
-        body: jsonEncode({
-          'phone': phone,
-          'channel': channel,
-          if (_turnstileToken() != null) 'turnstileToken': _turnstileToken(),
-        }),
+  Future<void> _register() async {
+    if (name.trim().isEmpty ||
+        !email.contains('@') ||
+        password.length < 8 ||
+        !acceptedTerms) {
+      setState(
+        () => status =
+            'Preencha nome, email, uma senha com 8+ caracteres e aceite os termos.',
       );
-      final data = _payload(response);
-      if (response.statusCode >= 400) throw StateError(_message(data));
-      setState(() {
-        codeSent = true;
-        code = data['devCode']?.toString() ?? '';
-        status = 'Código enviado. Ele vale por 5 minutos.';
-      });
-    });
-  }
-
-  Future<void> _verify() async {
-    if (!RegExp(r'^\d{6}$').hasMatch(code)) {
-      setState(() => status = 'Digite os 6 números do código.');
       return;
     }
     await _run(() async {
       final response = await credentialedClient.post(
-        Uri.parse('$apiUrl/auth/phone/verify-code'),
+        Uri.parse('$apiUrl/auth/register'),
         headers: {'content-type': 'application/json'},
         body: jsonEncode({
-          'phone': phone,
-          'code': code,
+          'name': name.trim(),
+          'email': email.trim(),
+          'password': password,
           if (invitationToken != null) 'invitationToken': invitationToken,
+          if (_turnstileToken() != null) 'turnstileToken': _turnstileToken(),
         }),
       );
       final data = _payload(response);

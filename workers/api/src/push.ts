@@ -1,4 +1,5 @@
 import { importPKCS8, SignJWT } from 'jose';
+import { buildPushPayload } from '@block65/webcrypto-web-push';
 import type { Env } from './env';
 import { execute, queryAll } from './db';
 
@@ -10,7 +11,10 @@ interface ServiceAccount {
 
 interface Subscription {
   id: string;
-  fcm_token: string;
+  fcm_token: string | null;
+  endpoint: string | null;
+  p256dh: string | null;
+  auth: string | null;
   user_id: string | null;
 }
 
@@ -30,6 +34,8 @@ interface PushResult {
   sent: number;
   deliveredUserIds: string[];
 }
+
+const empty: PushResult = { sent: 0, deliveredUserIds: [] };
 
 let cachedToken: { token: string; expiresAt: number } | null = null;
 
@@ -114,13 +120,13 @@ function messageBody(token: string, payload: PushPayload) {
     message: {
       token,
       data,
-      ...(payload.includeNotification === false
-        ? {}
-        : { notification }),
+      ...(payload.includeNotification === false ? {} : { notification }),
       android: {
         priority: payload.type === 'chat' ? 'high' : 'normal',
         notification: {
-          channel_id: payload.channelId ?? (payload.type === 'chat' ? 'chat_messages' : 'my_family_notifications'),
+          channel_id:
+            payload.channelId ??
+            (payload.type === 'chat' ? 'chat_messages' : 'my_family_notifications'),
           sound: 'default',
           ...(payload.conversationId ? { tag: `chat-${payload.conversationId}` } : {}),
         },
@@ -129,10 +135,10 @@ function messageBody(token: string, payload: PushPayload) {
         payload: {
           aps: {
             sound: 'default',
-            ...(payload.includeNotification === false
-              ? {}
-              : { alert: notification }),
-            ...(payload.conversationId ? { threadId: `chat-${payload.conversationId}` } : {}),
+            ...(payload.includeNotification === false ? {} : { alert: notification }),
+            ...(payload.conversationId
+              ? { threadId: `chat-${payload.conversationId}` }
+              : {}),
           },
         },
       },
@@ -140,27 +146,30 @@ function messageBody(token: string, payload: PushPayload) {
   };
 }
 
-async function deliver(
+async function deliverFcm(
   env: Env,
-  account: ServiceAccount,
-  accessToken: string,
   subscriptions: Subscription[],
   payload: PushPayload,
 ): Promise<PushResult> {
+  const account = serviceAccount(env);
+  const targets = subscriptions.filter((subscription) => subscription.fcm_token);
+  if (!account || targets.length === 0) return empty;
+  const token = await googleAccessToken(env, account);
+  if (!token) return empty;
   const deliveredUserIds = new Set<string>();
   let sent = 0;
   await Promise.all(
-    subscriptions.map(async (subscription) => {
+    targets.map(async (subscription) => {
       try {
         const response = await fetch(
           `https://fcm.googleapis.com/v1/projects/${account.project_id}/messages:send`,
           {
             method: 'POST',
             headers: {
-              authorization: `Bearer ${accessToken}`,
+              authorization: `Bearer ${token}`,
               'content-type': 'application/json',
             },
-            body: JSON.stringify(messageBody(subscription.fcm_token, payload)),
+            body: JSON.stringify(messageBody(subscription.fcm_token!, payload)),
           },
         );
         if (response.ok) {
@@ -201,25 +210,112 @@ async function deliver(
   return { sent, deliveredUserIds: [...deliveredUserIds] };
 }
 
+async function deliverWeb(
+  env: Env,
+  subscriptions: Subscription[],
+  payload: PushPayload,
+): Promise<PushResult> {
+  const targets = subscriptions.filter(
+    (subscription) => subscription.endpoint && subscription.p256dh && subscription.auth,
+  );
+  if (
+    !env.VAPID_PUBLIC_KEY ||
+    !env.VAPID_PRIVATE_KEY ||
+    !env.VAPID_SUBJECT ||
+    targets.length === 0
+  ) {
+    return empty;
+  }
+  const data: Record<string, string> = {
+    title: payload.title,
+    body: payload.body,
+    url: payload.url ?? '/',
+    type: payload.type ?? 'push',
+  };
+  if (payload.conversationId) data.conversationId = payload.conversationId;
+  if (payload.senderId) data.senderId = payload.senderId;
+  if (payload.senderName) data.senderName = payload.senderName;
+  const deliveredUserIds = new Set<string>();
+  let sent = 0;
+  await Promise.all(
+    targets.map(async (subscription) => {
+      try {
+        const built = await buildPushPayload(
+          {
+            data,
+            options: { ttl: 86400, urgency: 'normal' as const },
+          },
+          {
+            endpoint: subscription.endpoint!,
+            expirationTime: null,
+            keys: { p256dh: subscription.p256dh!, auth: subscription.auth! },
+          },
+          {
+            subject: env.VAPID_SUBJECT!,
+            publicKey: env.VAPID_PUBLIC_KEY!,
+            privateKey: env.VAPID_PRIVATE_KEY!,
+          },
+        );
+        const response = await fetch(subscription.endpoint!, {
+          method: built.method,
+          headers: built.headers,
+          body: built.body,
+        });
+        if (response.ok) {
+          sent += 1;
+          if (subscription.user_id) deliveredUserIds.add(subscription.user_id);
+          return;
+        }
+        if (response.status === 404 || response.status === 410) {
+          await execute(env.DB, 'DELETE FROM push_subscriptions WHERE id = ?', [
+            subscription.id,
+          ]);
+        }
+      } catch (error) {
+        console.error(
+          JSON.stringify({
+            level: 'warn',
+            message: 'Erro no envio Web Push',
+            error: error instanceof Error ? error.message : String(error),
+          }),
+        );
+      }
+    }),
+  );
+  return { sent, deliveredUserIds: [...deliveredUserIds] };
+}
+
+async function deliverAll(
+  env: Env,
+  subscriptions: Subscription[],
+  payload: PushPayload,
+): Promise<PushResult> {
+  const [fcm, web] = await Promise.all([
+    deliverFcm(env, subscriptions, payload),
+    deliverWeb(env, subscriptions, payload),
+  ]);
+  return {
+    sent: fcm.sent + web.sent,
+    deliveredUserIds: [...new Set([...fcm.deliveredUserIds, ...web.deliveredUserIds])],
+  };
+}
+
 export async function sendPushToUsers(
   env: Env,
   tenantId: string,
   userIds: string[],
   payload: PushPayload,
 ): Promise<PushResult> {
-  const account = serviceAccount(env);
-  if (!account || userIds.length === 0) return { sent: 0, deliveredUserIds: [] };
+  if (userIds.length === 0) return empty;
   const placeholders = userIds.map(() => '?').join(',');
   const subscriptions = await queryAll<Subscription>(
     env.DB,
-    `SELECT id, fcm_token, user_id FROM push_subscriptions
-      WHERE tenant_id = ? AND fcm_token IS NOT NULL AND user_id IN (${placeholders})`,
+    `SELECT id, fcm_token, endpoint, p256dh, auth, user_id FROM push_subscriptions
+      WHERE tenant_id = ? AND user_id IN (${placeholders})
+        AND (fcm_token IS NOT NULL OR endpoint IS NOT NULL)`,
     [tenantId, ...userIds],
   );
-  if (!subscriptions.length) return { sent: 0, deliveredUserIds: [] };
-  const token = await googleAccessToken(env, account);
-  if (!token) return { sent: 0, deliveredUserIds: [] };
-  return deliver(env, account, token, subscriptions, payload);
+  return deliverAll(env, subscriptions, payload);
 }
 
 export async function sendPushToTenant(
@@ -228,20 +324,15 @@ export async function sendPushToTenant(
   payload: PushPayload,
   excludeUserIds: string[] = [],
 ): Promise<PushResult> {
-  const account = serviceAccount(env);
-  if (!account) return { sent: 0, deliveredUserIds: [] };
   const subscriptions = await queryAll<Subscription>(
     env.DB,
-    `SELECT id, fcm_token, user_id FROM push_subscriptions
-      WHERE tenant_id = ? AND fcm_token IS NOT NULL`,
+    `SELECT id, fcm_token, endpoint, p256dh, auth, user_id FROM push_subscriptions
+      WHERE tenant_id = ? AND (fcm_token IS NOT NULL OR endpoint IS NOT NULL)`,
     [tenantId],
   );
   const excluded = new Set(excludeUserIds);
   const filtered = subscriptions.filter(
     (subscription) => !subscription.user_id || !excluded.has(subscription.user_id),
   );
-  if (!filtered.length) return { sent: 0, deliveredUserIds: [] };
-  const token = await googleAccessToken(env, account);
-  if (!token) return { sent: 0, deliveredUserIds: [] };
-  return deliver(env, account, token, filtered, payload);
+  return deliverAll(env, filtered, payload);
 }

@@ -45,13 +45,13 @@ class App extends StatelessComponent {
         builder: (_, _) => const ContentPage(
           path: '/como-funciona',
           eyebrow: 'Simples desde a porta',
-          title: 'Do celular ao espaço da família em poucos passos.',
+          title: 'Do cadastro ao espaço da família em poucos passos.',
           description:
-              'Veja como criar uma família, confirmar o celular e convidar pessoas no Nossa Família.',
+              'Veja como criar sua conta, entrar e convidar pessoas no Nossa Família.',
           sections: [
             (
-              '1. Confirme seu celular',
-              'Informe o número, receba um código por SMS e entre sem criar senha.',
+              '1. Crie sua conta',
+              'Informe seu nome, email e senha para começar.',
             ),
             (
               '2. A família já está pronta',
@@ -59,7 +59,7 @@ class App extends StatelessComponent {
             ),
             (
               '3. Convide quem faz parte',
-              'Envie o convite ao celular e defina papel e permissões de cada pessoa.',
+              'Compartilhe o convite e defina papel e permissões de cada pessoa.',
             ),
             (
               '4. Comecem a usar',
@@ -86,8 +86,8 @@ class App extends StatelessComponent {
               'Arquivos usam endereços temporários e não são publicados em buckets abertos.',
             ),
             (
-              'Acesso sem senha',
-              'Códigos curtos expiram em cinco minutos, têm limite de tentativas e só podem ser usados uma vez.',
+              'Acesso com email e senha',
+              'Sua senha é protegida por hash e as sessões usam cookies seguros.',
             ),
             (
               'Administração limitada',
@@ -103,12 +103,12 @@ class App extends StatelessComponent {
           eyebrow: 'Perguntas frequentes',
           title: 'Antes de abrir a porta, tire suas dúvidas.',
           description:
-              'Respostas sobre privacidade, celular, convites, demo e uso do Nossa Família.',
+              'Respostas sobre privacidade, conta, convites, demo e uso do Nossa Família.',
           faq: true,
           sections: [
             (
               'Preciso criar uma senha?',
-              'Não. Você entra com um código enviado por SMS.',
+              'Não. Você entra com email e senha.',
             ),
             (
               'Outras famílias veem meus dados?',
@@ -116,7 +116,7 @@ class App extends StatelessComponent {
             ),
             (
               'Posso participar de mais de uma família?',
-              'Sim. O mesmo celular pode participar de várias famílias e alternar entre elas.',
+              'Sim. A mesma conta pode participar de várias famílias e alternar entre elas.',
             ),
             (
               'A demo usa minha localização?',
@@ -135,7 +135,7 @@ class App extends StatelessComponent {
           sections: [
             (
               'Dados utilizados',
-              'Usamos celular, dados de perfil e o conteúdo que a própria família decide armazenar.',
+              'Usamos email, dados de perfil e o conteúdo que a própria família decide armazenar.',
             ),
             (
               'Finalidade',
@@ -166,7 +166,7 @@ class App extends StatelessComponent {
             ),
             (
               'Conta e acesso',
-              'O código recebido no celular é pessoal e não deve ser compartilhado com terceiros.',
+              'Sua senha é pessoal e não deve ser compartilhada com terceiros.',
             ),
           ],
         ),

@@ -152,9 +152,6 @@ export async function purgeExpired(env: Env): Promise<void> {
   await env.DB.batch([
     env.DB.prepare('DELETE FROM auth_sessions WHERE expires_at < ?').bind(timestamp),
     env.DB.prepare(
-      'DELETE FROM phone_challenges WHERE expires_at < ? OR (consumed_at IS NOT NULL AND consumed_at < ?)',
-    ).bind(timestamp, timestamp - 24 * 60 * 60 * 1000),
-    env.DB.prepare(
       `DELETE FROM notifications WHERE created_at < ?`,
     ).bind(timestamp - 180 * 24 * 60 * 60 * 1000),
     env.DB.prepare('DELETE FROM ws_tickets WHERE expires_at < ?').bind(timestamp),
@@ -178,7 +175,7 @@ export async function cleanupDemos(env: Env): Promise<void> {
       env.DB.prepare('DELETE FROM auth_sessions WHERE tenant_id = ?').bind(tenant.id),
       env.DB.prepare('DELETE FROM tenants WHERE id = ?').bind(tenant.id),
       env.DB.prepare(
-        `DELETE FROM users WHERE phone_number LIKE '+999%' AND id NOT IN (SELECT user_id FROM memberships)`,
+        `DELETE FROM users WHERE email LIKE 'demo-%@nossafamilia.local' AND id NOT IN (SELECT user_id FROM memberships)`,
       ),
     ]);
   }

@@ -6,24 +6,13 @@ import {
   type UserAccessKey,
   type UserRole,
 } from './auth';
-import { badRequest, conflict, unauthorized } from './http';
-import {
-  hashOtp,
-  isOtp,
-  randomOtp,
-  verifyOtpHash,
-} from './otp';
-import {
-  channelConfigured,
-  normalizePhoneNumber,
-  sendOtp,
-  type PhoneChannel,
-} from './messaging';
+import { badRequest, conflict, notFound, unauthorized } from './http';
+import { hashPassword, verifyPassword } from './password';
+import { normalizeEmail } from './email';
 import {
   acceptInvitation,
-  createFamily,
-  createSession,
   consumeSession,
+  createFamily,
   findTenantById,
   listMembershipsForUser,
   revokeSession,
@@ -31,11 +20,10 @@ import {
   tenantPrincipal,
   tokenResponse,
 } from './tenants';
-import { isProduction } from './env';
 
 export interface UserEntity {
   id: string;
-  phoneNumber: string;
+  email: string;
   name: string | null;
   role: UserRole;
   access: UserAccessKey[];
@@ -43,11 +31,13 @@ export interface UserEntity {
   platformRole: 'super_admin' | null;
   createdAt: string;
   updatedAt: string;
+  passwordHash: string;
 }
 
 interface UserRow {
   id: string;
-  phone_number: string;
+  email: string;
+  password_hash: string;
   name: string | null;
   role: string;
   access: string;
@@ -60,7 +50,7 @@ interface UserRow {
 function userFromRow(row: UserRow): UserEntity {
   return {
     id: row.id,
-    phoneNumber: row.phone_number,
+    email: row.email,
     name: row.name,
     role: row.role as UserRole,
     access: normalizeAccessKeys(jsonArray(row.access)),
@@ -68,6 +58,7 @@ function userFromRow(row: UserRow): UserEntity {
     platformRole: row.platform_role === 'super_admin' ? 'super_admin' : null,
     createdAt: new Date(row.created_at).toISOString(),
     updatedAt: new Date(row.updated_at).toISOString(),
+    passwordHash: row.password_hash,
   };
 }
 
@@ -76,28 +67,38 @@ export async function findUserById(env: Env, id: string): Promise<UserEntity | n
   return row ? userFromRow(row) : null;
 }
 
-export async function findUserByPhone(env: Env, phoneNumber: string): Promise<UserEntity | null> {
-  const row = await queryOne<UserRow>(env.DB, 'SELECT * FROM users WHERE phone_number = ?', [
-    phoneNumber,
-  ]);
+export async function findUserByEmail(env: Env, email: string): Promise<UserEntity | null> {
+  const row = await queryOne<UserRow>(env.DB, 'SELECT * FROM users WHERE email = ?', [email]);
   return row ? userFromRow(row) : null;
 }
 
 export async function createUser(
   env: Env,
-  phoneNumber: string,
-  data: { name?: string; platformRole?: 'super_admin' } = {},
+  data: { email: string; password: string; name?: string; platformRole?: 'super_admin' },
 ): Promise<UserEntity> {
-  if (await findUserByPhone(env, phoneNumber)) {
-    throw conflict('Celular já cadastrado.');
+  const email = normalizeEmail(data.email);
+  if (data.password.length < 8) {
+    throw badRequest('A senha deve ter pelo menos 8 caracteres.');
+  }
+  if (await findUserByEmail(env, email)) {
+    throw conflict('Este email já está cadastrado.');
   }
   const id = crypto.randomUUID();
   const timestamp = now();
+  const passwordHash = await hashPassword(data.password);
   await execute(
     env.DB,
-    `INSERT INTO users (id, phone_number, name, role, access, platform_role, created_at, updated_at)
-     VALUES (?, ?, ?, 'friends', '[]', ?, ?, ?)`,
-    [id, phoneNumber, data.name ?? null, data.platformRole ?? null, timestamp, timestamp],
+    `INSERT INTO users (id, email, password_hash, name, role, access, platform_role, created_at, updated_at)
+     VALUES (?, ?, ?, ?, 'friends', '[]', ?, ?, ?)`,
+    [
+      id,
+      email,
+      passwordHash,
+      data.name?.trim() || null,
+      data.platformRole ?? null,
+      timestamp,
+      timestamp,
+    ],
   );
   return (await findUserById(env, id))!;
 }
@@ -147,111 +148,62 @@ export async function deleteUser(env: Env, id: string): Promise<void> {
   await execute(env.DB, 'DELETE FROM users WHERE id = ?', [id]);
 }
 
-export async function requestCode(env: Env, phone: string, channel: PhoneChannel) {
-  const phoneNumber = normalizePhoneNumber(env, phone);
-  const code = randomOtp();
-  await execute(env.DB, 'DELETE FROM phone_challenges WHERE phone_number = ?', [phoneNumber]);
-  await execute(
-    env.DB,
-    `INSERT INTO phone_challenges (id, phone_number, code_hash, channel, attempts, expires_at, created_at)
-     VALUES (?, ?, ?, ?, 0, ?, ?)`,
-    [
-      crypto.randomUUID(),
-      phoneNumber,
-      await hashOtp(env.PHONE_OTP_SECRET, phoneNumber, code),
-      channel,
-      Date.now() + 5 * 60 * 1000,
-      now(),
-    ],
-  );
-
-  if (channelConfigured(env)) {
-    await sendOtp(env, phoneNumber, code, channel);
-    return { phoneNumber, expiresIn: 300 };
-  }
-  if (!isProduction(env)) {
-    return { phoneNumber, expiresIn: 300, devCode: code };
-  }
-  await sendOtp(env, phoneNumber, code, channel);
-  return { phoneNumber, expiresIn: 300 };
-}
-
-interface ChallengeRow {
-  id: string;
-  code_hash: string;
-  attempts: number;
-}
-
-async function verifyCode(env: Env, phoneNumber: string, code: string): Promise<void> {
-  if (!isOtp(code)) throw unauthorized('Código inválido ou expirado.');
-  const challenge = await queryOne<ChallengeRow>(
-    env.DB,
-    `SELECT id, code_hash, attempts FROM phone_challenges
-      WHERE phone_number = ? AND consumed_at IS NULL AND expires_at > ? AND attempts < 5
-      ORDER BY created_at DESC LIMIT 1`,
-    [phoneNumber, now()],
-  );
-  if (!challenge) throw unauthorized('Código inválido ou expirado.');
-  const expected = await hashOtp(env.PHONE_OTP_SECRET, phoneNumber, code);
-  if (!verifyOtpHash(challenge.code_hash, expected)) {
-    await execute(env.DB, 'UPDATE phone_challenges SET attempts = attempts + 1 WHERE id = ?', [
-      challenge.id,
-    ]);
-    throw unauthorized('Código inválido ou expirado.');
-  }
-  const consumed = await execute(
-    env.DB,
-    'UPDATE phone_challenges SET consumed_at = ? WHERE id = ? AND consumed_at IS NULL',
-    [now(), challenge.id],
-  );
-  if (consumed.meta.changes !== 1) throw unauthorized('Código inválido ou expirado.');
-}
-
-export async function authenticateWithCode(
+export async function register(
   env: Env,
   input: {
-    phone: string;
-    code: string;
+    name: string;
+    email: string;
+    password: string;
     invitationToken?: string;
     tenantSlug?: string;
     userAgent?: string;
   },
 ) {
-  const phoneNumber = normalizePhoneNumber(env, input.phone);
-  let user = await findUserByPhone(env, phoneNumber);
-  await verifyCode(env, phoneNumber, input.code);
-
-  if (!user) {
-    const configuredAdmin = env.PLATFORM_ADMIN_PHONE
-      ? normalizePhoneNumber(env, env.PLATFORM_ADMIN_PHONE)
-      : undefined;
-    user = await createUser(env, phoneNumber, {
-      ...(configuredAdmin === phoneNumber
-        ? { platformRole: 'super_admin' as const }
-        : {}),
-    });
-    try {
-      if (input.invitationToken) {
-        const tenant = await acceptInvitation(env, user.id, input.invitationToken);
-        return tokenResponse(env, user, tenant?.id, input.userAgent);
-      }
-      const tenant = await createFamily(
-        env,
-        user.id,
-        'Minha Família',
-        `familia-${crypto.randomUUID().slice(0, 10)}`,
-      );
-      return tokenResponse(env, user, tenant.id, input.userAgent);
-    } catch (error) {
-      await deleteUser(env, user.id);
-      throw error;
+  const email = normalizeEmail(input.email);
+  const name = input.name?.trim();
+  if (!name) throw badRequest('Informe seu nome.');
+  const platformAdmin = env.PLATFORM_ADMIN_EMAIL
+    ? normalizeEmail(env.PLATFORM_ADMIN_EMAIL)
+    : null;
+  const user = await createUser(env, {
+    email,
+    password: input.password,
+    name,
+    ...(platformAdmin === email ? { platformRole: 'super_admin' as const } : {}),
+  });
+  try {
+    if (input.invitationToken) {
+      const tenant = await acceptInvitation(env, user.id, input.invitationToken);
+      return tokenResponse(env, user, tenant?.id, input.userAgent);
     }
+    if (input.tenantSlug) {
+      const tenantId = await tenantIdForSlug(env, user.id, input.tenantSlug);
+      return tokenResponse(env, user, tenantId, input.userAgent);
+    }
+    const tenant = await createFamily(
+      env,
+      user.id,
+      'Minha Família',
+      `familia-${crypto.randomUUID().slice(0, 10)}`,
+    );
+    return tokenResponse(env, user, tenant.id, input.userAgent);
+  } catch (error) {
+    await deleteUser(env, user.id);
+    throw error;
   }
+}
 
-  if (input.invitationToken) {
-    const tenant = await acceptInvitation(env, user.id, input.invitationToken);
-    return tokenResponse(env, user, tenant?.id, input.userAgent);
+export async function login(
+  env: Env,
+  input: { email: string; password: string; tenantSlug?: string; userAgent?: string },
+) {
+  const email = normalizeEmail(input.email);
+  const user = await findUserByEmail(env, email);
+  if (!user || !user.passwordHash) {
+    throw unauthorized('Email ou senha inválidos.');
   }
+  const valid = await verifyPassword(input.password, user.passwordHash);
+  if (!valid) throw unauthorized('Email ou senha inválidos.');
   const tenantId = await tenantIdForSlug(env, user.id, input.tenantSlug);
   return tokenResponse(env, user, tenantId, input.userAgent);
 }
@@ -295,6 +247,6 @@ export async function listTenants(env: Env, userId: string) {
 
 export async function currentTenant(env: Env, tenantId: string) {
   const tenant = await findTenantById(env, tenantId);
-  if (!tenant) throw badRequest('Família não encontrada.');
+  if (!tenant) throw notFound('Família não encontrada.');
   return tenant;
 }

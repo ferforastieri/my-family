@@ -131,18 +131,18 @@ function assertDirectAccess(row: ConversationRow, userId: string): void {
 export async function chatUsers(env: Env, session: RealtimeSession) {
   const items = await members(env, session.tenantId);
   return items
-    .map(({ id, name, phoneNumber, role, avatarPath }) => ({
+    .map(({ id, name, email, role, avatarPath }) => ({
       id,
       name,
-      phoneNumber,
+      email,
       role,
       avatarPath,
     }))
     .filter((user) => user.id !== session.userId);
 }
 
-function userLabel(user?: { name?: string | null; phoneNumber?: string } | null) {
-  return user?.name?.trim() || user?.phoneNumber || '';
+function userLabel(user?: { name?: string | null; email?: string } | null) {
+  return user?.name?.trim() || user?.email || '';
 }
 
 export async function listConversations(
