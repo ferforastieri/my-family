@@ -18,6 +18,8 @@ mais de uma família e alternar entre elas sem criar outra conta.
 - Jogar quizzes e mini jogos em família.
 - Receber notificações no aplicativo e no navegador.
 - Convidar pessoas e definir o que cada uma pode acessar.
+- Escolher um cenário de fundo realista para a Home: flores, aurora, oceano
+  ou noite.
 
 ## Arquitetura
 

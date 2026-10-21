@@ -76,34 +76,44 @@ class AppShell extends StatelessWidget {
 
   PreferredSizeWidget _buildDesktopAppBar(BuildContext context) {
     return AppBar(
-      toolbarHeight: 92,
+      toolbarHeight: 78,
       titleSpacing: 0,
       leadingWidth: 0,
       leading: const SizedBox.shrink(),
-      title: Center(
-        child: _DesktopMainNavigation(
-          auth: auth,
-          chatUnreadCount: chat.unreadCount,
-          currentLocation: currentLocation,
-          onLogin: () => _openLogin(context),
-        ),
-      ),
-      actions: [
-        IconButton(
-          onPressed: () => _openNotificationsSheet(context),
-          icon: _BadgeIcon(
-            count: notifications.badgeCount,
-            child: const Icon(Icons.notifications_outlined),
+      title: Stack(
+        alignment: Alignment.center,
+        children: [
+          const Align(alignment: Alignment.centerLeft, child: _DesktopBrand()),
+          _DesktopMainNavigation(
+            auth: auth,
+            chatUnreadCount: chat.unreadCount,
+            currentLocation: currentLocation,
+            onLogin: () => _openLogin(context),
           ),
-          tooltip: 'Notificações',
-        ),
-        IconButton(
-          onPressed: () => _openThemeSheet(context),
-          icon: const Icon(Icons.palette_outlined),
-          tooltip: 'Cor e tema',
-        ),
-        const SizedBox(width: 14),
-      ],
+          Align(
+            alignment: Alignment.centerRight,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  onPressed: () => _openNotificationsSheet(context),
+                  icon: _BadgeIcon(
+                    count: notifications.badgeCount,
+                    child: const Icon(Icons.notifications_outlined),
+                  ),
+                  tooltip: 'Notificações',
+                ),
+                IconButton(
+                  onPressed: () => _openThemeSheet(context),
+                  icon: const Icon(Icons.palette_outlined),
+                  tooltip: 'Cor e tema',
+                ),
+                const SizedBox(width: 14),
+              ],
+            ),
+          ),
+        ],
+      ),
       bottom: const PreferredSize(
         preferredSize: Size.fromHeight(1),
         child: Divider(height: 1),
@@ -301,6 +311,48 @@ class _MobileDrawerItem extends StatelessWidget {
   }
 }
 
+class _DesktopBrand extends StatelessWidget {
+  const _DesktopBrand();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Padding(
+      padding: const EdgeInsets.only(left: 18),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: palette.card,
+              shape: BoxShape.circle,
+              border: Border.all(color: palette.border),
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                'assets/brand/family-logo.png',
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          const SizedBox(width: 9),
+          Text(
+            'Sião',
+            style: TextStyle(
+              color: palette.foreground,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _DesktopMainNavigation extends StatelessWidget {
   const _DesktopMainNavigation({
     required this.auth,
@@ -316,7 +368,6 @@ class _DesktopMainNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
     final user = auth.user;
     final hasMemories = user?.canAccess('memorias') == true ||
         user?.canAccess('playlist') == true ||
@@ -356,48 +407,19 @@ class _DesktopMainNavigation extends StatelessWidget {
               }
             },
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: InkWell(
-              onTap: () {
-                if (user == null) {
-                  onLogin();
-                } else if (user.canAccess('chat')) {
-                  context.openAppRoute('/chat');
-                }
-              },
-              customBorder: const CircleBorder(),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                width: 72,
-                height: 72,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: palette.card,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: _isSelected('/chat', currentLocation)
-                        ? palette.primary
-                        : palette.border,
-                    width: 2,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: palette.primary.withValues(alpha: .16),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: _BadgeIcon(
-                  count: chatUnreadCount,
-                  child: Image.asset(
-                    'assets/brand/family-logo.png',
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
-            ),
+          _DesktopNavPill(
+            icon: Icons.chat_bubble_outline,
+            selectedIcon: Icons.chat_bubble,
+            label: 'Conversas',
+            selected: _isSelected('/chat', currentLocation),
+            badgeCount: chatUnreadCount,
+            onTap: () {
+              if (user == null) {
+                onLogin();
+              } else if (user.canAccess('chat')) {
+                context.openAppRoute('/chat');
+              }
+            },
           ),
           _DesktopNavPill(
             icon: Icons.apps_outlined,
@@ -444,6 +466,7 @@ class _DesktopNavPill extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    this.badgeCount = 0,
   });
 
   final IconData icon;
@@ -451,6 +474,7 @@ class _DesktopNavPill extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -460,7 +484,10 @@ class _DesktopNavPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: TextButton.icon(
         onPressed: onTap,
-        icon: Icon(selected ? selectedIcon : icon, size: 20),
+        icon: _BadgeIcon(
+          count: badgeCount,
+          child: Icon(selected ? selectedIcon : icon, size: 20),
+        ),
         label: Text(label),
         style: TextButton.styleFrom(
           foregroundColor: color,
@@ -612,49 +639,19 @@ class _MobileBottomNavigation extends StatelessWidget {
                   }
                 },
               ),
-              Expanded(
-                child: Center(
-                  child: InkWell(
-                    onTap: () {
-                      if (user == null) {
-                        onLogin();
-                      } else if (user.canAccess('chat')) {
-                        context.openAppRoute('/chat');
-                      }
-                    },
-                    customBorder: const CircleBorder(),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      width: 66,
-                      height: 66,
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: palette.card,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: _isSelected('/chat', currentLocation)
-                              ? palette.primary
-                              : palette.border,
-                          width: 2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: palette.primary.withValues(alpha: .14),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: _BadgeIcon(
-                        count: chatUnreadCount,
-                        child: Image.asset(
-                          'assets/brand/family-logo.png',
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+              _MobileNavButton(
+                icon: Icons.chat_bubble_outline,
+                selectedIcon: Icons.chat_bubble,
+                label: 'Conversas',
+                selected: _isSelected('/chat', currentLocation),
+                badgeCount: chatUnreadCount,
+                onTap: () {
+                  if (user == null) {
+                    onLogin();
+                  } else if (user.canAccess('chat')) {
+                    context.openAppRoute('/chat');
+                  }
+                },
               ),
               _MobileNavButton(
                 icon: Icons.apps_outlined,
@@ -703,6 +700,7 @@ class _MobileNavButton extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    this.badgeCount = 0,
   });
 
   final IconData icon;
@@ -710,6 +708,7 @@ class _MobileNavButton extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -723,7 +722,14 @@ class _MobileNavButton extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(selected ? selectedIcon : icon, color: color, size: 23),
+              _BadgeIcon(
+                count: badgeCount,
+                child: Icon(
+                  selected ? selectedIcon : icon,
+                  color: color,
+                  size: 23,
+                ),
+              ),
               const SizedBox(height: 4),
               Text(
                 label,

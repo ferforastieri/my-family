@@ -55,7 +55,7 @@ demoRoutes.post('/', async (c) => {
   const homeEvents = [
     {
       title: 'Nossa história',
-      icon: 'favorite',
+      icon: '❤️',
       date: new Date('2018-05-12').getTime(),
       message: 'O dia em que tudo começou',
       countDirection: 'forward',

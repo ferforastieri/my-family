@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -7,9 +6,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/auth/authenticated_media.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_page_header.dart';
-import '../../../core/widgets/flower_garden.dart';
+import '../../../core/widgets/home_scene.dart';
 import '../../../core/widgets/love_action_card.dart';
-import '../../../core/widgets/love_background.dart';
 import '../../../core/config/app_config.dart';
 import '../../../data/family_repository.dart';
 import '../../../data/models.dart';
@@ -38,6 +36,7 @@ class _HomePageState extends State<HomePage> {
   bool galleryTitleVisible = true;
   String galleryTitleLayout = 'arc';
   String? loadError;
+  HomeScene scene = HomeScene.flowers;
 
   @override
   void initState() {
@@ -47,7 +46,18 @@ class _HomePageState extends State<HomePage> {
       if (events.isEmpty) return;
       setState(() => counters = _buildCounters(events));
     });
+    _loadScene();
     _loadSettings();
+  }
+
+  Future<void> _loadScene() async {
+    final saved = await loadHomeScene();
+    if (mounted) setState(() => scene = saved);
+  }
+
+  void _chooseScene(HomeScene value) {
+    setState(() => scene = value);
+    unawaited(saveHomeScene(value));
   }
 
   @override
@@ -87,101 +97,112 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return LoveBackground(
+    return HomeSceneBackground(
+      scene: scene,
       child: LayoutBuilder(
         builder: (context, viewport) {
-            final mobile = viewport.maxWidth < 760;
-            final content = ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(
-                18,
-                mobile ? 16 : 10,
-                18,
-                mobile ? 0 : 340,
-              ),
-              children: [
-                Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1200),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final wide = constraints.maxWidth >= 760;
-                        final homeItems = _buildHomeItems(
-                          events,
-                          galleryImages,
-                          galleryOrder,
-                          galleryTitle,
-                          galleryTitleVisible,
-                          galleryTitleLayout,
-                        );
-                        return Column(
-                          children: [
-                            if (!mobile) ...[
-                              const _HomeTitle(),
-                              const SizedBox(height: 14),
-                            ],
-                            if (loadError != null)
-                              _HomeLoadError(
-                                message: loadError!,
-                                onRetry: _loadSettings,
-                              )
-                            else if (homeItems.isEmpty)
-                              const _HomeCountersLoading()
-                            else if (wide)
-                              _DesktopHomeLayout(items: homeItems)
-                            else
-                              Column(
+          final mobile = viewport.maxWidth < 760;
+          final content = ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.fromLTRB(
+              18,
+              mobile ? 16 : 14,
+              18,
+              mobile ? 28 : 40,
+            ),
+            children: [
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1200),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final wide = constraints.maxWidth >= 760;
+                      final homeItems = _buildHomeItems(
+                        events,
+                        galleryImages,
+                        galleryOrder,
+                        galleryTitle,
+                        galleryTitleVisible,
+                        galleryTitleLayout,
+                      );
+                      return Column(
+                        children: [
+                          if (!mobile) ...[
+                            SizedBox(
+                              height: 84,
+                              child: Stack(
+                                alignment: Alignment.center,
                                 children: [
-                                  for (var i = 0;
-                                      i < homeItems.length;
-                                      i++) ...[
-                                    homeItems[i].build(context),
-                                    if (i < homeItems.length - 1)
-                                      const SizedBox(height: 14),
-                                  ],
+                                  const _HomeTitle(),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: HomeScenePicker(
+                                      scene: scene,
+                                      onSelected: _chooseScene,
+                                    ),
+                                  ),
                                 ],
                               ),
-                            if (mobile) ...[
-                              const SizedBox(height: 4),
-                              const _MobileGardenSection(),
-                            ],
+                            ),
+                            const SizedBox(height: 8),
+                          ] else ...[
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: HomeScenePicker(
+                                scene: scene,
+                                onSelected: _chooseScene,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
                           ],
-                        );
-                      },
-                    ),
+                          if (loadError != null)
+                            _HomeLoadError(
+                              message: loadError!,
+                              onRetry: _loadSettings,
+                            )
+                          else if (homeItems.isEmpty)
+                            const _HomeCountersLoading()
+                          else if (wide)
+                            _DesktopHomeLayout(items: homeItems)
+                          else
+                            Column(
+                              children: [
+                                for (var i = 0;
+                                    i < homeItems.length;
+                                    i++) ...[
+                                  homeItems[i].build(context),
+                                  if (i < homeItems.length - 1)
+                                    const SizedBox(height: 14),
+                                ],
+                              ],
+                            ),
+                        ],
+                      );
+                    },
                   ),
                 ),
-              ],
-            );
+              ),
+            ],
+          );
 
-            return Stack(
-              children: [
-                if (!mobile)
-                  const Positioned.fill(
-                    child: IgnorePointer(child: _HomeGardenLayer()),
-                  ),
-                if (mobile)
-                  Column(
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.fromLTRB(18, 10, 18, 0),
-                        child: AppPageHeader(
-                          title: 'Sião',
-                          subtitle: 'Memórias da nossa família.',
-                          icon: Icons.favorite_outline,
-                          leading: _HomeLogoMark(),
-                          showBackButton: false,
-                        ),
-                      ),
-                      Expanded(child: content),
-                    ],
-                  )
-                else
-                  content,
-              ],
-            );
-          },
-        ),
+          if (!mobile) return content;
+          return Column(
+            children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(18, 10, 18, 0),
+                child: AppPageHeader(
+                  title: 'Sião',
+                  subtitle: 'Memórias da nossa família.',
+                  icon: Icons.favorite_outline,
+                  leading: _HomeLogoMark(),
+                  showBackButton: false,
+                ),
+              ),
+              Expanded(child: content),
+            ],
+          );
+        },
+      ),
     );
   }
 }
@@ -211,62 +232,6 @@ class _HomeLogoMark extends StatelessWidget {
       child: ClipOval(
         child: Image.asset('assets/brand/family-logo.png', fit: BoxFit.cover),
       ),
-    );
-  }
-}
-
-class _MobileGardenSection extends StatelessWidget {
-  const _MobileGardenSection();
-
-  @override
-  Widget build(BuildContext context) {
-    return const SizedBox(
-      height: 240,
-      width: double.infinity,
-      child: IgnorePointer(
-        child: OverflowBox(
-          alignment: Alignment.bottomCenter,
-          minHeight: 430,
-          maxHeight: 430,
-          child: SizedBox(
-            width: double.infinity,
-            height: 430,
-            child: FlowerGarden(compactFlowers: true),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HomeGardenLayer extends StatelessWidget {
-  const _HomeGardenLayer();
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final mobile = constraints.maxWidth < 760;
-        if (!mobile) return const FlowerGarden();
-
-        final visibleHeight = math.min(constraints.maxHeight * .50, 430.0);
-        final paintHeight = visibleHeight + 90;
-        return Align(
-          alignment: Alignment.bottomCenter,
-          child: SizedBox(
-            width: double.infinity,
-            height: visibleHeight,
-            child: OverflowBox(
-              alignment: Alignment.bottomCenter,
-              minHeight: paintHeight,
-              maxHeight: paintHeight,
-              child: const SizedBox.expand(
-                child: FlowerGarden(compactFlowers: true),
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 }
@@ -470,17 +435,7 @@ class _DesktopHomeLayout extends StatelessWidget {
         final cardItems = <_HomeCounterLayoutItem>[];
         void addCards() {
           if (cardItems.isEmpty) return;
-          sections.add(
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              childAspectRatio: 1.58,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 14,
-              children: cardItems.map((item) => item.build(context)).toList(),
-            ),
-          );
+          sections.add(_DesktopCounterGrid(cards: List.of(cardItems)));
           cardItems.clear();
         }
 
@@ -516,19 +471,32 @@ class _DesktopCounterGrid extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         const gap = 16.0;
-        final columns = constraints.maxWidth >= 1080 ? 4 : 3;
-        final cardWidth =
+        final maxColumns = constraints.maxWidth >= 1080
+            ? 4
+            : constraints.maxWidth >= 860
+                ? 3
+                : 2;
+        final columns = cards.length < maxColumns ? cards.length : maxColumns;
+        if (columns == 0) return const SizedBox.shrink();
+        final rawWidth =
             (constraints.maxWidth - gap * (columns - 1)) / columns;
+        final cardWidth = columns == 1
+            ? 430.0
+            : columns == 2
+                ? (rawWidth > 480 ? 480.0 : rawWidth)
+                : rawWidth;
         return Wrap(
           alignment: WrapAlignment.center,
           spacing: gap,
-          runSpacing: 14,
+          runSpacing: 16,
           children: [
             for (final card in cards)
               SizedBox(
                 width: cardWidth,
-                height: 228,
-                child: card.build(context),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 226),
+                  child: card.build(context),
+                ),
               ),
           ],
         );
@@ -921,6 +889,7 @@ class CounterCard extends StatelessWidget {
         compact ? 10 : 14,
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -966,16 +935,22 @@ class CounterCard extends StatelessWidget {
             ],
           ),
           SizedBox(height: compact ? 6 : 10),
-          Text(
-            info.message,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: palette.muted,
-              fontSize: 13,
-              height: 1.35,
-              fontWeight: FontWeight.w600,
+          SizedBox(
+            height: compact ? 34 : 36,
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: Text(
+                info.message,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: palette.muted,
+                  fontSize: 13,
+                  height: 1.35,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
           SizedBox(height: compact ? 7 : 12),
@@ -1051,6 +1026,7 @@ class CounterCard extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(
@@ -1059,7 +1035,7 @@ class CounterCard extends StatelessWidget {
                 gradient: LinearGradient(colors: colors),
               ),
             ),
-            if (compact) content else Expanded(child: content),
+            content,
           ],
         ),
       ),
