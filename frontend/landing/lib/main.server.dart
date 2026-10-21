@@ -12,7 +12,7 @@ void main() {
       title: 'Sião',
       meta: const {'theme-color': '#FEFBF3', 'color-scheme': 'light'},
       head: const [
-        link(rel: 'icon', href: '/assets/favicon.png'),
+        link(rel: 'icon', href: '/assets/favicon.png?v=2'),
         link(rel: 'stylesheet', href: '/styles.css'),
       ],
       body: const App(),
