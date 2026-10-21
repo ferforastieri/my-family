@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/models.dart';
 import '../config/app_config.dart';
@@ -29,6 +31,24 @@ class AuthController extends ChangeNotifier {
   Completer<bool>? _refreshCompleter;
 
   String? takeMessage() => socket.takeLastMessage();
+
+  static const _cachedUserKey = 'auth.cachedUser';
+
+  Future<void> restoreCachedUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_cachedUserKey);
+    if (raw == null) return;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) {
+        user = AppUser.fromJson(Map<String, dynamic>.from(decoded));
+        loading = false;
+        notifyListeners();
+      }
+    } catch (_) {
+      await prefs.remove(_cachedUserKey);
+    }
+  }
 
   Future<void> bootstrap() async {
     try {
@@ -105,6 +125,8 @@ class AuthController extends ChangeNotifier {
     user = null;
     csrfToken = null;
     await clearAuthenticatedMediaHeaders();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_cachedUserKey);
     socket.disconnect();
     notifyListeners();
   }
@@ -121,6 +143,8 @@ class AuthController extends ChangeNotifier {
       }
       if (error.response?.statusCode == 401) {
         user = null;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove(_cachedUserKey);
         return;
       }
       rethrow;
@@ -177,8 +201,15 @@ class AuthController extends ChangeNotifier {
 
   void _setUser(Object? value) {
     if (value is! Map) return;
-    user = AppUser.fromJson(Map<String, dynamic>.from(value));
+    final map = Map<String, dynamic>.from(value);
+    user = AppUser.fromJson(map);
+    unawaited(_cacheUser(map));
     notifyListeners();
+  }
+
+  Future<void> _cacheUser(Map<String, dynamic> value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_cachedUserKey, jsonEncode(value));
   }
 
   Future<void> _reconnectSocket({bool force = false}) async {

@@ -465,7 +465,7 @@ class _DesktopCounterGrid extends StatelessWidget {
               SizedBox(
                 width: cardWidth,
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 190),
+                  constraints: const BoxConstraints(minHeight: 226),
                   child: card.build(context),
                 ),
               ),
@@ -792,7 +792,7 @@ class _HomeCounterSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     return Container(
-      height: 190,
+      height: 242,
       decoration: BoxDecoration(
         color: palette.card.withValues(alpha: .90),
         borderRadius: BorderRadius.circular(16),
@@ -803,13 +803,13 @@ class _HomeCounterSkeleton extends StatelessWidget {
         children: [
           const SkeletonBox(height: 7, borderRadius: 0),
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Row(
                   children: [
-                    SkeletonBox(width: 38, height: 38, borderRadius: 10),
+                    SkeletonBox(width: 44, height: 44, borderRadius: 12),
                     SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -824,22 +824,22 @@ class _HomeCounterSkeleton extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 14),
-                const SkeletonBox(width: 230, height: 10),
+                const SkeletonBox(width: 260, height: 11),
                 const SizedBox(height: 8),
-                const SkeletonBox(width: 190, height: 10),
+                const SkeletonBox(width: 210, height: 11),
                 const SizedBox(height: 14),
                 Row(
                   children: [
                     for (var i = 0; i < 3; i++) ...[
                       const Expanded(
-                        child: SkeletonBox(height: 38, borderRadius: 10),
+                        child: SkeletonBox(height: 48, borderRadius: 12),
                       ),
                       if (i < 2) const SizedBox(width: 8),
                     ],
                   ],
                 ),
                 const SizedBox(height: 10),
-                const SkeletonBox(height: 28, borderRadius: 10),
+                const SkeletonBox(height: 32, borderRadius: 12),
               ],
             ),
           ),
@@ -909,10 +909,10 @@ class CounterCard extends StatelessWidget {
     ];
     final content = Padding(
       padding: EdgeInsets.fromLTRB(
-        compact ? 12 : 14,
-        compact ? 8 : 10,
-        compact ? 12 : 14,
-        compact ? 8 : 10,
+        compact ? 14 : 16,
+        compact ? 10 : 14,
+        compact ? 14 : 16,
+        compact ? 10 : 14,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -921,8 +921,8 @@ class CounterCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
-                width: compact ? 34 : 38,
-                height: compact ? 34 : 38,
+                width: compact ? 38 : 44,
+                height: compact ? 38 : 44,
                 child: Center(
                   child: Text(
                     info.icon,
@@ -942,7 +942,7 @@ class CounterCard extends StatelessWidget {
                       style: TextStyle(
                         color: palette.foreground,
                         fontWeight: FontWeight.w900,
-                        fontSize: compact ? 15 : 16,
+                        fontSize: compact ? 16 : 17,
                         height: 1.1,
                       ),
                     ),
@@ -960,15 +960,15 @@ class CounterCard extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: compact ? 4 : 6),
+          SizedBox(height: compact ? 6 : 10),
           SizedBox(
-            height: compact ? 17 : 19,
+            height: compact ? 34 : 36,
             child: Align(
               alignment: Alignment.topCenter,
               child: Text(
                 info.message,
                 textAlign: TextAlign.center,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: palette.muted,
@@ -979,14 +979,14 @@ class CounterCard extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(height: compact ? 6 : 8),
+          SizedBox(height: compact ? 7 : 12),
           Row(
             children: values
                 .map(
                   (value) => Expanded(
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 3),
-                      padding: EdgeInsets.symmetric(vertical: compact ? 4 : 6),
+                      padding: EdgeInsets.symmetric(vertical: compact ? 5 : 8),
                       decoration: BoxDecoration(
                         color: palette.primary.withValues(alpha: .06),
                         borderRadius: BorderRadius.circular(12),
@@ -1001,7 +1001,7 @@ class CounterCard extends StatelessWidget {
                             style: TextStyle(
                               color: palette.foreground,
                               fontWeight: FontWeight.w900,
-                              fontSize: compact ? 17 : 19,
+                              fontSize: compact ? 19 : 22,
                             ),
                           ),
                           Text(
@@ -1019,12 +1019,12 @@ class CounterCard extends StatelessWidget {
                 )
                 .toList(),
           ),
-          SizedBox(height: compact ? 4 : 6),
+          SizedBox(height: compact ? 6 : 8),
           Container(
             width: double.infinity,
             padding: EdgeInsets.symmetric(
               horizontal: 12,
-              vertical: compact ? 5 : 6,
+              vertical: compact ? 6 : 8,
             ),
             decoration: BoxDecoration(
               color: palette.primary.withValues(alpha: .08),
@@ -1038,7 +1038,7 @@ class CounterCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: palette.foreground,
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: FontWeight.w900,
                 height: 1.2,
               ),
@@ -1056,7 +1056,7 @@ class CounterCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(
-              height: 6,
+              height: 7,
               decoration: BoxDecoration(
                 gradient: LinearGradient(colors: colors),
               ),

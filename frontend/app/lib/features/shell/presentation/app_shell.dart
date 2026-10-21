@@ -686,10 +686,13 @@ class _MobileBottomNavigation extends StatelessWidget {
         user?.canAccess('localizacao') == true;
     return SafeArea(
       top: false,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: palette.card,
-          border: Border(top: BorderSide(color: palette.border)),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: palette.card,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+            border: Border(top: BorderSide(color: palette.border)),
           boxShadow: [
             BoxShadow(
               color: palette.primary.withValues(alpha: .12),
@@ -807,7 +810,8 @@ class _MobileBottomNavigation extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }
 
@@ -885,11 +889,11 @@ class MobileOptionsPage extends StatelessWidget {
           subtitle: 'Escolha uma opção.',
           icon: FamilyIcons.favoriteOutline,
         ),
-        headerGap: 22,
+        headerGap: 12,
         children: [
           for (final item in items)
             Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: 8),
               child: FamilyActionCard(
                 title: item.label,
                 description: item.description,

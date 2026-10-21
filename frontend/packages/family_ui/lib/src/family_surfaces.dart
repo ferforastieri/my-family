@@ -129,7 +129,7 @@ class FamilyActionCard extends StatelessWidget {
     required this.onTap,
     this.trailing,
     this.maxWidth,
-    this.padding = const EdgeInsets.all(20),
+    this.padding = const EdgeInsets.all(14),
   });
 
   final String title;
@@ -150,41 +150,46 @@ class FamilyActionCard extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               color: scheme.primary.withValues(alpha: .12),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: scheme.primary, size: 30),
+            child: Icon(icon, color: scheme.primary, size: 24),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: scheme.onSurface,
-                    fontSize: 20,
+                    fontSize: 17,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 3),
                 Text(
                   description,
-                  maxLines: 3,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: scheme.onSurfaceVariant, height: 1.35),
+                  style: TextStyle(
+                    color: scheme.onSurfaceVariant,
+                    fontSize: 13,
+                    height: 1.2,
+                  ),
                 ),
               ],
             ),
           ),
           const SizedBox(width: 12),
-          trailing ?? Icon(FamilyIcons.chevronRight, color: scheme.primary),
+          trailing ??
+              Icon(FamilyIcons.chevronRight, color: scheme.primary, size: 20),
         ],
       ),
     );

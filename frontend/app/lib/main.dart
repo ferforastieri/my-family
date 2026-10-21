@@ -17,7 +17,7 @@ import 'core/toast/toast_overlay.dart';
 import 'data/family_repository.dart';
 import 'features/shell/presentation/app_router.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
@@ -40,6 +40,8 @@ void main() {
   final queryReset = ValueNotifier(0);
   String? lastUserId;
   String? lastPreferencesUserId;
+  await auth.restoreCachedUser();
+  await theme.bootstrap();
   runApp(AppQueryProvider(
     resetListenable: queryReset,
     child: MyFamilyApp(
@@ -114,8 +116,8 @@ void main() {
     await auth.bootstrap();
     unawaited(startProtectedServices());
   }).catchError((_) {});
-  theme.bootstrap();
 }
+
 
 class MyFamilyApp extends StatelessWidget {
   const MyFamilyApp({
