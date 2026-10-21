@@ -102,11 +102,6 @@ class AppShell extends StatelessWidget {
                   ),
                   tooltip: 'Notificações',
                 ),
-                IconButton(
-                  onPressed: () => _openThemeSheet(context),
-                  icon: const Icon(Icons.palette_outlined),
-                  tooltip: 'Cor e tema',
-                ),
                 const SizedBox(width: 14),
               ],
             ),
@@ -509,13 +504,13 @@ class _ThemeSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     return SizedBox(
-      width: 420,
+      width: 440,
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Cor e tema',
+            'Aparência',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: palette.primary,
@@ -523,42 +518,109 @@ class _ThemeSheet extends StatelessWidget {
               fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 18),
-          const Text(
-            'A cor e a fonte são definidas para toda a família no painel administrativo.',
+          const SizedBox(height: 8),
+          Text(
+            'Estas preferências são só suas e acompanham sua conta.',
             textAlign: TextAlign.center,
+            style: TextStyle(color: palette.muted, height: 1.35),
           ),
           const SizedBox(height: 20),
-          const Text(
-            'Modo',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontWeight: FontWeight.w700),
+          Text(
+            'Cor',
+            style: TextStyle(
+              color: palette.foreground,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 10),
-          Center(
-            child: SegmentedButton<ThemeMode>(
-              segments: const [
-                ButtonSegment(
-                  value: ThemeMode.light,
-                  icon: Icon(Icons.light_mode_outlined),
-                  label: Text('Claro'),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              for (final option in themePrimaryOptions)
+                InkWell(
+                  borderRadius: BorderRadius.circular(999),
+                  onTap: () {
+                    theme.setPrimary(option.color);
+                    toast.success('Cor ${option.label.toLowerCase()} ativada.');
+                  },
+                  child: Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: option.color,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: theme.primary.toARGB32() == option.color.toARGB32()
+                            ? palette.foreground
+                            : Colors.white,
+                        width: 2,
+                      ),
+                    ),
+                    child: theme.primary.toARGB32() == option.color.toARGB32()
+                        ? const Icon(Icons.check, color: Colors.white, size: 18)
+                        : null,
+                  ),
                 ),
-                ButtonSegment(
-                  value: ThemeMode.dark,
-                  icon: Icon(Icons.dark_mode_outlined),
-                  label: Text('Escuro'),
-                ),
-              ],
-              selected: {theme.mode},
-              onSelectionChanged: (value) {
-                theme.setMode(value.first);
-                toast.success(
-                  value.first == ThemeMode.dark
-                      ? 'Modo escuro ativado.'
-                      : 'Modo claro ativado.',
-                );
-              },
+            ],
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'Fonte',
+            style: TextStyle(
+              color: palette.foreground,
+              fontWeight: FontWeight.w800,
             ),
+          ),
+          const SizedBox(height: 8),
+          SegmentedButton<AppFontChoice>(
+            segments: const [
+              ButtonSegment(
+                value: AppFontChoice.moderna,
+                label: Text('Moderna'),
+              ),
+              ButtonSegment(
+                value: AppFontChoice.logo,
+                label: Text('Clássica'),
+              ),
+            ],
+            selected: {theme.font},
+            onSelectionChanged: (value) {
+              theme.setFont(value.first);
+              toast.success('Fonte atualizada.');
+            },
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'Modo',
+            style: TextStyle(
+              color: palette.foreground,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SegmentedButton<ThemeMode>(
+            segments: const [
+              ButtonSegment(
+                value: ThemeMode.light,
+                icon: Icon(Icons.light_mode_outlined),
+                label: Text('Claro'),
+              ),
+              ButtonSegment(
+                value: ThemeMode.dark,
+                icon: Icon(Icons.dark_mode_outlined),
+                label: Text('Escuro'),
+              ),
+            ],
+            selected: {theme.mode},
+            onSelectionChanged: (value) {
+              theme.setMode(value.first);
+              toast.success(
+                value.first == ThemeMode.dark
+                    ? 'Modo escuro ativado.'
+                    : 'Modo claro ativado.',
+              );
+            },
           ),
         ],
       ),

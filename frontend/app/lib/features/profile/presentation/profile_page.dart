@@ -144,13 +144,6 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
                 description: 'Atualize seu nome e suas informações.',
                 onTap: widget.onEditProfile,
               ),
-              const SizedBox(height: 10),
-              _ProfileActionTile(
-                icon: Icons.palette_outlined,
-                label: 'Cor e tema',
-                description: 'Escolha as cores, fonte e modo do app.',
-                onTap: () => AppHeaderActionsScope.maybeOf(context)?.onTheme(),
-              ),
               if (user.isAdmin) ...[
                 const SizedBox(height: 10),
                 _ProfileActionTile(
@@ -169,6 +162,22 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
                   Uri.parse(AppConfig.downloadUrl),
                   mode: LaunchMode.externalApplication,
                 ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Preferências',
+                style: TextStyle(
+                  color: palette.foreground,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _ProfileActionTile(
+                icon: Icons.palette_outlined,
+                label: 'Aparência',
+                description: 'Cor, fonte e modo — preferências só suas.',
+                onTap: () => AppHeaderActionsScope.maybeOf(context)?.onTheme(),
               ),
               const SizedBox(height: 18),
               Text(

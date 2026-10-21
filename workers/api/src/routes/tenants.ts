@@ -42,31 +42,7 @@ tenantRoutes.patch('/', requireTenantAdmin, demoRestricted, async (c) => {
   );
 });
 
-tenantRoutes.patch('/theme', requireTenantAdmin, async (c) => {
-  const body = await parseBody(
-    c,
-    z.object({
-      primaryColor: z.string(),
-      fontFamily: z.string(),
-    }),
-  );
-  if (!/^#[0-9A-Fa-f]{6}$/.test(body.primaryColor)) {
-    throw badRequest('Cor principal inválida.');
-  }
-  if (!['nunitoSans', 'cormorantGaramond'].includes(body.fontFamily)) {
-    throw badRequest('Fonte inválida.');
-  }
-  const principal = c.get('principal');
-  return envelope(
-    c,
-    await updateTenant(c.env, principal.tenantId, {
-      theme: {
-        primaryColor: body.primaryColor.toUpperCase(),
-        fontFamily: body.fontFamily,
-      },
-    }),
-  );
-});
+
 
 tenantRoutes.patch('/location', requireTenantAdmin, demoRestricted, async (c) => {
   const body = await parseBody(c, z.object({ enabled: z.boolean() }));

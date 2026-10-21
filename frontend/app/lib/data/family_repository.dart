@@ -13,6 +13,29 @@ class FamilyRepository {
 
   String? takeMessage() => socket.takeLastMessage();
 
+  Future<UserPreferences> getPreferences() async {
+    final data = await api.get<Map<String, dynamic>>('/auth/preferences');
+    return UserPreferences.fromJson(Map<String, dynamic>.from(data));
+  }
+
+  Future<UserPreferences> updatePreferences({
+    String? primaryColor,
+    String? fontFamily,
+    String? themeMode,
+    String? homeScene,
+  }) async {
+    final data = await api.patch<Map<String, dynamic>>(
+      '/auth/preferences',
+      data: {
+        if (primaryColor != null) 'primaryColor': primaryColor,
+        if (fontFamily != null) 'fontFamily': fontFamily,
+        if (themeMode != null) 'themeMode': themeMode,
+        if (homeScene != null) 'homeScene': homeScene,
+      },
+    );
+    return UserPreferences.fromJson(Map<String, dynamic>.from(data));
+  }
+
   Future<PaginatedResult<FamilyItem>> listPage(
     String resource,
     int page,

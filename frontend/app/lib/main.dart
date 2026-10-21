@@ -39,6 +39,7 @@ void main() {
   final toast = ToastController();
   final queryReset = ValueNotifier(0);
   String? lastUserId;
+  String? lastPreferencesUserId;
   runApp(AppQueryProvider(
     resetListenable: queryReset,
     child: MyFamilyApp(
@@ -71,6 +72,19 @@ void main() {
     unawaited(chat.bootstrap().catchError((_) {}));
   }
 
+  theme.savePreferences = ({
+    String? primaryColor,
+    String? fontFamily,
+    String? themeMode,
+  }) =>
+      repository
+          .updatePreferences(
+            primaryColor: primaryColor,
+            fontFamily: fontFamily,
+            themeMode: themeMode,
+          )
+          .then((_) {});
+
   auth.addListener(() {
     final userId = auth.user?.id;
     if (userId != lastUserId) {
@@ -78,12 +92,20 @@ void main() {
       if (userId == null) protectedServicesStarted = false;
       queryReset.value++;
     }
+    if (userId != lastPreferencesUserId) {
+      lastPreferencesUserId = userId;
+      if (userId == null) {
+        theme.reset();
+      } else {
+        unawaited(
+          repository
+              .getPreferences()
+              .then(theme.applyPreferences)
+              .catchError((_) {}),
+        );
+      }
+    }
     unawaited(startProtectedServices());
-    unawaited(theme.applyTenantTheme(
-      primaryColor: auth.user?.primaryColor,
-      fontFamily: auth.user?.tenantFont,
-      tenantKey: auth.user?.tenantKey,
-    ));
   });
 
   Future<void>(() async {

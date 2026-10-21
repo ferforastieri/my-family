@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../theme/app_theme.dart';
 
@@ -57,22 +56,6 @@ extension HomeSceneInfo on HomeScene {
         return Icons.nightlight_outlined;
     }
   }
-}
-
-const _scenePreferenceKey = 'home.scene';
-
-Future<HomeScene> loadHomeScene() async {
-  final prefs = await SharedPreferences.getInstance();
-  final saved = prefs.getString(_scenePreferenceKey);
-  return HomeScene.values.firstWhere(
-    (scene) => scene.name == saved,
-    orElse: () => HomeScene.flowers,
-  );
-}
-
-Future<void> saveHomeScene(HomeScene scene) async {
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.setString(_scenePreferenceKey, scene.name);
 }
 
 class HomeSceneBackground extends StatefulWidget {

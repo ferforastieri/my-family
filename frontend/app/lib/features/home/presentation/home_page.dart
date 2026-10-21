@@ -51,13 +51,25 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _loadScene() async {
-    final saved = await loadHomeScene();
-    if (mounted) setState(() => scene = saved);
+    try {
+      final prefs = await widget.repository.getPreferences();
+      final saved = HomeScene.values.firstWhere(
+        (item) => item.name == prefs.homeScene,
+        orElse: () => HomeScene.flowers,
+      );
+      if (mounted) setState(() => scene = saved);
+    } catch (_) {
+      // A Home usa o cenário padrão se a preferência não estiver disponível.
+    }
   }
 
   void _chooseScene(HomeScene value) {
     setState(() => scene = value);
-    unawaited(saveHomeScene(value));
+    unawaited(
+      widget.repository
+          .updatePreferences(homeScene: value.name)
+          .catchError((_) => UserPreferences(homeScene: value.name)),
+    );
   }
 
   @override

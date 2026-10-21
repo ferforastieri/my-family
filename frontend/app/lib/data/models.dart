@@ -738,3 +738,29 @@ enum HomeCountDirection {
     return value == backward.value ? backward : forward;
   }
 }
+
+class UserPreferences {
+  const UserPreferences({
+    this.primaryColor,
+    this.fontFamily,
+    this.themeMode = 'light',
+    this.homeScene = 'flowers',
+  });
+
+  final String? primaryColor;
+  final String? fontFamily;
+  final String themeMode;
+  final String homeScene;
+
+  factory UserPreferences.fromJson(Map<String, dynamic> json) {
+    return UserPreferences(
+      primaryColor: json['primaryColor']?.toString(),
+      fontFamily: json['fontFamily']?.toString(),
+      themeMode: json['themeMode'] == 'dark' ? 'dark' : 'light',
+      homeScene: (json['homeScene'] ?? 'flowers').toString(),
+    );
+  }
+
+  bool get isDark => themeMode == 'dark';
+  bool get usesClassicFont => fontFamily == 'cormorantGaramond';
+}

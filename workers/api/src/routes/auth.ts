@@ -25,6 +25,7 @@ import { verifyTurnstile } from '../turnstile';
 import { signedMediaUrl, serveMedia } from '../media';
 import { createWsTicket } from '../ws-ticket';
 import { createLocationToken } from '../location-token';
+import { execute, now, queryOne } from '../db';
 
 const authRoutes = new Hono<AppEnv>();
 
@@ -214,6 +215,89 @@ authRoutes.get('/avatar', authMiddleware, async (c) => {
   const signed = await signedMediaUrl(c.env, path);
   if (signed) return c.redirect(signed, 302);
   return serveMedia(c.env, path);
+});
+
+const preferencesSchema = z
+  .object({
+    primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+    fontFamily: z.enum(['nunitoSans', 'cormorantGaramond']).optional(),
+    themeMode: z.enum(['light', 'dark']).optional(),
+    homeScene: z.enum(['flowers', 'aurora', 'ocean', 'night']).optional(),
+  })
+  .refine(
+    (value) =>
+      value.primaryColor !== undefined ||
+      value.fontFamily !== undefined ||
+      value.themeMode !== undefined ||
+      value.homeScene !== undefined,
+    { message: 'Informe ao menos uma preferência.' },
+  );
+
+interface UserPreferencesRow {
+  primary_color: string | null;
+  font_family: string | null;
+  theme_mode: string;
+  home_scene: string;
+}
+
+function preferencesDto(row: UserPreferencesRow | null) {
+  return {
+    primaryColor: row?.primary_color ?? '#9F4D4D',
+    fontFamily: row?.font_family ?? 'nunitoSans',
+    themeMode: row?.theme_mode === 'dark' ? 'dark' : 'light',
+    homeScene: row?.home_scene ?? 'flowers',
+  };
+}
+
+authRoutes.get('/preferences', authMiddleware, async (c) => {
+  const principal = c.get('principal');
+  const row = await queryOne<UserPreferencesRow>(
+    c.env.DB,
+    'SELECT primary_color, font_family, theme_mode, home_scene FROM user_preferences WHERE user_id = ?',
+    [principal.id],
+  );
+  return envelope(c, preferencesDto(row));
+});
+
+authRoutes.patch('/preferences', authMiddleware, async (c) => {
+  const principal = c.get('principal');
+  const body = await parseBody(c, preferencesSchema);
+  const current = await queryOne<UserPreferencesRow>(
+    c.env.DB,
+    'SELECT primary_color, font_family, theme_mode, home_scene FROM user_preferences WHERE user_id = ?',
+    [principal.id],
+  );
+  const merged = {
+    primaryColor: body.primaryColor?.toUpperCase() ?? current?.primary_color ?? '#9F4D4D',
+    fontFamily: body.fontFamily ?? current?.font_family ?? 'nunitoSans',
+    themeMode: body.themeMode ?? current?.theme_mode ?? 'light',
+    homeScene: body.homeScene ?? current?.home_scene ?? 'flowers',
+  };
+  const timestamp = now();
+  await execute(
+    c.env.DB,
+    `INSERT INTO user_preferences (user_id, primary_color, font_family, theme_mode, home_scene, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(user_id) DO UPDATE SET
+       primary_color = excluded.primary_color,
+       font_family = excluded.font_family,
+       theme_mode = excluded.theme_mode,
+       home_scene = excluded.home_scene,
+       updated_at = excluded.updated_at`,
+    [
+      principal.id,
+      merged.primaryColor,
+      merged.fontFamily,
+      merged.themeMode,
+      merged.homeScene,
+      timestamp,
+      timestamp,
+    ],
+  );
+  return envelope(c, {
+    message: 'Preferências atualizadas.',
+    ...merged,
+  });
 });
 
 export { authRoutes };

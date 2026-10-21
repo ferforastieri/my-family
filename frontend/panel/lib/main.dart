@@ -375,7 +375,7 @@ class _LoginPageState extends State<LoginPage> {
   );
 }
 
-enum PanelSection { overview, family, members, appearance, content, platform }
+enum PanelSection { overview, family, members, content, platform }
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key, required this.session});
@@ -439,10 +439,6 @@ class _DashboardState extends State<Dashboard> {
               label: Text('Membros'),
             ),
             const NavigationRailDestination(
-              icon: Icon(Icons.palette_outlined),
-              label: Text('Aparência'),
-            ),
-            const NavigationRailDestination(
               icon: Icon(Icons.collections_bookmark_outlined),
               label: Text('Conteúdo'),
             ),
@@ -466,7 +462,6 @@ class _DashboardState extends State<Dashboard> {
     PanelSection.overview => Overview(session: widget.session),
     PanelSection.family => TenantSettings(session: widget.session),
     PanelSection.members => Members(session: widget.session),
-    PanelSection.appearance => Appearance(session: widget.session),
     PanelSection.content => ContentAdministration(session: widget.session),
     PanelSection.platform =>
       platformAdmin
@@ -741,75 +736,6 @@ class _MembersState extends State<Members> {
           },
         ),
       ],
-    ),
-  );
-}
-
-class Appearance extends StatefulWidget {
-  const Appearance({super.key, required this.session});
-  final PanelSession session;
-  @override
-  State<Appearance> createState() => _AppearanceState();
-}
-
-class _AppearanceState extends State<Appearance> {
-  late final color = TextEditingController(
-    text:
-        '#${widget.session.primary.toARGB32().toRadixString(16).substring(2)}',
-  );
-  String font = 'nunitoSans';
-  String? status;
-  @override
-  Widget build(BuildContext context) => PanelPage(
-    title: 'Aparência',
-    description: 'Uma cor, uma voz visual e espaço para a história de vocês.',
-    child: ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 520),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          FamilyTextField(
-            controller: color,
-            label: 'Cor principal',
-            hint: '#9F4D4D',
-          ),
-          const SizedBox(height: 12),
-          FamilySelect<String>(
-            value: font,
-            label: 'Fonte',
-            options: const [
-              FamilySelectOption(value: 'nunitoSans', label: 'Nunito Sans'),
-              FamilySelectOption(
-                value: 'cormorantGaramond',
-                label: 'Cormorant Garamond',
-              ),
-            ],
-            onChanged: (value) => font = value ?? font,
-          ),
-          const SizedBox(height: 16),
-          FamilyButton(
-            label: 'Salvar aparência',
-            onPressed: () async {
-              try {
-                await widget.session.request(
-                  '/tenant/theme',
-                  method: 'PATCH',
-                  body: {'primaryColor': color.text, 'fontFamily': font},
-                );
-                await widget.session.loadContext();
-                setState(() => status = 'Aparência salva.');
-              } catch (e) {
-                setState(() => status = e.toString());
-              }
-            },
-          ),
-          if (status != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Text(status!),
-            ),
-        ],
-      ),
     ),
   );
 }

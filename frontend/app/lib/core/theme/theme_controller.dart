@@ -1,94 +1,125 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../data/models.dart';
 
 enum ThemeColorChoice { floral }
 
 enum AppFontChoice { moderna, logo }
+
+class ThemePrimaryOption {
+  const ThemePrimaryOption(this.label, this.color, this.hex);
+
+  final String label;
+  final Color color;
+  final String hex;
+}
+
+const themePrimaryOptions = [
+  ThemePrimaryOption('Vinho', Color(0xff9f4d4d), '#9F4D4D'),
+  ThemePrimaryOption('Rosé', Color(0xffb45a6a), '#B45A6A'),
+  ThemePrimaryOption('Oliva', Color(0xff6f7d5c), '#6F7D5C'),
+  ThemePrimaryOption('Azul', Color(0xff4e6e81), '#4E6E81'),
+  ThemePrimaryOption('Terracota', Color(0xffa86b3c), '#A86B3C'),
+];
+
+typedef PreferencesSaver = Future<void> Function({
+  String? primaryColor,
+  String? fontFamily,
+  String? themeMode,
+});
 
 class ThemeController extends ChangeNotifier {
   ThemeMode mode = ThemeMode.light;
   ThemeColorChoice color = ThemeColorChoice.floral;
   AppFontChoice font = AppFontChoice.moderna;
   Color primary = const Color(0xff9f4d4d);
+  PreferencesSaver? savePreferences;
 
   Future<void> bootstrap() async {
     final prefs = await SharedPreferences.getInstance();
     mode = prefs.getString('theme.mode') == 'dark'
         ? ThemeMode.dark
         : ThemeMode.light;
-    final savedColor = prefs.getString('theme.color');
-    color = ThemeColorChoice.values.firstWhere(
-      (item) => item.name == savedColor,
-      orElse: () => ThemeColorChoice.floral,
-    );
     final savedFont = prefs.getString('theme.font');
     font = AppFontChoice.values.firstWhere(
       (item) => item.name == savedFont,
       orElse: () => AppFontChoice.moderna,
     );
-    final tenantKey = kIsWeb &&
-            Uri.base.pathSegments.length >= 2 &&
-            Uri.base.pathSegments.first == 'f'
-        ? Uri.base.pathSegments[1]
-        : null;
-    if (tenantKey != null) {
-      final tenantPrimary = prefs.getString('tenant.$tenantKey.primary');
-      if (tenantPrimary != null &&
-          RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(tenantPrimary)) {
-        primary =
-            Color(int.parse('ff${tenantPrimary.substring(1)}', radix: 16));
-      }
-      final tenantFont = prefs.getString('tenant.$tenantKey.font');
-      font = tenantFont == 'cormorantGaramond'
-          ? AppFontChoice.logo
-          : AppFontChoice.moderna;
+    final savedPrimary = prefs.getString('theme.primary');
+    if (savedPrimary != null && _hex.hasMatch(savedPrimary)) {
+      primary = Color(int.parse('ff${savedPrimary.substring(1)}', radix: 16));
     }
+    notifyListeners();
+  }
+
+  void applyPreferences(UserPreferences preferences) {
+    mode = preferences.isDark ? ThemeMode.dark : ThemeMode.light;
+    font = preferences.usesClassicFont
+        ? AppFontChoice.logo
+        : AppFontChoice.moderna;
+    final saved = preferences.primaryColor;
+    primary = saved != null && _hex.hasMatch(saved)
+        ? Color(int.parse('ff${saved.substring(1)}', radix: 16))
+        : const Color(0xff9f4d4d);
+    color = ThemeColorChoice.floral;
+    notifyListeners();
+  }
+
+  void reset() {
+    mode = ThemeMode.light;
+    font = AppFontChoice.moderna;
+    primary = const Color(0xff9f4d4d);
+    color = ThemeColorChoice.floral;
     notifyListeners();
   }
 
   Future<void> setMode(ThemeMode value) async {
     mode = value;
     notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      'theme.mode',
-      value == ThemeMode.dark ? 'dark' : 'light',
-    );
+    await _persist(themeMode: value == ThemeMode.dark ? 'dark' : 'light');
   }
 
-  Future<void> setColor(ThemeColorChoice value) async {
-    color = value;
+  Future<void> setPrimary(Color value) async {
+    primary = value;
     notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('theme.color', value.name);
+    await _persist(primaryColor: _hexFromColor(value));
   }
 
   Future<void> setFont(AppFontChoice value) async {
     font = value;
     notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('theme.font', value.name);
+    await _persist(
+      fontFamily: value == AppFontChoice.logo
+          ? 'cormorantGaramond'
+          : 'nunitoSans',
+    );
   }
 
-  Future<void> applyTenantTheme(
-      {String? primaryColor, String? fontFamily, String? tenantKey}) async {
-    if (primaryColor != null &&
-        RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(primaryColor)) {
-      primary = Color(int.parse('ff${primaryColor.substring(1)}', radix: 16));
-    } else {
-      primary = const Color(0xff9f4d4d);
-    }
-    font = fontFamily == 'cormorantGaramond'
-        ? AppFontChoice.logo
-        : AppFontChoice.moderna;
-    notifyListeners();
-    if (tenantKey != null) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
-          'tenant.$tenantKey.primary', primaryColor ?? '#9F4D4D');
-      await prefs.setString(
-          'tenant.$tenantKey.font', fontFamily ?? 'nunitoSans');
+  Future<void> _persist({
+    String? primaryColor,
+    String? fontFamily,
+    String? themeMode,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (themeMode != null) await prefs.setString('theme.mode', themeMode);
+    if (primaryColor != null) await prefs.setString('theme.primary', primaryColor);
+    if (fontFamily != null) await prefs.setString('theme.font', fontFamily);
+    try {
+      await savePreferences?.call(
+        primaryColor: primaryColor,
+        fontFamily: fontFamily,
+        themeMode: themeMode,
+      );
+    } catch (_) {
+      // A preferência local permanece válida mesmo se a sincronização falhar.
     }
   }
+}
+
+final _hex = RegExp(r'^#[0-9a-fA-F]{6}$');
+
+String _hexFromColor(Color color) {
+  final value = color.toARGB32() & 0xffffff;
+  return '#${value.toRadixString(16).padLeft(6, '0').toUpperCase()}';
 }
