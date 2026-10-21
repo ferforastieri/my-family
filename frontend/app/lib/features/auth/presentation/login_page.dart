@@ -22,20 +22,32 @@ class LoginPage extends StatelessWidget {
             padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 520),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: palette.card,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: palette.border),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(28),
-                  child: AuthSheet(
-                    auth: auth,
-                    toast: toast,
-                    onAuthenticated: () {},
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/brand/family-logo.png',
+                    width: 96,
+                    height: 96,
+                    fit: BoxFit.contain,
                   ),
-                ),
+                  const SizedBox(height: 18),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: palette.card,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: palette.border),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(28),
+                      child: AuthSheet(
+                        auth: auth,
+                        toast: toast,
+                        onAuthenticated: () {},
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

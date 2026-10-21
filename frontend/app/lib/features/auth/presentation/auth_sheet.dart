@@ -129,13 +129,6 @@ class _AuthSheetState extends State<AuthSheet> {
             ),
             child: const Text('Criar uma família'),
           ),
-          FamilyTextButton(
-            onPressed: () => launchUrl(
-              Uri.parse(AppConfig.downloadUrl),
-              mode: LaunchMode.externalApplication,
-            ),
-            child: const Text('Baixar app para Android'),
-          ),
         ],
       ),
     );
