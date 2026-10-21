@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "my-family-api",
+  "name": "siao-api",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-20",
   "compatibility_flags": ["nodejs_compat"],
@@ -9,16 +9,16 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "my-family-v2",
-      "database_id": "3dbad783-9c04-41fc-a769-cd459a0752dd"
+      "database_name": "siao",
+      "database_id": "1673888e-92c0-4045-b1a8-d29ee72dc4b1"
     }
   ],
-  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "my-family-media" }],
+  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "siao-media" }],
   "queues": {
-    "producers": [{ "binding": "JOBS", "queue": "my-family-jobs" }],
+    "producers": [{ "binding": "JOBS", "queue": "siao-jobs" }],
     "consumers": [
       {
-        "queue": "my-family-jobs",
+        "queue": "siao-jobs",
         "max_batch_size": 10,
         "max_batch_timeout": 5,
         "max_retries": 5
@@ -40,7 +40,7 @@
   "triggers": { "crons": ["* * * * *"] },
   "vars": {
     "APP_ENV": "production",
-    "CORS_ORIGIN": "https://my-family-web.vira-ia-br.workers.dev,https://my-family-panel.vira-ia-br.workers.dev,https://my-family-landing.vira-ia-br.workers.dev",
+    "CORS_ORIGIN": "https://siao-web.vira-ia-br.workers.dev,https://siao-panel.vira-ia-br.workers.dev,https://siao-landing.vira-ia-br.workers.dev",
     "PLATFORM_ADMIN_EMAIL": "ffnephew@hotmail.com",
     "COOKIE_SECURE": "true",
     "COOKIE_SAME_SITE": "lax",

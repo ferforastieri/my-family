@@ -7,12 +7,12 @@ import { isProduction } from './env';
 import { queryOne } from './db';
 import { forbidden, unauthorized } from './http';
 
-export const ACCESS_COOKIE = 'fmf_access';
-export const REFRESH_COOKIE = 'fmf_refresh';
-export const CSRF_COOKIE = 'fmf_csrf';
+export const ACCESS_COOKIE = 'siao_access';
+export const REFRESH_COOKIE = 'siao_refresh';
+export const CSRF_COOKIE = 'siao_csrf';
 
-const ISSUER = 'nossa-familia-api';
-const AUDIENCE = 'nossa-familia-app';
+const ISSUER = 'siao-api';
+const AUDIENCE = 'siao-app';
 const encoder = new TextEncoder();
 
 export const userAccessKeys = [

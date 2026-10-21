@@ -174,7 +174,7 @@ class _HomePageState extends State<HomePage> {
                       const Padding(
                         padding: EdgeInsets.fromLTRB(18, 10, 18, 0),
                         child: AppPageHeader(
-                          title: 'Nossa Família',
+                          title: 'Sião',
                           subtitle: 'Memórias da nossa família.',
                           icon: Icons.favorite_outline,
                           leading: _HomeLogoMark(),
@@ -350,7 +350,7 @@ class _HomeTitle extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Nossa Família',
+            'Sião',
             textAlign: TextAlign.center,
             style: text.display.merge(
               TextStyle(

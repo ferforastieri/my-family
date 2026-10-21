@@ -176,7 +176,7 @@ export async function cleanupDemos(env: Env): Promise<void> {
       env.DB.prepare('DELETE FROM auth_sessions WHERE tenant_id = ?').bind(tenant.id),
       env.DB.prepare('DELETE FROM tenants WHERE id = ?').bind(tenant.id),
       env.DB.prepare(
-        `DELETE FROM users WHERE email LIKE 'demo-%@nossafamilia.local' AND id NOT IN (SELECT user_id FROM memberships)`,
+        `DELETE FROM users WHERE email LIKE 'demo-%@siao.local' AND id NOT IN (SELECT user_id FROM memberships)`,
       ),
     ]);
   }

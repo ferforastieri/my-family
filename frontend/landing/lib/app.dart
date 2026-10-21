@@ -19,7 +19,7 @@ class App extends StatelessComponent {
           eyebrow: 'Tudo em um só lugar',
           title: 'Recursos para guardar e viver a história de vocês.',
           description:
-              'Conheça os recursos do Nossa Família para memórias, rotina, conversa e segurança.',
+              'Conheça os recursos do Sião para memórias, rotina, conversa e segurança.',
           sections: [
             (
               'Memórias sem feed',
@@ -47,7 +47,7 @@ class App extends StatelessComponent {
           eyebrow: 'Simples desde a porta',
           title: 'Do cadastro ao espaço da família em poucos passos.',
           description:
-              'Veja como criar sua conta, entrar e convidar pessoas no Nossa Família.',
+              'Veja como criar sua conta, entrar e convidar pessoas no Sião.',
           sections: [
             (
               '1. Crie sua conta',
@@ -75,7 +75,7 @@ class App extends StatelessComponent {
           eyebrow: 'Privado desde o começo',
           title: 'A família vê a família. A plataforma vê somente a operação.',
           description:
-              'Entenda como o Nossa Família protege conteúdo, arquivos, sessões e acesso de cada família.',
+              'Entenda como o Sião protege conteúdo, arquivos, sessões e acesso de cada família.',
           sections: [
             (
               'Isolamento por família',
@@ -103,7 +103,7 @@ class App extends StatelessComponent {
           eyebrow: 'Perguntas frequentes',
           title: 'Antes de abrir a porta, tire suas dúvidas.',
           description:
-              'Respostas sobre privacidade, conta, convites, demo e uso do Nossa Família.',
+              'Respostas sobre privacidade, conta, convites, demo e uso do Sião.',
           faq: true,
           sections: [
             (
@@ -131,7 +131,7 @@ class App extends StatelessComponent {
           path: '/privacidade',
           eyebrow: 'Política de privacidade',
           title: 'Privacidade explicada sem letras miúdas.',
-          description: 'Política de privacidade do Nossa Família.',
+          description: 'Política de privacidade do Sião.',
           sections: [
             (
               'Dados utilizados',
@@ -154,7 +154,7 @@ class App extends StatelessComponent {
           path: '/termos',
           eyebrow: 'Termos de uso',
           title: 'Um acordo claro para um espaço importante.',
-          description: 'Termos de uso do Nossa Família.',
+          description: 'Termos de uso do Sião.',
           sections: [
             (
               'Uso responsável',

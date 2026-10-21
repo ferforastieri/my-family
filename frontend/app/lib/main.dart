@@ -119,7 +119,7 @@ class MyFamilyApp extends StatelessWidget {
       builder: (context, _) {
         if (auth.loading) {
           return MaterialApp(
-            title: 'Nossa Família',
+            title: 'Sião',
             debugShowCheckedModeBanner: false,
             theme: buildAppTheme(
               color: theme.color,
@@ -137,7 +137,7 @@ class MyFamilyApp extends StatelessWidget {
           );
         }
         return MaterialApp.router(
-          title: 'Nossa Família',
+          title: 'Sião',
           debugShowCheckedModeBanner: false,
           theme: buildAppTheme(
             color: theme.color,

@@ -5,8 +5,8 @@
 // Generated with jaspr_builder
 
 import 'package:jaspr/server.dart';
-import 'package:my_family_landing/components/demo_button.dart' as _demo_button;
-import 'package:my_family_landing/pages/register_page.dart' as _register_page;
+import 'package:siao_landing/components/demo_button.dart' as _demo_button;
+import 'package:siao_landing/pages/register_page.dart' as _register_page;
 
 /// Default [ServerOptions] for use with your Jaspr project.
 ///

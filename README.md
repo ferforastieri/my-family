@@ -1,8 +1,8 @@
-# Nossa Família
+# Sião
 
 Um espaço privado para a família guardar memórias, organizar a rotina e conversar.
 
-O Nossa Família é um aplicativo multi-família: cada família tem seu próprio espaço,
+O Sião é um aplicativo multi-família: cada família tem seu próprio espaço,
 seus membros, suas permissões e seu conteúdo. A mesma pessoa pode participar de
 mais de uma família e alternar entre elas sem criar outra conta.
 
@@ -132,11 +132,11 @@ jaspr serve
 
 ## Links
 
-- Aplicativo: https://my-family-web.vira-ia-br.workers.dev
-- Painel: https://my-family-panel.vira-ia-br.workers.dev
-- Site: https://my-family-landing.vira-ia-br.workers.dev
-- API: https://my-family-api.vira-ia-br.workers.dev
-- Baixar o aplicativo: https://github.com/ferforastieri/my-family/releases/latest/download/app-release.apk
+- Aplicativo: https://siao-web.vira-ia-br.workers.dev
+- Painel: https://siao-panel.vira-ia-br.workers.dev
+- Site: https://siao-landing.vira-ia-br.workers.dev
+- API: https://siao-api.vira-ia-br.workers.dev
+- Baixar o aplicativo: https://github.com/ferforastieri/siao/releases/latest/download/app-release.apk
 
 ## Licença
 

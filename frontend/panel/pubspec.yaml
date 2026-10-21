@@ -1,5 +1,5 @@
-name: my_family_panel
-description: Tenant and platform administration for Nossa Familia.
+name: siao_panel
+description: Tenant and platform administration for Sião.
 publish_to: none
 version: 1.0.0+1
 environment:

@@ -1160,7 +1160,7 @@ class _LoveOrderGameState extends State<_LoveOrderGame> {
             'Primeiro encontro',
             'Namoro',
             'Casamento',
-            'Nossa família',
+            'Sião',
           ]
         : widget.config.items;
     return items.take(8).toList();

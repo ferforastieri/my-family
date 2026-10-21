@@ -24,7 +24,7 @@ demoRoutes.post('/', async (c) => {
 
   const suffix = crypto.randomUUID().slice(0, 8);
   const user = await createUser(c.env, {
-    email: `demo-${suffix}@nossafamilia.local`,
+    email: `demo-${suffix}@siao.local`,
     password: crypto.randomUUID(),
     name: 'Visitante da demo',
   });

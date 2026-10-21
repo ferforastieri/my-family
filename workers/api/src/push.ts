@@ -126,7 +126,7 @@ function messageBody(token: string, payload: PushPayload) {
         notification: {
           channel_id:
             payload.channelId ??
-            (payload.type === 'chat' ? 'chat_messages' : 'my_family_notifications'),
+            (payload.type === 'chat' ? 'chat_messages' : 'siao_notifications'),
           sound: 'default',
           ...(payload.conversationId ? { tag: `chat-${payload.conversationId}` } : {}),
         },

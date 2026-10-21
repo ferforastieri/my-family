@@ -1,1 +1,1 @@
-{"name":"@my-family/media-worker","private":true,"scripts":{"check":"tsc --noEmit","deploy":"wrangler deploy"},"devDependencies":{"@cloudflare/workers-types":"^5.20260828.1","typescript":"^5.9.2","wrangler":"^4.127.1"}}
+{"name":"@siao/media-worker","private":true,"scripts":{"check":"tsc --noEmit","deploy":"wrangler deploy"},"devDependencies":{"@cloudflare/workers-types":"^5.20260828.1","typescript":"^5.9.2","wrangler":"^4.127.1"}}

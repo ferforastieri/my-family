@@ -6,7 +6,7 @@ self.addEventListener('push', function (event) {
     payload = {};
   }
   var data = payload.data || payload;
-  var title = data.title || 'Nossa Família';
+  var title = data.title || 'Sião';
   var options = {
     body: data.body || '',
     icon: '/icons/Icon-192.png',

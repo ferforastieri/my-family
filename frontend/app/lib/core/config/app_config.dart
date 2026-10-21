@@ -8,7 +8,7 @@ class AppConfig {
   static const downloadUrl = String.fromEnvironment(
     'DOWNLOAD_URL',
     defaultValue:
-        'https://github.com/ferforastieri/my-family/releases/latest/download/app-release.apk',
+        'https://github.com/ferforastieri/siao/releases/latest/download/app-release.apk',
   );
 
   static String get apiBaseUrl => _requiredEnv('API_BASE_URL', _apiBaseUrl);

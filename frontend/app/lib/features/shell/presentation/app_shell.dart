@@ -202,7 +202,7 @@ class _MobileGlobalDrawer extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Nossa Família',
+                      'Sião',
                       style: TextStyle(
                         color: palette.foreground,
                         fontSize: 19,

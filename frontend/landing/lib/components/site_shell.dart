@@ -18,7 +18,7 @@ class SiteShell extends StatelessComponent {
         [
           a(href: '/', classes: 'brand', [
             img(src: '/assets/family-logo.png', width: 46, height: 46, alt: ''),
-            span([.text('Nossa Família')]),
+            span([.text('Sião')]),
           ]),
           div(classes: 'nav-links', [
             a(href: '/recursos', [.text('Recursos')]),
@@ -35,7 +35,7 @@ class SiteShell extends StatelessComponent {
     footer(classes: 'site-footer', [
       div(classes: 'footer-grid', [
         div([
-          h2([.text('Nossa Família')]),
+          h2([.text('Sião')]),
           p([.text('Um espaço privado para o que aproxima vocês.')]),
         ]),
         _footerColumn('Produto', [
@@ -55,7 +55,7 @@ class SiteShell extends StatelessComponent {
           ('Baixar app', downloadUrl),
         ]),
       ]),
-      p(classes: 'copyright', [.text('© 2026 Nossa Família.')]),
+      p(classes: 'copyright', [.text('© 2026 Sião.')]),
     ]),
   ]);
 

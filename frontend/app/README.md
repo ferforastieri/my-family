@@ -1,6 +1,6 @@
 # App Flutter
 
-Cliente Web/Android do projeto Nossa Familia. Este app e parte de um projeto de estudos para praticar Flutter, Firebase Messaging, Socket.IO, mapas, upload, notificacoes e tracking mobile.
+Cliente Web/Android do projeto Sião. Este app e parte de um projeto de estudos para praticar Flutter, Firebase Messaging, Socket.IO, mapas, upload, notificacoes e tracking mobile.
 
 ## Tecnologias
 

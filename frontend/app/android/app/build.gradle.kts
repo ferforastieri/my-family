@@ -9,7 +9,7 @@ if (file("google-services.json").exists()) {
 }
 
 android {
-    namespace = "com.nossafamilia.app"
+    namespace = "com.siao.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,7 +20,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.nossafamilia.app"
+        applicationId = "com.siao.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

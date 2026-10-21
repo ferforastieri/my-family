@@ -30,7 +30,7 @@ class SeoHead extends StatelessComponent {
         'description': description,
         'robots': noIndex ? 'noindex,nofollow' : 'index,follow',
         'og:type': 'website',
-        'og:site_name': 'Nossa Família',
+        'og:site_name': 'Sião',
         'og:title': title,
         'og:description': description,
         'og:url': canonical,

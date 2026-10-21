@@ -187,7 +187,7 @@ async function seedMiniGames(env: AppEnv['Bindings'], tenantId: string) {
       type: 'love_order',
       title: 'Linha do Amor',
       instructions: 'Toque nos momentos na ordem certa da história.',
-      items: ['Primeira conversa', 'Primeiro encontro', 'Namoro', 'Casamento', 'Nossa família'],
+      items: ['Primeira conversa', 'Primeiro encontro', 'Namoro', 'Casamento', 'Sião'],
     },
     {
       type: 'this_or_that',

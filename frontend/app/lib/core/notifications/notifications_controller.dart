@@ -150,7 +150,7 @@ Future<void> _showPushNotification(
   RemoteMessage message,
 ) async {
   final notification = message.notification;
-  final title = notification?.title ?? message.data['title'] ?? 'Nossa Família';
+  final title = notification?.title ?? message.data['title'] ?? 'Sião';
   final body = notification?.body ?? message.data['body'] ?? '';
   final isChat = message.data['type'] == 'chat';
   final conversationId = message.data['conversationId'];
@@ -162,8 +162,8 @@ Future<void> _showPushNotification(
     payload: _notificationPayload(message),
     notificationDetails: NotificationDetails(
       android: AndroidNotificationDetails(
-        isChat ? 'chat_messages' : 'my_family_notifications',
-        isChat ? 'Mensagens' : 'Nossa Família',
+        isChat ? 'chat_messages' : 'siao_notifications',
+        isChat ? 'Mensagens' : 'Sião',
         icon: 'ic_notification',
         importance: Importance.max,
         priority: Priority.max,
@@ -411,8 +411,8 @@ class NotificationsController extends ChangeNotifier {
         );
         await android?.createNotificationChannel(
           const AndroidNotificationChannel(
-            'my_family_notifications',
-            'Nossa Família',
+            'siao_notifications',
+            'Sião',
             description: 'Notificações criadas no painel e avisos da família.',
             importance: Importance.max,
             playSound: true,

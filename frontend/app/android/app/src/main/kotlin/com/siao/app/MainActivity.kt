@@ -1,4 +1,4 @@
-package com.nossafamilia.app
+package com.siao.app
 
 import android.content.Intent
 import android.os.Build

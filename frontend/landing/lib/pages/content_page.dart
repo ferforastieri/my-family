@@ -26,7 +26,7 @@ class ContentPage extends StatelessComponent {
   Component build(BuildContext context) => SiteShell(
     child: div([
       SeoHead(
-        title: '$title — Nossa Família',
+        title: '$title — Sião',
         description: description,
         path: path,
         jsonLd: faq

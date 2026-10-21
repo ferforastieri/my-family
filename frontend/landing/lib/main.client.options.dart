@@ -6,9 +6,9 @@
 
 import 'package:jaspr/client.dart';
 
-import 'package:my_family_landing/components/demo_button.dart'
+import 'package:siao_landing/components/demo_button.dart'
     deferred as _demo_button;
-import 'package:my_family_landing/pages/register_page.dart'
+import 'package:siao_landing/pages/register_page.dart'
     deferred as _register_page;
 
 /// Default [ClientOptions] for use with your Jaspr project.

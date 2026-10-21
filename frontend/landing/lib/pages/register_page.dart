@@ -17,7 +17,7 @@ class RegisterPage extends StatelessComponent {
   Component build(BuildContext context) => SiteShell(
     child: div([
       const SeoHead(
-        title: 'Criar minha família — Nossa Família',
+        title: 'Criar minha família — Sião',
         description: 'Crie o espaço privado da sua família com email e senha.',
         path: '/cadastro',
         noIndex: true,

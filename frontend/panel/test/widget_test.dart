@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:my_family_panel/main.dart';
+import 'package:siao_panel/main.dart';
 
 void main() {
   testWidgets('shows the email login form', (tester) async {

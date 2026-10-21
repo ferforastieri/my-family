@@ -46,6 +46,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: AppConfig.firebaseMessagingSenderId,
     projectId: AppConfig.firebaseProjectId,
     storageBucket: AppConfig.firebaseStorageBucket,
-    iosBundleId: 'com.nossafamilia.app',
+    iosBundleId: 'com.siao.app',
   );
 }

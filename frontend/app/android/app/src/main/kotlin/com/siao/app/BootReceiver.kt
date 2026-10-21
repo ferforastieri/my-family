@@ -1,4 +1,4 @@
-package com.nossafamilia.app
+package com.siao.app
 
 import android.content.BroadcastReceiver
 import android.content.Context

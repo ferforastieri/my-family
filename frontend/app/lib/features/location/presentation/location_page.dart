@@ -329,7 +329,7 @@ class _LocationMapPanel extends StatelessWidget {
                   TileLayer(
                     urlTemplate:
                         'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.nossafamilia.app',
+                    userAgentPackageName: 'com.siao.app',
                   ),
                   CircleLayer(
                     circles: [
@@ -1143,7 +1143,7 @@ class _LocationPlaceSheetState extends State<_LocationPlaceSheet> {
                       TileLayer(
                         urlTemplate:
                             'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        userAgentPackageName: 'com.nossafamilia.app',
+                        userAgentPackageName: 'com.siao.app',
                       ),
                       CircleLayer(
                         circles: [

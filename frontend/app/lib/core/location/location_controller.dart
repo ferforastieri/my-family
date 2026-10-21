@@ -19,7 +19,7 @@ class LocationController with WidgetsBindingObserver {
   late final HttpApiClient api = HttpApiClient(socket);
   final Battery _battery = Battery();
   static const MethodChannel _backgroundChannel = MethodChannel(
-    'com.nossafamilia.app/background_location',
+    'com.siao.app/background_location',
   );
   StreamSubscription<Position>? _positionSubscription;
   Timer? _timer;

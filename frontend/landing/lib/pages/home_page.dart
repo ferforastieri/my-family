@@ -13,17 +13,17 @@ class HomePage extends StatelessComponent {
   Component build(BuildContext context) => SiteShell(
     child: div([
       const SeoHead(
-        title: 'Nossa Família — memórias e rotina em um espaço privado',
+        title: 'Sião — memórias e rotina em um espaço privado',
         description:
             'Guarde memórias, organize a rotina e aproxime quem você ama em um espaço digital privado para casais e filhos.',
         path: '/',
         jsonLd: {
           '@context': 'https://schema.org',
           '@graph': [
-            {'@type': 'Organization', 'name': 'Nossa Família', 'url': siteUrl},
+            {'@type': 'Organization', 'name': 'Sião', 'url': siteUrl},
             {
               '@type': 'SoftwareApplication',
-              'name': 'Nossa Família',
+              'name': 'Sião',
               'url': siteUrl,
               'applicationCategory': 'LifestyleApplication',
               'operatingSystem': 'Web, Android',

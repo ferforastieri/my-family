@@ -9,7 +9,7 @@ void main() {
   runApp(
     Document(
       lang: 'pt-BR',
-      title: 'Nossa Família',
+      title: 'Sião',
       meta: const {'theme-color': '#FEFBF3', 'color-scheme': 'light'},
       head: const [
         link(rel: 'icon', href: '/assets/favicon.png'),

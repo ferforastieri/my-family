@@ -36,7 +36,7 @@ class _FamilyPanelState extends State<FamilyPanel> {
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: session,
     builder: (context, child) => MaterialApp(
-      title: 'Painel — Nossa Família',
+      title: 'Painel — Sião',
       debugShowCheckedModeBanner: false,
       theme: familyTheme(primary: session.primary, font: session.font),
       home: session.loading
@@ -301,7 +301,7 @@ class _DashboardState extends State<Dashboard> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('Nossa Família'),
+      title: const Text('Sião'),
       actions: [
         if (widget.session.tenants.length > 1)
           DropdownButtonHideUnderline(

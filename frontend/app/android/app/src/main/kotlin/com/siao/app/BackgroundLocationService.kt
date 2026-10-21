@@ -1,4 +1,4 @@
-package com.nossafamilia.app
+package com.siao.app
 
 import android.Manifest
 import android.app.Notification
@@ -271,13 +271,13 @@ class BackgroundLocationService : Service() {
     data class ServiceConfig(val token: String, val apiBaseUrl: String)
 
     companion object {
-        const val CHANNEL = "com.nossafamilia.app/background_location"
-        const val ACTION_START = "com.nossafamilia.app.background_location.START"
-        const val ACTION_STOP = "com.nossafamilia.app.background_location.STOP"
+        const val CHANNEL = "com.siao.app/background_location"
+        const val ACTION_START = "com.siao.app.background_location.START"
+        const val ACTION_STOP = "com.siao.app.background_location.STOP"
         private const val PREFS = "background_location_secure"
         private const val KEY_TOKEN = "location_token"
         private const val KEY_API_BASE_URL = "api_base_url"
-        private const val CHANNEL_ID = "my_family_location_tracking"
+        private const val CHANNEL_ID = "siao_location_tracking"
         private const val NOTIFICATION_ID = 4201
         private const val UPDATE_INTERVAL_MS = 30_000L
         private const val FASTEST_INTERVAL_MS = 15_000L
