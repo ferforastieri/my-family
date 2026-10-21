@@ -43,4 +43,5 @@ flutter:
   uses-material-design: true
   assets:
     - assets/brand/family-logo.png
+    - assets/brand/siao-logo.png
     - assets/scenes/

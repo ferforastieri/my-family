@@ -26,9 +26,8 @@ class LoginPage extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Image.asset(
-                    'assets/brand/family-logo.png',
-                    width: 96,
-                    height: 96,
+                    'assets/brand/siao-logo.png',
+                    width: 210,
                     fit: BoxFit.contain,
                   ),
                   const SizedBox(height: 18),
