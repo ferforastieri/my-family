@@ -102,6 +102,7 @@ class _HomePageState extends State<HomePage> {
       child: LayoutBuilder(
         builder: (context, viewport) {
           final mobile = viewport.maxWidth < 760;
+          final shortDesktop = !mobile && viewport.maxHeight < 620;
           final content = ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: EdgeInsets.fromLTRB(
@@ -127,7 +128,7 @@ class _HomePageState extends State<HomePage> {
                       );
                       return Column(
                         children: [
-                          if (!mobile) ...[
+                          if (!mobile && !shortDesktop) ...[
                             SizedBox(
                               height: 84,
                               child: Stack(
@@ -145,6 +146,15 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ),
                             const SizedBox(height: 8),
+                          ] else if (!mobile) ...[
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: HomeScenePicker(
+                                scene: scene,
+                                onSelected: _chooseScene,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
                           ] else ...[
                             Align(
                               alignment: Alignment.centerRight,
