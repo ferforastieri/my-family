@@ -502,15 +502,18 @@ class _ThemeSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
-    return SizedBox(
-      width: 440,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Aparência',
+    return ListenableBuilder(
+      listenable: theme,
+      builder: (context, _) {
+        final palette = Theme.of(context).extension<AppPalette>()!;
+        return SizedBox(
+          width: 440,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Aparência',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: palette.primary,
@@ -621,9 +624,11 @@ class _ThemeSheet extends StatelessWidget {
                     : 'Modo claro ativado.',
               );
             },
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
