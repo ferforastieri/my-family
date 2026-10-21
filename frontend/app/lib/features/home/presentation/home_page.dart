@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_controller.dart';
 import '../../../core/auth/authenticated_media.dart';
 import 'package:family_ui/family_ui.dart';
 import '../../../core/widgets/app_page_header.dart';
@@ -16,10 +17,12 @@ class HomePage extends StatefulWidget {
   const HomePage({
     super.key,
     required this.repository,
+    required this.theme,
     required this.onNavigate,
   });
 
   final FamilyRepository repository;
+  final ThemeController theme;
   final ValueChanged<String> onNavigate;
 
   @override
@@ -36,7 +39,6 @@ class _HomePageState extends State<HomePage> {
   bool galleryTitleVisible = true;
   String galleryTitleLayout = 'arc';
   String? loadError;
-  HomeScene scene = HomeScene.flowers;
 
   @override
   void initState() {
@@ -46,30 +48,7 @@ class _HomePageState extends State<HomePage> {
       if (events.isEmpty) return;
       setState(() => counters = _buildCounters(events));
     });
-    _loadScene();
     _loadSettings();
-  }
-
-  Future<void> _loadScene() async {
-    try {
-      final prefs = await widget.repository.getPreferences();
-      final saved = HomeScene.values.firstWhere(
-        (item) => item.name == prefs.homeScene,
-        orElse: () => HomeScene.flowers,
-      );
-      if (mounted) setState(() => scene = saved);
-    } catch (_) {
-      // A Home usa o cenário padrão se a preferência não estiver disponível.
-    }
-  }
-
-  void _chooseScene(HomeScene value) {
-    setState(() => scene = value);
-    unawaited(
-      widget.repository
-          .updatePreferences(homeScene: value.name)
-          .catchError((_) => UserPreferences(homeScene: value.name)),
-    );
   }
 
   @override
@@ -109,9 +88,11 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return HomeSceneBackground(
-      scene: scene,
-      child: LayoutBuilder(
+    return ListenableBuilder(
+      listenable: widget.theme,
+      builder: (context, _) => HomeSceneBackground(
+        scene: widget.theme.scene,
+        child: LayoutBuilder(
         builder: (context, viewport) {
           final mobile = viewport.maxWidth < 760;
           final shortDesktop = !mobile && viewport.maxHeight < 620;
@@ -141,41 +122,8 @@ class _HomePageState extends State<HomePage> {
                       return Column(
                         children: [
                           if (!mobile && !shortDesktop) ...[
-                            SizedBox(
-                              height: 84,
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  const _HomeTitle(),
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: HomeScenePicker(
-                                      scene: scene,
-                                      onSelected: _chooseScene,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            const _HomeTitle(),
                             const SizedBox(height: 8),
-                          ] else if (!mobile) ...[
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: HomeScenePicker(
-                                scene: scene,
-                                onSelected: _chooseScene,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                          ] else ...[
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: HomeScenePicker(
-                                scene: scene,
-                                onSelected: _chooseScene,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
                           ],
                           if (loadError != null)
                             _HomeLoadError(
@@ -224,6 +172,7 @@ class _HomePageState extends State<HomePage> {
             ],
           );
         },
+      ),
       ),
     );
   }

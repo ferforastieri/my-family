@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/models.dart';
+import '../widgets/home_scene.dart';
 
 enum ThemeColorChoice { floral }
 
@@ -27,6 +28,7 @@ typedef PreferencesSaver = Future<void> Function({
   String? primaryColor,
   String? fontFamily,
   String? themeMode,
+  String? homeScene,
 });
 
 class ThemeController extends ChangeNotifier {
@@ -34,6 +36,7 @@ class ThemeController extends ChangeNotifier {
   ThemeColorChoice color = ThemeColorChoice.floral;
   AppFontChoice font = AppFontChoice.moderna;
   Color primary = const Color(0xff9f4d4d);
+  HomeScene scene = HomeScene.flowers;
   PreferencesSaver? savePreferences;
 
   Future<void> bootstrap() async {
@@ -50,6 +53,11 @@ class ThemeController extends ChangeNotifier {
     if (savedPrimary != null && _hex.hasMatch(savedPrimary)) {
       primary = Color(int.parse('ff${savedPrimary.substring(1)}', radix: 16));
     }
+    final savedScene = prefs.getString('theme.scene');
+    scene = HomeScene.values.firstWhere(
+      (item) => item.name == savedScene,
+      orElse: () => HomeScene.flowers,
+    );
     notifyListeners();
   }
 
@@ -62,6 +70,10 @@ class ThemeController extends ChangeNotifier {
     primary = saved != null && _hex.hasMatch(saved)
         ? Color(int.parse('ff${saved.substring(1)}', radix: 16))
         : const Color(0xff9f4d4d);
+    scene = HomeScene.values.firstWhere(
+      (item) => item.name == preferences.homeScene,
+      orElse: () => HomeScene.flowers,
+    );
     color = ThemeColorChoice.floral;
     notifyListeners();
   }
@@ -70,6 +82,7 @@ class ThemeController extends ChangeNotifier {
     mode = ThemeMode.light;
     font = AppFontChoice.moderna;
     primary = const Color(0xff9f4d4d);
+    scene = HomeScene.flowers;
     color = ThemeColorChoice.floral;
     notifyListeners();
   }
@@ -96,20 +109,29 @@ class ThemeController extends ChangeNotifier {
     );
   }
 
+  Future<void> setScene(HomeScene value) async {
+    scene = value;
+    notifyListeners();
+    await _persist(homeScene: value.name);
+  }
+
   Future<void> _persist({
     String? primaryColor,
     String? fontFamily,
     String? themeMode,
+    String? homeScene,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     if (themeMode != null) await prefs.setString('theme.mode', themeMode);
     if (primaryColor != null) await prefs.setString('theme.primary', primaryColor);
     if (fontFamily != null) await prefs.setString('theme.font', fontFamily);
+    if (homeScene != null) await prefs.setString('theme.scene', homeScene);
     try {
       await savePreferences?.call(
         primaryColor: primaryColor,
         fontFamily: fontFamily,
         themeMode: themeMode,
+        homeScene: homeScene,
       );
     } catch (_) {
       // A preferência local permanece válida mesmo se a sincronização falhar.

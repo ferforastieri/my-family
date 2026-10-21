@@ -157,6 +157,7 @@ GoRouter buildRouter(
             path: '/',
             pageBuilder: (context, state) => _page(HomePage(
               repository: repository,
+              theme: theme,
               onNavigate: (path) {
                 context.openAppRoute(path);
               },

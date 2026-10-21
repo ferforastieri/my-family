@@ -11,6 +11,7 @@ import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_fixed_header_scroll_view.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
+import '../../../core/widgets/home_scene.dart';
 import 'package:family_ui/family_ui.dart';
 import '../../auth/presentation/auth_sheet.dart';
 import '../../notifications/presentation/notifications_sheet.dart';
@@ -564,6 +565,31 @@ class _ThemeSheet extends StatelessWidget {
                         ? const Icon(Icons.check, color: Colors.white, size: 18)
                         : null,
                   ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'Cenário da Home',
+            style: TextStyle(
+              color: palette.foreground,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final option in HomeScene.values)
+                FamilyChip(
+                  label: option.label,
+                  icon: option.icon,
+                  selected: theme.scene == option,
+                  onTap: () {
+                    theme.setScene(option);
+                    toast.success('Cenário ${option.label.toLowerCase()} ativado.');
+                  },
                 ),
             ],
           ),

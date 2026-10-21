@@ -176,7 +176,7 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
               _ProfileActionTile(
                 icon: Icons.palette_outlined,
                 label: 'Aparência',
-                description: 'Cor, fonte e modo — preferências só suas.',
+                description: 'Cor, fonte, modo e cenário — preferências só suas.',
                 onTap: () => AppHeaderActionsScope.maybeOf(context)?.onTheme(),
               ),
               const SizedBox(height: 18),

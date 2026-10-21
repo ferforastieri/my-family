@@ -76,12 +76,14 @@ void main() {
     String? primaryColor,
     String? fontFamily,
     String? themeMode,
+    String? homeScene,
   }) =>
       repository
           .updatePreferences(
             primaryColor: primaryColor,
             fontFamily: fontFamily,
             themeMode: themeMode,
+            homeScene: homeScene,
           )
           .then((_) {});
 
