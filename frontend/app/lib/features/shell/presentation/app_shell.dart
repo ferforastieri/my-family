@@ -43,7 +43,9 @@ class AppShell extends StatelessWidget {
       builder: (context, _) => LayoutBuilder(
         builder: (context, constraints) {
           final wide = constraints.maxWidth >= 860;
+          final palette = Theme.of(context).extension<AppPalette>()!;
           return Scaffold(
+            backgroundColor: palette.bgStart,
             appBar: wide ? _buildDesktopAppBar(context) : null,
             body: Builder(
               builder: (shellContext) => AppHeaderActionsScope(
@@ -56,11 +58,20 @@ class AppShell extends StatelessWidget {
             ),
             bottomNavigationBar: wide
                 ? null
-                : _MobileBottomNavigation(
-                    auth: auth,
-                    chatUnreadCount: chat.unreadCount,
-                    currentLocation: currentLocation,
-                    onLogin: () => _openLogin(context),
+                : DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [palette.bgStart, palette.bgEnd],
+                      ),
+                    ),
+                    child: _MobileBottomNavigation(
+                      auth: auth,
+                      chatUnreadCount: chat.unreadCount,
+                      currentLocation: currentLocation,
+                      onLogin: () => _openLogin(context),
+                    ),
                   ),
           );
         },
