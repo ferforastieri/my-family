@@ -123,8 +123,9 @@ jaspr serve
 
 ## Deploy
 
-- **API, aplicativo, painel e site** são publicados na Cloudflare. Cada projeto
-  tem seu próprio build automático conectado ao repositório.
+- **API, aplicativo, painel e site** são publicados na Cloudflare via Wrangler.
+  Os builds automáticos podem ser conectados a cada Worker no dashboard da
+  Cloudflare.
 - **Aplicativo Android** é gerado pelo GitHub Actions e publicado na página de
   releases.
 - Configurações e credenciais ficam nos painéis da Cloudflare e do GitHub; nada
