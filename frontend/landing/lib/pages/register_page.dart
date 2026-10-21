@@ -120,10 +120,10 @@ class _EmailRegistrationFormState extends State<EmailRegistrationForm> {
       ),
     button(
       type: ButtonType.button,
-      classes: 'button primary',
+      classes: busy ? 'button primary family-skeleton' : 'button primary',
       disabled: busy,
       onClick: _register,
-      [.text(busy ? 'Aguarde…' : 'Criar conta')],
+      [if (!busy) .text('Criar conta')],
     ),
     p(
       attributes: const {'role': 'status', 'aria-live': 'polite'},

@@ -253,7 +253,7 @@ class _QuizGameState extends State<_QuizGame> {
           child: AppQuery<List<QuizQuestion>>(
             queryKey: QueryKeys.quizQuestions(),
             queryFn: widget.repository.listQuizQuestions,
-            loading: const Center(child: CircularProgressIndicator()),
+            loading: const SkeletonBox(height: 260, borderRadius: 8),
             builder: (context, questions, _) {
               if (questions.isEmpty) {
                 return const _GameEmptyState(

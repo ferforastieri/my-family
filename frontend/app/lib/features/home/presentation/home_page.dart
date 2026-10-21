@@ -8,6 +8,7 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/home_scene.dart';
 import '../../../core/widgets/love_action_card.dart';
+import '../../../core/widgets/skeleton.dart';
 import '../../../core/config/app_config.dart';
 import '../../../data/family_repository.dart';
 import '../../../data/models.dart';
@@ -758,7 +759,9 @@ class _FloatingHomePhoto extends StatelessWidget {
             fit: BoxFit.cover,
             loadingBuilder: (context, child, progress) {
               if (progress == null) return child;
-              return const Center(child: CircularProgressIndicator());
+              return const Center(
+                child: SkeletonBox(width: 160, height: 18, borderRadius: 999),
+              );
             },
             errorBuilder: (_, __, ___) => const Center(
               child: Icon(Icons.broken_image_outlined, size: 42),
@@ -798,37 +801,90 @@ class _HomeCountersLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
     final wide = MediaQuery.sizeOf(context).width >= 760;
-    final placeholders = List.generate(
-      3,
-      (_) => Container(
-        height: wide ? 190 : 150,
-        decoration: BoxDecoration(
-          color: palette.card.withValues(alpha: .54),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: palette.primary.withValues(alpha: .10)),
-        ),
-      ),
-    );
+    final cards = List.generate(3, (_) => const _HomeCounterSkeleton());
     if (wide) {
-      return GridView.count(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        crossAxisCount: 3,
-        childAspectRatio: 1.58,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 14,
-        children: placeholders,
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (var i = 0; i < cards.length; i++) ...[
+            Expanded(child: cards[i]),
+            if (i < cards.length - 1) const SizedBox(width: 16),
+          ],
+        ],
       );
     }
     return Column(
       children: [
-        for (var i = 0; i < placeholders.length; i++) ...[
-          placeholders[i],
-          if (i < placeholders.length - 1) const SizedBox(height: 14),
+        for (var i = 0; i < cards.length; i++) ...[
+          cards[i],
+          if (i < cards.length - 1) const SizedBox(height: 14),
         ],
       ],
+    );
+  }
+}
+
+class _HomeCounterSkeleton extends StatelessWidget {
+  const _HomeCounterSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Container(
+      height: 242,
+      decoration: BoxDecoration(
+        color: palette.card.withValues(alpha: .90),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: palette.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SkeletonBox(height: 7, borderRadius: 0),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    SkeletonBox(width: 44, height: 44, borderRadius: 12),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SkeletonBox(width: 150, height: 16),
+                          SizedBox(height: 8),
+                          SkeletonBox(width: 100, height: 10),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                const SkeletonBox(width: 260, height: 11),
+                const SizedBox(height: 8),
+                const SkeletonBox(width: 210, height: 11),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    for (var i = 0; i < 3; i++) ...[
+                      const Expanded(
+                        child: SkeletonBox(height: 48, borderRadius: 12),
+                      ),
+                      if (i < 2) const SizedBox(width: 8),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 10),
+                const SkeletonBox(height: 32, borderRadius: 12),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

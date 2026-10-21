@@ -336,12 +336,15 @@ class _DesktopMainNavigation extends StatelessWidget {
         user?.canAccess('notas') == true ||
         user?.canAccess('localizacao') == true;
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 760),
+      constraints: const BoxConstraints(maxWidth: 560),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _DesktopNavPill(
-            icon: Icons.home_outlined,
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                _DesktopNavPill(
+                  icon: Icons.home_outlined,
             selectedIcon: Icons.home,
             label: 'Início',
             selected: currentLocation == '/',
@@ -364,6 +367,9 @@ class _DesktopMainNavigation extends StatelessWidget {
                 context.openAppRoute('/atalhos/memorias');
               }
             },
+                ),
+              ],
+            ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -408,9 +414,13 @@ class _DesktopMainNavigation extends StatelessWidget {
               ),
             ),
           ),
-          _DesktopNavPill(
-            icon: Icons.apps_outlined,
-            selectedIcon: Icons.apps,
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                _DesktopNavPill(
+                  icon: Icons.apps_outlined,
+                  selectedIcon: Icons.apps,
             label: 'Mais',
             selected: hasMore &&
                 (_isSelected('/atalhos/mais', currentLocation) ||
@@ -439,6 +449,9 @@ class _DesktopMainNavigation extends StatelessWidget {
                 context.openAppRoute('/perfil');
               }
             },
+                ),
+              ],
+            ),
           ),
         ],
       ),

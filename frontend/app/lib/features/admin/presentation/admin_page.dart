@@ -1,3 +1,4 @@
+import 'package:family_ui/family_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -3197,8 +3198,8 @@ class _ScheduleNotificationSheetState
 
   Future<void> _pickDate() async {
     final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await FamilyDatePicker.show(
+      context,
       initialDate: selectedDate.isBefore(now) ? now : selectedDate,
       firstDate: now,
       lastDate: now.add(const Duration(days: 365 * 2)),

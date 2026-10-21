@@ -1,3 +1,4 @@
+import 'package:family_ui/family_ui.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
@@ -17,29 +18,12 @@ class LovePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    final panel = Material(
+    return FamilyCard(
+      padding: padding,
+      maxWidth: maxWidth,
       color: palette.card.withValues(alpha: .92),
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: padding,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: palette.border),
-          boxShadow: [
-            BoxShadow(
-              color: palette.primary.withValues(alpha: .10),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: child,
-      ),
-    );
-    if (maxWidth == null) return panel;
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: maxWidth!),
-      child: panel,
+      borderColor: palette.border,
+      child: child,
     );
   }
 }
@@ -69,10 +53,10 @@ class LoveActionCard extends StatelessWidget {
     final palette = Theme.of(context).extension<AppPalette>()!;
     final card = Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         child: LovePanel(
           padding: padding,
           child: Row(

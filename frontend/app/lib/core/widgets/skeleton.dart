@@ -1,9 +1,9 @@
+import 'package:family_ui/family_ui.dart';
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
 import 'love_background.dart';
 
-class SkeletonBox extends StatefulWidget {
+class SkeletonBox extends StatelessWidget {
   const SkeletonBox({
     super.key,
     this.width,
@@ -16,41 +16,11 @@ class SkeletonBox extends StatefulWidget {
   final double borderRadius;
 
   @override
-  State<SkeletonBox> createState() => _SkeletonBoxState();
-}
-
-class _SkeletonBoxState extends State<SkeletonBox>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController controller;
-
-  @override
-  void initState() {
-    super.initState();
-    controller = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1100))
-      ..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
-    return FadeTransition(
-      opacity: Tween<double>(begin: .45, end: .9).animate(
-          CurvedAnimation(parent: controller, curve: Curves.easeInOut)),
-      child: Container(
-        width: widget.width,
-        height: widget.height,
-        decoration: BoxDecoration(
-          color: palette.primary.withValues(alpha: .10),
-          borderRadius: BorderRadius.circular(widget.borderRadius),
-        ),
-      ),
+    return FamilySkeletonBox(
+      width: width,
+      height: height,
+      borderRadius: borderRadius,
     );
   }
 }
@@ -64,31 +34,55 @@ class PageSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return LoveBackground(
       child: ListView(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(28),
         children: [
-          const Center(
-              child: SkeletonBox(width: 320, height: 44, borderRadius: 18)),
-          const SizedBox(height: 32),
           Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1200),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final columns = constraints.maxWidth >= 900
-                      ? 3
-                      : constraints.maxWidth >= 620
-                          ? 2
-                          : 1;
-                  return GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: columns,
-                    childAspectRatio: 1.1,
-                    crossAxisSpacing: 32,
-                    mainAxisSpacing: 32,
-                    children: List.generate(cards, (_) => const SkeletonCard()),
-                  );
-                },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      SkeletonBox(width: 44, height: 44, borderRadius: 999),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SkeletonBox(width: 240, height: 24),
+                            SizedBox(height: 8),
+                            SkeletonBox(width: 360, height: 12),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 22),
+                  const SkeletonBox(height: 52, borderRadius: 14),
+                  const SizedBox(height: 22),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final columns = constraints.maxWidth >= 900
+                          ? 3
+                          : constraints.maxWidth >= 620
+                              ? 2
+                              : 1;
+                      return GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: columns,
+                        childAspectRatio: 1.1,
+                        crossAxisSpacing: 18,
+                        mainAxisSpacing: 18,
+                        children: List.generate(
+                          cards,
+                          (_) => const SkeletonCard(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
           ),
@@ -103,23 +97,37 @@ class SkeletonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            SkeletonBox(width: 180, height: 24),
-            SizedBox(height: 18),
-            SkeletonBox(height: 16),
-            SizedBox(height: 10),
-            SkeletonBox(width: 220, height: 16),
-            Spacer(),
-            Align(
-                alignment: Alignment.centerRight,
-                child: SkeletonBox(width: 110, height: 14)),
-          ],
-        ),
+    return const FamilySkeletonCard(height: 220);
+  }
+}
+
+
+class ListPageSkeleton extends StatelessWidget {
+  const ListPageSkeleton({super.key, this.rows = 5});
+
+  final int rows;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.all(18),
+      itemCount: rows,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (_, __) => const Row(
+        children: [
+          SkeletonBox(width: 42, height: 42, borderRadius: 999),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SkeletonBox(width: 180, height: 14),
+                SizedBox(height: 8),
+                SkeletonBox(width: 250, height: 11),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

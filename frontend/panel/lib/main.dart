@@ -40,7 +40,7 @@ class _FamilyPanelState extends State<FamilyPanel> {
       debugShowCheckedModeBanner: false,
       theme: familyTheme(primary: session.primary, font: session.font),
       home: session.loading
-          ? const Scaffold(body: Center(child: CircularProgressIndicator()))
+          ? const PanelSkeleton()
           : !session.authenticated
           ? LoginPage(session: session)
           : Dashboard(session: session),
@@ -194,6 +194,96 @@ class PanelSession extends ChangeNotifier {
   }
 }
 
+class PanelSkeleton extends StatelessWidget {
+  const PanelSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Row(
+                children: [
+                  FamilySkeletonCircle(size: 38),
+                  SizedBox(width: 12),
+                  FamilySkeletonLine(width: 130, height: 18),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 220,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (var i = 0; i < 6; i++) ...[
+                            const FamilySkeletonLine(height: 38),
+                            const SizedBox(height: 8),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 24),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const FamilySkeletonLine(width: 240, height: 24),
+                          const SizedBox(height: 18),
+                          Expanded(
+                            child: GridView.count(
+                              crossAxisCount: 3,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                              children: const [
+                                FamilySkeletonCard(),
+                                FamilySkeletonCard(),
+                                FamilySkeletonCard(),
+                                FamilySkeletonCard(),
+                                FamilySkeletonCard(),
+                                FamilySkeletonCard(),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class PanelListSkeleton extends StatelessWidget {
+  const PanelListSkeleton({super.key, this.rows = 3});
+
+  final int rows;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (var i = 0; i < rows; i++) ...[
+          const FamilySkeletonBox(height: 64, borderRadius: 14),
+          if (i < rows - 1) const SizedBox(height: 10),
+        ],
+      ],
+    );
+  }
+}
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key, required this.session});
   final PanelSession session;
@@ -235,10 +325,9 @@ class _LoginPageState extends State<LoginPage> {
         constraints: const BoxConstraints(maxWidth: 440),
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(28),
-              child: Column(
+          child: FamilyCard(
+            padding: const EdgeInsets.all(28),
+            child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -249,19 +338,19 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 8),
                   const Text('Entre com seu email e senha.'),
                   const SizedBox(height: 24),
-                  TextField(
+                  FamilyTextField(
                     controller: email,
+                    label: 'Email',
                     keyboardType: TextInputType.emailAddress,
                     autofillHints: const [AutofillHints.email],
-                    decoration: const InputDecoration(labelText: 'Email'),
                   ),
                   const SizedBox(height: 12),
-                  TextField(
+                  FamilyTextField(
                     controller: password,
+                    label: 'Senha',
                     obscureText: true,
                     autofillHints: const [AutofillHints.password],
                     onSubmitted: (_) => _login(),
-                    decoration: const InputDecoration(labelText: 'Senha'),
                   ),
                   const SizedBox(height: 16),
                   if (error != null)
@@ -271,9 +360,11 @@ class _LoginPageState extends State<LoginPage> {
                         color: Theme.of(context).colorScheme.error,
                       ),
                     ),
-                  FilledButton(
-                    onPressed: busy ? null : _login,
-                    child: Text(busy ? 'Aguarde…' : 'Entrar'),
+                  FamilyButton(
+                    label: 'Entrar',
+                    loading: busy,
+                    expand: true,
+                    onPressed: _login,
                   ),
                 ],
               ),
@@ -281,7 +372,6 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       ),
-    ),
   );
 }
 
@@ -304,18 +394,18 @@ class _DashboardState extends State<Dashboard> {
       title: const Text('Sião'),
       actions: [
         if (widget.session.tenants.length > 1)
-          DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
+          SizedBox(
+            width: 220,
+            child: FamilySelect<String>(
               value: widget.session.tenant?['id'] as String?,
-              hint: const Text('Escolha a família'),
-              items: widget.session.tenants
-                  .map(
-                    (item) => DropdownMenuItem(
-                      value: item['id'] as String,
-                      child: Text(item['name'] as String),
-                    ),
-                  )
-                  .toList(),
+              hint: 'Escolha a família',
+              options: [
+                for (final item in widget.session.tenants)
+                  FamilySelectOption(
+                    value: item['id'] as String,
+                    label: item['name'] as String,
+                  ),
+              ],
               onChanged: (value) {
                 if (value != null) widget.session.switchTenant(value);
               },
@@ -441,10 +531,9 @@ class _Stat extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SizedBox(
     width: 230,
-    child: Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
+    child: FamilyCard(
+      padding: const EdgeInsets.all(20),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(label),
@@ -452,7 +541,6 @@ class _Stat extends StatelessWidget {
             Text('$value', style: Theme.of(context).textTheme.titleLarge),
           ],
         ),
-      ),
     ),
   );
 }
@@ -510,21 +598,18 @@ class _MembersState extends State<Members> {
           builder: (context, setDialogState) => Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
+              FamilyTextField(
                 controller: email,
+                label: 'Email',
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'Email'),
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: role,
-                decoration: const InputDecoration(labelText: 'Papel'),
-                items: const [
-                  DropdownMenuItem(value: 'member', child: Text('Membro')),
-                  DropdownMenuItem(
-                    value: 'admin',
-                    child: Text('Administrador'),
-                  ),
+              FamilySelect<String>(
+                value: role,
+                label: 'Papel',
+                options: const [
+                  FamilySelectOption(value: 'member', label: 'Membro'),
+                  FamilySelectOption(value: 'admin', label: 'Administrador'),
                 ],
                 onChanged: (value) =>
                     setDialogState(() => role = value ?? role),
@@ -533,13 +618,14 @@ class _MembersState extends State<Members> {
           ),
         ),
         actions: [
-          TextButton(
+          FamilyButton(
+            variant: FamilyButtonVariant.ghost,
+            label: 'Cancelar',
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
           ),
-          FilledButton(
+          FamilyButton(
+            label: 'Enviar convite',
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Enviar convite'),
           ),
         ],
       ),
@@ -569,16 +655,17 @@ class _MembersState extends State<Members> {
           ],
         ),
         actions: [
-          TextButton(
+          FamilyButton(
+            variant: FamilyButtonVariant.ghost,
+            label: 'Copiar link',
             onPressed: () {
               Clipboard.setData(ClipboardData(text: link));
               Navigator.pop(context);
             },
-            child: const Text('Copiar link'),
           ),
-          FilledButton(
+          FamilyButton(
+            label: 'Fechar',
             onPressed: () => Navigator.pop(context),
-            child: const Text('Fechar'),
           ),
         ],
       ),
@@ -594,10 +681,10 @@ class _MembersState extends State<Members> {
       children: [
         Align(
           alignment: Alignment.centerLeft,
-          child: FilledButton.icon(
+          child: FamilyButton(
             onPressed: _invite,
-            icon: const Icon(Icons.person_add_alt_1),
-            label: const Text('Convidar pessoa'),
+            icon: Icons.person_add_alt_1,
+            label: 'Convidar pessoa',
           ),
         ),
         const SizedBox(height: 20),
@@ -606,7 +693,7 @@ class _MembersState extends State<Members> {
           future: members,
           builder: (_, snapshot) {
             if (snapshot.hasError) return Text('${snapshot.error}');
-            if (!snapshot.hasData) return const LinearProgressIndicator();
+            if (!snapshot.hasData) return const PanelListSkeleton();
             return Column(
               children: snapshot.data!
                   .map(
@@ -634,7 +721,7 @@ class _MembersState extends State<Members> {
           future: invitations,
           builder: (_, snapshot) {
             if (snapshot.hasError) return Text('${snapshot.error}');
-            if (!snapshot.hasData) return const LinearProgressIndicator();
+            if (!snapshot.hasData) return const PanelListSkeleton();
             if (snapshot.data!.isEmpty) {
               return const Text('Nenhum convite pendente.');
             }
@@ -681,28 +768,27 @@ class _AppearanceState extends State<Appearance> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          TextField(
+          FamilyTextField(
             controller: color,
-            decoration: const InputDecoration(
-              labelText: 'Cor principal',
-              hintText: '#9F4D4D',
-            ),
+            label: 'Cor principal',
+            hint: '#9F4D4D',
           ),
           const SizedBox(height: 12),
-          DropdownButtonFormField(
-            initialValue: font,
-            decoration: const InputDecoration(labelText: 'Fonte'),
-            items: const [
-              DropdownMenuItem(value: 'nunitoSans', child: Text('Nunito Sans')),
-              DropdownMenuItem(
+          FamilySelect<String>(
+            value: font,
+            label: 'Fonte',
+            options: const [
+              FamilySelectOption(value: 'nunitoSans', label: 'Nunito Sans'),
+              FamilySelectOption(
                 value: 'cormorantGaramond',
-                child: Text('Cormorant Garamond'),
+                label: 'Cormorant Garamond',
               ),
             ],
             onChanged: (value) => font = value ?? font,
           ),
           const SizedBox(height: 16),
-          FilledButton(
+          FamilyButton(
+            label: 'Salvar aparência',
             onPressed: () async {
               try {
                 await widget.session.request(
@@ -716,7 +802,6 @@ class _AppearanceState extends State<Appearance> {
                 setState(() => status = e.toString());
               }
             },
-            child: const Text('Salvar aparência'),
           ),
           if (status != null)
             Padding(
@@ -752,7 +837,7 @@ class _PlatformOverviewState extends State<PlatformOverview> {
       future: data,
       builder: (_, snapshot) {
         if (snapshot.hasError) return Text('${snapshot.error}');
-        if (!snapshot.hasData) return const LinearProgressIndicator();
+        if (!snapshot.hasData) return const PanelListSkeleton();
         final items = (snapshot.data?['items'] as List?) ?? const [];
         return Column(
           children: items
@@ -808,12 +893,12 @@ class ContentAdministration extends StatelessWidget {
         'Abra as ferramentas completas no aplicativo. A sessão permanece protegida pelos cookies seguros da API.',
     child: Align(
       alignment: Alignment.centerLeft,
-      child: FilledButton.icon(
+      child: FamilyButton(
+        icon: Icons.open_in_new,
+        label: 'Abrir administração de conteúdo',
         onPressed: () async {
           await launchUrl(Uri.parse('$familyAppBase/admin'));
         },
-        icon: const Icon(Icons.open_in_new),
-        label: const Text('Abrir administração de conteúdo'),
       ),
     ),
   );

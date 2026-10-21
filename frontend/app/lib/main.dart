@@ -11,6 +11,7 @@ import 'core/query/app_query_provider.dart';
 import 'core/socket/socket_client.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
+import 'core/widgets/skeleton.dart';
 import 'core/toast/toast_controller.dart';
 import 'core/toast/toast_overlay.dart';
 import 'data/family_repository.dart';
@@ -181,7 +182,7 @@ class _BootSplash extends StatelessWidget {
           children: [
             Image.asset('assets/brand/family-logo.png', width: 96),
             const SizedBox(height: 20),
-            CircularProgressIndicator(color: palette.primary),
+            const SkeletonBox(width: 120, height: 12, borderRadius: 999),
           ],
         ),
       ),

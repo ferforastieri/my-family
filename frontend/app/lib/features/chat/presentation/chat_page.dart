@@ -941,7 +941,7 @@ class _MessagePane extends StatelessWidget {
                     ? const SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: SkeletonBox(height: 18, borderRadius: 9),
                       )
                     : const Icon(Icons.send),
               ),
@@ -1460,11 +1460,9 @@ class _MessageBubbleContent extends StatelessWidget {
                     fit: BoxFit.cover,
                     loadingBuilder: (context, child, progress) {
                       if (progress == null) return child;
-                      return SizedBox(
+                      return SkeletonBox(
                         height: compact ? 260 : 360,
-                        child: const Center(
-                          child: CircularProgressIndicator(),
-                        ),
+                        borderRadius: 8,
                       );
                     },
                     errorBuilder: (_, __, ___) => SizedBox(
@@ -2200,7 +2198,7 @@ void _openImagePreview(BuildContext context, String url) {
                 loadingBuilder: (context, child, progress) {
                   if (progress == null) return child;
                   return const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
+                    child: SkeletonBox(width: 84, height: 84, borderRadius: 16),
                   );
                 },
                 errorBuilder: (_, __, ___) => const Column(

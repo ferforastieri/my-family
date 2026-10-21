@@ -70,7 +70,46 @@ ThemeData buildAppTheme({
       style: IconButton.styleFrom(foregroundColor: palette.foreground),
     ),
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(foregroundColor: palette.primary),
+      style: TextButton.styleFrom(
+        foregroundColor: palette.primary,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: palette.primary,
+        side: BorderSide(color: palette.primary.withValues(alpha: .55)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      ),
+    ),
+    dropdownMenuTheme: DropdownMenuThemeData(
+      menuStyle: MenuStyle(
+        backgroundColor: WidgetStatePropertyAll(palette.card),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+      ),
+    ),
+    datePickerTheme: DatePickerThemeData(
+      backgroundColor: palette.card,
+      headerBackgroundColor: palette.primary,
+      headerForegroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: palette.card,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    ),
+    chipTheme: ChipThemeData(
+      backgroundColor: palette.card,
+      selectedColor: palette.primary.withValues(alpha: .14),
+      side: BorderSide(color: palette.border),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
     ),
     inputDecorationTheme: InputDecorationTheme(
       isDense: true,

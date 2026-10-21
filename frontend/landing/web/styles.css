@@ -90,3 +90,65 @@ h1 em { color: var(--wine); font-weight: inherit; }
   .form-row { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* Design system global — espelha os componentes do app e do painel. */
+:root {
+  --radius-control: 12px;
+  --radius-card: 16px;
+  --control-height: 48px;
+  --skeleton-base: #f0ded8;
+  --skeleton-highlight: #fbf0eb;
+}
+.family-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--white);
+  box-shadow: var(--shadow);
+}
+.family-input, .family-select, .family-textarea, .family-date {
+  width: 100%;
+  min-height: var(--control-height);
+  padding: .7rem .85rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+}
+.family-input:focus, .family-select:focus, .family-textarea:focus, .family-date:focus {
+  outline: 2px solid var(--wine);
+  outline-offset: 2px;
+}
+.family-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  min-height: var(--control-height);
+  padding: .7rem 1.15rem;
+  border-radius: 999px;
+  border: 1px solid var(--wine);
+  font-weight: 800;
+}
+.family-button.primary { background: var(--wine); color: white; }
+.family-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .5rem .8rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--white);
+  font-size: .85rem;
+  font-weight: 800;
+}
+.family-skeleton {
+  border-radius: var(--radius-control);
+  background: linear-gradient(100deg, var(--skeleton-base) 20%, var(--skeleton-highlight) 40%, var(--skeleton-base) 60%);
+  background-size: 220% 100%;
+  animation: siao-shimmer 1.4s linear infinite;
+}
+@keyframes siao-shimmer {
+  from { background-position: 120% 0; }
+  to { background-position: -120% 0; }
+}

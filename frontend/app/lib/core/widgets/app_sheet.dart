@@ -1,3 +1,4 @@
+import 'package:family_ui/family_ui.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
@@ -195,26 +196,12 @@ class AppDateField extends StatelessWidget {
 
   Future<void> _pick(BuildContext context) async {
     final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await FamilyDatePicker.show(
+      context,
       initialDate: value ?? now,
       firstDate: firstDate ?? DateTime(1900),
       lastDate: lastDate ?? DateTime(now.year + 20, 12, 31),
       helpText: label,
-      cancelText: 'Cancelar',
-      confirmText: 'Escolher',
-      builder: (context, child) {
-        final theme = Theme.of(context);
-        return Theme(
-          data: theme.copyWith(
-            colorScheme: theme.colorScheme.copyWith(
-              primary: theme.extension<AppPalette>()!.primary,
-              surface: theme.extension<AppPalette>()?.card,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (picked != null) onChanged(picked);
   }

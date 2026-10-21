@@ -47,7 +47,7 @@ class NotificationsSheet extends StatelessWidget {
                     ? ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
                         shrinkWrap: true,
-                        children: const [PageSkeleton(cards: 3)],
+                        children: const [ListPageSkeleton()],
                       )
                     : notifications.notifications.isEmpty
                         ? ListView(

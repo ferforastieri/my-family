@@ -16,6 +16,7 @@ import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
 import '../../../core/widgets/love_action_card.dart';
 import '../../../core/widgets/love_background.dart';
+import '../../../core/widgets/skeleton.dart';
 import '../../auth/presentation/auth_sheet.dart';
 import 'edit_profile_sheet.dart';
 
@@ -349,11 +350,11 @@ class _ProfileHero extends StatelessWidget {
                       width: 32,
                       height: 32,
                       child: uploadingAvatar
-                          ? const Padding(
-                              padding: EdgeInsets.all(8),
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
+                          ? const Center(
+                              child: SkeletonBox(
+                                width: 16,
+                                height: 16,
+                                borderRadius: 8,
                               ),
                             )
                           : const Icon(

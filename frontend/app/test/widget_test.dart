@@ -7,6 +7,7 @@ import 'package:siao/core/notifications/notifications_controller.dart';
 import 'package:siao/core/socket/socket_client.dart';
 import 'package:siao/core/theme/theme_controller.dart';
 import 'package:siao/core/toast/toast_controller.dart';
+import 'package:siao/core/widgets/skeleton.dart';
 import 'package:siao/data/family_repository.dart';
 import 'package:siao/main.dart';
 
@@ -27,7 +28,7 @@ void main() {
       ),
     );
 
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(SkeletonBox), findsOneWidget);
     expect(find.byType(Image), findsOneWidget);
   });
 }

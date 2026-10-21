@@ -32,6 +32,8 @@ dependencies:
   dio_web_adapter: ^2.1.2
   url_launcher: ^6.3.2
   web: ^1.1.1
+  family_ui:
+    path: ../packages/family_ui
 dev_dependencies:
   flutter_test:
     sdk: flutter
