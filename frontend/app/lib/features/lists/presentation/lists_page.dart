@@ -158,7 +158,7 @@ class _ListsPageState extends State<ListsPage> {
         header: const AppPageHeader(
           title: 'Listas',
           subtitle: 'Compras, tarefas e combinados.',
-          icon: Icons.checklist_outlined,
+          icon: FamilyIcons.checklistOutlined,
         ),
         children: [
           AppQuery<List<FamilyList>>(
@@ -365,7 +365,7 @@ class _SimpleListsPanel extends StatelessWidget {
                       border: Border.all(
                           color: Colors.white.withValues(alpha: .24)),
                     ),
-                    child: const Icon(Icons.checklist_outlined,
+                    child: const Icon(FamilyIcons.checklistOutlined,
                         color: Colors.white, size: 28),
                   ),
                   const SizedBox(width: 14),
@@ -396,7 +396,7 @@ class _SimpleListsPanel extends StatelessWidget {
                   ),
                   IconButton.filledTonal(
                     onPressed: onCreate,
-                    icon: const Icon(Icons.add),
+                    icon: const Icon(FamilyIcons.add),
                     tooltip: 'Nova lista',
                   ),
                 ],
@@ -406,7 +406,7 @@ class _SimpleListsPanel extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: lists.isEmpty
                   ? const _EmptyState(
-                      icon: Icons.playlist_add_outlined,
+                      icon: FamilyIcons.playlistAddOutlined,
                       title: 'Nenhuma lista ainda',
                       text:
                           'Crie uma lista para compras, tarefas ou combinados.',
@@ -464,13 +464,13 @@ class _SimpleListsPanel extends StatelessWidget {
                             onPressed: selected == null
                                 ? null
                                 : () => onDeleteList(selected!),
-                            icon: const Icon(Icons.delete_outline),
+                            icon: const Icon(FamilyIcons.deleteOutline),
                             tooltip: 'Excluir lista',
                           ),
                           const SizedBox(width: 4),
                           IconButton.filled(
                             onPressed: selected == null ? null : onAdd,
-                            icon: const Icon(Icons.add_task_outlined),
+                            icon: const Icon(FamilyIcons.addTaskOutlined),
                             tooltip: 'Adicionar item',
                           ),
                         ],
@@ -478,13 +478,13 @@ class _SimpleListsPanel extends StatelessWidget {
                       const SizedBox(height: 10),
                       if (selected == null)
                         const _EmptyState(
-                          icon: Icons.touch_app_outlined,
+                          icon: FamilyIcons.touchAppOutlined,
                           title: 'Escolha uma lista',
                           text: 'Toque em uma lista acima para ver os itens.',
                         )
                       else if (items.isEmpty)
                         const _EmptyState(
-                          icon: Icons.check_circle_outline,
+                          icon: FamilyIcons.checkCircleOutline,
                           title: 'Lista vazia',
                           text: 'Adicione o primeiro item quando quiser.',
                         )
@@ -569,7 +569,7 @@ class _ListPickerButton extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.checklist_outlined, color: palette.primary),
+          Icon(FamilyIcons.checklistOutlined, color: palette.primary),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -596,7 +596,7 @@ class _ListPickerButton extends StatelessWidget {
               ],
             ),
           ),
-          Icon(Icons.keyboard_arrow_down, color: palette.primary),
+          Icon(FamilyIcons.keyboardArrowDown, color: palette.primary),
         ],
       ),
     );
@@ -638,7 +638,7 @@ class _ListOptionsSheet extends StatelessWidget {
         const AppSheetHeader(
           title: 'Escolher lista',
           subtitle: 'Selecione qual lista deseja visualizar.',
-          icon: Icons.checklist_outlined,
+          icon: FamilyIcons.checklistOutlined,
         ),
         const SizedBox(height: 12),
         for (final list in lists)
@@ -669,7 +669,7 @@ class _ListOptionTile extends StatelessWidget {
     final description = list.description?.trim();
     return ListTile(
       onTap: onTap,
-      leading: Icon(Icons.checklist_outlined,
+      leading: Icon(FamilyIcons.checklistOutlined,
           color: selected ? palette.primary : palette.muted),
       title:
           Text(list.title, style: const TextStyle(fontWeight: FontWeight.w900)),
@@ -677,7 +677,7 @@ class _ListOptionTile extends StatelessWidget {
           ? null
           : Text(description, maxLines: 1, overflow: TextOverflow.ellipsis),
       trailing:
-          selected ? Icon(Icons.check_circle, color: palette.primary) : null,
+          selected ? Icon(FamilyIcons.checkCircle, color: palette.primary) : null,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
     );
   }
@@ -714,7 +714,7 @@ class _ListItemRow extends StatelessWidget {
           ),
           IconButton(
             onPressed: onDelete,
-            icon: const Icon(Icons.delete_outline),
+            icon: const Icon(FamilyIcons.deleteOutline),
             tooltip: 'Excluir',
           ),
         ],
@@ -740,7 +740,7 @@ class _DeleteListSheet extends StatelessWidget {
           const AppSheetHeader(
             title: 'Excluir lista',
             subtitle: 'Esta ação remove a lista e todos os itens dela.',
-            icon: Icons.delete_outline,
+            icon: FamilyIcons.deleteOutline,
           ),
           const SizedBox(height: 14),
           DecoratedBox(
@@ -773,7 +773,7 @@ class _DeleteListSheet extends StatelessWidget {
               Expanded(
                 child: FamilyFilledButton.icon(
                   onPressed: () => Navigator.pop(context, true),
-                  icon: const Icon(Icons.delete_outline),
+                  icon: const Icon(FamilyIcons.deleteOutline),
                   label: const Text('Excluir'),
                 ),
               ),
@@ -830,7 +830,7 @@ class _ListFormSheet extends StatelessWidget {
               if (context.mounted) Navigator.pop(context);
             },
             label: 'Salvar',
-            icon: Icons.save_outlined,
+            icon: FamilyIcons.saveOutlined,
           ),
         ],
       ),
@@ -871,7 +871,7 @@ class _ItemFormSheet extends StatelessWidget {
               if (context.mounted) Navigator.pop(context);
             },
             label: 'Adicionar',
-            icon: Icons.add,
+            icon: FamilyIcons.add,
           ),
         ],
       ),

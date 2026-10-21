@@ -1,3 +1,4 @@
+import 'package:family_ui/family_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -90,21 +91,21 @@ GoRouter buildRouter(
                     label: 'Memórias em Fotos',
                     description: 'Fotos, vídeos e álbuns da família.',
                     path: '/galeria',
-                    icon: Icons.photo_library_outlined,
+                    icon: FamilyIcons.photoLibraryOutlined,
                   ),
                 if (auth.user?.canAccess('playlist') == true)
                   const MobileOptionItem(
                     label: 'Nossa Playlist',
                     description: 'Músicas que marcaram nossa história.',
                     path: '/playlist',
-                    icon: Icons.music_note_outlined,
+                    icon: FamilyIcons.musicNoteOutlined,
                   ),
                 if (auth.user?.canAccess('cartas') == true)
                   const MobileOptionItem(
                     label: 'Carta de Amor',
                     description: 'Cartas e declarações especiais.',
                     path: '/carta-de-amor',
-                    icon: Icons.card_giftcard_outlined,
+                    icon: FamilyIcons.cardGiftcardOutlined,
                   ),
                 if (auth.user?.canAccess('nossaHistoria') == true)
                   const MobileOptionItem(
@@ -112,7 +113,7 @@ GoRouter buildRouter(
                     description:
                         'Capítulos e registros da história da família.',
                     path: '/nossa-historia',
-                    icon: Icons.menu_book_outlined,
+                    icon: FamilyIcons.menuBookOutlined,
                   ),
               ],
             )),
@@ -127,28 +128,28 @@ GoRouter buildRouter(
                     label: 'Jogos do Amor',
                     description: 'Jogos simples para se divertir juntos.',
                     path: '/jogos',
-                    icon: Icons.sports_esports_outlined,
+                    icon: FamilyIcons.sportsEsportsOutlined,
                   ),
                 if (auth.user?.canAccess('listas') == true)
                   const MobileOptionItem(
                     label: 'Listas',
                     description: 'Compras, tarefas e combinados.',
                     path: '/listas',
-                    icon: Icons.checklist_outlined,
+                    icon: FamilyIcons.checklistOutlined,
                   ),
                 if (auth.user?.canAccess('notas') == true)
                   const MobileOptionItem(
                     label: 'Notas',
                     description: 'Ideias, lembretes e registros soltos.',
                     path: '/notas',
-                    icon: Icons.sticky_note_2_outlined,
+                    icon: FamilyIcons.stickyNote2Outlined,
                   ),
                 if (auth.user?.canAccess('localizacao') == true)
                   const MobileOptionItem(
                     label: 'Localização',
                     description: 'Mapa da família e bateria de cada pessoa.',
                     path: '/localizacao',
-                    icon: Icons.location_on_outlined,
+                    icon: FamilyIcons.locationOnOutlined,
                   ),
               ],
             )),

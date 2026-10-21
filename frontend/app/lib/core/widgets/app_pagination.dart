@@ -1,3 +1,4 @@
+import 'package:family_ui/family_ui.dart';
 import 'package:flutter/material.dart';
 
 class AppPagination extends StatelessWidget {
@@ -23,7 +24,7 @@ class AppPagination extends StatelessWidget {
       children: [
         IconButton(
           onPressed: onPrevious,
-          icon: const Icon(Icons.chevron_left),
+          icon: const Icon(FamilyIcons.chevronLeft),
           tooltip: 'Página anterior',
         ),
         Flexible(
@@ -35,7 +36,7 @@ class AppPagination extends StatelessWidget {
         ),
         IconButton(
           onPressed: onNext,
-          icon: const Icon(Icons.chevron_right),
+          icon: const Icon(FamilyIcons.chevronRight),
           tooltip: 'Próxima página',
         ),
       ],

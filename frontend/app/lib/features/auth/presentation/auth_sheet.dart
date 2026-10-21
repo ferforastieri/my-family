@@ -54,8 +54,8 @@ class _AuthSheetState extends State<AuthSheet> {
                 ? 'Crie sua conta e comece a guardar as memórias da família.'
                 : 'Acesse com seu email e senha.',
             icon: registerMode
-                ? Icons.person_add_alt_1_outlined
-                : Icons.lock_open_outlined,
+                ? FamilyIcons.personAddAlt1Outlined
+                : FamilyIcons.lockOpenOutlined,
           ),
           const SizedBox(height: 16),
           if (registerMode) ...[
@@ -91,8 +91,8 @@ class _AuthSheetState extends State<AuthSheet> {
                     setState(() => obscurePassword = !obscurePassword),
                 icon: Icon(
                   obscurePassword
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
+                      ? FamilyIcons.visibilityOutlined
+                      : FamilyIcons.visibilityOffOutlined,
                 ),
               ),
             ),
@@ -108,7 +108,7 @@ class _AuthSheetState extends State<AuthSheet> {
           FamilyButton(
             onPressed: _submit,
             loading: loading,
-            icon: registerMode ? Icons.person_add_alt : Icons.login,
+            icon: registerMode ? FamilyIcons.personAddAlt : FamilyIcons.login,
             label: registerMode ? 'Criar conta' : 'Entrar',
           ),
           FamilyTextButton(

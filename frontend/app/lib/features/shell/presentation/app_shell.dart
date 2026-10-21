@@ -45,18 +45,11 @@ class AppShell extends StatelessWidget {
           final wide = constraints.maxWidth >= 860;
           return Scaffold(
             appBar: wide ? _buildDesktopAppBar(context) : null,
-            drawer: wide
-                ? null
-                : _MobileGlobalDrawer(
-                    auth: auth,
-                    currentLocation: currentLocation,
-                    onLogin: () => _openLogin(context),
-                  ),
             body: Builder(
               builder: (shellContext) => AppHeaderActionsScope(
                 onNotifications: () => _openNotificationsSheet(shellContext),
                 onTheme: () => _openThemeSheet(shellContext),
-                onNavigation: () => Scaffold.of(shellContext).openDrawer(),
+                onNavigation: () => _openNavigationSheet(shellContext),
                 notificationCount: notifications.badgeCount,
                 child: child,
               ),
@@ -99,7 +92,7 @@ class AppShell extends StatelessWidget {
                   onPressed: () => _openNotificationsSheet(context),
                   icon: _BadgeIcon(
                     count: notifications.badgeCount,
-                    child: const Icon(Icons.notifications_outlined),
+                    child: const Icon(FamilyIcons.notificationsOutlined),
                   ),
                   tooltip: 'Notificações',
                 ),
@@ -112,6 +105,17 @@ class AppShell extends StatelessWidget {
       bottom: const PreferredSize(
         preferredSize: Size.fromHeight(1),
         child: Divider(height: 1),
+      ),
+    );
+  }
+
+  void _openNavigationSheet(BuildContext context) {
+    showAppSheet<void>(
+      context: context,
+      builder: (_) => _NavigationSheet(
+        auth: auth,
+        currentLocation: currentLocation,
+        onLogin: () => _openLogin(context),
       ),
     );
   }
@@ -139,8 +143,8 @@ class AppShell extends StatelessWidget {
   }
 }
 
-class _MobileGlobalDrawer extends StatelessWidget {
-  const _MobileGlobalDrawer({
+class _NavigationSheet extends StatelessWidget {
+  const _NavigationSheet({
     required this.auth,
     required this.currentLocation,
     required this.onLogin,
@@ -177,13 +181,11 @@ class _MobileGlobalDrawer extends StatelessWidget {
       }
     }
 
-    return Drawer(
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 18, 14, 22),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
               Row(
                 children: [
                   Container(
@@ -218,36 +220,36 @@ class _MobileGlobalDrawer extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 22),
-              _MobileDrawerItem(
-                icon: Icons.home_outlined,
+              _NavigationSheetItem(
+                icon: FamilyIcons.homeOutlined,
                 label: 'Início',
                 selected: currentLocation == '/',
                 onTap: () => navigate('/'),
               ),
-              _MobileDrawerItem(
-                icon: Icons.photo_library_outlined,
+              _NavigationSheetItem(
+                icon: FamilyIcons.photoLibraryOutlined,
                 label: 'Memórias',
                 selected: _isSelected('/atalhos/memorias', currentLocation),
                 enabled: user == null || hasMemories,
                 onTap: () => requireAccess(hasMemories, '/atalhos/memorias'),
               ),
-              _MobileDrawerItem(
-                icon: Icons.chat_bubble_outline,
+              _NavigationSheetItem(
+                icon: FamilyIcons.chatBubbleOutline,
                 label: 'Conversas',
                 selected: _isSelected('/chat', currentLocation),
                 enabled: user == null || user.canAccess('chat'),
                 onTap: () =>
                     requireAccess(user?.canAccess('chat') == true, '/chat'),
               ),
-              _MobileDrawerItem(
-                icon: Icons.apps_outlined,
+              _NavigationSheetItem(
+                icon: FamilyIcons.appsOutlined,
                 label: 'Mais',
                 selected: _isSelected('/atalhos/mais', currentLocation),
                 enabled: user == null || hasMore,
                 onTap: () => requireAccess(hasMore, '/atalhos/mais'),
               ),
-              _MobileDrawerItem(
-                icon: Icons.person_outline,
+              _NavigationSheetItem(
+                icon: FamilyIcons.personOutline,
                 label: 'Perfil',
                 selected: _isSelected('/perfil', currentLocation),
                 onTap: () => requireAccess(user != null, '/perfil'),
@@ -257,8 +259,8 @@ class _MobileGlobalDrawer extends StatelessWidget {
                   padding: EdgeInsets.symmetric(vertical: 10),
                   child: Divider(),
                 ),
-                _MobileDrawerItem(
-                  icon: Icons.admin_panel_settings_outlined,
+                _NavigationSheetItem(
+                  icon: FamilyIcons.adminPanelSettingsOutlined,
                   label: 'Administração',
                   selected: _isSelected('/admin', currentLocation),
                   onTap: () => navigate('/admin'),
@@ -266,14 +268,12 @@ class _MobileGlobalDrawer extends StatelessWidget {
               ],
             ],
           ),
-        ),
-      ),
     );
   }
 }
 
-class _MobileDrawerItem extends StatelessWidget {
-  const _MobileDrawerItem({
+class _NavigationSheetItem extends StatelessWidget {
+  const _NavigationSheetItem({
     required this.icon,
     required this.label,
     required this.selected,
@@ -340,15 +340,15 @@ class _DesktopMainNavigation extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 _DesktopNavPill(
-                  icon: Icons.home_outlined,
-            selectedIcon: Icons.home,
+                  icon: FamilyIcons.homeOutlined,
+            selectedIcon: FamilyIcons.home,
             label: 'Início',
             selected: currentLocation == '/',
             onTap: () => context.openAppRoute('/'),
           ),
           _DesktopNavPill(
-            icon: Icons.photo_library_outlined,
-            selectedIcon: Icons.photo_library,
+            icon: FamilyIcons.photoLibraryOutlined,
+            selectedIcon: FamilyIcons.photoLibrary,
             label: 'Memórias',
             selected: hasMemories &&
                 (_isSelected('/atalhos/memorias', currentLocation) ||
@@ -415,8 +415,8 @@ class _DesktopMainNavigation extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 _DesktopNavPill(
-                  icon: Icons.apps_outlined,
-                  selectedIcon: Icons.apps,
+                  icon: FamilyIcons.appsOutlined,
+                  selectedIcon: FamilyIcons.apps,
             label: 'Mais',
             selected: hasMore &&
                 (_isSelected('/atalhos/mais', currentLocation) ||
@@ -433,8 +433,8 @@ class _DesktopMainNavigation extends StatelessWidget {
             },
           ),
           _DesktopNavPill(
-            icon: Icons.person_outline,
-            selectedIcon: Icons.person,
+            icon: FamilyIcons.personOutline,
+            selectedIcon: FamilyIcons.person,
             label: 'Perfil',
             selected: _isSelected('/perfil', currentLocation) ||
                 _isSelected('/admin', currentLocation),
@@ -562,7 +562,7 @@ class _ThemeSheet extends StatelessWidget {
                       ),
                     ),
                     child: theme.primary.toARGB32() == option.color.toARGB32()
-                        ? const Icon(Icons.check, color: Colors.white, size: 18)
+                        ? const Icon(FamilyIcons.check, color: Colors.white, size: 18)
                         : null,
                   ),
                 ),
@@ -632,12 +632,12 @@ class _ThemeSheet extends StatelessWidget {
             segments: const [
               ButtonSegment(
                 value: ThemeMode.light,
-                icon: Icon(Icons.light_mode_outlined),
+                icon: Icon(FamilyIcons.lightModeOutlined),
                 label: Text('Claro'),
               ),
               ButtonSegment(
                 value: ThemeMode.dark,
-                icon: Icon(Icons.dark_mode_outlined),
+                icon: Icon(FamilyIcons.darkModeOutlined),
                 label: Text('Escuro'),
               ),
             ],
@@ -703,15 +703,15 @@ class _MobileBottomNavigation extends StatelessWidget {
           child: Row(
             children: [
               _MobileNavButton(
-                icon: Icons.home_outlined,
-                selectedIcon: Icons.home,
+                icon: FamilyIcons.homeOutlined,
+                selectedIcon: FamilyIcons.home,
                 label: 'Início',
                 selected: currentLocation == '/',
                 onTap: () => context.openAppRoute('/'),
               ),
               _MobileNavButton(
-                icon: Icons.photo_library_outlined,
-                selectedIcon: Icons.photo_library,
+                icon: FamilyIcons.photoLibraryOutlined,
+                selectedIcon: FamilyIcons.photoLibrary,
                 label: 'Memórias',
                 selected: hasMemories &&
                     (_isSelected('/atalhos/memorias', currentLocation) ||
@@ -772,8 +772,8 @@ class _MobileBottomNavigation extends StatelessWidget {
                 ),
               ),
               _MobileNavButton(
-                icon: Icons.apps_outlined,
-                selectedIcon: Icons.apps,
+                icon: FamilyIcons.appsOutlined,
+                selectedIcon: FamilyIcons.apps,
                 label: 'Mais',
                 selected: hasMore &&
                     (_isSelected('/atalhos/mais', currentLocation) ||
@@ -790,8 +790,8 @@ class _MobileBottomNavigation extends StatelessWidget {
                 },
               ),
               _MobileNavButton(
-                icon: Icons.person_outline,
-                selectedIcon: Icons.person,
+                icon: FamilyIcons.personOutline,
+                selectedIcon: FamilyIcons.person,
                 label: 'Perfil',
                 selected: _isSelected('/perfil', currentLocation) ||
                     _isSelected('/admin', currentLocation),
@@ -883,7 +883,7 @@ class MobileOptionsPage extends StatelessWidget {
         header: AppPageHeader(
           title: title,
           subtitle: 'Escolha uma opção.',
-          icon: Icons.favorite_outline,
+          icon: FamilyIcons.favoriteOutline,
         ),
         headerGap: 22,
         children: [

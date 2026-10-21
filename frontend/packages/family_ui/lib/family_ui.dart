@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 export 'src/family_button.dart';
 export 'src/family_buttons.dart';
 export 'src/family_fields.dart';
+export 'src/family_icons.dart';
 export 'src/family_skeleton.dart';
 export 'src/family_surfaces.dart';
 

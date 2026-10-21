@@ -76,8 +76,8 @@ class NotificationsSheet extends StatelessWidget {
                               return ListTile(
                                 leading: Icon(
                                   item.read
-                                      ? Icons.notifications_none_outlined
-                                      : Icons.notifications_active_outlined,
+                                      ? FamilyIcons.notificationsNoneOutlined
+                                      : FamilyIcons.notificationsActiveOutlined,
                                   color: item.read
                                       ? palette.muted
                                       : palette.primary,
@@ -104,8 +104,8 @@ class NotificationsSheet extends StatelessWidget {
                 onPressed: notifications.configurePush,
                 label: notifications.pushReady ? 'Push ativo' : 'Ativar push',
                 icon: notifications.pushReady
-                    ? Icons.check
-                    : Icons.notifications_active_outlined,
+                    ? FamilyIcons.check
+                    : FamilyIcons.notificationsActiveOutlined,
               ),
             ],
           );

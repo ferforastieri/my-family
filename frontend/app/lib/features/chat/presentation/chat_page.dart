@@ -203,7 +203,7 @@ class _ChatPageState extends State<ChatPage> {
             const AppSheetHeader(
               title: 'Apagar mensagem?',
               subtitle: 'Ela continuará aparecendo como mensagem apagada.',
-              icon: Icons.delete_outline,
+              icon: FamilyIcons.deleteOutline,
             ),
             const SizedBox(height: 20),
             AppSheetActions(
@@ -276,7 +276,7 @@ class _ChatPageState extends State<ChatPage> {
                                   ? 'Chat'
                                   : widget.chat.active?.title ?? 'Chat',
                               subtitle: null,
-                              icon: Icons.chat_bubble_outline,
+                              icon: FamilyIcons.chatBubbleOutline,
                             ),
                           ),
                           Expanded(child: messages),
@@ -379,7 +379,7 @@ class _EditMessageSheetState extends State<_EditMessageSheet> {
         children: [
           const AppSheetHeader(
             title: 'Editar mensagem',
-            icon: Icons.edit_outlined,
+            icon: FamilyIcons.editOutlined,
           ),
           const SizedBox(height: 18),
           FamilyTextField(
@@ -486,7 +486,7 @@ class _ConversationListState extends State<_ConversationList> {
           padding: EdgeInsets.fromLTRB(18, 10, 18, 0),
           child: AppPageHeader(
             title: 'Conversas',
-            icon: Icons.chat_bubble_outline,
+            icon: FamilyIcons.chatBubbleOutline,
           ),
         ),
         Padding(
@@ -496,12 +496,12 @@ class _ConversationListState extends State<_ConversationList> {
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
               hintText: 'Pesquisar conversas',
-              prefixIcon: const Icon(Icons.search_rounded),
+              prefixIcon: const Icon(FamilyIcons.searchRounded),
               suffixIcon: searchQuery.isEmpty
                   ? null
                   : IconButton(
                       onPressed: searchController.clear,
-                      icon: const Icon(Icons.close_rounded),
+                      icon: const Icon(FamilyIcons.closeRounded),
                       tooltip: 'Limpar pesquisa',
                     ),
               isDense: true,
@@ -711,8 +711,8 @@ class _ConversationListItem extends StatelessWidget {
                       radius: 18,
                       child: Icon(
                         favorite
-                            ? Icons.star_rounded
-                            : Icons.star_outline_rounded,
+                            ? FamilyIcons.starRounded
+                            : FamilyIcons.starOutlineRounded,
                         color: favorite ? palette.primary : palette.muted,
                         size: 20,
                       ),
@@ -866,7 +866,7 @@ class _MessagePane extends StatelessWidget {
               controller: name,
               decoration: const InputDecoration(
                 labelText: 'Seu nome',
-                prefixIcon: Icon(Icons.badge_outlined),
+                prefixIcon: Icon(FamilyIcons.badgeOutlined),
               ),
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => onSendText(),
@@ -883,12 +883,12 @@ class _MessagePane extends StatelessWidget {
             children: [
               IconButton(
                 onPressed: sending ? null : onOpenEmojiPanel,
-                icon: const Icon(Icons.sentiment_satisfied_alt_outlined),
+                icon: const Icon(FamilyIcons.sentimentSatisfiedAltOutlined),
                 tooltip: 'Emojis e figurinhas',
               ),
               IconButton(
                 onPressed: sending ? null : onSendImage,
-                icon: const Icon(Icons.image_outlined),
+                icon: const Icon(FamilyIcons.imageOutlined),
                 tooltip: 'Enviar imagem',
               ),
               Expanded(
@@ -944,7 +944,7 @@ class _MessagePane extends StatelessWidget {
                         height: 18,
                         child: SkeletonBox(height: 18, borderRadius: 9),
                       )
-                    : const Icon(Icons.send),
+                    : const Icon(FamilyIcons.send),
               ),
             ],
           ),
@@ -1047,7 +1047,7 @@ class _ReplyComposerPreview extends StatelessWidget {
           IconButton(
             visualDensity: VisualDensity.compact,
             onPressed: onCancel,
-            icon: const Icon(Icons.close),
+            icon: const Icon(FamilyIcons.close),
             tooltip: 'Cancelar resposta',
           ),
         ],
@@ -1219,7 +1219,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      Icons.reply,
+                      FamilyIcons.reply,
                       size: 19,
                       color: palette.primary,
                     ),
@@ -1426,7 +1426,7 @@ class _MessageBubbleContent extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    Icons.block_outlined,
+                    FamilyIcons.blockOutlined,
                     size: 15,
                     color: palette.muted,
                   ),
@@ -1469,7 +1469,7 @@ class _MessageBubbleContent extends StatelessWidget {
                     errorBuilder: (_, __, ___) => SizedBox(
                       height: compact ? 180 : 240,
                       child: const Center(
-                        child: Icon(Icons.broken_image_outlined, size: 38),
+                        child: Icon(FamilyIcons.brokenImageOutlined, size: 38),
                       ),
                     ),
                   ),
@@ -1594,7 +1594,7 @@ class _MessageMeta extends StatelessWidget {
         if (isMine) ...[
           const SizedBox(width: 3),
           Icon(
-            wasRead || wasDelivered ? Icons.done_all : Icons.done,
+            wasRead || wasDelivered ? FamilyIcons.doneAll : FamilyIcons.done,
             size: 16,
             color: wasRead || wasDelivered ? palette.primary : palette.muted,
           ),
@@ -1677,14 +1677,14 @@ class _EmojiStickerSheet extends StatelessWidget {
             const AppSheetHeader(
               title: 'Emojis e figurinhas',
               subtitle: 'Escolha um emoji ou envie uma figurinha.',
-              icon: Icons.sentiment_satisfied_alt_outlined,
+              icon: FamilyIcons.sentimentSatisfiedAltOutlined,
             ),
             const SizedBox(height: 12),
             TabBar(
               tabs: const [
-                Tab(icon: Icon(Icons.emoji_emotions_outlined), text: 'Emojis'),
+                Tab(icon: Icon(FamilyIcons.emojiEmotionsOutlined), text: 'Emojis'),
                 Tab(
-                    icon: Icon(Icons.sticky_note_2_outlined),
+                    icon: Icon(FamilyIcons.stickyNote2Outlined),
                     text: 'Figurinhas'),
               ],
               labelColor: palette.primary,
@@ -1931,28 +1931,28 @@ class _MessageActionsSheet extends StatelessWidget {
           const AppSheetHeader(
             title: 'Mensagem',
             subtitle: 'Escolha uma ação para esta mensagem.',
-            icon: Icons.chat_bubble_outline,
+            icon: FamilyIcons.chatBubbleOutline,
           ),
           const SizedBox(height: 12),
           _MessageActionTile(
-            icon: Icons.reply,
+            icon: FamilyIcons.reply,
             label: 'Responder',
             onTap: () => Navigator.pop(context, _MessageAction.reply),
           ),
           _MessageActionTile(
-            icon: Icons.info_outline,
+            icon: FamilyIcons.infoOutline,
             label: 'Informações',
             onTap: () => Navigator.pop(context, _MessageAction.info),
           ),
           if (isMine && canEdit)
             _MessageActionTile(
-              icon: Icons.edit_outlined,
+              icon: FamilyIcons.editOutlined,
               label: 'Editar',
               onTap: () => Navigator.pop(context, _MessageAction.edit),
             ),
           if (isMine)
             _MessageActionTile(
-              icon: Icons.delete_outline,
+              icon: FamilyIcons.deleteOutline,
               label: 'Apagar',
               destructive: true,
               onTap: () => Navigator.pop(context, _MessageAction.delete),
@@ -2014,33 +2014,33 @@ class _MessageInfoSheet extends StatelessWidget {
           const AppSheetHeader(
             title: 'Informações',
             subtitle: 'Detalhes desta mensagem.',
-            icon: Icons.info_outline,
+            icon: FamilyIcons.infoOutline,
           ),
           const SizedBox(height: 14),
           _MessageInfoRow(
-            icon: Icons.person_outline,
+            icon: FamilyIcons.personOutline,
             label: 'Enviada por',
             value: message.senderName,
           ),
           _MessageInfoRow(
-            icon: Icons.schedule_outlined,
+            icon: FamilyIcons.scheduleOutlined,
             label: 'Enviada em',
             value: _dateTimeLabel(message.at),
           ),
           if (message.editedAt != null)
             _MessageInfoRow(
-              icon: Icons.edit_outlined,
+              icon: FamilyIcons.editOutlined,
               label: 'Editada em',
               value: _dateTimeLabel(message.editedAt!),
             ),
           if (message.deletedAt != null)
             _MessageInfoRow(
-              icon: Icons.delete_outline,
+              icon: FamilyIcons.deleteOutline,
               label: 'Apagada em',
               value: _dateTimeLabel(message.deletedAt!),
             ),
           _MessageInfoRow(
-            icon: isMine && wasRead ? Icons.done_all : Icons.done,
+            icon: isMine && wasRead ? FamilyIcons.doneAll : FamilyIcons.done,
             label: 'Status',
             value: isMine ? (wasRead ? 'Visualizada' : 'Enviada') : 'Recebida',
           ),
@@ -2207,7 +2207,7 @@ void _openImagePreview(BuildContext context, String url) {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.broken_image_outlined,
+                      FamilyIcons.brokenImageOutlined,
                       color: Colors.white,
                       size: 54,
                     ),

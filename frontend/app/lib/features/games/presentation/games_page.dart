@@ -115,13 +115,13 @@ class _GamesHub extends StatelessWidget {
             return Column(
               children: [
                 _GameOptionCard(
-                  icon: Icons.favorite,
+                  icon: FamilyIcons.favorite,
                   title: 'Quiz do Amor',
                   description: 'Jogo de perguntas para brincar juntos.',
                   onTap: () => onOpen(_GameView.quiz),
                 ),
                 _GameOptionCard(
-                  icon: Icons.grid_on,
+                  icon: FamilyIcons.gridOn,
                   title: 'Caça Palavras',
                   description: 'Encontre palavras especiais no tabuleiro.',
                   onTap: () => onOpen(_GameView.wordSearch),
@@ -150,7 +150,7 @@ class _GamesHero extends StatelessWidget {
     return const AppPageHeader(
       title: 'Jogos do Amor',
       subtitle: 'Escolha um jogo.',
-      icon: Icons.favorite_outline,
+      icon: FamilyIcons.favoriteOutline,
     );
   }
 }
@@ -244,7 +244,7 @@ class _QuizGameState extends State<_QuizGame> {
       header: _GamePlayHeader(
         title: 'Quiz do Amor',
         subtitle: 'Responda uma pergunta por vez.',
-        icon: Icons.favorite_outline,
+        icon: FamilyIcons.favoriteOutline,
         onBack: widget.onBack,
       ),
       headerGap: 14,
@@ -355,7 +355,7 @@ class _QuizQuestionView extends StatelessWidget {
                 for (var i = 0; i < question.options.length; i++)
                   FamilyOutlinedButton.icon(
                     onPressed: () => onAnswer(i),
-                    icon: Icon(Icons.favorite_border, color: palette.primary),
+                    icon: Icon(FamilyIcons.favoriteBorder, color: palette.primary),
                     label: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
@@ -506,7 +506,7 @@ class _WordSearchGameState extends State<_WordSearchGame> {
       header: _GamePlayHeader(
         title: 'Caça Palavras',
         subtitle: 'Toque na primeira letra e depois na última.',
-        icon: Icons.grid_on_outlined,
+        icon: FamilyIcons.gridOnOutlined,
         onBack: widget.onBack,
       ),
       headerGap: 14,
@@ -706,7 +706,7 @@ class _WordSearchSidePanel extends StatelessWidget {
                 for (final word in words)
                   Chip(
                     avatar: Icon(
-                      found.contains(word) ? Icons.check_circle : Icons.search,
+                      found.contains(word) ? FamilyIcons.checkCircle : FamilyIcons.search,
                       size: 18,
                       color:
                           found.contains(word) ? Colors.green : palette.primary,
@@ -726,7 +726,7 @@ class _WordSearchSidePanel extends StatelessWidget {
             const SizedBox(height: 14),
             FamilyFilledButton.icon(
               onPressed: onNewGame,
-              icon: const Icon(Icons.shuffle),
+              icon: const Icon(FamilyIcons.shuffle),
               label: const Text('Novo sorteio'),
             ),
           ],
@@ -1108,7 +1108,7 @@ class _MemoryMatchGameState extends State<_MemoryMatchGame> {
         const SizedBox(height: 14),
         FamilyFilledButton.icon(
           onPressed: () => setState(_reset),
-          icon: const Icon(Icons.shuffle),
+          icon: const Icon(FamilyIcons.shuffle),
           label: const Text('Recomeçar'),
         ),
       ],
@@ -1231,7 +1231,7 @@ class _LoveOrderGameState extends State<_LoveOrderGame> {
         const SizedBox(height: 14),
         FamilyFilledButton.icon(
           onPressed: () => setState(_reset),
-          icon: const Icon(Icons.replay),
+          icon: const Icon(FamilyIcons.replay),
           label: const Text('Recomeçar'),
         ),
       ],
@@ -1500,7 +1500,7 @@ class _GameEmptyState extends StatelessWidget {
     final palette = Theme.of(context).extension<AppPalette>()!;
     return Column(
       children: [
-        Icon(Icons.info_outline, color: palette.primary, size: 42),
+        Icon(FamilyIcons.infoOutline, color: palette.primary, size: 42),
         const SizedBox(height: 10),
         Text(text, textAlign: TextAlign.center),
       ],
@@ -1524,7 +1524,7 @@ class _QuizFinished extends StatelessWidget {
     final palette = Theme.of(context).extension<AppPalette>()!;
     return Column(
       children: [
-        Icon(Icons.celebration, size: 54, color: palette.primary),
+        Icon(FamilyIcons.celebration, size: 54, color: palette.primary),
         const SizedBox(height: 12),
         Text(
           'Você acertou $score de $total.',
@@ -1533,7 +1533,7 @@ class _QuizFinished extends StatelessWidget {
         const SizedBox(height: 14),
         FamilyFilledButton.icon(
           onPressed: onRestart,
-          icon: const Icon(Icons.replay),
+          icon: const Icon(FamilyIcons.replay),
           label: const Text('Jogar novamente'),
         ),
       ],
@@ -1557,7 +1557,7 @@ class _PreferenceFinished extends StatelessWidget {
     final palette = Theme.of(context).extension<AppPalette>()!;
     return Column(
       children: [
-        Icon(Icons.favorite, size: 54, color: palette.primary),
+        Icon(FamilyIcons.favorite, size: 54, color: palette.primary),
         const SizedBox(height: 12),
         Text(
           'Você escolheu $answered de $total.',
@@ -1573,7 +1573,7 @@ class _PreferenceFinished extends StatelessWidget {
         const SizedBox(height: 14),
         FamilyFilledButton.icon(
           onPressed: onRestart,
-          icon: const Icon(Icons.replay),
+          icon: const Icon(FamilyIcons.replay),
           label: const Text('Jogar novamente'),
         ),
       ],
@@ -1742,10 +1742,10 @@ _GameView _viewForMiniGame(String type) {
 
 IconData _miniGameIcon(String type) {
   return switch (type) {
-    'memory_match' => Icons.style_outlined,
-    'love_order' => Icons.timeline_outlined,
-    'this_or_that' => Icons.compare_arrows_outlined,
-    _ => Icons.extension_outlined,
+    'memory_match' => FamilyIcons.styleOutlined,
+    'love_order' => FamilyIcons.timelineOutlined,
+    'this_or_that' => FamilyIcons.compareArrowsOutlined,
+    _ => FamilyIcons.extensionOutlined,
   };
 }
 

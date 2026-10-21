@@ -1,3 +1,4 @@
+import 'package:family_ui/family_ui.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/navigation/app_navigation.dart';
@@ -17,7 +18,7 @@ class ChatFloatingButton extends StatelessWidget {
         onPressed: () => context.openAppRoute('/chat'),
         backgroundColor: palette.primary,
         foregroundColor: Colors.white,
-        icon: const Icon(Icons.chat_bubble_outline),
+        icon: const Icon(FamilyIcons.chatBubbleOutline),
         label: const Text('Chat'),
       ),
     );

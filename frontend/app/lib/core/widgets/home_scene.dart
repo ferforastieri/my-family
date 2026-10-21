@@ -1,3 +1,4 @@
+import 'package:family_ui/family_ui.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
@@ -47,13 +48,13 @@ extension HomeSceneInfo on HomeScene {
   IconData get icon {
     switch (this) {
       case HomeScene.flowers:
-        return Icons.local_florist_outlined;
+        return FamilyIcons.localFloristOutlined;
       case HomeScene.aurora:
-        return Icons.auto_awesome_outlined;
+        return FamilyIcons.autoAwesomeOutlined;
       case HomeScene.ocean:
-        return Icons.waves_outlined;
+        return FamilyIcons.wavesOutlined;
       case HomeScene.night:
-        return Icons.nightlight_outlined;
+        return FamilyIcons.nightlightOutlined;
     }
   }
 }

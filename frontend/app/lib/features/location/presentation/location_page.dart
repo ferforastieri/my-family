@@ -97,7 +97,7 @@ class _LocationPageState extends State<LocationPage> {
         header: const AppPageHeader(
           title: 'Localização',
           subtitle: 'Localização e bateria da família.',
-          icon: Icons.location_on_outlined,
+          icon: FamilyIcons.locationOnOutlined,
         ),
         children: [
           AppQuery<List<LocationPlace>>(
@@ -328,8 +328,14 @@ class _LocationMapPanel extends StatelessWidget {
                 children: [
                   TileLayer(
                     urlTemplate:
-                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
                     userAgentPackageName: 'com.siao.app',
+                  ),
+                                    RichAttributionWidget(
+                    attributions: [
+                      TextSourceAttribution('OpenStreetMap contributors'),
+                      TextSourceAttribution('CARTO'),
+                    ],
                   ),
                   CircleLayer(
                     circles: [
@@ -354,7 +360,7 @@ class _LocationMapPanel extends StatelessWidget {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.home_work_outlined,
+                              Icon(FamilyIcons.homeWorkOutlined,
                                   color: palette.primary, size: 32),
                               _MapLabel(text: place.name),
                             ],
@@ -372,7 +378,7 @@ class _LocationMapPanel extends StatelessWidget {
                                 text: _shortName(location),
                                 highlighted: true,
                               ),
-                              Icon(Icons.location_on,
+                              Icon(FamilyIcons.locationOn,
                                   color: palette.primary, size: 38),
                             ],
                           ),
@@ -408,7 +414,7 @@ class _LocationMapPanel extends StatelessWidget {
                   if (canManage)
                     FamilyOutlinedButton.icon(
                       onPressed: () => onEditPlace(place),
-                      icon: const Icon(Icons.edit_location_alt_outlined),
+                      icon: const Icon(FamilyIcons.editLocationAltOutlined),
                       label: Text(place.name),
                     )
                   else
@@ -519,12 +525,12 @@ class _LocationMapHeader extends StatelessWidget {
       description: locationsCount == 0
           ? 'Aguardando localizações.'
           : '$locationsCount pessoas no mapa.',
-      icon: Icons.map_outlined,
+      icon: FamilyIcons.mapOutlined,
     );
     if (!canManage) return title;
     final action = FamilyFilledButton.icon(
       onPressed: onCreatePlace,
-      icon: const Icon(Icons.add_location_alt_outlined),
+      icon: const Icon(FamilyIcons.addLocationAltOutlined),
       label: const Text('Novo local'),
     );
 
@@ -580,7 +586,7 @@ class _LocationSharingCard extends StatelessWidget {
               _LocationPanelTitle(
                 title: 'Compartilhamento',
                 description: 'Você decide quem vê sua localização.',
-                icon: Icons.share_location_outlined,
+                icon: FamilyIcons.shareLocationOutlined,
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
@@ -625,7 +631,7 @@ class _LocationReadOnlyNote extends StatelessWidget {
       maxWidth: 1200,
       child: Row(
         children: [
-          Icon(Icons.visibility_outlined, color: palette.primary),
+          Icon(FamilyIcons.visibilityOutlined, color: palette.primary),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -668,7 +674,7 @@ class _LocationActions extends StatelessWidget {
               CircleAvatar(
                 backgroundColor: palette.primary.withValues(alpha: .14),
                 foregroundColor: palette.primary,
-                child: const Icon(Icons.shield_outlined),
+                child: const Icon(FamilyIcons.shieldOutlined),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -705,7 +711,7 @@ class _LocationActions extends StatelessWidget {
                     backgroundColor: Colors.red.shade700,
                   ),
                   onPressed: () => onSos(),
-                  icon: const Icon(Icons.sos_outlined),
+                  icon: const Icon(FamilyIcons.sosOutlined),
                   label: const Text('SOS'),
                 ),
               ),
@@ -713,7 +719,7 @@ class _LocationActions extends StatelessWidget {
               Expanded(
                 child: FamilyOutlinedButton.icon(
                   onPressed: () => onCheckIn(),
-                  icon: const Icon(Icons.check_circle_outline),
+                  icon: const Icon(FamilyIcons.checkCircleOutline),
                   label: const Text('Check-in'),
                 ),
               ),
@@ -748,7 +754,7 @@ class _LocationList extends StatelessWidget {
             description: locations.isEmpty
                 ? 'Aguardando atualizações.'
                 : '${locations.length} pessoas compartilhando.',
-            icon: Icons.people_alt_outlined,
+            icon: FamilyIcons.peopleAltOutlined,
           ),
           const SizedBox(height: 12),
           if (locations.isEmpty)
@@ -916,10 +922,10 @@ class _LocationTile extends StatelessWidget {
                   children: [
                     Icon(
                       place != null
-                          ? Icons.home_work_outlined
+                          ? FamilyIcons.homeWorkOutlined
                           : (location.speed ?? 0) > 1.5
-                              ? Icons.directions_car_outlined
-                              : Icons.location_off_outlined,
+                              ? FamilyIcons.directionsCarOutlined
+                              : FamilyIcons.locationOffOutlined,
                       size: 14,
                       color: place != null ? palette.primary : palette.muted,
                     ),
@@ -954,8 +960,8 @@ class _LocationTile extends StatelessWidget {
             children: [
               Icon(
                 location.isCharging == true
-                    ? Icons.battery_charging_full
-                    : Icons.battery_std,
+                    ? FamilyIcons.batteryChargingFull
+                    : FamilyIcons.batteryStd,
                 color: batteryColor,
               ),
               Text(
@@ -1106,7 +1112,7 @@ class _LocationPlaceSheetState extends State<_LocationPlaceSheet> {
           AppSheetHeader(
             title: widget.place == null ? 'Novo local' : 'Editar local',
             subtitle: 'Arraste o mapa e deixe o marcador no ponto desejado.',
-            icon: Icons.add_location_alt_outlined,
+            icon: FamilyIcons.addLocationAltOutlined,
           ),
           const SizedBox(height: 16),
           FamilyTextField(
@@ -1142,9 +1148,15 @@ class _LocationPlaceSheetState extends State<_LocationPlaceSheet> {
                     children: [
                       TileLayer(
                         urlTemplate:
-                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
                         userAgentPackageName: 'com.siao.app',
                       ),
+                                        RichAttributionWidget(
+                    attributions: [
+                      TextSourceAttribution('OpenStreetMap contributors'),
+                      TextSourceAttribution('CARTO'),
+                    ],
+                  ),
                       CircleLayer(
                         circles: [
                           CircleMarker(
@@ -1161,7 +1173,7 @@ class _LocationPlaceSheetState extends State<_LocationPlaceSheet> {
                   ),
                   IgnorePointer(
                     child: Icon(
-                      Icons.location_on,
+                      FamilyIcons.locationOn,
                       color: palette.primary,
                       size: 48,
                     ),
@@ -1206,7 +1218,7 @@ class _LocationPlaceSheetState extends State<_LocationPlaceSheet> {
                   alignment: Alignment.centerLeft,
                   child: FamilyOutlinedButton.icon(
                     onPressed: saving ? null : _delete,
-                    icon: const Icon(Icons.delete_outline),
+                    icon: const Icon(FamilyIcons.deleteOutline),
                     label: const Text('Excluir'),
                   ),
                 ),

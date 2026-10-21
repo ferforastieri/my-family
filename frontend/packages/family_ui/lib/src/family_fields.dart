@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'family_icons.dart';
 import 'package:flutter/services.dart';
 
 class FamilySelectOption<T> {
@@ -234,7 +235,7 @@ class FamilyDateField extends StatelessWidget {
         decoration: InputDecoration(
           labelText: label,
           enabled: enabled,
-          suffixIcon: const Icon(Icons.calendar_today_outlined, size: 18),
+          suffixIcon: const Icon(FamilyIcons.calendarTodayOutlined, size: 18),
         ),
         child: Text(formatted),
       ),

@@ -414,7 +414,7 @@ class _DashboardState extends State<Dashboard> {
         IconButton(
           tooltip: 'Sair',
           onPressed: widget.session.signOut,
-          icon: const Icon(Icons.logout),
+          icon: const Icon(FamilyIcons.logout),
         ),
       ],
     ),
@@ -427,26 +427,26 @@ class _DashboardState extends State<Dashboard> {
               setState(() => selected = PanelSection.values[index]),
           destinations: [
             const NavigationRailDestination(
-              icon: Icon(Icons.space_dashboard_outlined),
+              icon: Icon(FamilyIcons.spaceDashboardOutlined),
               label: Text('Visão geral'),
             ),
             const NavigationRailDestination(
-              icon: Icon(Icons.home_outlined),
+              icon: Icon(FamilyIcons.homeOutlined),
               label: Text('Família'),
             ),
             const NavigationRailDestination(
-              icon: Icon(Icons.people_outline),
+              icon: Icon(FamilyIcons.peopleOutline),
               label: Text('Membros'),
             ),
             const NavigationRailDestination(
-              icon: Icon(Icons.collections_bookmark_outlined),
+              icon: Icon(FamilyIcons.collectionsBookmarkOutlined),
               label: Text('Conteúdo'),
             ),
             NavigationRailDestination(
               icon: Icon(
                 platformAdmin
-                    ? Icons.admin_panel_settings_outlined
-                    : Icons.lock_outline,
+                    ? FamilyIcons.adminPanelSettingsOutlined
+                    : FamilyIcons.lockOutline,
               ),
               label: Text(platformAdmin ? 'Plataforma' : 'Restrito'),
             ),
@@ -470,7 +470,7 @@ class _DashboardState extends State<Dashboard> {
               title: 'Acesso restrito',
               message:
                   'Somente administradores da plataforma podem abrir esta área.',
-              icon: Icons.lock_outline,
+              icon: FamilyIcons.lockOutline,
             ),
   };
 }
@@ -678,7 +678,7 @@ class _MembersState extends State<Members> {
           alignment: Alignment.centerLeft,
           child: FamilyButton(
             onPressed: _invite,
-            icon: Icons.person_add_alt_1,
+            icon: FamilyIcons.personAddAlt1,
             label: 'Convidar pessoa',
           ),
         ),
@@ -694,7 +694,7 @@ class _MembersState extends State<Members> {
                   .map(
                     (item) => ListTile(
                       leading: const CircleAvatar(
-                        child: Icon(Icons.person_outline),
+                        child: Icon(FamilyIcons.personOutline),
                       ),
                       title: Text(
                         item['name'] ?? item['email'] ?? 'Membro',
@@ -724,7 +724,7 @@ class _MembersState extends State<Members> {
               children: snapshot.data!
                   .map(
                     (item) => ListTile(
-                      leading: const Icon(Icons.mail_outlined),
+                      leading: const Icon(FamilyIcons.mailOutlined),
                       title: Text(item['email'] ?? ''),
                       subtitle: Text(
                         item['role'] ?? 'member',
@@ -820,7 +820,7 @@ class ContentAdministration extends StatelessWidget {
     child: Align(
       alignment: Alignment.centerLeft,
       child: FamilyButton(
-        icon: Icons.open_in_new,
+        icon: FamilyIcons.openInNew,
         label: 'Abrir administração de conteúdo',
         onPressed: () async {
           await launchUrl(Uri.parse('$familyAppBase/admin'));

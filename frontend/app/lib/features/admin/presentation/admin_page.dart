@@ -156,9 +156,9 @@ class _AdminPageState extends State<AdminPage> {
         header: AppPageHeader(
           title: 'Administração',
           subtitle: selected.label,
-          icon: Icons.admin_panel_settings_outlined,
+          icon: FamilyIcons.adminPanelSettingsOutlined,
           actionLabel: 'Seções',
-          actionIcon: Icons.tune_outlined,
+          actionIcon: FamilyIcons.tuneOutlined,
           inlineAction: true,
           onAction: _openSectionPicker,
         ),
@@ -214,7 +214,7 @@ class _AdminPageState extends State<AdminPage> {
                 leading: Icon(section.icon),
                 title: Text(section.label),
                 trailing:
-                    selected == section ? const Icon(Icons.check_circle) : null,
+                    selected == section ? const Icon(FamilyIcons.checkCircle) : null,
                 onTap: () {
                   _selectSection(section);
                   Navigator.of(sheetContext).pop();
@@ -597,22 +597,22 @@ class _AdminLoadingState extends StatelessWidget {
 }
 
 const _roleOptions = [
-  _UserOption('husband', 'Marido', Icons.admin_panel_settings_outlined),
-  _UserOption('wife', 'Esposa', Icons.admin_panel_settings_outlined),
-  _UserOption('children', 'Filhos', Icons.child_care_outlined),
-  _UserOption('friends', 'Amigos', Icons.favorite_outline),
+  _UserOption('husband', 'Marido', FamilyIcons.adminPanelSettingsOutlined),
+  _UserOption('wife', 'Esposa', FamilyIcons.adminPanelSettingsOutlined),
+  _UserOption('children', 'Filhos', FamilyIcons.childCareOutlined),
+  _UserOption('friends', 'Amigos', FamilyIcons.favoriteOutline),
 ];
 
 const _accessOptions = [
-  _UserOption('memorias', 'Memórias em Fotos', Icons.photo_library_outlined),
-  _UserOption('playlist', 'Nossa Playlist', Icons.music_note_outlined),
-  _UserOption('cartas', 'Cartas de Amor', Icons.card_giftcard_outlined),
-  _UserOption('jogos', 'Jogos', Icons.sports_esports_outlined),
-  _UserOption('listas', 'Listas', Icons.checklist_outlined),
-  _UserOption('notas', 'Notas', Icons.sticky_note_2_outlined),
-  _UserOption('localizacao', 'Localização', Icons.location_on_outlined),
-  _UserOption('chat', 'Chat', Icons.chat_bubble_outline),
-  _UserOption('nossaHistoria', 'Nossa Jornada', Icons.auto_stories_outlined),
+  _UserOption('memorias', 'Memórias em Fotos', FamilyIcons.photoLibraryOutlined),
+  _UserOption('playlist', 'Nossa Playlist', FamilyIcons.musicNoteOutlined),
+  _UserOption('cartas', 'Cartas de Amor', FamilyIcons.cardGiftcardOutlined),
+  _UserOption('jogos', 'Jogos', FamilyIcons.sportsEsportsOutlined),
+  _UserOption('listas', 'Listas', FamilyIcons.checklistOutlined),
+  _UserOption('notas', 'Notas', FamilyIcons.stickyNote2Outlined),
+  _UserOption('localizacao', 'Localização', FamilyIcons.locationOnOutlined),
+  _UserOption('chat', 'Chat', FamilyIcons.chatBubbleOutline),
+  _UserOption('nossaHistoria', 'Nossa Jornada', FamilyIcons.autoStoriesOutlined),
 ];
 
 class _UserOption {
@@ -651,10 +651,10 @@ String _miniGameAdminLabel(String type) {
 
 IconData _miniGameAdminIcon(String type) {
   return switch (type) {
-    'memory_match' => Icons.style_outlined,
-    'love_order' => Icons.timeline_outlined,
-    'this_or_that' => Icons.compare_arrows_outlined,
-    _ => Icons.extension_outlined,
+    'memory_match' => FamilyIcons.styleOutlined,
+    'love_order' => FamilyIcons.timelineOutlined,
+    'this_or_that' => FamilyIcons.compareArrowsOutlined,
+    _ => FamilyIcons.extensionOutlined,
   };
 }
 
@@ -668,8 +668,8 @@ String _gameStatLabel(String game) {
 
 IconData _gameStatIcon(String game) {
   return switch (game) {
-    'quiz' => Icons.favorite_outline,
-    'word_search' => Icons.grid_on_outlined,
+    'quiz' => FamilyIcons.favoriteOutline,
+    'word_search' => FamilyIcons.gridOnOutlined,
     _ => _miniGameAdminIcon(game),
   };
 }
@@ -684,11 +684,11 @@ extension _AdminSectionView on _AdminSection {
       };
 
   IconData get icon => switch (this) {
-        _AdminSection.users => Icons.people_outline,
-        _AdminSection.notifications => Icons.notifications_outlined,
-        _AdminSection.games => Icons.sports_esports_outlined,
-        _AdminSection.stats => Icons.query_stats_outlined,
-        _AdminSection.home => Icons.home_outlined,
+        _AdminSection.users => FamilyIcons.peopleOutline,
+        _AdminSection.notifications => FamilyIcons.notificationsOutlined,
+        _AdminSection.games => FamilyIcons.sportsEsportsOutlined,
+        _AdminSection.stats => FamilyIcons.queryStatsOutlined,
+        _AdminSection.home => FamilyIcons.homeOutlined,
       };
 }
 
@@ -706,7 +706,7 @@ class _AdminErrorBanner extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
-            const Icon(Icons.error_outline, color: Colors.redAccent),
+            const Icon(FamilyIcons.errorOutline, color: Colors.redAccent),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -938,7 +938,7 @@ class _UsersAdminTab extends StatelessWidget {
               if (index == users.length) return pagination!;
               final user = users[index];
               return _AdminTile(
-                icon: Icons.person_outline,
+                icon: FamilyIcons.personOutline,
                 title: user.name?.isNotEmpty == true
                     ? user.name!
                     : user.email,
@@ -947,12 +947,12 @@ class _UsersAdminTab extends StatelessWidget {
                 actions: [
                   IconButton(
                     onPressed: () => onEdit(user),
-                    icon: const Icon(Icons.edit_outlined),
+                    icon: const Icon(FamilyIcons.editOutlined),
                     tooltip: 'Editar',
                   ),
                   IconButton(
                     onPressed: () => onDelete(user),
-                    icon: const Icon(Icons.delete_outline),
+                    icon: const Icon(FamilyIcons.deleteOutline),
                     tooltip: 'Remover',
                   ),
                 ],
@@ -997,7 +997,7 @@ class _NotificationsAdminTab extends StatelessWidget {
         const _AdminSectionTitle('Agendadas'),
         for (final scheduled in scheduledNotifications)
           _AdminTile(
-            icon: Icons.schedule_send_outlined,
+            icon: FamilyIcons.scheduleSendOutlined,
             title: scheduled.title,
             subtitle:
                 '${scheduled.body.isEmpty ? 'Sem texto' : scheduled.body} • ${_scheduledStatusLabel(scheduled.status)} • ${_formatAdminDateTime(scheduled.scheduledAt)}',
@@ -1013,7 +1013,7 @@ class _NotificationsAdminTab extends StatelessWidget {
         const _AdminSectionTitle('Cadastradas'),
         for (final notification in notifications)
           _AdminTile(
-            icon: Icons.notifications_outlined,
+            icon: FamilyIcons.notificationsOutlined,
             title: notification.title,
             subtitle:
                 '${notification.body.isEmpty ? 'Sem texto' : notification.body} • ${notification.url}',
@@ -1022,17 +1022,17 @@ class _NotificationsAdminTab extends StatelessWidget {
               children: [
                 IconButton(
                   onPressed: () => onSend(notification),
-                  icon: const Icon(Icons.send_outlined),
+                  icon: const Icon(FamilyIcons.sendOutlined),
                   tooltip: 'Enviar push',
                 ),
                 IconButton(
                   onPressed: () => onEdit(notification),
-                  icon: const Icon(Icons.edit_outlined),
+                  icon: const Icon(FamilyIcons.editOutlined),
                   tooltip: 'Editar',
                 ),
                 IconButton(
                   onPressed: () => onDelete(notification),
-                  icon: const Icon(Icons.delete_outline),
+                  icon: const Icon(FamilyIcons.deleteOutline),
                   tooltip: 'Remover',
                 ),
               ],
@@ -1049,11 +1049,11 @@ class _NotificationsAdminTab extends StatelessWidget {
           action: _AdminActions(
             fullWidthOnCompact: true,
             children: [
-              FamilyButton(onPressed: onAdd, label: 'Nova', icon: Icons.add),
+              FamilyButton(onPressed: onAdd, label: 'Nova', icon: FamilyIcons.add),
               FamilyButton(
                 onPressed: onScheduleNew,
                 label: 'Agendar',
-                icon: Icons.schedule_send_outlined,
+                icon: FamilyIcons.scheduleSendOutlined,
               ),
             ],
           ),
@@ -1135,13 +1135,13 @@ class _GamesAdminTabState extends State<_GamesAdminTab> {
                 FamilyButton(
                   onPressed: widget.onAddQuestion,
                   label: 'Pergunta',
-                  icon: Icons.add,
+                  icon: FamilyIcons.add,
                 ),
               if (section == _GamesAdminSection.words)
                 FamilyButton(
                   onPressed: widget.onAddWord,
                   label: 'Palavra',
-                  icon: Icons.add,
+                  icon: FamilyIcons.add,
                 ),
             ],
           ),
@@ -1165,7 +1165,7 @@ class _GamesAdminTabState extends State<_GamesAdminTab> {
                       children: [
                         for (final question in widget.questions)
                           _AdminTile(
-                            icon: Icons.favorite_outline,
+                            icon: FamilyIcons.favoriteOutline,
                             title: question.question,
                             subtitle:
                                 '${question.options.length} opções • correta: ${_correctAnswerLabel(question)} • ${question.active ? 'ativa' : 'inativa'}',
@@ -1173,13 +1173,13 @@ class _GamesAdminTabState extends State<_GamesAdminTab> {
                               IconButton(
                                 onPressed: () =>
                                     widget.onEditQuestion(question),
-                                icon: const Icon(Icons.edit_outlined),
+                                icon: const Icon(FamilyIcons.editOutlined),
                                 tooltip: 'Editar',
                               ),
                               IconButton(
                                 onPressed: () =>
                                     widget.onDeleteQuestion(question),
-                                icon: const Icon(Icons.delete_outline),
+                                icon: const Icon(FamilyIcons.deleteOutline),
                                 tooltip: 'Remover',
                               ),
                             ],
@@ -1194,19 +1194,19 @@ class _GamesAdminTabState extends State<_GamesAdminTab> {
                       children: [
                         for (final word in widget.words)
                           _AdminTile(
-                            icon: Icons.grid_on_outlined,
+                            icon: FamilyIcons.gridOnOutlined,
                             title: word.word,
                             subtitle:
                                 '${word.word.length} letras • ${word.active ? 'ativa' : 'inativa'}',
                             actions: [
                               IconButton(
                                 onPressed: () => widget.onEditWord(word),
-                                icon: const Icon(Icons.edit_outlined),
+                                icon: const Icon(FamilyIcons.editOutlined),
                                 tooltip: 'Editar',
                               ),
                               IconButton(
                                 onPressed: () => widget.onDeleteWord(word),
-                                icon: const Icon(Icons.delete_outline),
+                                icon: const Icon(FamilyIcons.deleteOutline),
                                 tooltip: 'Remover',
                               ),
                             ],
@@ -1277,12 +1277,12 @@ class _MiniGameConfigSection extends StatelessWidget {
             actions: [
               IconButton(
                 onPressed: () => onEdit(miniGame),
-                icon: const Icon(Icons.edit_outlined),
+                icon: const Icon(FamilyIcons.editOutlined),
                 tooltip: 'Editar',
               ),
               IconButton(
                 onPressed: () => onDelete(miniGame),
-                icon: const Icon(Icons.delete_outline),
+                icon: const Icon(FamilyIcons.deleteOutline),
                 tooltip: 'Remover',
               ),
             ],
@@ -1306,27 +1306,27 @@ class _GameAdminNav extends StatelessWidget {
         segments: const [
           ButtonSegment(
             value: _GamesAdminSection.quiz,
-            icon: Icon(Icons.quiz_outlined),
+            icon: Icon(FamilyIcons.quizOutlined),
             label: Text('Quiz do Amor'),
           ),
           ButtonSegment(
             value: _GamesAdminSection.words,
-            icon: Icon(Icons.grid_on_outlined),
+            icon: Icon(FamilyIcons.gridOnOutlined),
             label: Text('Caça Palavras'),
           ),
           ButtonSegment(
             value: _GamesAdminSection.memoryMatch,
-            icon: Icon(Icons.style_outlined),
+            icon: Icon(FamilyIcons.styleOutlined),
             label: Text('Memória da Família'),
           ),
           ButtonSegment(
             value: _GamesAdminSection.loveOrder,
-            icon: Icon(Icons.timeline_outlined),
+            icon: Icon(FamilyIcons.timelineOutlined),
             label: Text('Linha do Amor'),
           ),
           ButtonSegment(
             value: _GamesAdminSection.thisOrThat,
-            icon: Icon(Icons.compare_arrows_outlined),
+            icon: Icon(FamilyIcons.compareArrowsOutlined),
             label: Text('Isso ou Aquilo'),
           ),
         ],
@@ -1499,7 +1499,7 @@ class _HomeSettingsAdminTab extends StatelessWidget {
           action: FamilyButton(
             onPressed: () => _openEventSheet(context),
             label: 'Criar',
-            icon: Icons.add,
+            icon: FamilyIcons.add,
           ),
         ),
         Expanded(
@@ -1512,7 +1512,7 @@ class _HomeSettingsAdminTab extends StatelessWidget {
               final item = items[index];
               if (item.isGallery) {
                 return _AdminTile(
-                  icon: Icons.auto_awesome_motion_outlined,
+                  icon: FamilyIcons.autoAwesomeMotionOutlined,
                   title: 'Carrossel de fotos',
                   subtitle:
                       '${galleryImages.length} foto${galleryImages.length == 1 ? '' : 's'} • ${galleryTitleVisible ? galleryTitle : 'título oculto'}',
@@ -1520,19 +1520,19 @@ class _HomeSettingsAdminTab extends StatelessWidget {
                     IconButton(
                       onPressed:
                           item.order <= 0 ? null : () => _moveGallery(-1),
-                      icon: const Icon(Icons.arrow_upward),
+                      icon: const Icon(FamilyIcons.arrowUpward),
                       tooltip: 'Subir',
                     ),
                     IconButton(
                       onPressed: item.order >= events.length
                           ? null
                           : () => _moveGallery(1),
-                      icon: const Icon(Icons.arrow_downward),
+                      icon: const Icon(FamilyIcons.arrowDownward),
                       tooltip: 'Descer',
                     ),
                     IconButton(
                       onPressed: () => _openGallerySheet(context),
-                      icon: const Icon(Icons.edit_outlined),
+                      icon: const Icon(FamilyIcons.editOutlined),
                       tooltip: 'Editar carrossel',
                     ),
                   ],
@@ -1552,36 +1552,36 @@ class _HomeSettingsAdminTab extends StatelessWidget {
                     onPressed: item.order <= 0
                         ? null
                         : () => _moveEvent(item.eventIndex!, -1),
-                    icon: const Icon(Icons.arrow_upward),
+                    icon: const Icon(FamilyIcons.arrowUpward),
                     tooltip: 'Subir',
                   ),
                   IconButton(
                     onPressed: item.order >= items.length - 1
                         ? null
                         : () => _moveEvent(item.eventIndex!, 1),
-                    icon: const Icon(Icons.arrow_downward),
+                    icon: const Icon(FamilyIcons.arrowDownward),
                     tooltip: 'Descer',
                   ),
                   IconButton(
                     onPressed: () => _toggleHidden(item.eventIndex!),
                     icon: Icon(
                       event.hidden
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
+                          ? FamilyIcons.visibilityOutlined
+                          : FamilyIcons.visibilityOffOutlined,
                     ),
                     tooltip: event.hidden ? 'Mostrar' : 'Ocultar',
                   ),
                   IconButton(
                     onPressed: () =>
                         _openEventSheet(context, index: item.eventIndex),
-                    icon: const Icon(Icons.edit_outlined),
+                    icon: const Icon(FamilyIcons.editOutlined),
                     tooltip: 'Editar',
                   ),
                   IconButton(
                     onPressed: events.length <= 1
                         ? null
                         : () => _deleteEvent(item.eventIndex!),
-                    icon: const Icon(Icons.delete_outline),
+                    icon: const Icon(FamilyIcons.deleteOutline),
                     tooltip: 'Remover',
                   ),
                 ],
@@ -1871,7 +1871,7 @@ class _StatusPill extends StatelessWidget {
           const SizedBox(width: 4),
           IconButton(
             onPressed: onDelete,
-            icon: const Icon(Icons.delete_outline),
+            icon: const Icon(FamilyIcons.deleteOutline),
             tooltip: 'Remover agendamento',
           ),
         ],
@@ -1899,7 +1899,7 @@ class _HomeGalleryThumbs extends StatelessWidget {
           border: Border.all(color: palette.primary.withValues(alpha: .12)),
         ),
         child: Icon(
-          Icons.add_photo_alternate_outlined,
+          FamilyIcons.addPhotoAlternateOutlined,
           color: palette.primary,
           size: 22,
         ),
@@ -1935,7 +1935,7 @@ class _HomeGalleryThumbs extends StatelessWidget {
                     headers: authenticatedMediaHeaders(),
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) =>
-                        const Icon(Icons.broken_image_outlined, size: 18),
+                        const Icon(FamilyIcons.brokenImageOutlined, size: 18),
                   ),
                 ),
               ),
@@ -1972,9 +1972,9 @@ String _formatAdminDate(DateTime value) {
 
 IconData _homeEventIcon(int index) {
   return switch (index) {
-    0 => Icons.favorite_outline,
-    1 => Icons.diamond_outlined,
-    _ => Icons.child_care_outlined,
+    0 => FamilyIcons.favoriteOutline,
+    1 => FamilyIcons.diamondOutlined,
+    _ => FamilyIcons.childCareOutlined,
   };
 }
 
@@ -2148,7 +2148,7 @@ class _HomeEventSheetState extends State<_HomeEventSheet> {
           AppSheetHeader(
             title: widget.isNew ? 'Criar card' : 'Editar card',
             subtitle: 'Ajuste o conteúdo e a visibilidade deste card.',
-            icon: widget.isNew ? Icons.add : Icons.edit_outlined,
+            icon: widget.isNew ? FamilyIcons.add : FamilyIcons.editOutlined,
           ),
           const SizedBox(height: 18),
           Row(
@@ -2190,12 +2190,12 @@ class _HomeEventSheetState extends State<_HomeEventSheet> {
             segments: const [
               ButtonSegment(
                 value: HomeCountDirection.forward,
-                icon: Icon(Icons.trending_up),
+                icon: Icon(FamilyIcons.trendingUp),
                 label: Text('Frente'),
               ),
               ButtonSegment(
                 value: HomeCountDirection.backward,
-                icon: Icon(Icons.hourglass_bottom_outlined),
+                icon: Icon(FamilyIcons.hourglassBottomOutlined),
                 label: Text('Trás'),
               ),
             ],
@@ -2309,7 +2309,7 @@ class _HomeGallerySheetState extends State<_HomeGallerySheet> {
           const AppSheetHeader(
             title: 'Carrossel de fotos',
             subtitle: 'Edite as fotos do card flutuante da Home.',
-            icon: Icons.auto_awesome_motion_outlined,
+            icon: FamilyIcons.autoAwesomeMotionOutlined,
           ),
           const SizedBox(height: 18),
           FamilyTextField(
@@ -2331,12 +2331,12 @@ class _HomeGallerySheetState extends State<_HomeGallerySheet> {
             segments: const [
               ButtonSegment(
                 value: 'arc',
-                icon: Icon(Icons.architecture_outlined),
+                icon: Icon(FamilyIcons.architectureOutlined),
                 label: Text('Arco'),
               ),
               ButtonSegment(
                 value: 'straight',
-                icon: Icon(Icons.horizontal_rule_rounded),
+                icon: Icon(FamilyIcons.horizontalRuleRounded),
                 label: Text('Reto'),
               ),
             ],
@@ -2538,7 +2538,7 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
           const AppSheetHeader(
             title: 'Cards da Home',
             subtitle: 'Ajuste ordem, título, ícone, mensagem, data e contagem.',
-            icon: Icons.dashboard_customize_outlined,
+            icon: FamilyIcons.dashboardCustomizeOutlined,
           ),
           const SizedBox(height: 18),
           ConstrainedBox(
@@ -2588,19 +2588,19 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
                             onPressed: saving || index == 0
                                 ? null
                                 : () => _moveCard(index, -1),
-                            icon: const Icon(Icons.arrow_upward),
+                            icon: const Icon(FamilyIcons.arrowUpward),
                             tooltip: 'Subir',
                           ),
                           IconButton(
                             onPressed: saving || index == drafts.length - 1
                                 ? null
                                 : () => _moveCard(index, 1),
-                            icon: const Icon(Icons.arrow_downward),
+                            icon: const Icon(FamilyIcons.arrowDownward),
                             tooltip: 'Descer',
                           ),
                           IconButton(
                             onPressed: saving ? null : () => _removeCard(index),
-                            icon: const Icon(Icons.delete_outline),
+                            icon: const Icon(FamilyIcons.deleteOutline),
                             tooltip: 'Remover card',
                           ),
                         ],
@@ -2656,12 +2656,12 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
                         segments: const [
                           ButtonSegment(
                             value: HomeCountDirection.forward,
-                            icon: Icon(Icons.trending_up),
+                            icon: Icon(FamilyIcons.trendingUp),
                             label: Text('Frente'),
                           ),
                           ButtonSegment(
                             value: HomeCountDirection.backward,
-                            icon: Icon(Icons.hourglass_bottom_outlined),
+                            icon: Icon(FamilyIcons.hourglassBottomOutlined),
                             label: Text('Trás'),
                           ),
                         ],
@@ -2692,7 +2692,7 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
             child: FamilyButton(
               onPressed: saving ? null : _addCard,
               label: 'Adicionar card',
-              icon: Icons.add,
+              icon: FamilyIcons.add,
             ),
           ),
           const SizedBox(height: 18),
@@ -2747,7 +2747,7 @@ class _HomeGalleryEditor extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.photo_library_outlined, color: palette.primary),
+              Icon(FamilyIcons.photoLibraryOutlined, color: palette.primary),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -2761,7 +2761,7 @@ class _HomeGalleryEditor extends StatelessWidget {
               FamilyButton(
                 onPressed: onAdd,
                 label: uploading ? 'Enviando...' : 'Adicionar fotos',
-                icon: Icons.add_photo_alternate_outlined,
+                icon: FamilyIcons.addPhotoAlternateOutlined,
               ),
             ],
           ),
@@ -2797,7 +2797,7 @@ class _HomeGalleryEditor extends StatelessWidget {
                             width: 128,
                             height: 104,
                             color: palette.primary.withValues(alpha: .08),
-                            child: const Icon(Icons.broken_image_outlined),
+                            child: const Icon(FamilyIcons.brokenImageOutlined),
                           ),
                         ),
                       ),
@@ -2815,7 +2815,7 @@ class _HomeGalleryEditor extends StatelessWidget {
                             child: const Padding(
                               padding: EdgeInsets.all(5),
                               child: Icon(
-                                Icons.close,
+                                FamilyIcons.close,
                                 size: 16,
                                 color: Colors.white,
                               ),
@@ -2942,7 +2942,7 @@ class _UserSheetState extends State<_UserSheet> {
           const AppSheetHeader(
             title: 'Editar usuário',
             subtitle: 'Ajuste o parentesco e os acessos nesta família.',
-            icon: Icons.person_outline,
+            icon: FamilyIcons.personOutline,
           ),
           const SizedBox(height: 14),
           Text(widget.user.name ?? widget.user.email),
@@ -3080,7 +3080,7 @@ class _NotificationSheetState extends State<_NotificationSheet> {
                 ? 'Nova notificação'
                 : 'Editar notificação',
             subtitle: 'Defina a mensagem que será enviada para a família.',
-            icon: Icons.notifications_active_outlined,
+            icon: FamilyIcons.notificationsActiveOutlined,
           ),
           const SizedBox(height: 14),
           FamilyTextField(
@@ -3266,7 +3266,7 @@ class _ScheduleNotificationSheetState
           const AppSheetHeader(
             title: 'Agendar notificação',
             subtitle: 'Defina a mensagem e quando a família deve receber.',
-            icon: Icons.schedule_send_outlined,
+            icon: FamilyIcons.scheduleSendOutlined,
           ),
           const SizedBox(height: 14),
           FamilyTextField(
@@ -3298,20 +3298,20 @@ class _ScheduleNotificationSheetState
             runSpacing: 8,
             children: [
               ActionChip(
-                avatar: const Icon(Icons.timer_outlined, size: 18),
+                avatar: const Icon(FamilyIcons.timerOutlined, size: 18),
                 label: const Text('Em 10 min'),
                 onPressed: saving
                     ? null
                     : () => _setPreset(const Duration(minutes: 10)),
               ),
               ActionChip(
-                avatar: const Icon(Icons.schedule_outlined, size: 18),
+                avatar: const Icon(FamilyIcons.scheduleOutlined, size: 18),
                 label: const Text('Em 1 hora'),
                 onPressed:
                     saving ? null : () => _setPreset(const Duration(hours: 1)),
               ),
               ActionChip(
-                avatar: const Icon(Icons.today_outlined, size: 18),
+                avatar: const Icon(FamilyIcons.todayOutlined, size: 18),
                 label: const Text('Amanhã'),
                 onPressed:
                     saving ? null : () => _setPreset(const Duration(days: 1)),
@@ -3324,7 +3324,7 @@ class _ScheduleNotificationSheetState
               Expanded(
                 child: FamilyOutlinedButton.icon(
                   onPressed: saving ? null : _pickDate,
-                  icon: const Icon(Icons.calendar_month_outlined),
+                  icon: const Icon(FamilyIcons.calendarMonthOutlined),
                   label: Text(
                     '${selectedDate.day.toString().padLeft(2, '0')}/${selectedDate.month.toString().padLeft(2, '0')}/${selectedDate.year}',
                   ),
@@ -3334,7 +3334,7 @@ class _ScheduleNotificationSheetState
               Expanded(
                 child: FamilyOutlinedButton.icon(
                   onPressed: saving ? null : _pickTime,
-                  icon: const Icon(Icons.schedule_outlined),
+                  icon: const Icon(FamilyIcons.scheduleOutlined),
                   label: Text(selectedTime.format(context)),
                 ),
               ),
@@ -3351,7 +3351,7 @@ class _ScheduleNotificationSheetState
             child: Row(
               children: [
                 Icon(
-                  Icons.event_available_outlined,
+                  FamilyIcons.eventAvailableOutlined,
                   color: palette.primary,
                   size: 20,
                 ),
@@ -3461,7 +3461,7 @@ class _QuestionSheetState extends State<_QuestionSheet> {
             title:
                 widget.question == null ? 'Nova pergunta' : 'Editar pergunta',
             subtitle: 'Monte as opções e marque qual resposta está correta.',
-            icon: Icons.quiz_outlined,
+            icon: FamilyIcons.quizOutlined,
           ),
           const SizedBox(height: 14),
           FamilyTextField(
@@ -3559,7 +3559,7 @@ class _WordSheetState extends State<_WordSheet> {
           AppSheetHeader(
             title: widget.word == null ? 'Nova palavra' : 'Editar palavra',
             subtitle: 'Cadastre palavras que aparecem no caça-palavras.',
-            icon: Icons.extension_outlined,
+            icon: FamilyIcons.extensionOutlined,
           ),
           const SizedBox(height: 14),
           FamilyTextField(
@@ -3840,7 +3840,7 @@ class _MiniGameItemsEditor extends StatelessWidget {
                 ),
                 IconButton.filledTonal(
                   onPressed: onAdd,
-                  icon: const Icon(Icons.add),
+                  icon: const Icon(FamilyIcons.add),
                   tooltip: 'Adicionar',
                 ),
               ],
@@ -3898,7 +3898,7 @@ class _MiniGameItemFields extends StatelessWidget {
                 ),
                 IconButton(
                   onPressed: onRemove,
-                  icon: const Icon(Icons.delete_outline),
+                  icon: const Icon(FamilyIcons.deleteOutline),
                   tooltip: 'Remover',
                 ),
               ],

@@ -168,7 +168,7 @@ class AppSheetActions extends StatelessWidget {
           child: FamilyButton(
             onPressed: onSave,
             label: saveLabel,
-            icon: Icons.check,
+            icon: FamilyIcons.check,
             loading: loading,
           ),
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'family_icons.dart';
 
 class FamilyCard extends StatelessWidget {
   const FamilyCard({
@@ -183,7 +184,7 @@ class FamilyActionCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          trailing ?? Icon(Icons.chevron_right, color: scheme.primary),
+          trailing ?? Icon(FamilyIcons.chevronRight, color: scheme.primary),
         ],
       ),
     );

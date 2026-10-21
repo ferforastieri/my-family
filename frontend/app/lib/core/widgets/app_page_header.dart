@@ -66,7 +66,7 @@ class AppPageHeader extends StatelessWidget {
         : inlineAction
             ? AppHeaderIconButton(
                 onPressed: onAction!,
-                icon: Icon(actionIcon ?? Icons.more_horiz),
+                icon: Icon(actionIcon ?? FamilyIcons.moreHoriz),
                 tooltip: actionLabel!,
               )
             : FamilyButton(
@@ -129,7 +129,7 @@ class AppPageHeader extends StatelessWidget {
                   onPressed: mobileActions.onNotifications,
                   icon: _HeaderBadge(
                     count: mobileActions.notificationCount,
-                    child: const Icon(Icons.notifications_outlined),
+                    child: const Icon(FamilyIcons.notificationsOutlined),
                   ),
                   tooltip: 'Notificações',
                 ),
@@ -214,7 +214,7 @@ class _AppHeaderLogoButton extends StatelessWidget {
                     shape: BoxShape.circle,
                     border: Border.all(color: palette.card, width: 1.5),
                   ),
-                  child: const Icon(Icons.menu_rounded,
+                  child: const Icon(FamilyIcons.menuRounded,
                       size: 12, color: Colors.white),
                 ),
               ),

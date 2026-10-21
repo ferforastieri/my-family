@@ -56,7 +56,7 @@ class _EditProfileSheetState extends State<EditProfileSheet> {
           const AppSheetHeader(
             title: 'Editar perfil',
             subtitle: 'Atualize como seu nome aparece no app.',
-            icon: Icons.badge_outlined,
+            icon: FamilyIcons.badgeOutlined,
           ),
           const SizedBox(height: 14),
           FamilyTextField(

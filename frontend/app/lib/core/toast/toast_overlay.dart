@@ -1,3 +1,4 @@
+import 'package:family_ui/family_ui.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
@@ -62,9 +63,9 @@ class _ToastCard extends StatelessWidget {
       ToastKind.info => palette.primary,
     };
     final icon = switch (toast.kind) {
-      ToastKind.success => Icons.check_circle_outline,
-      ToastKind.error => Icons.error_outline,
-      ToastKind.info => Icons.info_outline,
+      ToastKind.success => FamilyIcons.checkCircleOutline,
+      ToastKind.error => FamilyIcons.errorOutline,
+      ToastKind.info => FamilyIcons.infoOutline,
     };
 
     return Dismissible(

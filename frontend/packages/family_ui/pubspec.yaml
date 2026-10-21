@@ -7,3 +7,9 @@ dependencies:
   flutter:
     sdk: flutter
   google_fonts: ^6.3.0
+
+flutter:
+  fonts:
+    - family: PhosphorRegular
+      fonts:
+        - asset: assets/Phosphor.ttf

@@ -263,7 +263,7 @@ class _ResourceHero extends StatelessWidget {
       subtitle: subtitle,
       icon: _resourceIcon(resource),
       actionLabel: actionLabel,
-      actionIcon: Icons.add,
+      actionIcon: FamilyIcons.add,
       onAction: onPressed,
     );
   }
@@ -291,9 +291,9 @@ class _ResourceMetrics extends StatelessWidget {
         _resourceIcon(resource),
       ),
       if (resource == 'fotos')
-        _MetricValue('Álbuns', albums, Icons.collections_bookmark_outlined),
+        _MetricValue('Álbuns', albums, FamilyIcons.collectionsBookmarkOutlined),
       if (resource == 'fotos')
-        _MetricValue('Na visão atual', visible, Icons.filter_alt_outlined),
+        _MetricValue('Na visão atual', visible, FamilyIcons.filterAltOutlined),
     ];
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -394,7 +394,7 @@ class _AlbumFilter extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
-              Icons.collections_bookmark_outlined,
+              FamilyIcons.collectionsBookmarkOutlined,
               color: palette.primary,
             ),
           ),
@@ -442,7 +442,7 @@ class _AlbumFilter extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Icon(Icons.keyboard_arrow_down, color: palette.primary),
+                  Icon(FamilyIcons.keyboardArrowDown, color: palette.primary),
                 ],
               ),
             ),
@@ -489,11 +489,11 @@ class _AlbumOptionsSheet extends StatelessWidget {
         const AppSheetHeader(
           title: 'Escolher álbum',
           subtitle: 'Filtre as memórias pelo álbum desejado.',
-          icon: Icons.collections_bookmark_outlined,
+          icon: FamilyIcons.collectionsBookmarkOutlined,
         ),
         const SizedBox(height: 12),
         _OptionTile(
-          icon: Icons.photo_library_outlined,
+          icon: FamilyIcons.photoLibraryOutlined,
           title: 'Todos os álbuns',
           subtitle: '$total memórias',
           selected: selectedAlbum == null,
@@ -501,7 +501,7 @@ class _AlbumOptionsSheet extends StatelessWidget {
         ),
         for (final album in albums)
           _OptionTile(
-            icon: Icons.photo_album_outlined,
+            icon: FamilyIcons.photoAlbumOutlined,
             title: album.album,
             subtitle: '${album.count} memórias',
             selected: selectedAlbum == album.album,
@@ -536,7 +536,7 @@ class _OptionTile extends StatelessWidget {
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
       subtitle: Text(subtitle),
       trailing:
-          selected ? Icon(Icons.check_circle, color: palette.primary) : null,
+          selected ? Icon(FamilyIcons.checkCircle, color: palette.primary) : null,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
     );
   }
@@ -560,7 +560,7 @@ class _EmptyResourceState extends StatelessWidget {
       padding: const EdgeInsets.all(28),
       child: Column(
         children: [
-          Icon(Icons.favorite_border, color: palette.primary, size: 42),
+          Icon(FamilyIcons.favoriteBorder, color: palette.primary, size: 42),
           const SizedBox(height: 10),
           Text(
             title,
@@ -568,7 +568,7 @@ class _EmptyResourceState extends StatelessWidget {
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 14),
-          FamilyButton(onPressed: onPressed, label: actionLabel, icon: Icons.add),
+          FamilyButton(onPressed: onPressed, label: actionLabel, icon: FamilyIcons.add),
         ],
       ),
     );
@@ -687,7 +687,7 @@ class _TextResourceCard extends StatelessWidget {
                   item.subtitle.isEmpty ? 'Sem descrição.' : item.subtitle,
               icon: _resourceIcon(resource),
               onTap: () => onEdit(item),
-              trailing: Icon(Icons.chevron_right, color: palette.primary),
+              trailing: Icon(FamilyIcons.chevronRight, color: palette.primary),
               padding: const EdgeInsets.fromLTRB(18, 18, 18, 54),
             ),
           ),
@@ -711,12 +711,12 @@ class _TextResourceCard extends StatelessWidget {
                 ),
                 IconButton(
                   onPressed: () => onEdit(item),
-                  icon: const Icon(Icons.edit_outlined),
+                  icon: const Icon(FamilyIcons.editOutlined),
                   tooltip: 'Editar',
                 ),
                 IconButton(
                   onPressed: () => onDelete(item),
-                  icon: const Icon(Icons.delete_outline),
+                  icon: const Icon(FamilyIcons.deleteOutline),
                   tooltip: 'Excluir',
                 ),
               ],
@@ -788,7 +788,7 @@ class _MusicCard extends StatelessWidget {
                               ),
                             ),
                             child: const Icon(
-                              Icons.music_note,
+                              FamilyIcons.musicNote,
                               color: Colors.white,
                               size: 30,
                             ),
@@ -873,12 +873,12 @@ class _MusicCard extends StatelessWidget {
                   ),
                   IconButton(
                     onPressed: () => onEdit(item),
-                    icon: const Icon(Icons.edit_outlined),
+                    icon: const Icon(FamilyIcons.editOutlined),
                     tooltip: 'Editar',
                   ),
                   IconButton(
                     onPressed: () => onDelete(item),
-                    icon: const Icon(Icons.delete_outline),
+                    icon: const Icon(FamilyIcons.deleteOutline),
                     tooltip: 'Excluir',
                   ),
                 ],
@@ -1012,12 +1012,12 @@ class _LetterCard extends StatelessWidget {
                   ),
                   IconButton(
                     onPressed: () => onEdit(item),
-                    icon: const Icon(Icons.edit_outlined),
+                    icon: const Icon(FamilyIcons.editOutlined),
                     tooltip: 'Editar',
                   ),
                   IconButton(
                     onPressed: () => onDelete(item),
-                    icon: const Icon(Icons.delete_outline),
+                    icon: const Icon(FamilyIcons.deleteOutline),
                     tooltip: 'Excluir',
                   ),
                 ],
@@ -1070,7 +1070,7 @@ class _NoteCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
-                          Icons.sticky_note_2_outlined,
+                          FamilyIcons.stickyNote2Outlined,
                           color: palette.primary,
                         ),
                       ),
@@ -1120,12 +1120,12 @@ class _NoteCard extends StatelessWidget {
                       ),
                       IconButton(
                         onPressed: () => onEdit(item),
-                        icon: const Icon(Icons.edit_outlined),
+                        icon: const Icon(FamilyIcons.editOutlined),
                         tooltip: 'Editar',
                       ),
                       IconButton(
                         onPressed: () => onDelete(item),
-                        icon: const Icon(Icons.delete_outline),
+                        icon: const Icon(FamilyIcons.deleteOutline),
                         tooltip: 'Excluir',
                       ),
                     ],
@@ -1172,7 +1172,7 @@ class _PhotoCard extends StatelessWidget {
                       color: palette.primary.withValues(alpha: .08),
                       child: item.tipo == 'video'
                           ? Icon(
-                              Icons.play_circle_fill,
+                              FamilyIcons.playCircleFill,
                               color: palette.primary,
                               size: 64,
                             )
@@ -1192,7 +1192,7 @@ class _PhotoCard extends StatelessWidget {
                                 );
                               },
                               errorBuilder: (_, __, ___) => Icon(
-                                Icons.photo,
+                                FamilyIcons.photo,
                                 color: palette.primary,
                                 size: 48,
                               ),
@@ -1254,12 +1254,12 @@ class _PhotoCard extends StatelessWidget {
                       ),
                       IconButton(
                         onPressed: () => onEdit(item),
-                        icon: const Icon(Icons.edit_outlined),
+                        icon: const Icon(FamilyIcons.editOutlined),
                         tooltip: 'Editar',
                       ),
                       IconButton(
                         onPressed: () => onDelete(item),
-                        icon: const Icon(Icons.delete_outline),
+                        icon: const Icon(FamilyIcons.deleteOutline),
                         tooltip: 'Excluir',
                       ),
                     ],
@@ -1461,12 +1461,12 @@ class _PhotoMemorySheetState extends State<PhotoMemorySheet> {
         child: Wrap(
           children: [
             ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
+              leading: const Icon(FamilyIcons.photoLibraryOutlined),
               title: const Text('Foto da galeria'),
               onTap: () => Navigator.pop(context, _PickedMediaType.image),
             ),
             ListTile(
-              leading: const Icon(Icons.video_library_outlined),
+              leading: const Icon(FamilyIcons.videoLibraryOutlined),
               title: const Text('Vídeo da galeria'),
               onTap: () => Navigator.pop(context, _PickedMediaType.video),
             ),
@@ -1537,7 +1537,7 @@ class _PhotoMemorySheetState extends State<PhotoMemorySheet> {
             const SizedBox(height: 16),
             FamilyOutlinedButton.icon(
               onPressed: saving ? null : _pickFile,
-              icon: const Icon(Icons.upload_file),
+              icon: const Icon(FamilyIcons.uploadFile),
               label: Text(file == null ? 'Escolher foto ou vídeo' : file!.name),
             ),
             const SizedBox(height: 12),
@@ -1677,7 +1677,7 @@ class _LetterReader extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 6),
-                        Icon(Icons.favorite, color: palette.primary, size: 22),
+                        Icon(FamilyIcons.favorite, color: palette.primary, size: 22),
                       ],
                     ),
                   ),
@@ -1719,7 +1719,7 @@ class _NoteReader extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.sticky_note_2_outlined, color: palette.primary),
+                    Icon(FamilyIcons.stickyNote2Outlined, color: palette.primary),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -1886,7 +1886,7 @@ class _PhotoViewer extends StatelessWidget {
                     color: palette.primary.withValues(alpha: .08),
                     alignment: Alignment.center,
                     child: Icon(
-                      Icons.play_circle_fill,
+                      FamilyIcons.playCircleFill,
                       color: palette.primary,
                       size: 72,
                     ),
@@ -1955,11 +1955,11 @@ String? _footerFor(String resource, FamilyItem item) {
 
 IconData _resourceIcon(String resource) {
   return switch (resource) {
-    'musicas' => Icons.music_note_outlined,
-    'cartas' => Icons.card_giftcard_outlined,
-    'notas' => Icons.sticky_note_2_outlined,
-    'fotos' => Icons.photo_library_outlined,
-    _ => Icons.favorite_outline,
+    'musicas' => FamilyIcons.musicNoteOutlined,
+    'cartas' => FamilyIcons.cardGiftcardOutlined,
+    'notas' => FamilyIcons.stickyNote2Outlined,
+    'fotos' => FamilyIcons.photoLibraryOutlined,
+    _ => FamilyIcons.favoriteOutline,
   };
 }
 

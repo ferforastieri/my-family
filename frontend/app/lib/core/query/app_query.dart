@@ -50,7 +50,7 @@ class AppQuery<T> extends StatelessWidget {
                   FamilyButton(
                     onPressed: () async => result.refetch(),
                     label: 'Tentar novamente',
-                    icon: Icons.refresh,
+                    icon: FamilyIcons.refresh,
                   ),
                 ],
               ),

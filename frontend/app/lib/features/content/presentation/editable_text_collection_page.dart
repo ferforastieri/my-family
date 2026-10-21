@@ -75,9 +75,9 @@ class _EditableTextCollectionPageState
                 subtitle: canWrite
                     ? 'Escreva os textos desta página.'
                     : 'Textos da família.',
-                icon: Icons.edit_note_outlined,
+                icon: FamilyIcons.editNoteOutlined,
                 actionLabel: canWrite ? 'Escrever' : null,
-                actionIcon: Icons.edit_outlined,
+                actionIcon: FamilyIcons.editOutlined,
                 onAction: canWrite ? () => _openEditor() : null,
               ),
               children: [
@@ -137,14 +137,14 @@ class _EditableTextCollectionPageState
                                                   onPressed: () =>
                                                       _openEditor(item),
                                                   icon: const Icon(
-                                                    Icons.edit_outlined,
+                                                    FamilyIcons.editOutlined,
                                                   ),
                                                 ),
                                                 IconButton(
                                                   onPressed: () =>
                                                       _delete(item),
                                                   icon: const Icon(
-                                                    Icons.delete_outline,
+                                                    FamilyIcons.deleteOutline,
                                                   ),
                                                 ),
                                               ],
@@ -242,7 +242,7 @@ class _TextReaderSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppSheetHeader(title: item.title, icon: Icons.auto_stories_outlined),
+          AppSheetHeader(title: item.title, icon: FamilyIcons.autoStoriesOutlined),
           const SizedBox(height: 18),
           Text(
             item.subtitle,
@@ -335,7 +335,7 @@ class _TextEntrySheetState extends State<_TextEntrySheet> {
             title:
                 widget.item == null ? 'Escrever em ${widget.title}' : 'Editar',
             subtitle: 'Registre um texto especial para aparecer no app.',
-            icon: Icons.edit_note_outlined,
+            icon: FamilyIcons.editNoteOutlined,
           ),
           const SizedBox(height: 16),
           FamilyTextField(

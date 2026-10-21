@@ -37,7 +37,7 @@ class ProfilePage extends StatelessWidget {
         header: const AppPageHeader(
           title: 'Perfil',
           subtitle: 'Conta e preferências.',
-          icon: Icons.person_outline,
+          icon: FamilyIcons.personOutline,
         ),
         children: [
           user == null
@@ -139,7 +139,7 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
               ),
               const SizedBox(height: 12),
               _ProfileActionTile(
-                icon: Icons.person_outline,
+                icon: FamilyIcons.personOutline,
                 label: 'Editar perfil',
                 description: 'Atualize seu nome e suas informações.',
                 onTap: widget.onEditProfile,
@@ -147,7 +147,7 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
               if (user.isAdmin) ...[
                 const SizedBox(height: 10),
                 _ProfileActionTile(
-                  icon: Icons.admin_panel_settings_outlined,
+                  icon: FamilyIcons.adminPanelSettingsOutlined,
                   label: 'Administração',
                   description: 'Gerencie usuários, notificações e jogos.',
                   onTap: widget.onAdmin,
@@ -155,7 +155,7 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
               ],
               const SizedBox(height: 10),
               _ProfileActionTile(
-                icon: Icons.download_outlined,
+                icon: FamilyIcons.downloadOutlined,
                 label: 'Baixar versão mais atual',
                 description: 'Instale a versão mais recente do aplicativo.',
                 onTap: () => launchUrl(
@@ -174,7 +174,7 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
               ),
               const SizedBox(height: 12),
               _ProfileActionTile(
-                icon: Icons.palette_outlined,
+                icon: FamilyIcons.paletteOutlined,
                 label: 'Aparência',
                 description: 'Cor, fonte, modo e cenário — preferências só suas.',
                 onTap: () => AppHeaderActionsScope.maybeOf(context)?.onTheme(),
@@ -190,7 +190,7 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
               ),
               const SizedBox(height: 12),
               _ProfileActionTile(
-                icon: Icons.logout,
+                icon: FamilyIcons.logout,
                 label: 'Sair',
                 description: 'Encerrar sua sessão neste dispositivo.',
                 destructive: true,
@@ -238,7 +238,7 @@ class _GuestProfileCard extends StatelessWidget {
               ),
             ),
             child: Icon(
-              Icons.account_circle_outlined,
+              FamilyIcons.accountCircleOutlined,
               color: palette.primary,
               size: 56,
             ),
@@ -265,7 +265,7 @@ class _GuestProfileCard extends StatelessWidget {
             child: FamilyButton(
               onPressed: onLogin,
               label: 'Entrar',
-              icon: Icons.login,
+              icon: FamilyIcons.login,
             ),
           ),
         ],
@@ -366,7 +366,7 @@ class _ProfileHero extends StatelessWidget {
                               ),
                             )
                           : const Icon(
-                              Icons.photo_camera_outlined,
+                              FamilyIcons.photoCameraOutlined,
                               color: Colors.white,
                               size: 18,
                             ),
@@ -476,7 +476,7 @@ class _ProfileActionTile extends StatelessWidget {
       icon: icon,
       onTap: onTap,
       padding: const EdgeInsets.all(14),
-      trailing: Icon(Icons.chevron_right, color: color),
+      trailing: Icon(FamilyIcons.chevronRight, color: color),
     );
   }
 }
