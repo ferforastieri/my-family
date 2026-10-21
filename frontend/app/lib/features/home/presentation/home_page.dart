@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -39,7 +38,6 @@ class _HomePageState extends State<HomePage> {
   bool galleryTitleVisible = true;
   String galleryTitleLayout = 'arc';
   String? loadError;
-  Offset? cursorPosition;
 
   @override
   void initState() {
@@ -90,14 +88,8 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return LoveBackground(
-      child: MouseRegion(
-        cursor: kIsWeb ? SystemMouseCursors.none : MouseCursor.defer,
-        onHover: kIsWeb
-            ? (event) => setState(() => cursorPosition = event.localPosition)
-            : null,
-        onExit: kIsWeb ? (_) => setState(() => cursorPosition = null) : null,
-        child: LayoutBuilder(
-          builder: (context, viewport) {
+      child: LayoutBuilder(
+        builder: (context, viewport) {
             final mobile = viewport.maxWidth < 760;
             final content = ListView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -186,17 +178,10 @@ class _HomePageState extends State<HomePage> {
                   )
                 else
                   content,
-                if (kIsWeb && cursorPosition != null)
-                  Positioned(
-                    left: cursorPosition!.dx - 2,
-                    top: cursorPosition!.dy - 2,
-                    child: const IgnorePointer(child: _HomeCursor()),
-                  ),
               ],
             );
           },
         ),
-      ),
     );
   }
 }
@@ -284,58 +269,6 @@ class _HomeGardenLayer extends StatelessWidget {
       },
     );
   }
-}
-
-class _HomeCursor extends StatelessWidget {
-  const _HomeCursor();
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
-    return SizedBox(
-      width: 25,
-      height: 29,
-      child: CustomPaint(
-        painter: _HomeCursorPainter(
-          fill: palette.card,
-          outline: palette.primary,
-        ),
-      ),
-    );
-  }
-}
-
-class _HomeCursorPainter extends CustomPainter {
-  const _HomeCursorPainter({required this.fill, required this.outline});
-
-  final Color fill;
-  final Color outline;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final pointer = Path()
-      ..moveTo(2.5, 1.5)
-      ..lineTo(4.4, 22)
-      ..lineTo(9.4, 16.8)
-      ..lineTo(14.7, 27)
-      ..lineTo(19.1, 24.8)
-      ..lineTo(13.8, 14.5)
-      ..lineTo(23, 13.8)
-      ..close();
-    canvas.drawPath(pointer, Paint()..color = fill);
-    canvas.drawPath(
-      pointer,
-      Paint()
-        ..color = outline
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.7
-        ..strokeJoin = StrokeJoin.round,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _HomeCursorPainter oldDelegate) =>
-      oldDelegate.fill != fill || oldDelegate.outline != outline;
 }
 
 class _HomeTitle extends StatelessWidget {
