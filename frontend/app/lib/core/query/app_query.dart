@@ -1,8 +1,8 @@
+import 'package:family_ui/family_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:fquery/fquery.dart';
 import 'package:fquery_core/fquery_core.dart';
 
-import '../widgets/app_button.dart';
 import '../widgets/skeleton.dart';
 
 class AppQuery<T> extends StatelessWidget {
@@ -47,7 +47,7 @@ class AppQuery<T> extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 12),
-                  AppButton(
+                  FamilyButton(
                     onPressed: () async => result.refetch(),
                     label: 'Tentar novamente',
                     icon: Icons.refresh,

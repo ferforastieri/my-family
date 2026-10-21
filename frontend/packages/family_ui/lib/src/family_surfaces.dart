@@ -118,3 +118,74 @@ class FamilyChip extends StatelessWidget {
     );
   }
 }
+
+class FamilyActionCard extends StatelessWidget {
+  const FamilyActionCard({
+    super.key,
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.onTap,
+    this.trailing,
+    this.maxWidth,
+    this.padding = const EdgeInsets.all(20),
+  });
+
+  final String title;
+  final String description;
+  final IconData icon;
+  final VoidCallback onTap;
+  final Widget? trailing;
+  final double? maxWidth;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return FamilyCard(
+      padding: padding,
+      maxWidth: maxWidth,
+      onTap: onTap,
+      child: Row(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: scheme.primary.withValues(alpha: .12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: scheme.primary, size: 30),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: scheme.onSurface,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  description,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: scheme.onSurfaceVariant, height: 1.35),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          trailing ?? Icon(Icons.chevron_right, color: scheme.primary),
+        ],
+      ),
+    );
+  }
+}

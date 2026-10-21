@@ -7,12 +7,11 @@ import '../../../core/api/query_keys.dart';
 import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
-import '../../../core/widgets/app_button.dart';
+import 'package:family_ui/family_ui.dart';
 import '../../../core/widgets/app_fixed_header_scroll_view.dart';
 import '../../../core/widgets/app_pagination.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
-import '../../../core/widgets/love_action_card.dart';
 import '../../../core/widgets/love_background.dart';
 import '../../../core/widgets/skeleton.dart';
 import '../../../data/family_repository.dart';
@@ -328,7 +327,7 @@ class _ResourceMetricCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    return LovePanel(
+    return FamilyCard(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Row(
         children: [
@@ -383,7 +382,7 @@ class _AlbumFilter extends StatelessWidget {
     final palette = Theme.of(context).extension<AppPalette>()!;
     final total = albums.fold<int>(0, (sum, album) => sum + album.count);
     final selectedLabel = selectedAlbum ?? 'Todos os álbuns';
-    return LovePanel(
+    return FamilyCard(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       child: Row(
         children: [
@@ -401,7 +400,7 @@ class _AlbumFilter extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: OutlinedButton(
+            child: FamilyOutlinedButton(
               onPressed: () => _openAlbumSheet(context, total),
               style: OutlinedButton.styleFrom(
                 alignment: Alignment.centerLeft,
@@ -557,7 +556,7 @@ class _EmptyResourceState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    return LovePanel(
+    return FamilyCard(
       padding: const EdgeInsets.all(28),
       child: Column(
         children: [
@@ -569,7 +568,7 @@ class _EmptyResourceState extends StatelessWidget {
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 14),
-          AppButton(onPressed: onPressed, label: actionLabel, icon: Icons.add),
+          FamilyButton(onPressed: onPressed, label: actionLabel, icon: Icons.add),
         ],
       ),
     );
@@ -682,7 +681,7 @@ class _TextResourceCard extends StatelessWidget {
       child: Stack(
         children: [
           Positioned.fill(
-            child: LoveActionCard(
+            child: FamilyActionCard(
               title: item.title,
               description:
                   item.subtitle.isEmpty ? 'Sem descrição.' : item.subtitle,
@@ -746,7 +745,7 @@ class _MusicCard extends StatelessWidget {
     final moment = item.data['momento']?.toString().trim();
     final link = item.data['linkSpotify']?.toString().trim();
     final hasLink = link != null && link.isNotEmpty;
-    return LovePanel(
+    return FamilyCard(
       padding: EdgeInsets.zero,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -1048,7 +1047,7 @@ class _NoteCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     final preview = item.subtitle.trim();
-    return LovePanel(
+    return FamilyCard(
       padding: EdgeInsets.zero,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
@@ -1157,7 +1156,7 @@ class _PhotoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    return LovePanel(
+    return FamilyCard(
       padding: EdgeInsets.zero,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -1329,7 +1328,7 @@ class _ResourceDialogState extends State<ResourceDialog> {
             icon: _resourceIcon(widget.resource),
           ),
           const SizedBox(height: 16),
-          TextField(
+          FamilyTextField(
             controller: title,
             decoration: InputDecoration(
               labelText:
@@ -1339,7 +1338,7 @@ class _ResourceDialogState extends State<ResourceDialog> {
             onSubmitted: (_) => _save(),
           ),
           const SizedBox(height: 10),
-          TextField(
+          FamilyTextField(
             controller: subtitle,
             decoration: InputDecoration(
               labelText:
@@ -1364,7 +1363,7 @@ class _ResourceDialogState extends State<ResourceDialog> {
           ),
           if (widget.resource != 'cartas' && widget.resource != 'notas') ...[
             const SizedBox(height: 10),
-            TextField(
+            FamilyTextField(
               controller: extra,
               decoration: const InputDecoration(labelText: 'Extra'),
               textInputAction: TextInputAction.done,
@@ -1536,20 +1535,20 @@ class _PhotoMemorySheetState extends State<PhotoMemorySheet> {
               style: TextStyle(color: palette.muted, height: 1.35),
             ),
             const SizedBox(height: 16),
-            OutlinedButton.icon(
+            FamilyOutlinedButton.icon(
               onPressed: saving ? null : _pickFile,
               icon: const Icon(Icons.upload_file),
               label: Text(file == null ? 'Escolher foto ou vídeo' : file!.name),
             ),
             const SizedBox(height: 12),
-            TextField(
+            FamilyTextField(
               controller: album,
               decoration: const InputDecoration(labelText: 'Álbum'),
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _save(),
             ),
             const SizedBox(height: 10),
-            TextField(
+            FamilyTextField(
               controller: texto,
               decoration: const InputDecoration(labelText: 'Descrição'),
               minLines: 2,
@@ -1558,7 +1557,7 @@ class _PhotoMemorySheetState extends State<PhotoMemorySheet> {
               onSubmitted: (_) => _save(),
             ),
             const SizedBox(height: 10),
-            AppDateField(
+            FamilyDateField(
               label: 'Data da memória',
               value: date,
               onChanged: (value) => setState(() => date = value),
@@ -1712,7 +1711,7 @@ class _NoteReader extends StatelessWidget {
           maxHeight: screenHeight * .90,
         ),
         child: SingleChildScrollView(
-          child: LovePanel(
+          child: FamilyCard(
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 28),
             child: Column(
               mainAxisSize: MainAxisSize.min,

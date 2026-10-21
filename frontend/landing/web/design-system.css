@@ -1,0 +1,95 @@
+/* Sião design system — compartilhado por landing, app e painel. */
+:root {
+  --ds-wine: #9f4d4d;
+  --ds-wine-dark: #763538;
+  --ds-paper: #fefbf3;
+  --ds-paper-deep: #fbebdc;
+  --ds-ink: #542a30;
+  --ds-line: #d8aca0;
+  --ds-white: #fffdf8;
+  --ds-radius-control: 14px;
+  --ds-radius-card: 18px;
+  --ds-control-height: 48px;
+  --ds-shadow: 0 22px 60px rgb(84 42 48 / 12%);
+  --ds-skeleton-base: #efe0da;
+  --ds-skeleton-highlight: #fbf0eb;
+}
+
+.ds-card {
+  border: 1px solid var(--ds-line);
+  border-radius: var(--ds-radius-card);
+  background: var(--ds-white);
+  box-shadow: var(--ds-shadow);
+}
+
+.ds-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  min-height: var(--ds-control-height);
+  padding: .7rem 1.15rem;
+  border: 1px solid var(--ds-wine);
+  border-radius: 999px;
+  color: var(--ds-wine-dark);
+  background: transparent;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+.ds-button-primary { background: var(--ds-wine); color: white; }
+.ds-button-ghost { border-color: transparent; background: transparent; }
+.ds-button:disabled { cursor: wait; opacity: .72; }
+.ds-button:focus-visible {
+  outline: 3px solid var(--ds-wine);
+  outline-offset: 4px;
+}
+
+.ds-field { display: grid; gap: .4rem; font-weight: 800; }
+.ds-input, .ds-select, .ds-textarea, .ds-date {
+  width: 100%;
+  min-height: var(--ds-control-height);
+  padding: .7rem .85rem;
+  border: 1px solid var(--ds-line);
+  border-radius: var(--ds-radius-control);
+  background: var(--ds-paper);
+  color: var(--ds-ink);
+  font: inherit;
+}
+.ds-input:focus, .ds-select:focus, .ds-textarea:focus, .ds-date:focus {
+  outline: 2px solid var(--ds-wine);
+  outline-offset: 2px;
+}
+
+.ds-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .5rem .8rem;
+  border: 1px solid var(--ds-line);
+  border-radius: 999px;
+  background: var(--ds-white);
+  font-size: .85rem;
+  font-weight: 800;
+}
+
+.ds-skeleton {
+  border-radius: var(--ds-radius-control);
+  background: linear-gradient(
+    100deg,
+    var(--ds-skeleton-base) 20%,
+    var(--ds-skeleton-highlight) 40%,
+    var(--ds-skeleton-base) 60%
+  );
+  background-size: 220% 100%;
+  animation: ds-shimmer 1.4s linear infinite;
+}
+@keyframes ds-shimmer {
+  from { background-position: 120% 0; }
+  to { background-position: -120% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-skeleton { animation: none; }
+}

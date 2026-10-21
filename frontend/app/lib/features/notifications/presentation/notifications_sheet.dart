@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../core/notifications/notifications_controller.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/app_button.dart';
+import 'package:family_ui/family_ui.dart';
 import '../../../core/widgets/skeleton.dart';
 
 class NotificationsSheet extends StatelessWidget {
@@ -100,7 +100,7 @@ class NotificationsSheet extends StatelessWidget {
                           ),
               ),
               const SizedBox(height: 14),
-              AppButton(
+              FamilyButton(
                 onPressed: notifications.configurePush,
                 label: notifications.pushReady ? 'Push ativo' : 'Ativar push',
                 icon: notifications.pushReady

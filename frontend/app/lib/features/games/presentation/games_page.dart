@@ -9,7 +9,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_fixed_header_scroll_view.dart';
 import '../../../core/widgets/app_page_header.dart';
-import '../../../core/widgets/love_action_card.dart';
+import 'package:family_ui/family_ui.dart';
 import '../../../core/widgets/love_background.dart';
 import '../../../core/widgets/skeleton.dart';
 import '../../../data/family_repository.dart';
@@ -172,7 +172,7 @@ class _GameOptionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: LoveActionCard(
+      child: FamilyActionCard(
         title: title,
         description: description,
         icon: icon,
@@ -333,7 +333,7 @@ class _QuizQuestionView extends StatelessWidget {
         ),
         const SizedBox(height: 18),
         if (showName) ...[
-          TextField(
+          FamilyTextField(
             controller: name,
             decoration: const InputDecoration(labelText: 'Seu nome'),
             textInputAction: TextInputAction.done,
@@ -353,7 +353,7 @@ class _QuizQuestionView extends StatelessWidget {
               mainAxisSpacing: 10,
               children: [
                 for (var i = 0; i < question.options.length; i++)
-                  OutlinedButton.icon(
+                  FamilyOutlinedButton.icon(
                     onPressed: () => onAnswer(i),
                     icon: Icon(Icons.favorite_border, color: palette.primary),
                     label: Align(
@@ -607,7 +607,7 @@ class _WordSearchContent extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (showName) ...[
-          TextField(
+          FamilyTextField(
             controller: name,
             decoration: const InputDecoration(labelText: 'Seu nome'),
             textInputAction: TextInputAction.done,
@@ -724,7 +724,7 @@ class _WordSearchSidePanel extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 14),
-            FilledButton.icon(
+            FamilyFilledButton.icon(
               onPressed: onNewGame,
               icon: const Icon(Icons.shuffle),
               label: const Text('Novo sorteio'),
@@ -957,7 +957,7 @@ class _PlayerNameField extends StatelessWidget {
     if (!show) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
-      child: TextField(
+      child: FamilyTextField(
         controller: controller,
         decoration: const InputDecoration(labelText: 'Seu nome'),
         textInputAction: TextInputAction.done,
@@ -1106,7 +1106,7 @@ class _MemoryMatchGameState extends State<_MemoryMatchGame> {
           },
         ),
         const SizedBox(height: 14),
-        FilledButton.icon(
+        FamilyFilledButton.icon(
           onPressed: () => setState(_reset),
           icon: const Icon(Icons.shuffle),
           label: const Text('Recomeçar'),
@@ -1229,7 +1229,7 @@ class _LoveOrderGameState extends State<_LoveOrderGame> {
           ),
         ),
         const SizedBox(height: 14),
-        FilledButton.icon(
+        FamilyFilledButton.icon(
           onPressed: () => setState(_reset),
           icon: const Icon(Icons.replay),
           label: const Text('Recomeçar'),
@@ -1381,7 +1381,7 @@ class _ChoiceButtons extends StatelessWidget {
         final wide = constraints.maxWidth >= 620;
         final buttons = [
           for (final option in options)
-            FilledButton(
+            FamilyFilledButton(
               onPressed: () => onChoose(option),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 14),
@@ -1486,7 +1486,7 @@ class _GamePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final compact = MediaQuery.sizeOf(context).width < 520;
-    return LovePanel(padding: EdgeInsets.all(compact ? 12 : 22), child: child);
+    return FamilyCard(padding: EdgeInsets.all(compact ? 12 : 22), child: child);
   }
 }
 
@@ -1531,7 +1531,7 @@ class _QuizFinished extends StatelessWidget {
           style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
         ),
         const SizedBox(height: 14),
-        FilledButton.icon(
+        FamilyFilledButton.icon(
           onPressed: onRestart,
           icon: const Icon(Icons.replay),
           label: const Text('Jogar novamente'),
@@ -1571,7 +1571,7 @@ class _PreferenceFinished extends StatelessWidget {
           style: TextStyle(color: palette.muted),
         ),
         const SizedBox(height: 14),
-        FilledButton.icon(
+        FamilyFilledButton.icon(
           onPressed: onRestart,
           icon: const Icon(Icons.replay),
           label: const Text('Jogar novamente'),

@@ -26,7 +26,7 @@ class SiteShell extends StatelessComponent {
             a(href: '/seguranca', [.text('Privacidade')]),
             a(href: '/faq', [.text('Dúvidas')]),
             a(href: downloadUrl, [.text('Baixar app')]),
-            a(href: '/cadastro', classes: 'button', [.text('Entrar')]),
+            a(href: '/cadastro', classes: 'ds-button ds-button-ghost', [.text('Entrar')]),
           ]),
         ],
       ),

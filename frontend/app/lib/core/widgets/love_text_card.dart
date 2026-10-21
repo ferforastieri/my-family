@@ -1,7 +1,7 @@
+import 'package:family_ui/family_ui.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
-import 'love_action_card.dart';
 
 class LoveTextCard extends StatelessWidget {
   const LoveTextCard({
@@ -20,7 +20,7 @@ class LoveTextCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    final card = LovePanel(
+    final card = FamilyCard(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

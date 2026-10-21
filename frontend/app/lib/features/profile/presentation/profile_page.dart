@@ -10,11 +10,10 @@ import '../../../core/auth/authenticated_media.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
-import '../../../core/widgets/app_button.dart';
+import 'package:family_ui/family_ui.dart';
 import '../../../core/widgets/app_fixed_header_scroll_view.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
-import '../../../core/widgets/love_action_card.dart';
 import '../../../core/widgets/love_background.dart';
 import '../../../core/widgets/skeleton.dart';
 import '../../auth/presentation/auth_sheet.dart';
@@ -254,7 +253,7 @@ class _GuestProfileCard extends StatelessWidget {
           const SizedBox(height: 22),
           SizedBox(
             width: double.infinity,
-            child: AppButton(
+            child: FamilyButton(
               onPressed: onLogin,
               label: 'Entrar',
               icon: Icons.login,
@@ -462,7 +461,7 @@ class _ProfileActionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     final color = destructive ? Colors.redAccent : palette.primary;
-    return LoveActionCard(
+    return FamilyActionCard(
       title: label,
       description: description,
       icon: icon,

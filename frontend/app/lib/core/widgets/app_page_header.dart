@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
-import 'app_button.dart';
+import 'package:family_ui/family_ui.dart';
 
 class AppHeaderActionsScope extends InheritedWidget {
   const AppHeaderActionsScope({
@@ -69,7 +69,7 @@ class AppPageHeader extends StatelessWidget {
                 icon: Icon(actionIcon ?? Icons.more_horiz),
                 tooltip: actionLabel!,
               )
-            : AppButton(
+            : FamilyButton(
                 onPressed: onAction,
                 label: actionLabel!,
                 icon: actionIcon,

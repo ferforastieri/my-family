@@ -58,7 +58,7 @@ class HomePage extends StatelessComponent {
             ),
           ]),
           div(classes: 'actions', [
-            a(href: '/cadastro', classes: 'button primary', [
+            a(href: '/cadastro', classes: 'ds-button ds-button-primary', [
               .text('Criar minha família'),
             ]),
             const DemoButton(label: 'Experimentar a demo'),
@@ -126,7 +126,7 @@ class HomePage extends StatelessComponent {
             'O acesso acontece por convite. Cada família vê somente seu espaço, enquanto a plataforma acompanha a operação — nunca uma galeria com o conteúdo privado.',
           ),
         ]),
-        a(href: '/seguranca', classes: 'button', [
+        a(href: '/seguranca', classes: 'ds-button', [
           .text('Conhecer a proteção dos dados'),
         ]),
       ]),
@@ -136,7 +136,7 @@ class HomePage extends StatelessComponent {
           h2([.text('Abra a porta da casa digital da sua família.')]),
         ]),
         div(classes: 'actions', [
-          a(href: '/cadastro', classes: 'button primary', [
+          a(href: '/cadastro', classes: 'ds-button ds-button-primary', [
             .text('Criar minha família'),
           ]),
           const DemoButton(label: 'Ver por dentro'),
@@ -146,7 +146,7 @@ class HomePage extends StatelessComponent {
   );
 
   Component _memory(String date, String title, String body) =>
-      article(classes: 'memory', [
+      article(classes: 'memory ds-card', [
         small([.text(date)]),
         strong([.text(title)]),
         p([.text(body)]),

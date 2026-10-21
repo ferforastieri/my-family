@@ -2,7 +2,6 @@ import 'package:family_ui/family_ui.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
-import 'app_button.dart';
 
 Future<T?> showAppSheet<T>({
   required BuildContext context,
@@ -159,14 +158,14 @@ class AppSheetActions extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: OutlinedButton(
+          child: FamilyOutlinedButton(
             onPressed: loading ? null : onCancel,
             child: const Text('Cancelar'),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: AppButton(
+          child: FamilyButton(
             onPressed: onSave,
             label: saveLabel,
             icon: Icons.check,
@@ -178,58 +177,3 @@ class AppSheetActions extends StatelessWidget {
   }
 }
 
-class AppDateField extends StatelessWidget {
-  const AppDateField({
-    super.key,
-    required this.label,
-    required this.value,
-    required this.onChanged,
-    this.firstDate,
-    this.lastDate,
-  });
-
-  final String label;
-  final DateTime? value;
-  final ValueChanged<DateTime?> onChanged;
-  final DateTime? firstDate;
-  final DateTime? lastDate;
-
-  Future<void> _pick(BuildContext context) async {
-    final now = DateTime.now();
-    final picked = await FamilyDatePicker.show(
-      context,
-      initialDate: value ?? now,
-      firstDate: firstDate ?? DateTime(1900),
-      lastDate: lastDate ?? DateTime(now.year + 20, 12, 31),
-      helpText: label,
-    );
-    if (picked != null) onChanged(picked);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final text = _formatDate(value);
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: () => _pick(context),
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          suffixIcon: IconButton(
-            tooltip: 'Escolher data',
-            icon: const Icon(Icons.calendar_month_outlined),
-            onPressed: () => _pick(context),
-          ),
-        ),
-        child: Text(text.isEmpty ? 'Escolher data' : text),
-      ),
-    );
-  }
-}
-
-String _formatDate(DateTime? value) {
-  if (value == null) return '';
-  final day = value.day.toString().padLeft(2, '0');
-  final month = value.month.toString().padLeft(2, '0');
-  return '$day/$month/${value.year}';
-}

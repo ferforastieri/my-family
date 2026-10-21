@@ -36,9 +36,14 @@ class _DemoButtonState extends State<DemoButton> {
         },
         [],
       ),
-    button(classes: 'button', disabled: busy, onClick: _open, [
-      .text(busy ? 'Preparando…' : component.label),
-    ]),
+    button(
+      classes: busy
+          ? 'ds-button ds-button-ghost ds-skeleton'
+          : 'ds-button ds-button-ghost',
+      disabled: busy,
+      onClick: _open,
+      [if (!busy) .text(component.label)],
+    ),
     if (error != null)
       small(attributes: const {'role': 'alert'}, [.text(error!)]),
   ]);

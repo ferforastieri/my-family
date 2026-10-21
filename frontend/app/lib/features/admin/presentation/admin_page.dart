@@ -9,12 +9,10 @@ import '../../../core/config/app_config.dart';
 import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
-import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_fixed_header_scroll_view.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_pagination.dart';
 import '../../../core/widgets/app_sheet.dart';
-import '../../../core/widgets/love_action_card.dart';
 import '../../../core/widgets/love_background.dart';
 import '../../../core/widgets/skeleton.dart';
 import '../../../data/family_repository.dart';
@@ -553,7 +551,7 @@ class _AdminScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LovePanel(
+    return FamilyCard(
       padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1051,8 +1049,8 @@ class _NotificationsAdminTab extends StatelessWidget {
           action: _AdminActions(
             fullWidthOnCompact: true,
             children: [
-              AppButton(onPressed: onAdd, label: 'Nova', icon: Icons.add),
-              AppButton(
+              FamilyButton(onPressed: onAdd, label: 'Nova', icon: Icons.add),
+              FamilyButton(
                 onPressed: onScheduleNew,
                 label: 'Agendar',
                 icon: Icons.schedule_send_outlined,
@@ -1134,13 +1132,13 @@ class _GamesAdminTabState extends State<_GamesAdminTab> {
             fullWidthOnCompact: true,
             children: [
               if (section == _GamesAdminSection.quiz)
-                AppButton(
+                FamilyButton(
                   onPressed: widget.onAddQuestion,
                   label: 'Pergunta',
                   icon: Icons.add,
                 ),
               if (section == _GamesAdminSection.words)
-                AppButton(
+                FamilyButton(
                   onPressed: widget.onAddWord,
                   label: 'Palavra',
                   icon: Icons.add,
@@ -1398,7 +1396,7 @@ class _GameSectionBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     if (children.isEmpty) {
-      return LovePanel(
+      return FamilyCard(
         padding: const EdgeInsets.all(18),
         child: Text(empty, style: TextStyle(color: palette.muted)),
       );
@@ -1498,7 +1496,7 @@ class _HomeSettingsAdminTab extends StatelessWidget {
         _AdminToolbar(
           title: 'Home',
           subtitle: 'Cards, visibilidade e carrossel de fotos da tela inicial.',
-          action: AppButton(
+          action: FamilyButton(
             onPressed: () => _openEventSheet(context),
             label: 'Criar',
             icon: Icons.add,
@@ -1798,7 +1796,7 @@ class _AdminTile extends StatelessWidget {
           ),
         );
 
-        return LovePanel(
+        return FamilyCard(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           child: compact
               ? Column(
@@ -2157,7 +2155,7 @@ class _HomeEventSheetState extends State<_HomeEventSheet> {
             children: [
               SizedBox(
                 width: 86,
-                child: TextField(
+                child: FamilyTextField(
                   controller: draft.icon,
                   decoration: const InputDecoration(labelText: 'Ícone'),
                   textInputAction: TextInputAction.next,
@@ -2165,7 +2163,7 @@ class _HomeEventSheetState extends State<_HomeEventSheet> {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: TextField(
+                child: FamilyTextField(
                   controller: draft.title,
                   decoration: const InputDecoration(labelText: 'Título'),
                   textInputAction: TextInputAction.next,
@@ -2174,7 +2172,7 @@ class _HomeEventSheetState extends State<_HomeEventSheet> {
             ],
           ),
           const SizedBox(height: 10),
-          TextField(
+          FamilyTextField(
             controller: draft.message,
             minLines: 2,
             maxLines: 4,
@@ -2182,7 +2180,7 @@ class _HomeEventSheetState extends State<_HomeEventSheet> {
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: 10),
-          AppDateField(
+          FamilyDateField(
             label: 'Data',
             value: draft.date,
             onChanged: (date) => setState(() => draft.date = date),
@@ -2314,7 +2312,7 @@ class _HomeGallerySheetState extends State<_HomeGallerySheet> {
             icon: Icons.auto_awesome_motion_outlined,
           ),
           const SizedBox(height: 18),
-          TextField(
+          FamilyTextField(
             controller: title,
             enabled: !uploading,
             decoration: const InputDecoration(labelText: 'Título do carrossel'),
@@ -2553,7 +2551,7 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
               separatorBuilder: (_, __) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
                 final draft = drafts[index];
-                return LovePanel(
+                return FamilyCard(
                   padding: const EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2612,7 +2610,7 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
                         children: [
                           SizedBox(
                             width: 86,
-                            child: TextField(
+                            child: FamilyTextField(
                               controller: draft.icon,
                               enabled: !saving,
                               decoration: const InputDecoration(
@@ -2623,7 +2621,7 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: TextField(
+                            child: FamilyTextField(
                               controller: draft.title,
                               enabled: !saving,
                               decoration: const InputDecoration(
@@ -2635,7 +2633,7 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
                         ],
                       ),
                       const SizedBox(height: 10),
-                      TextField(
+                      FamilyTextField(
                         controller: draft.message,
                         enabled: !saving,
                         minLines: 2,
@@ -2646,7 +2644,7 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 10),
-                      AppDateField(
+                      FamilyDateField(
                         label: 'Data',
                         value: draft.date,
                         onChanged: saving
@@ -2691,7 +2689,7 @@ class _HomeSettingsSheetState extends State<_HomeSettingsSheet> {
           const SizedBox(height: 12),
           Align(
             alignment: Alignment.centerLeft,
-            child: AppButton(
+            child: FamilyButton(
               onPressed: saving ? null : _addCard,
               label: 'Adicionar card',
               icon: Icons.add,
@@ -2742,7 +2740,7 @@ class _HomeGalleryEditor extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    return LovePanel(
+    return FamilyCard(
       padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2760,7 +2758,7 @@ class _HomeGalleryEditor extends StatelessWidget {
                   ),
                 ),
               ),
-              AppButton(
+              FamilyButton(
                 onPressed: onAdd,
                 label: uploading ? 'Enviando...' : 'Adicionar fotos',
                 icon: Icons.add_photo_alternate_outlined,
@@ -3085,14 +3083,14 @@ class _NotificationSheetState extends State<_NotificationSheet> {
             icon: Icons.notifications_active_outlined,
           ),
           const SizedBox(height: 14),
-          TextField(
+          FamilyTextField(
             controller: title,
             decoration: const InputDecoration(labelText: 'Título'),
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _save(),
           ),
           const SizedBox(height: 10),
-          TextField(
+          FamilyTextField(
             controller: body,
             minLines: 2,
             maxLines: 4,
@@ -3101,7 +3099,7 @@ class _NotificationSheetState extends State<_NotificationSheet> {
             onSubmitted: (_) => _save(),
           ),
           const SizedBox(height: 10),
-          TextField(
+          FamilyTextField(
             controller: url,
             decoration: const InputDecoration(labelText: 'Rota ao abrir'),
             textInputAction: TextInputAction.done,
@@ -3271,7 +3269,7 @@ class _ScheduleNotificationSheetState
             icon: Icons.schedule_send_outlined,
           ),
           const SizedBox(height: 14),
-          TextField(
+          FamilyTextField(
             controller: title,
             decoration: const InputDecoration(labelText: 'Título'),
             textInputAction: TextInputAction.next,
@@ -3280,7 +3278,7 @@ class _ScheduleNotificationSheetState
             },
           ),
           const SizedBox(height: 10),
-          TextField(
+          FamilyTextField(
             controller: body,
             minLines: 2,
             maxLines: 4,
@@ -3288,7 +3286,7 @@ class _ScheduleNotificationSheetState
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: 10),
-          TextField(
+          FamilyTextField(
             controller: url,
             decoration: const InputDecoration(labelText: 'Rota ao abrir'),
             textInputAction: TextInputAction.done,
@@ -3324,7 +3322,7 @@ class _ScheduleNotificationSheetState
           Row(
             children: [
               Expanded(
-                child: OutlinedButton.icon(
+                child: FamilyOutlinedButton.icon(
                   onPressed: saving ? null : _pickDate,
                   icon: const Icon(Icons.calendar_month_outlined),
                   label: Text(
@@ -3334,7 +3332,7 @@ class _ScheduleNotificationSheetState
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: OutlinedButton.icon(
+                child: FamilyOutlinedButton.icon(
                   onPressed: saving ? null : _pickTime,
                   icon: const Icon(Icons.schedule_outlined),
                   label: Text(selectedTime.format(context)),
@@ -3466,7 +3464,7 @@ class _QuestionSheetState extends State<_QuestionSheet> {
             icon: Icons.quiz_outlined,
           ),
           const SizedBox(height: 14),
-          TextField(
+          FamilyTextField(
             controller: question,
             decoration: const InputDecoration(labelText: 'Pergunta'),
             textInputAction: TextInputAction.done,
@@ -3485,7 +3483,7 @@ class _QuestionSheetState extends State<_QuestionSheet> {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: TextField(
+                    child: FamilyTextField(
                       controller: options[i],
                       decoration: InputDecoration(labelText: 'Opção ${i + 1}'),
                       textInputAction: TextInputAction.done,
@@ -3564,7 +3562,7 @@ class _WordSheetState extends State<_WordSheet> {
             icon: Icons.extension_outlined,
           ),
           const SizedBox(height: 14),
-          TextField(
+          FamilyTextField(
             controller: word,
             decoration: const InputDecoration(labelText: 'Palavra'),
             textInputAction: TextInputAction.done,
@@ -3752,13 +3750,13 @@ class _MiniGameSheetState extends State<_MiniGameSheet> {
             icon: _miniGameAdminIcon(type),
           ),
           const SizedBox(height: 14),
-          TextField(
+          FamilyTextField(
             controller: title,
             decoration: const InputDecoration(labelText: 'Título'),
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: 10),
-          TextField(
+          FamilyTextField(
             controller: instructions,
             decoration: const InputDecoration(labelText: 'Instrução'),
             maxLines: 2,
@@ -3910,19 +3908,19 @@ class _MiniGameItemFields extends StatelessWidget {
               LayoutBuilder(
                 builder: (context, constraints) {
                   final compact = constraints.maxWidth < 420;
-                  final optionA = TextField(
+                  final optionA = FamilyTextField(
                     controller: fields[1],
                     decoration: const InputDecoration(labelText: 'Opção A'),
                     textInputAction: TextInputAction.next,
                   );
-                  final optionB = TextField(
+                  final optionB = FamilyTextField(
                     controller: fields[2],
                     decoration: const InputDecoration(labelText: 'Opção B'),
                     textInputAction: TextInputAction.next,
                   );
                   return Column(
                     children: [
-                      TextField(
+                      FamilyTextField(
                         controller: fields[0],
                         decoration: const InputDecoration(
                           labelText: 'Pergunta',
@@ -3951,7 +3949,7 @@ class _MiniGameItemFields extends StatelessWidget {
                 },
               )
             else
-              TextField(
+              FamilyTextField(
                 controller: fields.first,
                 decoration: InputDecoration(
                   labelText: _miniGameItemLabel(type),

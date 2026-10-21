@@ -4,10 +4,9 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/auth/authenticated_media.dart';
-import '../../../core/widgets/app_button.dart';
+import 'package:family_ui/family_ui.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/home_scene.dart';
-import '../../../core/widgets/love_action_card.dart';
 import '../../../core/widgets/skeleton.dart';
 import '../../../core/config/app_config.dart';
 import '../../../data/family_repository.dart';
@@ -898,7 +897,7 @@ class _HomeLoadError extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    return LovePanel(
+    return FamilyCard(
       maxWidth: 720,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -921,7 +920,7 @@ class _HomeLoadError extends StatelessWidget {
             style: TextStyle(color: palette.muted, height: 1.35),
           ),
           const SizedBox(height: 16),
-          AppButton(
+          FamilyButton(
             onPressed: onRetry,
             label: 'Tentar novamente',
             icon: Icons.refresh,
@@ -1087,7 +1086,7 @@ class CounterCard extends StatelessWidget {
         ],
       ),
     );
-    return LovePanel(
+    return FamilyCard(
       padding: EdgeInsets.zero,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),

@@ -1,3 +1,4 @@
+import 'package:family_ui/family_ui.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/auth/auth_controller.dart';
@@ -58,7 +59,7 @@ class _EditProfileSheetState extends State<EditProfileSheet> {
             icon: Icons.badge_outlined,
           ),
           const SizedBox(height: 14),
-          TextField(
+          FamilyTextField(
             controller: _name,
             textInputAction: TextInputAction.done,
             decoration: const InputDecoration(labelText: 'Nome'),

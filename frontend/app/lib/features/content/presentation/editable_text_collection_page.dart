@@ -9,7 +9,7 @@ import '../../../core/widgets/app_fixed_header_scroll_view.dart';
 import '../../../core/widgets/app_pagination.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
-import '../../../core/widgets/love_action_card.dart';
+import 'package:family_ui/family_ui.dart';
 import '../../../core/widgets/love_background.dart';
 import '../../../core/widgets/love_text_card.dart';
 import '../../../core/widgets/skeleton.dart';
@@ -82,7 +82,7 @@ class _EditableTextCollectionPageState
               ),
               children: [
                 items.isEmpty
-                    ? LovePanel(
+                    ? FamilyCard(
                         child: Text(
                           canWrite
                               ? 'Nenhum texto escrito ainda.'
@@ -338,14 +338,14 @@ class _TextEntrySheetState extends State<_TextEntrySheet> {
             icon: Icons.edit_note_outlined,
           ),
           const SizedBox(height: 16),
-          TextField(
+          FamilyTextField(
             controller: title,
             decoration: const InputDecoration(labelText: 'Título'),
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _save(),
           ),
           const SizedBox(height: 10),
-          TextField(
+          FamilyTextField(
             controller: content,
             decoration: const InputDecoration(labelText: 'Texto'),
             minLines: 5,

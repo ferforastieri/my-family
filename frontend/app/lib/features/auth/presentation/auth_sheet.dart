@@ -4,7 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/toast/toast_controller.dart';
-import '../../../core/widgets/app_button.dart';
+import 'package:family_ui/family_ui.dart';
 import '../../../core/widgets/app_sheet.dart';
 
 class AuthSheet extends StatefulWidget {
@@ -59,7 +59,7 @@ class _AuthSheetState extends State<AuthSheet> {
           ),
           const SizedBox(height: 16),
           if (registerMode) ...[
-            TextField(
+            FamilyTextField(
               controller: name,
               textInputAction: TextInputAction.next,
               autofillHints: const [AutofillHints.name],
@@ -67,7 +67,7 @@ class _AuthSheetState extends State<AuthSheet> {
             ),
             const SizedBox(height: 12),
           ],
-          TextField(
+          FamilyTextField(
             controller: email,
             keyboardType: TextInputType.emailAddress,
             autofillHints: const [AutofillHints.email],
@@ -75,7 +75,7 @@ class _AuthSheetState extends State<AuthSheet> {
             decoration: const InputDecoration(labelText: 'Email'),
           ),
           const SizedBox(height: 12),
-          TextField(
+          FamilyTextField(
             controller: password,
             obscureText: obscurePassword,
             autofillHints: [
@@ -105,13 +105,13 @@ class _AuthSheetState extends State<AuthSheet> {
             ),
           ],
           const SizedBox(height: 20),
-          AppButton(
+          FamilyButton(
             onPressed: _submit,
             loading: loading,
             icon: registerMode ? Icons.person_add_alt : Icons.login,
             label: registerMode ? 'Criar conta' : 'Entrar',
           ),
-          TextButton(
+          FamilyTextButton(
             onPressed: loading
                 ? null
                 : () => setState(() {
@@ -122,14 +122,14 @@ class _AuthSheetState extends State<AuthSheet> {
               registerMode ? 'Já tenho conta' : 'Criar uma conta',
             ),
           ),
-          TextButton(
+          FamilyTextButton(
             onPressed: () => launchUrl(
               Uri.parse('${AppConfig.landingUrl}/cadastro'),
               mode: LaunchMode.externalApplication,
             ),
             child: const Text('Criar uma família'),
           ),
-          TextButton(
+          FamilyTextButton(
             onPressed: () => launchUrl(
               Uri.parse(AppConfig.downloadUrl),
               mode: LaunchMode.externalApplication,

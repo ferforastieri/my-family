@@ -72,7 +72,7 @@ class _EmailRegistrationFormState extends State<EmailRegistrationForm> {
   }
 
   @override
-  Component build(BuildContext context) => form(classes: 'form', [
+  Component build(BuildContext context) => form(classes: 'form ds-card', [
     _field(
       'Seu nome',
       'text',
@@ -94,7 +94,7 @@ class _EmailRegistrationFormState extends State<EmailRegistrationForm> {
       autocomplete: 'new-password',
       onInput: (value) => password = value,
     ),
-    label([
+    label(classes: 'ds-field', [
       span([
         input<bool>(
           type: InputType.checkbox,
@@ -120,7 +120,7 @@ class _EmailRegistrationFormState extends State<EmailRegistrationForm> {
       ),
     button(
       type: ButtonType.button,
-      classes: busy ? 'button primary family-skeleton' : 'button primary',
+      classes: busy ? 'ds-button ds-button-primary ds-skeleton' : 'ds-button ds-button-primary',
       disabled: busy,
       onClick: _register,
       [if (!busy) .text('Criar conta')],
@@ -141,9 +141,10 @@ class _EmailRegistrationFormState extends State<EmailRegistrationForm> {
     String? placeholder,
     String? autocomplete,
     required void Function(String) onInput,
-  }) => label([
+  }) => label(classes: 'ds-field', [
     .text(labelText),
     input<String>(
+      classes: 'ds-input',
       type: switch (type) {
         'email' => InputType.email,
         'password' => InputType.password,

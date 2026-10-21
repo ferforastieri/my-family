@@ -5,11 +5,10 @@ import '../../../core/auth/auth_controller.dart';
 import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
-import '../../../core/widgets/app_button.dart';
+import 'package:family_ui/family_ui.dart';
 import '../../../core/widgets/app_fixed_header_scroll_view.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
-import '../../../core/widgets/love_action_card.dart';
 import '../../../core/widgets/love_background.dart';
 import '../../../core/widgets/skeleton.dart';
 import '../../../data/family_repository.dart';
@@ -271,7 +270,7 @@ class _ListsPageSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const LovePanel(
+    return const FamilyCard(
       maxWidth: 980,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -292,7 +291,7 @@ class _ListsPanelSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const LovePanel(
+    return const FamilyCard(
       maxWidth: 980,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -337,7 +336,7 @@ class _SimpleListsPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     final pending = items.where((item) => !item.checked).length;
-    return LovePanel(
+    return FamilyCard(
       maxWidth: 980,
       padding: EdgeInsets.zero,
       child: ClipRRect(
@@ -560,7 +559,7 @@ class _ListPickerButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    return OutlinedButton(
+    return FamilyOutlinedButton(
       onPressed: () => _openListSheet(context),
       style: OutlinedButton.styleFrom(
         alignment: Alignment.centerLeft,
@@ -765,14 +764,14 @@ class _DeleteListSheet extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: OutlinedButton(
+                child: FamilyOutlinedButton(
                   onPressed: () => Navigator.pop(context, false),
                   child: const Text('Cancelar'),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: FilledButton.icon(
+                child: FamilyFilledButton.icon(
                   onPressed: () => Navigator.pop(context, true),
                   icon: const Icon(Icons.delete_outline),
                   label: const Text('Excluir'),
@@ -810,13 +809,13 @@ class _ListFormSheet extends StatelessWidget {
               style:
                   const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
           const SizedBox(height: 16),
-          TextField(
+          FamilyTextField(
             controller: titleController,
             decoration: const InputDecoration(labelText: 'Nome da lista'),
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: 12),
-          TextField(
+          FamilyTextField(
             controller: descriptionController,
             decoration: const InputDecoration(labelText: 'Descrição'),
             onSubmitted: (_) async {
@@ -825,7 +824,7 @@ class _ListFormSheet extends StatelessWidget {
             },
           ),
           const SizedBox(height: 16),
-          AppButton(
+          FamilyButton(
             onPressed: () async {
               await onSave();
               if (context.mounted) Navigator.pop(context);
@@ -855,7 +854,7 @@ class _ItemFormSheet extends StatelessWidget {
           const Text('Novo item',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
           const SizedBox(height: 16),
-          TextField(
+          FamilyTextField(
             controller: controller,
             autofocus: true,
             decoration: const InputDecoration(labelText: 'Item'),
@@ -866,7 +865,7 @@ class _ItemFormSheet extends StatelessWidget {
             },
           ),
           const SizedBox(height: 16),
-          AppButton(
+          FamilyButton(
             onPressed: () async {
               await onSave();
               if (context.mounted) Navigator.pop(context);

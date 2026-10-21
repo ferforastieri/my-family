@@ -1,3 +1,4 @@
+import 'package:family_ui/family_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -381,7 +382,7 @@ class _EditMessageSheetState extends State<_EditMessageSheet> {
             icon: Icons.edit_outlined,
           ),
           const SizedBox(height: 18),
-          TextField(
+          FamilyTextField(
             controller: controller,
             autofocus: true,
             minLines: 2,
@@ -490,7 +491,7 @@ class _ConversationListState extends State<_ConversationList> {
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
-          child: TextField(
+          child: FamilyTextField(
             controller: searchController,
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
@@ -861,7 +862,7 @@ class _MessagePane extends StatelessWidget {
           Padding(
             padding:
                 EdgeInsets.fromLTRB(compact ? 10 : 14, 8, compact ? 10 : 14, 0),
-            child: TextField(
+            child: FamilyTextField(
               controller: name,
               decoration: const InputDecoration(
                 labelText: 'Seu nome',
@@ -913,7 +914,7 @@ class _MessagePane extends StatelessWidget {
                         }
                         return KeyEventResult.handled;
                       },
-                      child: TextField(
+                      child: FamilyTextField(
                         controller: text,
                         minLines: 1,
                         maxLines: 4,
@@ -928,7 +929,7 @@ class _MessagePane extends StatelessWidget {
                 ),
               ),
               SizedBox(width: compact ? 6 : 8),
-              FilledButton(
+              FamilyFilledButton(
                 style: compact
                     ? FilledButton.styleFrom(
                         shape: const CircleBorder(),

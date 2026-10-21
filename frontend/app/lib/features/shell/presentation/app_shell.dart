@@ -11,7 +11,7 @@ import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_fixed_header_scroll_view.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
-import '../../../core/widgets/love_action_card.dart';
+import 'package:family_ui/family_ui.dart';
 import '../../auth/presentation/auth_sheet.dart';
 import '../../notifications/presentation/notifications_sheet.dart';
 
@@ -480,7 +480,7 @@ class _DesktopNavPill extends StatelessWidget {
     final color = selected ? palette.primary : palette.foreground;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: TextButton.icon(
+      child: FamilyTextButton.icon(
         onPressed: onTap,
         icon: Icon(selected ? selectedIcon : icon, size: 20),
         label: Text(label),
@@ -797,7 +797,7 @@ class MobileOptionsPage extends StatelessWidget {
           for (final item in items)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: LoveActionCard(
+              child: FamilyActionCard(
                 title: item.label,
                 description: item.description,
                 icon: item.icon,

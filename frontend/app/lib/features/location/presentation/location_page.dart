@@ -14,7 +14,7 @@ import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_fixed_header_scroll_view.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
-import '../../../core/widgets/love_action_card.dart';
+import 'package:family_ui/family_ui.dart';
 import '../../../core/widgets/skeleton.dart';
 import '../../../data/family_repository.dart';
 import '../../../data/models.dart';
@@ -178,11 +178,11 @@ class _LocationPageState extends State<LocationPage> {
           'A família receberá uma notificação de ajuda com a sua localização.',
         ),
         actions: [
-          TextButton(
+          FamilyTextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancelar'),
           ),
-          FilledButton(
+          FamilyFilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Colors.red.shade700,
             ),
@@ -292,7 +292,7 @@ class _LocationMapPanel extends StatelessWidget {
             ? LatLng(places.first.latitude, places.first.longitude)
             : const LatLng(-23.55052, -46.63331);
     final desktop = MediaQuery.sizeOf(context).width >= 840;
-    return LovePanel(
+    return FamilyCard(
       maxWidth: 1200,
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -406,7 +406,7 @@ class _LocationMapPanel extends StatelessWidget {
               children: [
                 for (final place in places)
                   if (canManage)
-                    OutlinedButton.icon(
+                    FamilyOutlinedButton.icon(
                       onPressed: () => onEditPlace(place),
                       icon: const Icon(Icons.edit_location_alt_outlined),
                       label: Text(place.name),
@@ -427,7 +427,7 @@ class _LocationLoadingSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LovePanel(
+    return FamilyCard(
       maxWidth: 1200,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -522,7 +522,7 @@ class _LocationMapHeader extends StatelessWidget {
       icon: Icons.map_outlined,
     );
     if (!canManage) return title;
-    final action = FilledButton.icon(
+    final action = FamilyFilledButton.icon(
       onPressed: onCreatePlace,
       icon: const Icon(Icons.add_location_alt_outlined),
       label: const Text('Novo local'),
@@ -572,7 +572,7 @@ class _LocationSharingCard extends StatelessWidget {
         final user = auth.user;
         final familyEnabled = user?.locationEnabled ?? true;
         final sharing = user?.locationSharing ?? true;
-        return LovePanel(
+        return FamilyCard(
           maxWidth: 1200,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -621,7 +621,7 @@ class _LocationReadOnlyNote extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    return LovePanel(
+    return FamilyCard(
       maxWidth: 1200,
       child: Row(
         children: [
@@ -658,7 +658,7 @@ class _LocationActions extends StatelessWidget {
     final palette = Theme.of(context).extension<AppPalette>()!;
     final updated =
         currentLocation == null ? null : _relative(currentLocation!.at);
-    return LovePanel(
+    return FamilyCard(
       maxWidth: 1200,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -700,7 +700,7 @@ class _LocationActions extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: FilledButton.icon(
+                child: FamilyFilledButton.icon(
                   style: FilledButton.styleFrom(
                     backgroundColor: Colors.red.shade700,
                   ),
@@ -711,7 +711,7 @@ class _LocationActions extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: OutlinedButton.icon(
+                child: FamilyOutlinedButton.icon(
                   onPressed: () => onCheckIn(),
                   icon: const Icon(Icons.check_circle_outline),
                   label: const Text('Check-in'),
@@ -738,7 +738,7 @@ class _LocationList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LovePanel(
+    return FamilyCard(
       maxWidth: 1200,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1109,14 +1109,14 @@ class _LocationPlaceSheetState extends State<_LocationPlaceSheet> {
             icon: Icons.add_location_alt_outlined,
           ),
           const SizedBox(height: 16),
-          TextField(
+          FamilyTextField(
             controller: name,
             autofocus: true,
             decoration: const InputDecoration(labelText: 'Nome'),
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: 12),
-          TextField(
+          FamilyTextField(
             controller: description,
             decoration: const InputDecoration(labelText: 'Descrição'),
             textInputAction: TextInputAction.next,
@@ -1171,7 +1171,7 @@ class _LocationPlaceSheetState extends State<_LocationPlaceSheet> {
             ),
           ),
           const SizedBox(height: 12),
-          TextField(
+          FamilyTextField(
             controller: radius,
             decoration: const InputDecoration(labelText: 'Raio em metros'),
             keyboardType: TextInputType.number,
@@ -1204,7 +1204,7 @@ class _LocationPlaceSheetState extends State<_LocationPlaceSheet> {
               if (widget.onDelete != null) ...[
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: OutlinedButton.icon(
+                  child: FamilyOutlinedButton.icon(
                     onPressed: saving ? null : _delete,
                     icon: const Icon(Icons.delete_outline),
                     label: const Text('Excluir'),
