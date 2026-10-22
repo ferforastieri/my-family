@@ -19,6 +19,12 @@ LANDING_URL="${LANDING_URL:-$SITE_URL}"
 
 export PATH="$HOME/.local/bin:$PATH"
 
+# The Worker imports shared API source from workers/api. Install its runtime
+# and type dependencies so Wrangler can bundle the API in this build.
+if [[ -f "$ROOT/workers/api/package-lock.json" ]]; then
+  (cd "$ROOT/workers/api" && npm ci)
+fi
+
 # Flutter is not part of the Workers Builds image.
 FLUTTER_HOME="${FLUTTER_HOME:-$HOME/flutter}"
 if [[ ! -x "$FLUTTER_HOME/bin/flutter" ]]; then
