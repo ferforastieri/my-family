@@ -131,7 +131,7 @@ class _EmailRegistrationFormState extends State<EmailRegistrationForm> {
     ),
     p([
       .text('Já tem uma conta? '),
-      a(href: appUrl, [.text('Entrar no aplicativo')]),
+      a(href: appHome, [.text('Entrar no aplicativo')]),
     ]),
   ]);
 
@@ -186,8 +186,8 @@ class _EmailRegistrationFormState extends State<EmailRegistrationForm> {
       final tenant = data['tenant'] as Map<String, dynamic>?;
       final tenantSlug = tenant?['slug']?.toString() ?? '';
       final destination = tenantSlug.isEmpty
-          ? appUrl
-          : '$appUrl/f/${Uri.encodeComponent(tenantSlug)}';
+          ? appHome
+          : '$appHome#/f/${Uri.encodeComponent(tenantSlug)}';
       web.window.location.assign(destination);
     });
   }

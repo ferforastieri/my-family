@@ -52,7 +52,7 @@ class SiteShell extends StatelessComponent {
         ]),
         _footerColumn('Acesso', [
           ('Criar minha família', '/cadastro'),
-          ('Abrir aplicativo', appUrl),
+          ('Abrir aplicativo', appHome),
           ('Baixar app', downloadUrl),
         ]),
       ]),

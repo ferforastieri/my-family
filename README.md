@@ -61,7 +61,7 @@ Aplicativo (Flutter Web/Android)          Site (Jaspr)
 
 ```
 frontend/app       aplicativo Flutter (Web e Android)
-frontend/landing   site público de apresentação e cadastro
+frontend/landing   fonte da landing pública (build incorporado ao siao-web)
 workers/api        API, banco, tempo real, filas e notificações
 workers/web        camada que entrega os sites e encaminha a API
 ```
@@ -111,7 +111,9 @@ jaspr serve
 
 ## Deploy
 
-- **API, aplicativo e site** são publicados na Cloudflare via Wrangler.
+- **API e site** são publicados na Cloudflare via Wrangler.
+  O Worker `siao-web` entrega a landing na raiz e o app Flutter em `/app`;
+  a API continua no Worker separado `siao-api`.
   Os builds automáticos podem ser conectados a cada Worker no dashboard da
   Cloudflare.
 - **Aplicativo Android** é gerado pelo GitHub Actions e publicado na página de
@@ -121,8 +123,8 @@ jaspr serve
 
 ## Links
 
-- Aplicativo: https://siao-web.vira-ia-br.workers.dev
-- Site: https://siao-landing.vira-ia-br.workers.dev
+- Site e aplicativo web: https://siao-web.vira-ia-br.workers.dev
+- Aplicativo: https://siao-web.vira-ia-br.workers.dev/app/
 - API: https://siao-api.vira-ia-br.workers.dev
 - Baixar o aplicativo: https://github.com/ferforastieri/siao/releases/latest/download/app-release.apk
 

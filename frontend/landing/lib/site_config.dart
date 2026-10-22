@@ -10,6 +10,8 @@ const appUrl = String.fromEnvironment(
   'APP_URL',
   defaultValue: 'http://localhost:3458',
 );
+
+String get appHome => appUrl.endsWith('/') ? appUrl : '$appUrl/';
 const turnstileSiteKey = String.fromEnvironment('TURNSTILE_SITE_KEY');
 const downloadUrl = String.fromEnvironment(
   'DOWNLOAD_URL',

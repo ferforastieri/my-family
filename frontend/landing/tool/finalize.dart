@@ -28,6 +28,7 @@ Future<void> main(List<String> arguments) async {
 Allow: /
 Disallow: /cadastro
 Disallow: /demo
+Disallow: /app
 Sitemap: ${site.resolve('/sitemap.xml')}
 ''');
 
