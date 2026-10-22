@@ -61,7 +61,7 @@ Aplicativo (Flutter Web/Android)          Site (Jaspr)
 
 ```
 frontend/app       aplicativo Flutter (Web e Android)
-frontend/landing   fonte da landing pública (build incorporado ao siao-web)
+frontend/landing   fonte da landing pública (build incorporado ao siao)
 workers/api        código da API, banco, tempo real, filas e notificações
 workers/web        entrypoint do Worker combinado (site, SEO e API)
 ```
@@ -77,7 +77,7 @@ workers/web        entrypoint do Worker combinado (site, SEO e API)
 
 ### API
 
-Em produção, a API roda dentro do Worker `siao-web`, em `/api` e `/ws`. Para
+Em produção, a API roda dentro do Worker `siao`, em `/api` e `/ws`. Para
 desenvolvimento local do Worker completo:
 
 ```bash
@@ -112,9 +112,14 @@ jaspr serve
 
 ## Deploy
 
-- **Site e API** são publicados no mesmo Worker `siao-web` via Wrangler.
-  Ele entrega a landing Flutter na raiz, a versão HTML de SEO para crawlers,
-  e a API em `/api` e `/ws`.
+- **Site e API** são publicados automaticamente pelo Cloudflare Workers Builds
+  no Worker `siao`. O build roda `frontend/app/tool/workers_build.sh` e o deploy
+  roda `npx wrangler deploy`.
+- **Cloudflare Workers Builds:** root directory `frontend/app`, build command
+  `bash tool/workers_build.sh`, deploy command `npx wrangler deploy`.
+  Watch paths: `frontend/app/**`, `frontend/landing/**` e `workers/**`.
+  O script instala Flutter/Dart, gera o app, a landing e o HTML de SEO.
+- O GitHub Actions cuida somente do APK Android.
 - **Aplicativo Android** é gerado pelo GitHub Actions e publicado na página de
   releases.
 - Configurações e credenciais ficam nos painéis da Cloudflare e do GitHub; nada
@@ -122,9 +127,9 @@ jaspr serve
 
 ## Links
 
-- Site e aplicativo web: https://siao-web.vira-ia-br.workers.dev
+- Site e aplicativo web: https://siao.vira-ia-br.workers.dev
 - Aplicativo Android: https://github.com/ferforastieri/siao/releases/latest/download/app-release.apk
-- API: https://siao-web.vira-ia-br.workers.dev/api/health
+- API: https://siao.vira-ia-br.workers.dev/api/health
 - Baixar o aplicativo: https://github.com/ferforastieri/siao/releases/latest/download/app-release.apk
 
 ## Licença

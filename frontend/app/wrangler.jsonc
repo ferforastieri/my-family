@@ -1,5 +1,5 @@
 {
-  "name": "siao-web",
+  "name": "siao",
   "main": "../../workers/web/src/index.ts",
   "compatibility_date": "2026-10-20",
   "compatibility_flags": ["nodejs_compat"],
@@ -45,7 +45,7 @@
   "triggers": { "crons": ["* * * * *"] },
   "vars": {
     "APP_ENV": "production",
-    "CORS_ORIGIN": "https://siao-web.vira-ia-br.workers.dev",
+    "CORS_ORIGIN": "https://siao.vira-ia-br.workers.dev",
     "PLATFORM_ADMIN_EMAIL": "ffnephew@hotmail.com",
     "COOKIE_SECURE": "true",
     "COOKIE_SAME_SITE": "lax",
