@@ -2,6 +2,7 @@
 set -euo pipefail
 
 # Cloudflare Workers Builds entrypoint.
+# Release build marker: 0.0.1
 # Root directory in Workers Builds: frontend/app
 # Deploy command in Workers Builds: npx wrangler deploy
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
