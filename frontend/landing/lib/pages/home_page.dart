@@ -1,7 +1,6 @@
 import 'package:jaspr/dom.dart';
 import 'package:jaspr/jaspr.dart';
 
-import '../components/demo_button.dart';
 import '../components/seo_head.dart';
 import '../components/site_shell.dart';
 import '../site_config.dart';
@@ -29,6 +28,47 @@ class HomePage extends StatelessComponent {
               'operatingSystem': 'Web, Android',
               'description':
                   'Espaço digital privado para memórias e rotina familiar.',
+            },
+            {
+              '@type': 'FAQPage',
+              'mainEntity': [
+                {
+                  '@type': 'Question',
+                  'name': 'Como começo?',
+                  'acceptedAnswer': {
+                    '@type': 'Answer',
+                    'text':
+                        'Crie sua conta com nome, email e senha. Em poucos passos o espaço da sua família está pronto.',
+                  },
+                },
+                {
+                  '@type': 'Question',
+                  'name': 'Outras famílias veem meus dados?',
+                  'acceptedAnswer': {
+                    '@type': 'Answer',
+                    'text':
+                        'Não. Cada família tem um ambiente isolado; membros de outras famílias não acessam suas memórias, arquivos ou localização.',
+                  },
+                },
+                {
+                  '@type': 'Question',
+                  'name': 'Posso participar de mais de uma família?',
+                  'acceptedAnswer': {
+                    '@type': 'Answer',
+                    'text':
+                        'Sim. A mesma conta pode participar de mais de uma família e alternar entre elas sem criar outra conta.',
+                  },
+                },
+                {
+                  '@type': 'Question',
+                  'name': 'Quem decide compartilhar a localização?',
+                  'acceptedAnswer': {
+                    '@type': 'Answer',
+                    'text':
+                        'Cada pessoa decide individualmente se compartilha a própria localização. O ajuste fica em Perfil → Preferências → Localização.',
+                  },
+                },
+              ],
             },
           ],
         },
@@ -58,10 +98,12 @@ class HomePage extends StatelessComponent {
             ),
           ]),
           div(classes: 'actions', [
-            a(href: '/cadastro', classes: 'ds-button ds-button-primary', [
+            a(href: appHome, classes: 'ds-button ds-button-primary', [
               .text('Criar minha família'),
             ]),
-            const DemoButton(label: 'Experimentar a demo'),
+            a(href: appHome, classes: 'ds-button ds-button-ghost', [
+              .text('Entrar'),
+            ]),
           ]),
         ]),
         div(
@@ -126,8 +168,27 @@ class HomePage extends StatelessComponent {
             'O acesso acontece por convite. Cada família vê somente seu espaço, enquanto a plataforma acompanha a operação — nunca uma galeria com o conteúdo privado.',
           ),
         ]),
-        a(href: '/seguranca', classes: 'ds-button', [
-          .text('Conhecer a proteção dos dados'),
+      ]),
+      section(classes: 'section faq', attributes: const {'id': 'faq'}, [
+        p(classes: 'eyebrow', [.text('Perguntas frequentes')]),
+        h2([.text('Antes de abrir a porta, tire suas dúvidas.')]),
+        div(classes: 'feature-list', [
+          _faq(
+            'Como começo?',
+            'Crie sua conta com nome, email e senha. Em poucos passos o espaço da sua família está pronto.',
+          ),
+          _faq(
+            'Outras famílias veem meus dados?',
+            'Não. Cada família tem um ambiente isolado; membros de outras famílias não acessam suas memórias, arquivos ou localização.',
+          ),
+          _faq(
+            'Posso participar de mais de uma família?',
+            'Sim. A mesma conta pode participar de mais de uma família e alternar entre elas sem criar outra conta.',
+          ),
+          _faq(
+            'Quem decide compartilhar a localização?',
+            'Cada pessoa decide individualmente se compartilha a própria localização. O ajuste fica em Perfil → Preferências → Localização.',
+          ),
         ]),
       ]),
       section(classes: 'section cta', [
@@ -136,10 +197,9 @@ class HomePage extends StatelessComponent {
           h2([.text('Abra a porta da casa digital da sua família.')]),
         ]),
         div(classes: 'actions', [
-          a(href: '/cadastro', classes: 'ds-button ds-button-primary', [
+          a(href: appHome, classes: 'ds-button ds-button-primary', [
             .text('Criar minha família'),
           ]),
-          const DemoButton(label: 'Ver por dentro'),
         ]),
       ]),
     ]),
@@ -155,5 +215,10 @@ class HomePage extends StatelessComponent {
   Component _feature(String title, String body) => article(classes: 'feature', [
     h3([.text(title)]),
     p([.text(body)]),
+  ]);
+
+  Component _faq(String question, String answer) => article(classes: 'feature', [
+    h3([.text(question)]),
+    p([.text(answer)]),
   ]);
 }

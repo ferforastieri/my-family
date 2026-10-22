@@ -6,11 +6,6 @@
 
 import 'package:jaspr/client.dart';
 
-import 'package:siao_landing/components/demo_button.dart'
-    deferred as _demo_button;
-import 'package:siao_landing/pages/register_page.dart'
-    deferred as _register_page;
-
 /// Default [ClientOptions] for use with your Jaspr project.
 ///
 /// Use this to initialize Jaspr **before** calling [runApp].
@@ -27,15 +22,4 @@ import 'package:siao_landing/pages/register_page.dart'
 ///   runApp(...);
 /// }
 /// ```
-ClientOptions get defaultClientOptions => ClientOptions(
-  clients: {
-    'demo_button': ClientLoader(
-      (p) => _demo_button.DemoButton(label: p['label'] as String),
-      loader: _demo_button.loadLibrary,
-    ),
-    'register_page': ClientLoader(
-      (p) => _register_page.EmailRegistrationForm(),
-      loader: _register_page.loadLibrary,
-    ),
-  },
-);
+ClientOptions get defaultClientOptions => ClientOptions();

@@ -96,6 +96,8 @@ class WelcomePage extends StatelessWidget {
                   const SizedBox(height: 46),
                   _WelcomePrivacy(wide: isWide),
                   const SizedBox(height: 46),
+                  _WelcomeFaq(wide: isWide),
+                  const SizedBox(height: 46),
                   _WelcomeFinalCta(
                     wide: isWide,
                     onCreate: () => _openAuth(
@@ -513,6 +515,87 @@ class _WelcomePrivacy extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _WelcomeFaq extends StatelessWidget {
+  const _WelcomeFaq({required this.wide});
+
+  final bool wide;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    const items = [
+      (
+        'Como começo?',
+        'Crie sua conta com nome, email e senha. Em poucos passos o espaço da sua família está pronto.',
+      ),
+      (
+        'Outras famílias veem meus dados?',
+        'Não. Cada família tem um ambiente isolado; membros de outras famílias não acessam suas memórias, arquivos ou localização.',
+      ),
+      (
+        'Posso participar de mais de uma família?',
+        'Sim. A mesma conta pode participar de mais de uma família e alternar entre elas sem criar outra conta.',
+      ),
+      (
+        'Quem decide compartilhar a localização?',
+        'Cada pessoa decide individualmente se compartilha a própria localização. O ajuste fica em Perfil → Preferências → Localização.',
+      ),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'PERGUNTAS FREQUENTES',
+          style: TextStyle(
+            color: palette.primary,
+            fontSize: 11,
+            letterSpacing: 1.5,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          'Antes de abrir a porta, tire suas dúvidas.',
+          style: TextStyle(
+            color: palette.foreground,
+            fontSize: wide ? 28 : 24,
+            height: 1.12,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 16),
+        for (var index = 0; index < items.length; index++) ...[
+          SizedBox(
+            width: double.infinity,
+            child: FamilyCard(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    items[index].$1,
+                    style: TextStyle(
+                      color: palette.foreground,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    items[index].$2,
+                    style: TextStyle(color: palette.muted, height: 1.4),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (index < items.length - 1) const SizedBox(height: 10),
+        ],
+      ],
     );
   }
 }

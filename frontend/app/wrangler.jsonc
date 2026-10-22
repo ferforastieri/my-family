@@ -6,7 +6,7 @@
     "directory": "./build/site",
     "binding": "ASSETS",
     "not_found_handling": "404-page",
-    "run_worker_first": ["/api", "/api/*", "/ws", "/app", "/app/*"]
+    "run_worker_first": ["/", "/seo", "/seo/*", "/api", "/api/*", "/ws", "/app", "/app/*"]
   },
   "services": [{ "binding": "API", "service": "siao-api" }],
   "observability": { "enabled": true }

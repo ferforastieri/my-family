@@ -112,7 +112,7 @@ jaspr serve
 ## Deploy
 
 - **API e site** são publicados na Cloudflare via Wrangler.
-  O Worker `siao-web` entrega a landing na raiz e o app Flutter em `/app`;
+  O Worker `siao-web` entrega a landing Flutter na raiz e a versão HTML de SEO para crawlers;
   a API continua no Worker separado `siao-api`.
   Os builds automáticos podem ser conectados a cada Worker no dashboard da
   Cloudflare.
@@ -124,7 +124,7 @@ jaspr serve
 ## Links
 
 - Site e aplicativo web: https://siao-web.vira-ia-br.workers.dev
-- Aplicativo: https://siao-web.vira-ia-br.workers.dev/app/
+- Aplicativo Android: https://github.com/ferforastieri/siao/releases/latest/download/app-release.apk
 - API: https://siao-api.vira-ia-br.workers.dev
 - Baixar o aplicativo: https://github.com/ferforastieri/siao/releases/latest/download/app-release.apk
 

@@ -29,6 +29,7 @@ Allow: /
 Disallow: /cadastro
 Disallow: /demo
 Disallow: /app
+Disallow: /seo
 Sitemap: ${site.resolve('/sitemap.xml')}
 ''');
 

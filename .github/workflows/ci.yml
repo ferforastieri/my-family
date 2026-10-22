@@ -47,4 +47,4 @@ jobs:
           dart run tool/finalize.dart https://example.com https://api.example.com/api
       - name: Analyze and test Flutter projects
         run: |
-          docker run --rm -v "$PWD:/workspace" -w /workspace/frontend/app ghcr.io/cirruslabs/flutter:stable sh -lc 'flutter pub get && flutter analyze && flutter test && flutter build web --release --base-href /app/ --no-wasm-dry-run'
+          docker run --rm -v "$PWD:/workspace" -w /workspace/frontend/app ghcr.io/cirruslabs/flutter:stable sh -lc 'flutter pub get && flutter analyze && flutter test && flutter build web --release --base-href / --no-wasm-dry-run'

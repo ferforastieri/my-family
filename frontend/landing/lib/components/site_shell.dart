@@ -21,12 +21,9 @@ class SiteShell extends StatelessComponent {
             span([.text('Sião')]),
           ]),
           div(classes: 'nav-links', [
-            a(href: '/recursos', [.text('Recursos')]),
-            a(href: '/como-funciona', [.text('Como funciona')]),
-            a(href: '/seguranca', [.text('Privacidade')]),
-            a(href: '/faq', [.text('Dúvidas')]),
+            a(href: '/#faq', [.text('Dúvidas')]),
             a(href: downloadUrl, [.text('Baixar app')]),
-            a(href: '/cadastro', classes: 'ds-button ds-button-ghost', [
+            a(href: appHome, classes: 'ds-button ds-button-ghost', [
               .text('Entrar'),
             ]),
           ]),
@@ -40,20 +37,17 @@ class SiteShell extends StatelessComponent {
           h2([.text('Sião')]),
           p([.text('Um espaço privado para o que aproxima vocês.')]),
         ]),
-        _footerColumn('Produto', [
-          ('Recursos', '/recursos'),
-          ('Como funciona', '/como-funciona'),
-          ('Perguntas frequentes', '/faq'),
+        _footerColumn('Sião', [
+          ('Perguntas frequentes', '/#faq'),
+          ('Baixar app', downloadUrl),
         ]),
         _footerColumn('Confiança', [
-          ('Segurança e privacidade', '/seguranca'),
           ('Política de privacidade', '/privacidade'),
           ('Termos de uso', '/termos'),
         ]),
         _footerColumn('Acesso', [
-          ('Criar minha família', '/cadastro'),
+          ('Criar minha família', appHome),
           ('Abrir aplicativo', appHome),
-          ('Baixar app', downloadUrl),
         ]),
       ]),
       p(classes: 'copyright', [.text('© 2026 Sião.')]),
