@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/auth/auth_controller.dart';
-import '../../../core/api/query_keys.dart';
-import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_fixed_header_scroll_view.dart';
-import '../../../core/widgets/app_pagination.dart';
+import '../../../core/widgets/app_infinite_loader.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
 import 'package:family_ui/family_ui.dart';
@@ -41,20 +39,69 @@ class _EditableTextCollectionPageState
     extends State<EditableTextCollectionPage> {
   static const _pageLimit = 12;
 
-  int page = 1;
+  List<FamilyItem> items = const [];
+  int page = 0;
+  int pages = 0;
+  int total = 0;
+  bool loading = true;
+  bool loadingMore = false;
+  Object? error;
+  int requestId = 0;
 
-  void _invalidate() {
-    invalidateQueries(context, QueryKeys.textCollectionScope(widget.prefix));
+  bool get hasMore => page < pages;
+
+  @override
+  void initState() {
+    super.initState();
+    _load(reset: true);
   }
 
-  Future<PaginatedResult<FamilyItem>> _fetchTexts() async {
-    final result = await widget.repository.listPage(
-      'journey',
-      page,
-      _pageLimit,
-    );
-    return result;
+  Future<void> _load({required bool reset}) async {
+    if (!reset && (loadingMore || !hasMore)) return;
+    final request = reset ? ++requestId : requestId;
+    setState(() {
+      if (reset) {
+        loading = true;
+        loadingMore = false;
+        error = null;
+        items = const [];
+        page = 0;
+        pages = 0;
+        total = 0;
+      } else {
+        loadingMore = true;
+      }
+    });
+    try {
+      final result = await widget.repository.listPage(
+        'journey',
+        reset ? 1 : page + 1,
+        _pageLimit,
+      );
+      if (!mounted || request != requestId) return;
+      setState(() {
+        page = result.page;
+        pages = result.pages;
+        total = result.total;
+        items = reset ? List.of(result.items) : [...items, ...result.items];
+        loading = false;
+        loadingMore = false;
+        error = null;
+      });
+    } catch (caught) {
+      if (!mounted || request != requestId) return;
+      setState(() {
+        loading = false;
+        loadingMore = false;
+        if (reset || items.isEmpty) error = caught;
+      });
+      if (!reset && items.isNotEmpty) {
+        widget.toast.error(caught.toString());
+      }
+    }
   }
+
+  void _reload() => _load(reset: true);
 
   @override
   Widget build(BuildContext context) {
@@ -63,127 +110,106 @@ class _EditableTextCollectionPageState
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: LoveBackground(
-        child: AppQuery<PaginatedResult<FamilyItem>>(
-          queryKey: QueryKeys.textCollection(widget.prefix, page, _pageLimit),
-          queryFn: _fetchTexts,
-          loading: const PageSkeleton(cards: 3),
-          builder: (context, result, refetch) {
-            final items = result.items;
-            return AppFixedHeaderScrollView(
-              header: AppPageHeader(
-                title: widget.title,
-                subtitle: canWrite
-                    ? 'Escreva os textos desta página.'
-                    : 'Textos da família.',
-                icon: FamilyIcons.editNoteOutlined,
-                actionLabel: canWrite ? 'Escrever' : null,
-                actionIcon: FamilyIcons.editOutlined,
-                onAction: canWrite ? () => _openEditor() : null,
-              ),
-              children: [
-                items.isEmpty
-                    ? FamilyCard(
-                        child: Text(
-                          canWrite
-                              ? 'Nenhum texto escrito ainda.'
-                              : 'Ainda não há textos publicados.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: palette.muted),
+        child: AppFixedHeaderScrollView(
+          header: AppPageHeader(
+            title: widget.title,
+            subtitle: canWrite
+                ? 'Escreva os textos desta página.'
+                : 'Textos da família.',
+            icon: FamilyIcons.editNoteOutlined,
+            actionLabel: canWrite ? 'Escrever' : null,
+            actionIcon: FamilyIcons.editOutlined,
+            onAction: canWrite ? () => _openEditor() : null,
+          ),
+          onEndReached: hasMore ? () => _load(reset: false) : null,
+          children: [
+            if (loading && items.isEmpty)
+              _TextsLoadingSkeleton()
+            else if (error != null && items.isEmpty)
+              _TextsErrorState(error: error!, onRetry: _reload)
+            else if (items.isEmpty)
+              FamilyCard(
+                child: Text(
+                  canWrite
+                      ? 'Nenhum texto escrito ainda.'
+                      : 'Ainda não há textos publicados.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: palette.muted),
+                ),
+              )
+            else
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final columns = constraints.maxWidth >= 860 ? 2 : 1;
+                  return Column(
+                    children: [
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: items.length,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: columns,
+                          mainAxisExtent: columns == 1 ? 250 : 240,
+                          crossAxisSpacing: 24,
+                          mainAxisSpacing: 24,
                         ),
-                      )
-                    : LayoutBuilder(
-                        builder: (context, constraints) {
-                          final columns = constraints.maxWidth >= 860 ? 2 : 1;
-                          return Column(
-                            children: [
-                              GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: items.length,
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: columns,
-                                  mainAxisExtent: columns == 1 ? 250 : 240,
-                                  crossAxisSpacing: 24,
-                                  mainAxisSpacing: 24,
+                        itemBuilder: (context, index) {
+                          final item = items[index];
+                          return InkWell(
+                            onTap: () => _openReader(item),
+                            onLongPress:
+                                canWrite ? () => _openEditor(item) : null,
+                            child: Stack(
+                              children: [
+                                Positioned.fill(
+                                  child: LoveTextCard(
+                                    title: item.title,
+                                    body: item.subtitle,
+                                    footer: item.data['data']
+                                            ?.toString()
+                                            .split('T')
+                                            .first ??
+                                        '',
+                                  ),
                                 ),
-                                itemBuilder: (context, index) {
-                                  final item = items[index];
-                                  return InkWell(
-                                    onTap: () => _openReader(item),
-                                    onLongPress: canWrite
-                                        ? () => _openEditor(item)
-                                        : null,
-                                    child: Stack(
+                                if (canWrite)
+                                  Positioned(
+                                    right: 8,
+                                    top: 8,
+                                    child: Row(
                                       children: [
-                                        Positioned.fill(
-                                          child: LoveTextCard(
-                                            title: item.title,
-                                            body: item.subtitle,
-                                            footer: item.data['data']
-                                                    ?.toString()
-                                                    .split('T')
-                                                    .first ??
-                                                '',
+                                        IconButton(
+                                          onPressed: () => _openEditor(item),
+                                          icon: const Icon(
+                                            FamilyIcons.editOutlined,
                                           ),
                                         ),
-                                        if (canWrite)
-                                          Positioned(
-                                            right: 8,
-                                            top: 8,
-                                            child: Row(
-                                              children: [
-                                                IconButton(
-                                                  onPressed: () =>
-                                                      _openEditor(item),
-                                                  icon: const Icon(
-                                                    FamilyIcons.editOutlined,
-                                                  ),
-                                                ),
-                                                IconButton(
-                                                  onPressed: () =>
-                                                      _delete(item),
-                                                  icon: const Icon(
-                                                    FamilyIcons.deleteOutline,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
+                                        IconButton(
+                                          onPressed: () => _delete(item),
+                                          icon: const Icon(
+                                            FamilyIcons.deleteOutline,
                                           ),
+                                        ),
                                       ],
                                     ),
-                                  );
-                                },
-                              ),
-                              if (result.pages > 1) ...[
-                                const SizedBox(height: 16),
-                                AppPagination(
-                                  page: result.page,
-                                  pages: result.pages,
-                                  total: result.total,
-                                  onPrevious: result.hasPrevious
-                                      ? () {
-                                          setState(() {
-                                            page -= 1;
-                                          });
-                                        }
-                                      : null,
-                                  onNext: result.hasNext
-                                      ? () {
-                                          setState(() {
-                                            page += 1;
-                                          });
-                                        }
-                                      : null,
-                                ),
+                                  ),
                               ],
-                            ],
+                            ),
                           );
                         },
                       ),
-              ],
-            );
-          },
+                      if (hasMore)
+                        AppInfiniteLoader(
+                          page: page,
+                          hasMore: hasMore,
+                          loading: loadingMore,
+                          onLoadMore: () => _load(reset: false),
+                        ),
+                    ],
+                  );
+                },
+              ),
+          ],
         ),
       ),
     );
@@ -202,12 +228,11 @@ class _EditableTextCollectionPageState
           };
           if (item == null) {
             await widget.repository.create('journey', payload);
-            page = 1;
           } else {
             await widget.repository.update('journey', item.id, payload);
           }
           widget.toast.backendSuccess(widget.repository.takeMessage());
-          _invalidate();
+          _reload();
         },
       ),
     );
@@ -223,7 +248,64 @@ class _EditableTextCollectionPageState
   Future<void> _delete(FamilyItem item) async {
     await widget.repository.delete('journey', item.id);
     widget.toast.backendSuccess(widget.repository.takeMessage());
-    _invalidate();
+    _reload();
+  }
+}
+
+class _TextsLoadingSkeleton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 860 ? 2 : 1;
+        return GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: columns,
+          mainAxisExtent: columns == 1 ? 250 : 240,
+          crossAxisSpacing: 24,
+          mainAxisSpacing: 24,
+          children: List.generate(columns * 2, (_) => const SkeletonCard()),
+        );
+      },
+    );
+  }
+}
+
+class _TextsErrorState extends StatelessWidget {
+  const _TextsErrorState({required this.error, required this.onRetry});
+
+  final Object error;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return FamilyCard(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(FamilyIcons.errorOutline, size: 34),
+          const SizedBox(height: 10),
+          const Text(
+            'Não foi possível carregar os textos.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            error.toString(),
+            textAlign: TextAlign.center,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 14),
+          FamilyFilledButton(
+            onPressed: onRetry,
+            child: const Text('Tentar de novo'),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -242,7 +324,8 @@ class _TextReaderSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppSheetHeader(title: item.title, icon: FamilyIcons.autoStoriesOutlined),
+          AppSheetHeader(
+              title: item.title, icon: FamilyIcons.autoStoriesOutlined),
           const SizedBox(height: 18),
           Text(
             item.subtitle,

@@ -24,6 +24,7 @@ import { notificationsRoutes } from './routes/notifications';
 import { locationRoutes } from './routes/location';
 import { gamesRoutes } from './routes/games';
 import { demoRoutes } from './routes/demo';
+import { mapRoutes } from './routes/map';
 import { TenantRealtime } from './durable/realtime';
 import { RateLimiter } from './durable/rate-limit';
 import { handleJob, handleScheduled } from './jobs';
@@ -82,6 +83,7 @@ app.use('/api/*', async (c, next) => {
 });
 
 app.use('/api/*', async (c, next) => {
+  if (c.req.path.startsWith('/api/map/tiles/')) return next();
   const isAuth = c.req.path === '/api/auth/login' || c.req.path === '/api/auth/register';
   const limit = isAuth ? 10 : Number(c.env.THROTTLE_LIMIT ?? 120);
   const windowMs = Number(c.env.THROTTLE_TTL_MS ?? 60000);
@@ -145,6 +147,7 @@ app.route('/api/notifications', notificationsRoutes);
 app.route('/api/location', locationRoutes);
 app.route('/api/games', gamesRoutes);
 app.route('/api/public/demo-sessions', demoRoutes);
+app.route('/api/map', mapRoutes);
 
 app.get('/ws', async (c) => {
   const ticket = c.req.query('ticket');

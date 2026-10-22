@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/auth/authenticated_media.dart';
 import '../../../core/config/app_config.dart';
+import '../../../core/location/location_controller.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import 'package:family_ui/family_ui.dart';
@@ -16,17 +17,23 @@ import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_sheet.dart';
 import '../../../core/widgets/love_background.dart';
 import '../../../core/widgets/skeleton.dart';
+import '../../../data/family_repository.dart';
 import '../../auth/presentation/auth_sheet.dart';
+import 'location_settings_sheet.dart';
 import 'edit_profile_sheet.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({
     super.key,
     required this.auth,
+    required this.repository,
+    required this.location,
     required this.toast,
   });
 
   final AuthController auth;
+  final FamilyRepository repository;
+  final LocationController location;
   final ToastController toast;
 
   @override
@@ -49,6 +56,8 @@ class ProfilePage extends StatelessWidget {
                 )
               : _SignedProfileCard(
                   auth: auth,
+                  repository: repository,
+                  location: location,
                   toast: toast,
                   onEditProfile: () => showAppSheet<void>(
                     context: context,
@@ -69,6 +78,8 @@ class ProfilePage extends StatelessWidget {
 class _SignedProfileCard extends StatefulWidget {
   const _SignedProfileCard({
     required this.auth,
+    required this.repository,
+    required this.location,
     required this.toast,
     required this.onEditProfile,
     required this.onAdmin,
@@ -76,6 +87,8 @@ class _SignedProfileCard extends StatefulWidget {
   });
 
   final AuthController auth;
+  final FamilyRepository repository;
+  final LocationController location;
   final ToastController toast;
   final VoidCallback onEditProfile;
   final VoidCallback onAdmin;
@@ -176,8 +189,24 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
               _ProfileActionTile(
                 icon: FamilyIcons.paletteOutlined,
                 label: 'Aparência',
-                description: 'Cor, fonte, modo e cenário — preferências só suas.',
+                description:
+                    'Cor, fonte, modo e cenário — preferências só suas.',
                 onTap: () => AppHeaderActionsScope.maybeOf(context)?.onTheme(),
+              ),
+              const SizedBox(height: 10),
+              _ProfileActionTile(
+                icon: FamilyIcons.locationOnOutlined,
+                label: 'Localização',
+                description: 'Controle se a família pode ver você.',
+                onTap: () => showAppSheet<void>(
+                  context: context,
+                  builder: (_) => LocationSettingsSheet(
+                    auth: widget.auth,
+                    repository: widget.repository,
+                    location: widget.location,
+                    toast: widget.toast,
+                  ),
+                ),
               ),
               const SizedBox(height: 18),
               Text(

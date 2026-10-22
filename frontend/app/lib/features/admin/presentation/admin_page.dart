@@ -11,7 +11,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_fixed_header_scroll_view.dart';
 import '../../../core/widgets/app_page_header.dart';
-import '../../../core/widgets/app_pagination.dart';
+import '../../../core/widgets/app_infinite_loader.dart';
 import '../../../core/widgets/app_sheet.dart';
 import '../../../core/widgets/love_background.dart';
 import '../../../core/widgets/skeleton.dart';
@@ -213,8 +213,9 @@ class _AdminPageState extends State<AdminPage> {
               ListTile(
                 leading: Icon(section.icon),
                 title: Text(section.label),
-                trailing:
-                    selected == section ? const Icon(FamilyIcons.checkCircle) : null,
+                trailing: selected == section
+                    ? const Icon(FamilyIcons.checkCircle)
+                    : null,
                 onTap: () {
                   _selectSection(section);
                   Navigator.of(sheetContext).pop();
@@ -327,22 +328,14 @@ class _AdminPageState extends State<AdminPage> {
     ValueChanged<int> setPage,
   ) {
     if (result == null || result.pages <= 1) return null;
-    return AppPagination(
+    return AppInfiniteLoader(
       page: result.page,
-      pages: result.pages,
-      total: result.total,
-      onPrevious: result.hasPrevious
-          ? () {
-              setState(() => setPage(result.page - 1));
-              _invalidateAdmin();
-            }
-          : null,
-      onNext: result.hasNext
-          ? () {
-              setState(() => setPage(result.page + 1));
-              _invalidateAdmin();
-            }
-          : null,
+      hasMore: result.hasNext,
+      onLoadMore: () {
+        if (!mounted) return;
+        setState(() => setPage(result.page + 1));
+        _invalidateAdmin();
+      },
     );
   }
 
@@ -604,7 +597,8 @@ const _roleOptions = [
 ];
 
 const _accessOptions = [
-  _UserOption('memorias', 'Memórias em Fotos', FamilyIcons.photoLibraryOutlined),
+  _UserOption(
+      'memorias', 'Memórias em Fotos', FamilyIcons.photoLibraryOutlined),
   _UserOption('playlist', 'Nossa Playlist', FamilyIcons.musicNoteOutlined),
   _UserOption('cartas', 'Cartas de Amor', FamilyIcons.cardGiftcardOutlined),
   _UserOption('jogos', 'Jogos', FamilyIcons.sportsEsportsOutlined),
@@ -612,7 +606,8 @@ const _accessOptions = [
   _UserOption('notas', 'Notas', FamilyIcons.stickyNote2Outlined),
   _UserOption('localizacao', 'Localização', FamilyIcons.locationOnOutlined),
   _UserOption('chat', 'Chat', FamilyIcons.chatBubbleOutline),
-  _UserOption('nossaHistoria', 'Nossa Jornada', FamilyIcons.autoStoriesOutlined),
+  _UserOption(
+      'nossaHistoria', 'Nossa Jornada', FamilyIcons.autoStoriesOutlined),
 ];
 
 class _UserOption {
@@ -939,9 +934,7 @@ class _UsersAdminTab extends StatelessWidget {
               final user = users[index];
               return _AdminTile(
                 icon: FamilyIcons.personOutline,
-                title: user.name?.isNotEmpty == true
-                    ? user.name!
-                    : user.email,
+                title: user.name?.isNotEmpty == true ? user.name! : user.email,
                 subtitle: '${user.email} • ${_roleLabel(user.role)}',
                 onTap: () => onEdit(user),
                 actions: [
@@ -1049,7 +1042,8 @@ class _NotificationsAdminTab extends StatelessWidget {
           action: _AdminActions(
             fullWidthOnCompact: true,
             children: [
-              FamilyButton(onPressed: onAdd, label: 'Nova', icon: FamilyIcons.add),
+              FamilyButton(
+                  onPressed: onAdd, label: 'Nova', icon: FamilyIcons.add),
               FamilyButton(
                 onPressed: onScheduleNew,
                 label: 'Agendar',

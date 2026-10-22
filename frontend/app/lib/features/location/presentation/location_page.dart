@@ -6,6 +6,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/api/query_keys.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/location/location_controller.dart';
 import '../../../core/query/app_query.dart';
@@ -126,12 +127,6 @@ class _LocationPageState extends State<LocationPage> {
                 return Column(
                   children: [
                     if (!kIsWeb) ...[
-                      _LocationSharingCard(
-                        auth: widget.auth,
-                        onMySharingChanged: _setMySharing,
-                        onFamilySharingChanged: _setFamilySharing,
-                      ),
-                      const SizedBox(height: 16),
                       _LocationActions(
                         currentLocation: currentLocation,
                         onSos: _sendSos,
@@ -200,33 +195,6 @@ class _LocationPageState extends State<LocationPage> {
   Future<void> _sendCheckIn() async {
     await widget.repository.sendLocationCheckIn();
     widget.toast.backendSuccess(widget.repository.takeMessage());
-  }
-
-  Future<void> _setMySharing(bool enabled) async {
-    await widget.repository.setLocationSharing(enabled);
-    await widget.auth.refreshMe();
-    if (enabled) {
-      await widget.location.bootstrap();
-    } else {
-      widget.location.stop();
-    }
-    widget.toast.backendSuccess(widget.repository.takeMessage());
-    if (mounted) invalidateQueries(context, QueryKeys.locations);
-  }
-
-  Future<void> _setFamilySharing(bool enabled) async {
-    await widget.repository.setFamilyLocation(enabled);
-    await widget.auth.refreshMe();
-    if (enabled) {
-      await widget.location.bootstrap();
-    } else {
-      widget.location.stop();
-    }
-    widget.toast.backendSuccess(widget.repository.takeMessage());
-    if (mounted) {
-      invalidateQueries(context, QueryKeys.locations);
-      invalidateQueries(context, QueryKeys.locationPlaces);
-    }
   }
 
   void _openPlaceSheet(
@@ -328,13 +296,12 @@ class _LocationMapPanel extends StatelessWidget {
                 children: [
                   TileLayer(
                     urlTemplate:
-                        'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+                        '${AppConfig.apiBaseUrl}/map/tiles/{z}/{x}/{y}',
                     userAgentPackageName: 'com.siao.app',
                   ),
-                                    RichAttributionWidget(
+                  RichAttributionWidget(
                     attributions: [
                       TextSourceAttribution('OpenStreetMap contributors'),
-                      TextSourceAttribution('CARTO'),
                     ],
                   ),
                   CircleLayer(
@@ -559,68 +526,6 @@ class _LocationMapHeader extends StatelessWidget {
   }
 }
 
-class _LocationSharingCard extends StatelessWidget {
-  const _LocationSharingCard({
-    required this.auth,
-    required this.onMySharingChanged,
-    required this.onFamilySharingChanged,
-  });
-
-  final AuthController auth;
-  final Future<void> Function(bool) onMySharingChanged;
-  final Future<void> Function(bool) onFamilySharingChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: auth,
-      builder: (context, _) {
-        final user = auth.user;
-        final familyEnabled = user?.locationEnabled ?? true;
-        final sharing = user?.locationSharing ?? true;
-        return FamilyCard(
-          maxWidth: 1200,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _LocationPanelTitle(
-                title: 'Compartilhamento',
-                description: 'Você decide quem vê sua localização.',
-                icon: FamilyIcons.shareLocationOutlined,
-              ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                value: sharing && familyEnabled,
-                onChanged: familyEnabled
-                    ? (value) => onMySharingChanged(value)
-                    : null,
-                title: const Text('Compartilhar minha localização'),
-                subtitle: Text(
-                  !familyEnabled
-                      ? 'A localização está desativada para a família.'
-                      : sharing
-                          ? 'A família pode ver você.'
-                          : 'Sua localização está pausada.',
-                ),
-              ),
-              if (user?.isAdmin == true)
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  value: familyEnabled,
-                  onChanged: (value) => onFamilySharingChanged(value),
-                  title: const Text('Localização da família'),
-                  subtitle: const Text(
-                    'Desliga o mapa e o compartilhamento para todos.',
-                  ),
-                ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
 class _LocationReadOnlyNote extends StatelessWidget {
   const _LocationReadOnlyNote();
 
@@ -635,7 +540,7 @@ class _LocationReadOnlyNote extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'No navegador, a localização é apenas para consulta. O compartilhamento acontece pelo aplicativo Android.',
+              'No navegador, a localização é apenas para consulta. O compartilhamento é ajustado em Perfil → Preferências → Localização.',
               style: TextStyle(
                 color: palette.muted,
                 fontWeight: FontWeight.w700,
@@ -831,8 +736,8 @@ class _LocationTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
-    final isMe = location.userId != null &&
-        location.userId == currentLocation?.userId;
+    final isMe =
+        location.userId != null && location.userId == currentLocation?.userId;
     final place = _placeFor(location, places);
     final stale = DateTime.now().difference(location.at).inMinutes > 10;
     final status = place != null
@@ -936,7 +841,8 @@ class _LocationTile extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: place != null ? palette.primary : palette.muted,
+                          color:
+                              place != null ? palette.primary : palette.muted,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -989,8 +895,10 @@ class _MemberAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
     final parts = name.trim().split(RegExp(r'\s+'));
-    final first = parts.isNotEmpty && parts.first.isNotEmpty ? parts.first[0] : '';
-    final last = parts.length >= 2 && parts.last.isNotEmpty ? parts.last[0] : '';
+    final first =
+        parts.isNotEmpty && parts.first.isNotEmpty ? parts.first[0] : '';
+    final last =
+        parts.length >= 2 && parts.last.isNotEmpty ? parts.last[0] : '';
     final initials = (first + last).isEmpty ? '?' : (first + last);
     return Stack(
       clipBehavior: Clip.none,
@@ -1148,15 +1056,14 @@ class _LocationPlaceSheetState extends State<_LocationPlaceSheet> {
                     children: [
                       TileLayer(
                         urlTemplate:
-                            'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+                            '${AppConfig.apiBaseUrl}/map/tiles/{z}/{x}/{y}',
                         userAgentPackageName: 'com.siao.app',
                       ),
-                                        RichAttributionWidget(
-                    attributions: [
-                      TextSourceAttribution('OpenStreetMap contributors'),
-                      TextSourceAttribution('CARTO'),
-                    ],
-                  ),
+                      RichAttributionWidget(
+                        attributions: [
+                          TextSourceAttribution('OpenStreetMap contributors'),
+                            ],
+                      ),
                       CircleLayer(
                         circles: [
                           CircleMarker(

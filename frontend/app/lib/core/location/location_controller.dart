@@ -49,7 +49,7 @@ class LocationController with WidgetsBindingObserver {
       return;
     }
     if (auth.user == null) return;
-    if (!auth.user!.locationEnabled || !auth.user!.locationSharing) {
+    if (!auth.user!.locationSharing) {
       stop();
       return;
     }
@@ -108,9 +108,7 @@ class LocationController with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed &&
-        auth.user != null &&
-        !_started) {
+    if (state == AppLifecycleState.resumed && auth.user != null && !_started) {
       unawaited(bootstrap());
     }
   }

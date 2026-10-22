@@ -105,7 +105,10 @@ class _HomeSceneBackgroundState extends State<HomeSceneBackground>
           switchOutCurve: Curves.easeInCubic,
           layoutBuilder: (currentChild, previousChildren) => Stack(
             fit: StackFit.expand,
-            children: [...previousChildren, if (currentChild != null) currentChild],
+            children: [
+              ...previousChildren,
+              if (currentChild != null) currentChild
+            ],
           ),
           child: _ScenePhoto(
             key: ValueKey(widget.scene),
@@ -172,12 +175,14 @@ class _ScenePhoto extends StatelessWidget {
             ),
           );
         },
-        child: Image.asset(
-          scene.asset,
-          fit: BoxFit.cover,
-          filterQuality: FilterQuality.medium,
-          errorBuilder: (context, error, stackTrace) => const ColoredBox(
-            color: Color(0xfffefbf3),
+        child: RepaintBoundary(
+          child: Image.asset(
+            scene.asset,
+            fit: BoxFit.cover,
+            filterQuality: FilterQuality.medium,
+            errorBuilder: (context, error, stackTrace) => const ColoredBox(
+              color: Color(0xfffefbf3),
+            ),
           ),
         ),
       ),

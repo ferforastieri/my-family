@@ -42,7 +42,9 @@ GoRouter buildRouter(
         final query = <String, String>{...state.uri.queryParameters};
         final segments = state.uri.pathSegments;
         final slug = state.pathParameters['slug'] ??
-            (segments.length >= 2 && segments.first == 'f' ? segments[1] : null);
+            (segments.length >= 2 && segments.first == 'f'
+                ? segments[1]
+                : null);
         if (slug != null && slug.isNotEmpty) query['tenantSlug'] = slug;
         return Uri(
           path: '/login',
@@ -243,6 +245,8 @@ GoRouter buildRouter(
             path: '/perfil',
             pageBuilder: (context, state) => _page(ProfilePage(
               auth: auth,
+              repository: repository,
+              location: location,
               toast: toast,
             )),
           ),
@@ -256,8 +260,6 @@ GoRouter buildRouter(
     ],
   );
 }
-
-
 
 String? _accessForPath(String path) {
   return switch (path) {

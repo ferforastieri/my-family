@@ -284,9 +284,6 @@ locationRoutes.use('*', locationAuth, requireAccess('localizacao'), demoRestrict
 
 locationRoutes.post('/update', async (c) => {
   const principal = c.get('principal');
-  if (!principal.tenant.locationEnabled) {
-    throw forbidden('A localização está desativada para esta família.');
-  }
   if (!principal.locationSharing) {
     throw forbidden('Seu compartilhamento de localização está pausado.');
   }
@@ -525,9 +522,6 @@ locationRoutes.delete('/places/:id', async (c) => {
 
 locationRoutes.post('/sos', async (c) => {
   const principal = c.get('principal');
-  if (!principal.tenant.locationEnabled) {
-    throw forbidden('A localização está desativada para esta família.');
-  }
   const latest = await getLatestRow(c.env, principal.tenantId, principal.id);
   const place = await currentPlaceName(c.env, principal.tenantId, latest);
   const name = principal.name?.trim() || principal.email;
@@ -543,9 +537,6 @@ locationRoutes.post('/sos', async (c) => {
 
 locationRoutes.post('/check-in', async (c) => {
   const principal = c.get('principal');
-  if (!principal.tenant.locationEnabled) {
-    throw forbidden('A localização está desativada para esta família.');
-  }
   const latest = await getLatestRow(c.env, principal.tenantId, principal.id);
   const place = await currentPlaceName(c.env, principal.tenantId, latest);
   const name = principal.name?.trim() || principal.email;

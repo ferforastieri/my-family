@@ -44,8 +44,10 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     counters = _buildCounters(events);
-    timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (events.isEmpty) return;
+    // The counters are expressed in days/months. Rebuilding the whole Home
+    // every second only created jank while navigating between pages.
+    timer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (events.isEmpty || !mounted) return;
       setState(() => counters = _buildCounters(events));
     });
     _loadSettings();
@@ -93,86 +95,86 @@ class _HomePageState extends State<HomePage> {
       builder: (context, _) => HomeSceneBackground(
         scene: widget.theme.scene,
         child: LayoutBuilder(
-        builder: (context, viewport) {
-          final mobile = viewport.maxWidth < 760;
-          final shortDesktop = !mobile && viewport.maxHeight < 620;
-          final content = ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.fromLTRB(
-              18,
-              mobile ? 16 : 14,
-              18,
-              mobile ? 28 : 40,
-            ),
-            children: [
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1200),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final wide = constraints.maxWidth >= 760;
-                      final homeItems = _buildHomeItems(
-                        events,
-                        galleryImages,
-                        galleryOrder,
-                        galleryTitle,
-                        galleryTitleVisible,
-                        galleryTitleLayout,
-                      );
-                      return Column(
-                        children: [
-                          if (!mobile && !shortDesktop) ...[
-                            const _HomeTitle(),
-                            const SizedBox(height: 8),
-                          ],
-                          if (loadError != null)
-                            _HomeLoadError(
-                              message: loadError!,
-                              onRetry: _loadSettings,
-                            )
-                          else if (homeItems.isEmpty)
-                            const _HomeCountersLoading()
-                          else if (wide)
-                            _DesktopHomeLayout(items: homeItems)
-                          else
-                            Column(
-                              children: [
-                                for (var i = 0;
-                                    i < homeItems.length;
-                                    i++) ...[
-                                  homeItems[i].build(context),
-                                  if (i < homeItems.length - 1)
-                                    const SizedBox(height: 14),
+          builder: (context, viewport) {
+            final mobile = viewport.maxWidth < 760;
+            final shortDesktop = !mobile && viewport.maxHeight < 620;
+            final content = ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(
+                18,
+                mobile ? 16 : 14,
+                18,
+                mobile ? 28 : 40,
+              ),
+              children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1200),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final wide = constraints.maxWidth >= 760;
+                        final homeItems = _buildHomeItems(
+                          events,
+                          galleryImages,
+                          galleryOrder,
+                          galleryTitle,
+                          galleryTitleVisible,
+                          galleryTitleLayout,
+                        );
+                        return Column(
+                          children: [
+                            if (!mobile && !shortDesktop) ...[
+                              const _HomeTitle(),
+                              const SizedBox(height: 8),
+                            ],
+                            if (loadError != null)
+                              _HomeLoadError(
+                                message: loadError!,
+                                onRetry: _loadSettings,
+                              )
+                            else if (homeItems.isEmpty)
+                              const _HomeCountersLoading()
+                            else if (wide)
+                              _DesktopHomeLayout(items: homeItems)
+                            else
+                              Column(
+                                children: [
+                                  for (var i = 0;
+                                      i < homeItems.length;
+                                      i++) ...[
+                                    homeItems[i].build(context),
+                                    if (i < homeItems.length - 1)
+                                      const SizedBox(height: 14),
+                                  ],
                                 ],
-                              ],
-                            ),
-                        ],
-                      );
-                    },
+                              ),
+                          ],
+                        );
+                      },
+                    ),
                   ),
                 ),
-              ),
-            ],
-          );
+              ],
+            );
 
-          if (!mobile) return content;
-          return Column(
-            children: [
-              const Padding(
-                padding: EdgeInsets.fromLTRB(18, 10, 18, 0),
-                child: AppPageHeader(
-                  title: 'Sião',
-                  subtitle: 'Memórias da nossa família.',
-                  icon: FamilyIcons.favoriteOutline,
-                  leading: _HomeLogoMark(),
-                  showBackButton: false,
+            if (!mobile) return content;
+            return Column(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(18, 10, 18, 0),
+                  child: AppPageHeader(
+                    title: 'Sião',
+                    subtitle: 'Memórias da nossa família.',
+                    icon: FamilyIcons.favoriteOutline,
+                    leading: _HomeLogoMark(),
+                    showBackButton: false,
+                  ),
                 ),
-              ),
-              Expanded(child: content),
-            ],
-          );
-        },
-      ),
+                Expanded(child: content),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -449,8 +451,7 @@ class _DesktopCounterGrid extends StatelessWidget {
                 : 2;
         final columns = cards.length < maxColumns ? cards.length : maxColumns;
         if (columns == 0) return const SizedBox.shrink();
-        final rawWidth =
-            (constraints.maxWidth - gap * (columns - 1)) / columns;
+        final rawWidth = (constraints.maxWidth - gap * (columns - 1)) / columns;
         final cardWidth = columns == 1
             ? 430.0
             : columns == 2
@@ -863,7 +864,8 @@ class _HomeLoadError extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(FamilyIcons.errorOutline, color: Colors.redAccent, size: 42),
+          const Icon(FamilyIcons.errorOutline,
+              color: Colors.redAccent, size: 42),
           const SizedBox(height: 12),
           Text(
             'Não foi possível carregar a Home.',
