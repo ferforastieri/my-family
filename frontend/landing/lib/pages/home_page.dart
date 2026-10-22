@@ -10,6 +10,7 @@ class HomePage extends StatelessComponent {
 
   @override
   Component build(BuildContext context) => SiteShell(
+    showHeader: false,
     child: div([
       const SeoHead(
         title: 'Sião — memórias e rotina em um espaço privado',

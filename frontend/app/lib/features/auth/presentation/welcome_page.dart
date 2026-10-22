@@ -69,14 +69,7 @@ class WelcomePage extends StatelessWidget {
                   40,
                 ),
                 children: [
-                  _WelcomeTopBar(
-                    onLogin: () => _openAuth(
-                      context,
-                      register: false,
-                      tenantSlug: tenantSlug,
-                    ),
-                  ),
-                  const SizedBox(height: 38),
+                  const SizedBox(height: 26),
                   _WelcomeHero(
                     wide: isWide,
                     onCreate: () => _openAuth(
@@ -128,37 +121,6 @@ class WelcomePage extends StatelessWidget {
   }
 }
 
-class _WelcomeTopBar extends StatelessWidget {
-  const _WelcomeTopBar({required this.onLogin});
-
-  final VoidCallback onLogin;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = Theme.of(context).extension<AppPalette>()!;
-    return Row(
-      children: [
-        Image.asset('assets/brand/family-logo.png', width: 52, height: 52),
-        const SizedBox(width: 10),
-        Text(
-          'Sião',
-          style: TextStyle(
-            color: palette.foreground,
-            fontSize: 24,
-            fontWeight: FontWeight.w900,
-            letterSpacing: .2,
-          ),
-        ),
-        const Spacer(),
-        FamilyTextButton(
-          onPressed: onLogin,
-          child: const Text('Entrar'),
-        ),
-      ],
-    );
-  }
-}
-
 class _WelcomeHero extends StatelessWidget {
   const _WelcomeHero({
     required this.wide,
@@ -179,7 +141,7 @@ class _WelcomeHero extends StatelessWidget {
       children: [
         Image.asset(
           'assets/brand/siao-logo.png',
-          width: wide ? 300 : 230,
+          width: wide ? 250 : 200,
           fit: BoxFit.contain,
         ),
         const SizedBox(height: 18),

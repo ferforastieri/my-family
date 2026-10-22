@@ -4,32 +4,38 @@ import 'package:jaspr/jaspr.dart';
 import '../site_config.dart';
 
 class SiteShell extends StatelessComponent {
-  const SiteShell({required this.child, super.key});
+  const SiteShell({
+    required this.child,
+    this.showHeader = true,
+    super.key,
+  });
 
   final Component child;
+  final bool showHeader;
 
   @override
   Component build(BuildContext context) => div([
     a(href: '#conteudo', classes: 'skip', [.text('Pular para o conteúdo')]),
-    header(classes: 'site-header', [
-      nav(
-        classes: 'nav',
-        attributes: const {'aria-label': 'Navegação principal'},
-        [
-          a(href: '/', classes: 'brand', [
-            img(src: '/assets/family-logo.png', width: 46, height: 46, alt: ''),
-            span([.text('Sião')]),
-          ]),
-          div(classes: 'nav-links', [
-            a(href: '/#faq', [.text('Dúvidas')]),
-            a(href: downloadUrl, [.text('Baixar app')]),
-            a(href: appHome, classes: 'ds-button ds-button-ghost', [
-              .text('Entrar'),
+    if (showHeader)
+      header(classes: 'site-header', [
+        nav(
+          classes: 'nav',
+          attributes: const {'aria-label': 'Navegação principal'},
+          [
+            a(href: '/', classes: 'brand', [
+              img(src: '/assets/family-logo.png', width: 46, height: 46, alt: ''),
+              span([.text('Sião')]),
             ]),
-          ]),
-        ],
-      ),
-    ]),
+            div(classes: 'nav-links', [
+              a(href: '/#faq', [.text('Dúvidas')]),
+              a(href: downloadUrl, [.text('Baixar app')]),
+              a(href: appHome, classes: 'ds-button ds-button-ghost', [
+                .text('Entrar'),
+              ]),
+            ]),
+          ],
+        ),
+      ]),
     main_(id: 'conteudo', [child]),
     footer(classes: 'site-footer', [
       div(classes: 'footer-grid', [
