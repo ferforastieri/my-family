@@ -12,6 +12,7 @@ import 'core/socket/socket_client.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
 import 'core/widgets/app_brand.dart';
+import 'core/widgets/app_scroll_behavior.dart';
 import 'core/widgets/skeleton.dart';
 import 'core/toast/toast_controller.dart';
 import 'core/toast/toast_overlay.dart';
@@ -149,6 +150,7 @@ class MyFamilyApp extends StatelessWidget {
           return MaterialApp(
             title: 'Sião',
             debugShowCheckedModeBanner: false,
+            scrollBehavior: const AppScrollBehavior(),
             theme: buildAppTheme(
               color: theme.color,
               mode: theme.mode,
@@ -169,6 +171,7 @@ class MyFamilyApp extends StatelessWidget {
           child: MaterialApp.router(
           title: 'Sião',
           debugShowCheckedModeBanner: false,
+          scrollBehavior: const AppScrollBehavior(),
           theme: buildAppTheme(
             color: theme.color,
             mode: theme.mode,
