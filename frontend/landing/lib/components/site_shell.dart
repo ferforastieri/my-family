@@ -28,7 +28,6 @@ class SiteShell extends StatelessComponent {
             ]),
             div(classes: 'nav-links', [
               a(href: '/#faq', [.text('Dúvidas')]),
-              a(href: downloadUrl, [.text('Baixar app')]),
               a(href: appHome, classes: 'ds-button ds-button-ghost', [
                 .text('Entrar'),
               ]),
@@ -44,8 +43,6 @@ class SiteShell extends StatelessComponent {
           p([.text('Um espaço privado para o que aproxima vocês.')]),
         ]),
         _footerColumn('Sião', [
-          ('Perguntas frequentes', '/#faq'),
-          ('Baixar app', downloadUrl),
         ]),
         _footerColumn('Confiança', [
           ('Política de privacidade', '/#/privacidade'),

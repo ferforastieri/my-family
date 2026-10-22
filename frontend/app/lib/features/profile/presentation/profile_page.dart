@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/navigation/app_navigation.dart';
 import 'package:image_picker/image_picker.dart';
@@ -167,16 +166,6 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
                   onTap: widget.onAdmin,
                 ),
               ],
-              const SizedBox(height: 10),
-              _ProfileActionTile(
-                icon: FamilyIcons.downloadOutlined,
-                label: 'Baixar versão mais atual',
-                description: 'Instale a versão mais recente do aplicativo.',
-                onTap: () => launchUrl(
-                  Uri.parse(AppConfig.downloadUrl),
-                  mode: LaunchMode.externalApplication,
-                ),
-              ),
               const SizedBox(height: 18),
               Text(
                 'Preferências',

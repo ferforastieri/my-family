@@ -13,8 +13,4 @@ const appUrl = String.fromEnvironment(
 
 String get appHome => appUrl.endsWith('/') ? appUrl : '$appUrl/';
 const turnstileSiteKey = String.fromEnvironment('TURNSTILE_SITE_KEY');
-const downloadUrl = String.fromEnvironment(
-  'DOWNLOAD_URL',
-  defaultValue:
-      'https://github.com/ferforastieri/siao/releases/latest/download/app-release.apk',
-);
+

@@ -41,16 +41,25 @@ class _LegalPageState extends State<LegalPage> {
   @override
   Widget build(BuildContext context) {
     final palette = Theme.of(context).extension<AppPalette>()!;
+    final wide = MediaQuery.sizeOf(context).width >= 760;
     return Scaffold(
       backgroundColor: palette.bgStart,
       body: LoveBackground(
         child: SafeArea(
-          child: FutureBuilder<Map<String, dynamic>>(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1120),
+              child: FutureBuilder<Map<String, dynamic>>(
             future: content,
             builder: (context, snapshot) {
               final text = snapshot.data?[key]?.toString() ?? '';
               return ListView(
-                padding: const EdgeInsets.fromLTRB(20, 14, 20, 48),
+                padding: EdgeInsets.fromLTRB(
+                  wide ? 38 : 20,
+                  14,
+                  wide ? 38 : 20,
+                  48,
+                ),
                 children: [
                   Row(
                     children: [
@@ -109,6 +118,8 @@ class _LegalPageState extends State<LegalPage> {
                 ],
               );
             },
+              ),
+            ),
           ),
         ),
       ),

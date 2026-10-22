@@ -84,3 +84,6 @@ h1 em { color: var(--wine); font-weight: inherit; }
   .form-row { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+html { scrollbar-width: none; }
+body::-webkit-scrollbar { display: none; }

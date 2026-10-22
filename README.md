@@ -130,7 +130,6 @@ jaspr serve
 - Site e aplicativo web: https://siao.vira-ia-br.workers.dev
 - Aplicativo Android: https://github.com/ferforastieri/siao/releases/latest/download/app-release.apk
 - API: https://siao.vira-ia-br.workers.dev/api/health
-- Baixar o aplicativo: https://github.com/ferforastieri/siao/releases/latest/download/app-release.apk
 
 ## Licença
 

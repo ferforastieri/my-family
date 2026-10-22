@@ -5,11 +5,6 @@ class AppConfig {
     'LANDING_URL',
     defaultValue: 'http://localhost:3000',
   );
-  static const downloadUrl = String.fromEnvironment(
-    'DOWNLOAD_URL',
-    defaultValue:
-        'https://github.com/ferforastieri/siao/releases/latest/download/app-release.apk',
-  );
 
   static String get apiBaseUrl => _requiredEnv('API_BASE_URL', _apiBaseUrl);
   static String get socketUrl => _requiredEnv('SOCKET_URL', _socketUrl);
