@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'core/auth/auth_controller.dart';
+import 'core/config/app_config.dart';
 import 'core/chat/chat_controller.dart';
 import 'core/location/location_controller.dart';
 import 'core/notifications/notifications_controller.dart';
@@ -210,7 +211,14 @@ class _BootSplash extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Image.asset('assets/brand/family-logo.png', width: 96),
+            Image.network(
+              AppConfig.apiUri('/public/branding/logo').toString(),
+              width: 96,
+              errorBuilder: (_, __, ___) => Image.asset(
+                'assets/brand/family-logo.png',
+                width: 96,
+              ),
+            ),
             const SizedBox(height: 20),
             const SkeletonBox(width: 120, height: 12, borderRadius: 999),
           ],
