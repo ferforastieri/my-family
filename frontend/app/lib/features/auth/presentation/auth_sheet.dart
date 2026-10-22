@@ -13,11 +13,17 @@ class AuthSheet extends StatefulWidget {
     required this.auth,
     required this.toast,
     this.onAuthenticated,
+    this.initialRegisterMode = false,
+    this.tenantSlug,
+    this.invitationToken,
   });
 
   final AuthController auth;
   final ToastController toast;
   final VoidCallback? onAuthenticated;
+  final bool initialRegisterMode;
+  final String? tenantSlug;
+  final String? invitationToken;
 
   @override
   State<AuthSheet> createState() => _AuthSheetState();
@@ -27,10 +33,17 @@ class _AuthSheetState extends State<AuthSheet> {
   final name = TextEditingController();
   final email = TextEditingController();
   final password = TextEditingController();
-  bool registerMode = false;
+  late bool registerMode;
   bool loading = false;
   bool obscurePassword = true;
+  bool acceptedTerms = false;
   String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    registerMode = widget.initialRegisterMode;
+  }
 
   @override
   void dispose() {
@@ -97,6 +110,58 @@ class _AuthSheetState extends State<AuthSheet> {
               ),
             ),
           ),
+          if (registerMode) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 30,
+                  height: 30,
+                  child: Checkbox(
+                    value: acceptedTerms,
+                    onChanged: loading
+                        ? null
+                        : (value) =>
+                            setState(() => acceptedTerms = value ?? false),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      const Text('Li e aceito os '),
+                      InkWell(
+                        onTap: () => _openLegal('termos'),
+                        child: Text(
+                          'Termos',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w700,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                      const Text(' e a '),
+                      InkWell(
+                        onTap: () => _openLegal('privacidade'),
+                        child: Text(
+                          'Política de privacidade',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w700,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                      const Text('.'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
           if (error != null) ...[
             const SizedBox(height: 12),
             Text(
@@ -122,15 +187,15 @@ class _AuthSheetState extends State<AuthSheet> {
               registerMode ? 'Já tenho conta' : 'Criar uma conta',
             ),
           ),
-          FamilyTextButton(
-            onPressed: () => launchUrl(
-              Uri.parse('${AppConfig.landingUrl}/cadastro'),
-              mode: LaunchMode.externalApplication,
-            ),
-            child: const Text('Criar uma família'),
-          ),
         ],
       ),
+    );
+  }
+
+  Future<void> _openLegal(String path) async {
+    await launchUrl(
+      Uri.parse('${AppConfig.landingUrl}/$path'),
+      mode: LaunchMode.externalApplication,
     );
   }
 
@@ -153,15 +218,29 @@ class _AuthSheetState extends State<AuthSheet> {
       setState(() => error = 'Informe seu nome.');
       return;
     }
+    if (registerMode && !acceptedTerms) {
+      setState(() => error = 'Aceite os termos para criar sua conta.');
+      return;
+    }
     setState(() {
       loading = true;
       error = null;
     });
     try {
       if (registerMode) {
-        await widget.auth.register(name.text, emailValue, passwordValue);
+        await widget.auth.register(
+          name.text,
+          emailValue,
+          passwordValue,
+          tenantSlug: widget.tenantSlug,
+          invitationToken: widget.invitationToken,
+        );
       } else {
-        await widget.auth.login(emailValue, passwordValue);
+        await widget.auth.login(
+          emailValue,
+          passwordValue,
+          tenantSlug: widget.tenantSlug,
+        );
       }
       widget.toast.backendSuccess(widget.auth.takeMessage());
       if (widget.onAuthenticated != null) {

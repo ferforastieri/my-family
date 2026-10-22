@@ -1,5 +1,6 @@
 import 'package:family_ui/family_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/api/query_keys.dart';
@@ -44,6 +45,10 @@ class _AdminPageState extends State<AdminPage> {
   List<GameWord> words = [];
   List<MiniGameConfig> miniGames = [];
   List<GameStat> stats = [];
+  List<Map<String, dynamic>> invitations = [];
+  Map<String, dynamic>? tenantInfo;
+  List<Map<String, dynamic>> platformTenants = [];
+  PaginatedResult<Map<String, dynamic>>? platformPagination;
   List<HomeEventConfig> homeEvents = [];
   List<String> homeGalleryImages = [];
   int? homeGalleryOrder;
@@ -62,6 +67,7 @@ class _AdminPageState extends State<AdminPage> {
   int wordsPage = 1;
   int miniGamesPage = 1;
   int statsPage = 1;
+  int platformPage = 1;
   String? loadError;
   _AdminSection selected = _AdminSection.users;
 
@@ -78,6 +84,9 @@ class _AdminPageState extends State<AdminPage> {
     PaginatedResult<GameWord>? nextWords;
     PaginatedResult<MiniGameConfig>? nextMiniGames;
     PaginatedResult<GameStat>? nextStats;
+    List<Map<String, dynamic>>? nextInvitations;
+    Map<String, dynamic>? nextTenantInfo;
+    PaginatedResult<Map<String, dynamic>>? nextPlatform;
     HomeSettingsConfig? nextHomeSettings;
     await Future.wait([
       _fetchPart('usuários', () async {
@@ -120,6 +129,19 @@ class _AdminPageState extends State<AdminPage> {
           _adminPageLimit,
         );
       }, errors),
+      _fetchPart('convites', () async {
+        nextInvitations = await widget.repository.listTenantInvitations();
+      }, errors),
+      _fetchPart('família', () async {
+        nextTenantInfo = await widget.repository.getTenantInfo();
+      }, errors),
+      if (widget.auth.user?.isPlatformAdmin == true)
+        _fetchPart('plataforma', () async {
+          nextPlatform = await widget.repository.listPlatformTenantsPage(
+            platformPage,
+            _adminPageLimit,
+          );
+        }, errors),
       _fetchPart('datas da Home', () async {
         nextHomeSettings = await widget.repository.getHomeSettings();
       }, errors),
@@ -132,6 +154,9 @@ class _AdminPageState extends State<AdminPage> {
       words: nextWords,
       miniGames: nextMiniGames,
       stats: nextStats,
+      invitations: nextInvitations,
+      tenantInfo: nextTenantInfo,
+      platform: nextPlatform,
       homeSettings: nextHomeSettings,
       loadError: errors.isEmpty ? null : errors.join(' • '),
     );
@@ -171,6 +196,7 @@ class _AdminPageState extends State<AdminPage> {
               wordsPage: wordsPage,
               miniGamesPage: miniGamesPage,
               statsPage: statsPage,
+              platformPage: platformPage,
             ),
             queryFn: _fetchAdminData,
             loading: _AdminScaffold(child: const _AdminLoadingState()),
@@ -209,7 +235,11 @@ class _AdminPageState extends State<AdminPage> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 12),
-            for (final section in _AdminSection.values)
+            for (final section in _AdminSection.values.where(
+              (section) =>
+                  section != _AdminSection.platform ||
+                  widget.auth.user?.isPlatformAdmin == true,
+            ))
               ListTile(
                 leading: Icon(section.icon),
                 title: Text(section.label),
@@ -241,6 +271,10 @@ class _AdminPageState extends State<AdminPage> {
     words = data.words?.items ?? const [];
     miniGames = data.miniGames?.items ?? const [];
     stats = data.stats?.items ?? const [];
+    invitations = data.invitations ?? const [];
+    tenantInfo = data.tenantInfo;
+    platformPagination = data.platform;
+    platformTenants = data.platform?.items ?? const [];
     homeEvents = data.homeSettings?.events ?? const [];
     homeGalleryImages = data.homeSettings?.galleryImages ?? const [];
     homeGalleryOrder = data.homeSettings?.galleryOrder;
@@ -254,11 +288,15 @@ class _AdminPageState extends State<AdminPage> {
     return switch (selected) {
       _AdminSection.users => _UsersAdminTab(
           users: users,
+          invitations: invitations,
           loading: false,
+          onInvite: _openInviteSheet,
+          onRevokeInvitation: _revokeInvitation,
           onEdit: _openUserSheet,
           onDelete: _deleteUser,
           pagination: _pagination(usersPagination, (page) => usersPage = page),
         ),
+      _AdminSection.family => _FamilyAdminTab(tenant: tenantInfo),
       _AdminSection.notifications => _NotificationsAdminTab(
           notifications: notifications,
           scheduledNotifications: scheduledNotifications,
@@ -305,6 +343,14 @@ class _AdminPageState extends State<AdminPage> {
           stats: stats,
           loading: false,
           pagination: _pagination(statsPagination, (page) => statsPage = page),
+        ),
+      _AdminSection.platform => _PlatformAdminTab(
+          tenants: platformTenants,
+          loading: false,
+          pagination: _pagination(
+            platformPagination,
+            (page) => platformPage = page,
+          ),
         ),
       _AdminSection.home => _HomeSettingsAdminTab(
           events: homeEvents,
@@ -357,6 +403,86 @@ class _AdminPageState extends State<AdminPage> {
     await widget.repository.deleteUser(user.id);
     widget.toast.backendSuccess(widget.repository.takeMessage());
     _invalidateAdmin();
+  }
+
+  Future<void> _openInviteSheet() async {
+    final response = await showAppSheet<Map<String, dynamic>?>(
+      context: context,
+      builder: (_) => _InviteMemberSheet(
+        repository: widget.repository,
+        toast: widget.toast,
+      ),
+    );
+    if (response == null || !mounted) return;
+    _invalidateAdmin();
+    final token =
+        (response['token'] ?? response['invitationToken'])?.toString().trim();
+    if (token == null || token.isEmpty) return;
+    final link =
+        '${AppConfig.landingUrl}/cadastro?invitation=${Uri.encodeComponent(token)}';
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Convite criado'),
+        content: SizedBox(
+          width: 520,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Compartilhe este link com a pessoa convidada:'),
+              const SizedBox(height: 12),
+              SelectableText(link),
+            ],
+          ),
+        ),
+        actions: [
+          FamilyTextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: link));
+              Navigator.of(dialogContext).pop();
+            },
+            child: const Text('Copiar link'),
+          ),
+          FamilyFilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _revokeInvitation(Map<String, dynamic> invitation) async {
+    final id = invitation['id']?.toString();
+    if (id == null || id.isEmpty) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Revogar convite?'),
+        content: Text(
+          'O convite para ${invitation['email'] ?? 'esta pessoa'} deixará de funcionar.',
+        ),
+        actions: [
+          FamilyTextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FamilyFilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Revogar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await widget.repository.deleteTenantInvitation(id);
+      widget.toast.backendSuccess(widget.repository.takeMessage());
+      _invalidateAdmin();
+    } catch (error) {
+      widget.toast.error(error.toString());
+    }
   }
 
   Future<void> _openNotificationSheet([AppNotification? notification]) async {
@@ -519,6 +645,9 @@ class _AdminData {
     required this.words,
     required this.miniGames,
     required this.stats,
+    required this.invitations,
+    required this.tenantInfo,
+    required this.platform,
     required this.homeSettings,
     required this.loadError,
   });
@@ -530,11 +659,22 @@ class _AdminData {
   final PaginatedResult<GameWord>? words;
   final PaginatedResult<MiniGameConfig>? miniGames;
   final PaginatedResult<GameStat>? stats;
+  final List<Map<String, dynamic>>? invitations;
+  final Map<String, dynamic>? tenantInfo;
+  final PaginatedResult<Map<String, dynamic>>? platform;
   final HomeSettingsConfig? homeSettings;
   final String? loadError;
 }
 
-enum _AdminSection { users, notifications, games, stats, home }
+enum _AdminSection {
+  users,
+  family,
+  notifications,
+  games,
+  stats,
+  home,
+  platform
+}
 
 class _AdminScaffold extends StatelessWidget {
   const _AdminScaffold({required this.child, this.error});
@@ -671,19 +811,23 @@ IconData _gameStatIcon(String game) {
 
 extension _AdminSectionView on _AdminSection {
   String get label => switch (this) {
-        _AdminSection.users => 'Usuários',
+        _AdminSection.users => 'Membros',
+        _AdminSection.family => 'Família',
         _AdminSection.notifications => 'Notificações',
         _AdminSection.games => 'Jogos',
         _AdminSection.stats => 'Estatísticas',
         _AdminSection.home => 'Home',
+        _AdminSection.platform => 'Plataforma',
       };
 
   IconData get icon => switch (this) {
         _AdminSection.users => FamilyIcons.peopleOutline,
+        _AdminSection.family => FamilyIcons.homeOutlined,
         _AdminSection.notifications => FamilyIcons.notificationsOutlined,
         _AdminSection.games => FamilyIcons.sportsEsportsOutlined,
         _AdminSection.stats => FamilyIcons.queryStatsOutlined,
         _AdminSection.home => FamilyIcons.homeOutlined,
+        _AdminSection.platform => FamilyIcons.adminPanelSettingsOutlined,
       };
 }
 
@@ -878,6 +1022,252 @@ class _AdminActions extends StatelessWidget {
   }
 }
 
+class _FamilyAdminTab extends StatelessWidget {
+  const _FamilyAdminTab({required this.tenant});
+
+  final Map<String, dynamic>? tenant;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Column(
+      children: [
+        const _AdminToolbar(
+          title: 'Família',
+          subtitle: 'Identidade e situação do espaço da sua família.',
+        ),
+        Expanded(
+          child: ListView(
+            padding: _adminListPadding,
+            children: [
+              FamilyCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: palette.primary.withValues(alpha: .12),
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: Icon(
+                            FamilyIcons.homeWorkOutlined,
+                            color: palette.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                tenant?['name']?.toString() ?? 'Família',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              Text(
+                                tenant?['slug']?.toString() ?? '—',
+                                style: TextStyle(color: palette.muted),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    _FamilyInfoRow(
+                      label: 'Plano',
+                      value: tenant?['planCode']?.toString() ?? '—',
+                    ),
+                    _FamilyInfoRow(
+                      label: 'Assinatura',
+                      value: tenant?['subscriptionStatus']?.toString() ?? '—',
+                    ),
+                    _FamilyInfoRow(
+                      label: 'Status',
+                      value: tenant?['status']?.toString() ?? '—',
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FamilyInfoRow extends StatelessWidget {
+  const _FamilyInfoRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: Row(
+        children: [
+          Expanded(child: Text(label, style: TextStyle(color: palette.muted))),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w800)),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlatformAdminTab extends StatelessWidget {
+  const _PlatformAdminTab({
+    required this.tenants,
+    required this.loading,
+    required this.pagination,
+  });
+
+  final List<Map<String, dynamic>> tenants;
+  final bool loading;
+  final Widget? pagination;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const _AdminToolbar(
+          title: 'Plataforma',
+          subtitle: 'Visão operacional das famílias cadastradas.',
+        ),
+        Expanded(
+          child: _AdminSectionBody(
+            loading: loading,
+            isEmpty: tenants.isEmpty,
+            empty: 'Nenhuma família cadastrada.',
+            itemCount: tenants.length + (pagination == null ? 0 : 1),
+            itemBuilder: (context, index) {
+              if (index == tenants.length) return pagination!;
+              final tenant = tenants[index];
+              return _AdminTile(
+                icon: FamilyIcons.homeWorkOutlined,
+                title: tenant['name']?.toString() ?? 'Família',
+                subtitle:
+                    '${tenant['slug'] ?? '—'} • ${tenant['status'] ?? '—'}',
+                trailing: Text(
+                  tenant['planCode']?.toString() ?? '—',
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _InviteMemberSheet extends StatefulWidget {
+  const _InviteMemberSheet({
+    required this.repository,
+    required this.toast,
+  });
+
+  final FamilyRepository repository;
+  final ToastController toast;
+
+  @override
+  State<_InviteMemberSheet> createState() => _InviteMemberSheetState();
+}
+
+class _InviteMemberSheetState extends State<_InviteMemberSheet> {
+  final email = TextEditingController();
+  String role = 'member';
+  bool saving = false;
+  String? error;
+
+  @override
+  void dispose() {
+    email.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final value = email.text.trim();
+    if (!value.contains('@') || !value.contains('.')) {
+      setState(() => error = 'Informe um email válido.');
+      return;
+    }
+    setState(() {
+      saving = true;
+      error = null;
+    });
+    try {
+      final response = await widget.repository.inviteTenantMember(
+        email: value,
+        role: role,
+      );
+      widget.toast.backendSuccess(widget.repository.takeMessage());
+      if (mounted) Navigator.of(context).pop(response);
+    } catch (caught) {
+      setState(() => saving = false);
+      setState(() => error = caught.toString());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 520),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const AppSheetHeader(
+            title: 'Convidar pessoa',
+            subtitle: 'Envie um convite para alguém entrar na sua família.',
+            icon: FamilyIcons.personAddAlt1Outlined,
+          ),
+          const SizedBox(height: 16),
+          FamilyTextField(
+            controller: email,
+            keyboardType: TextInputType.emailAddress,
+            autofillHints: const [AutofillHints.email],
+            decoration: const InputDecoration(labelText: 'Email'),
+          ),
+          const SizedBox(height: 12),
+          FamilySelect<String>(
+            value: role,
+            label: 'Papel',
+            options: const [
+              FamilySelectOption(value: 'member', label: 'Membro'),
+              FamilySelectOption(value: 'admin', label: 'Administrador'),
+            ],
+            onChanged: saving
+                ? null
+                : (value) => setState(() => role = value ?? 'member'),
+          ),
+          if (error != null) ...[
+            const SizedBox(height: 10),
+            Text(error!, style: TextStyle(color: palette.primaryDark)),
+          ],
+          const SizedBox(height: 20),
+          FamilyButton(
+            label: 'Enviar convite',
+            icon: FamilyIcons.personAddAlt1Outlined,
+            loading: saving,
+            onPressed: _submit,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _AdminSectionTitle extends StatelessWidget {
   const _AdminSectionTitle(this.title);
 
@@ -903,26 +1293,87 @@ class _AdminSectionTitle extends StatelessWidget {
 class _UsersAdminTab extends StatelessWidget {
   const _UsersAdminTab({
     required this.users,
+    required this.invitations,
     required this.loading,
+    required this.onInvite,
+    required this.onRevokeInvitation,
     required this.onEdit,
     required this.onDelete,
     required this.pagination,
   });
 
   final List<AppUser> users;
+  final List<Map<String, dynamic>> invitations;
   final bool loading;
+  final VoidCallback onInvite;
+  final ValueChanged<Map<String, dynamic>> onRevokeInvitation;
   final ValueChanged<AppUser> onEdit;
   final ValueChanged<AppUser> onDelete;
   final Widget? pagination;
 
   @override
   Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
     return Column(
       children: [
         _AdminToolbar(
-          title: 'Usuários',
-          subtitle: 'Edite perfil, função e remova acessos quando precisar.',
+          title: 'Membros',
+          subtitle: 'Convide pessoas, edite permissões e remova acessos.',
+          action: FamilyFilledButton.icon(
+            onPressed: onInvite,
+            icon: const Icon(FamilyIcons.personAddAlt1Outlined),
+            label: const Text('Convidar pessoa'),
+          ),
         ),
+        if (invitations.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+            child: FamilyCard(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Convites pendentes',
+                    style: TextStyle(
+                      color: palette.foreground,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 210),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: invitations.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final invitation = invitations[index];
+                        return ListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(FamilyIcons.mailOutlined),
+                          title: Text(
+                            invitation['email']?.toString() ?? 'Convite',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(
+                            invitation['role']?.toString() ?? 'member',
+                          ),
+                          trailing: IconButton(
+                            tooltip: 'Revogar convite',
+                            onPressed: () => onRevokeInvitation(invitation),
+                            icon: const Icon(FamilyIcons.deleteOutline),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         Expanded(
           child: _AdminSectionBody(
             loading: loading,

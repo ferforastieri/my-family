@@ -67,30 +67,46 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  Future<void> login(String email, String password) async {
+  Future<void> login(
+    String email,
+    String password, {
+    String? tenantSlug,
+  }) async {
     final path = Uri.base.pathSegments;
-    final tenantSlug = Uri.base.queryParameters['tenantSlug'] ??
+    tenantSlug ??= Uri.base.queryParameters['tenantSlug'] ??
         (path.length >= 2 && path.first == 'f' ? path[1] : null);
-    final response = await _post('/auth/login', {
-      'email': email.trim(),
-      'password': password,
-      if (tenantSlug != null) 'tenantSlug': tenantSlug,
-    }, retry: false);
+    final response = await _post(
+        '/auth/login',
+        {
+          'email': email.trim(),
+          'password': password,
+          if (tenantSlug != null) 'tenantSlug': tenantSlug,
+        },
+        retry: false);
     await _acceptSession(response);
   }
 
-  Future<void> register(String name, String email, String password) async {
+  Future<void> register(
+    String name,
+    String email,
+    String password, {
+    String? tenantSlug,
+    String? invitationToken,
+  }) async {
     final path = Uri.base.pathSegments;
-    final tenantSlug = Uri.base.queryParameters['tenantSlug'] ??
+    tenantSlug ??= Uri.base.queryParameters['tenantSlug'] ??
         (path.length >= 2 && path.first == 'f' ? path[1] : null);
-    final invitationToken = Uri.base.queryParameters['invitation'];
-    final response = await _post('/auth/register', {
-      'name': name.trim(),
-      'email': email.trim(),
-      'password': password,
-      if (tenantSlug != null) 'tenantSlug': tenantSlug,
-      if (invitationToken != null) 'invitationToken': invitationToken,
-    }, retry: false);
+    invitationToken ??= Uri.base.queryParameters['invitation'];
+    final response = await _post(
+        '/auth/register',
+        {
+          'name': name.trim(),
+          'email': email.trim(),
+          'password': password,
+          if (tenantSlug != null) 'tenantSlug': tenantSlug,
+          if (invitationToken != null) 'invitationToken': invitationToken,
+        },
+        retry: false);
     await _acceptSession(response);
   }
 
@@ -138,7 +154,9 @@ class AuthController extends ChangeNotifier {
       await refreshAuthenticatedMediaHeaders();
       await _reconnectSocket(force: true);
     } on DioException catch (error) {
-      if (retry && error.response?.statusCode == 401 && await _refreshSession()) {
+      if (retry &&
+          error.response?.statusCode == 401 &&
+          await _refreshSession()) {
         return _loadCurrentUser(retry: false);
       }
       if (error.response?.statusCode == 401) {
@@ -248,14 +266,15 @@ class AuthController extends ChangeNotifier {
           method: method,
           headers: {
             'Accept': 'application/json',
-            if (method != 'GET' && csrfToken != null)
-              'X-CSRF-Token': csrfToken,
+            if (method != 'GET' && csrfToken != null) 'X-CSRF-Token': csrfToken,
           },
         ),
       );
       return _unwrap(response.data);
     } on DioException catch (error) {
-      if (retry && error.response?.statusCode == 401 && await _refreshSession()) {
+      if (retry &&
+          error.response?.statusCode == 401 &&
+          await _refreshSession()) {
         return _request(method, path, data: data, retry: false);
       }
       rethrow;

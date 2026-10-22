@@ -43,12 +43,8 @@ jobs:
             --sitemap-exclude '^/cadastro' \
             --dart-define SITE_URL=https://example.com \
             --dart-define API_URL=https://api.example.com/api \
-            --dart-define APP_URL=https://app.example.com \
-            --dart-define PANEL_URL=https://panel.example.com
+            --dart-define APP_URL=https://app.example.com
           dart run tool/finalize.dart https://example.com https://api.example.com/api
-      - run: npm ci && npm run check
-        working-directory: workers/media
       - name: Analyze and test Flutter projects
         run: |
           docker run --rm -v "$PWD:/workspace" -w /workspace/frontend/app ghcr.io/cirruslabs/flutter:stable sh -lc 'flutter pub get && flutter analyze && flutter test && flutter build web --release --no-wasm-dry-run'
-          docker run --rm -v "$PWD:/workspace" -w /workspace/frontend/panel ghcr.io/cirruslabs/flutter:stable sh -lc 'flutter pub get && flutter analyze && flutter test && flutter build web --release --no-wasm-dry-run'

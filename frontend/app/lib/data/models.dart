@@ -8,6 +8,7 @@ class AppUser {
     this.avatarPath,
     this.createdAt,
     this.membershipRole,
+    this.platformRole,
     this.primaryColor,
     this.tenantFont,
     this.tenantKey,
@@ -23,6 +24,7 @@ class AppUser {
   final String? avatarPath;
   final DateTime? createdAt;
   final String? membershipRole;
+  final String? platformRole;
   final String? primaryColor;
   final String? tenantFont;
   final String? tenantKey;
@@ -43,6 +45,7 @@ class AppUser {
             ? null
             : DateTime.tryParse(json['createdAt'].toString()),
         membershipRole: json['membershipRole'] as String?,
+        platformRole: json['platformRole'] as String?,
         primaryColor: ((json['tenant'] as Map?)?['theme']
             as Map?)?['primaryColor'] as String?,
         tenantFont: ((json['tenant'] as Map?)?['theme'] as Map?)?['fontFamily']
@@ -55,6 +58,8 @@ class AppUser {
       );
 
   bool get isAdmin => membershipRole == 'owner' || membershipRole == 'admin';
+
+  bool get isPlatformAdmin => platformRole == 'super_admin';
 
   bool canAccess(String key) => isAdmin || access.contains(key);
 }

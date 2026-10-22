@@ -596,6 +596,45 @@ class FamilyRepository {
     return HomeSettingsConfig.fromJson(data);
   }
 
+  Future<Map<String, dynamic>> getTenantInfo() async {
+    final data = await api.get<Map<String, dynamic>>('/tenant');
+    return Map<String, dynamic>.from(data);
+  }
+
+  Future<List<Map<String, dynamic>>> listTenantInvitations() async {
+    final data = await api.get<List<dynamic>>('/tenant/invitations');
+    return data.map((row) => Map<String, dynamic>.from(row as Map)).toList();
+  }
+
+  Future<Map<String, dynamic>> inviteTenantMember({
+    required String email,
+    String role = 'member',
+  }) async {
+    final data = await api.post<Map<String, dynamic>>(
+      '/tenant/invitations',
+      data: {'email': email.trim(), 'role': role},
+    );
+    return Map<String, dynamic>.from(data);
+  }
+
+  Future<void> deleteTenantInvitation(String id) async {
+    await api.delete<Map<String, dynamic>>('/tenant/invitations/$id');
+  }
+
+  Future<PaginatedResult<Map<String, dynamic>>> listPlatformTenantsPage(
+    int page,
+    int limit,
+  ) async {
+    final data = await api.get<dynamic>(
+      '/platform/tenants',
+      query: {'page': page, 'limit': limit},
+    );
+    return _paginated(
+      data,
+      (row) => Map<String, dynamic>.from(row),
+    );
+  }
+
   PaginatedResult<T> _paginated<T>(
     dynamic data,
     T Function(Map<String, dynamic> row) mapper,

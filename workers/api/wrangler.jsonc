@@ -40,7 +40,7 @@
   "triggers": { "crons": ["* * * * *"] },
   "vars": {
     "APP_ENV": "production",
-    "CORS_ORIGIN": "https://siao-web.vira-ia-br.workers.dev,https://siao-panel.vira-ia-br.workers.dev,https://siao-landing.vira-ia-br.workers.dev",
+    "CORS_ORIGIN": "https://siao-web.vira-ia-br.workers.dev,https://siao-landing.vira-ia-br.workers.dev",
     "PLATFORM_ADMIN_EMAIL": "ffnephew@hotmail.com",
     "COOKIE_SECURE": "true",
     "COOKIE_SAME_SITE": "lax",

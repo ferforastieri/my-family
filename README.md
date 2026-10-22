@@ -22,9 +22,9 @@ mais de uma família e alternar entre elas sem criar outra conta.
 ## Arquitetura
 
 ```
-Aplicativo (Flutter Web/Android)   Painel (Flutter Web)   Site (Jaspr)
-                    │                      │                  │
-                    └──────────── HTTPS e WebSocket ──────────┘
+Aplicativo (Flutter Web/Android)          Site (Jaspr)
+                    │                            │
+                    └──────── HTTPS e WebSocket ──┘
                                        │
                               Cloudflare Workers
                               API Hono na borda
@@ -35,7 +35,7 @@ Aplicativo (Flutter Web/Android)   Painel (Flutter Web)   Site (Jaspr)
      (dados)        (fotos)      (Durable Objects) (rotinas)     (push)
 ```
 
-- **Aplicativo, painel e site** rodam na Cloudflare e conversam com a API pela
+- **Aplicativo e site** rodam na Cloudflare e conversam com a API pela
   mesma origem, o que mantém cookies, sessões e WebSocket simples e seguros.
 - **API** concentra autenticação, permissões, regras de negócio e acesso aos dados.
 - **Banco** guarda usuários, famílias, membros e todo o conteúdo textual.
@@ -55,17 +55,15 @@ Aplicativo (Flutter Web/Android)   Painel (Flutter Web)   Site (Jaspr)
   vem do corpo da requisição.
 - Cada membro tem um papel (`owner`, `admin` ou `member`) e permissões por área.
 - Uploads e leituras de mídia usam URLs temporárias.
-- Acesso à plataforma administrativa é separado do acesso ao conteúdo das famílias.
+- A administração da família e da plataforma fica dentro do próprio aplicativo, com permissões por papel.
 
 ## Estrutura do repositório
 
 ```
 frontend/app       aplicativo Flutter (Web e Android)
-frontend/panel     painel para administradores das famílias
 frontend/landing   site público de apresentação e cadastro
 workers/api        API, banco, tempo real, filas e notificações
 workers/web        camada que entrega os sites e encaminha a API
-workers/media      entrega privada de mídia
 ```
 
 ## Como rodar
@@ -102,16 +100,6 @@ flutter run -d chrome \
 
 Para Android, use o mesmo comando com um dispositivo ou emulador conectado.
 
-### Painel
-
-```bash
-cd frontend/panel
-flutter pub get
-flutter run -d chrome \
-  --dart-define=API_BASE_URL=http://localhost:8787/api \
-  --dart-define=APP_BASE_URL=http://localhost:8080
-```
-
 ### Site
 
 ```bash
@@ -123,7 +111,7 @@ jaspr serve
 
 ## Deploy
 
-- **API, aplicativo, painel e site** são publicados na Cloudflare via Wrangler.
+- **API, aplicativo e site** são publicados na Cloudflare via Wrangler.
   Os builds automáticos podem ser conectados a cada Worker no dashboard da
   Cloudflare.
 - **Aplicativo Android** é gerado pelo GitHub Actions e publicado na página de
@@ -134,7 +122,6 @@ jaspr serve
 ## Links
 
 - Aplicativo: https://siao-web.vira-ia-br.workers.dev
-- Painel: https://siao-panel.vira-ia-br.workers.dev
 - Site: https://siao-landing.vira-ia-br.workers.dev
 - API: https://siao-api.vira-ia-br.workers.dev
 - Baixar o aplicativo: https://github.com/ferforastieri/siao/releases/latest/download/app-release.apk

@@ -25,6 +25,7 @@ class QueryKeys {
     required int wordsPage,
     required int miniGamesPage,
     required int statsPage,
+    int platformPage = 1,
   }) =>
       [
         ...admin,
@@ -34,6 +35,7 @@ class QueryKeys {
         wordsPage,
         miniGamesPage,
         statsPage,
+        platformPage,
       ];
 
   static List<Object?> resourceScope(String resource) => ['resource', resource];

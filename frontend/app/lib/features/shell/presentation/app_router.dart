@@ -11,7 +11,7 @@ import '../../../core/theme/theme_controller.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../data/family_repository.dart';
 import '../../admin/presentation/admin_page.dart';
-import '../../auth/presentation/login_page.dart';
+import '../../auth/presentation/welcome_page.dart';
 import '../../chat/presentation/chat_page.dart';
 import '../../content/presentation/editable_text_collection_page.dart';
 import '../../games/presentation/games_page.dart';
@@ -38,7 +38,7 @@ GoRouter buildRouter(
     redirect: (context, state) {
       final path = state.uri.path;
       if (auth.user == null) {
-        if (path == '/login') return null;
+        if (path == '/boas-vindas') return null;
         final query = <String, String>{...state.uri.queryParameters};
         final segments = state.uri.pathSegments;
         final slug = state.pathParameters['slug'] ??
@@ -47,11 +47,11 @@ GoRouter buildRouter(
                 : null);
         if (slug != null && slug.isNotEmpty) query['tenantSlug'] = slug;
         return Uri(
-          path: '/login',
+          path: '/boas-vindas',
           queryParameters: query.isEmpty ? null : query,
         ).toString();
       }
-      if (path == '/login') return '/';
+      if (path == '/login' || path == '/boas-vindas') return '/';
       final accessKey = _accessForPath(path);
       if (path == '/admin' && auth.user?.isAdmin != true) return '/';
       if (accessKey != null && auth.user?.canAccess(accessKey) != true) {
@@ -61,9 +61,9 @@ GoRouter buildRouter(
     },
     routes: [
       GoRoute(
-        path: '/login',
+        path: '/boas-vindas',
         pageBuilder: (context, state) => _page(
-          LoginPage(auth: auth, toast: toast),
+          WelcomePage(auth: auth, toast: toast),
         ),
       ),
       ShellRoute(
@@ -79,9 +79,17 @@ GoRouter buildRouter(
         routes: [
           GoRoute(
             path: '/f/:slug',
-            redirect: (context, state) => auth.user == null
-                ? '/perfil?tenantSlug=${Uri.encodeQueryComponent(state.pathParameters['slug'] ?? '')}'
-                : '/',
+            redirect: (context, state) {
+              if (auth.user != null) return '/';
+              final query = <String, String>{
+                'tenantSlug': state.pathParameters['slug'] ?? '',
+                ...state.uri.queryParameters,
+              };
+              return Uri(
+                path: '/boas-vindas',
+                queryParameters: query,
+              ).toString();
+            },
           ),
           GoRoute(
             path: '/atalhos/memorias',

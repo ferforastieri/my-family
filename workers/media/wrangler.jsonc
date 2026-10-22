@@ -1,1 +1,0 @@
-{"name":"siao-media","main":"src/index.ts","compatibility_date":"2026-08-28","r2_buckets":[{"binding":"MEDIA","bucket_name":"siao-media"}],"vars":{"ALLOWED_ORIGIN":"https://siao-web.vira-ia-br.workers.dev"}}

@@ -162,7 +162,8 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
                 _ProfileActionTile(
                   icon: FamilyIcons.adminPanelSettingsOutlined,
                   label: 'Administração',
-                  description: 'Gerencie usuários, notificações e jogos.',
+                  description:
+                      'Gerencie membros, conteúdo, jogos e plataforma.',
                   onTap: widget.onAdmin,
                 ),
               ],
