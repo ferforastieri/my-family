@@ -1,6 +1,10 @@
-interface Env {
+import api, { TenantRealtime, RateLimiter } from '../../api/src/index';
+import type { Env as ApiEnv } from '../../api/src/env';
+
+export { TenantRealtime, RateLimiter };
+
+interface Env extends ApiEnv {
   ASSETS: Fetcher;
-  API: Fetcher;
 }
 
 const crawlerPattern =
@@ -22,14 +26,14 @@ function dynamicRoot(response: Response): Response {
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     if (
       url.pathname === '/api' ||
       url.pathname.startsWith('/api/') ||
       url.pathname === '/ws'
     ) {
-      return env.API.fetch(request);
+      return api.fetch(request, env, ctx);
     }
 
     // The landing is Flutter for people and a pre-rendered HTML equivalent for
@@ -56,5 +60,15 @@ export default {
     }
 
     return env.ASSETS.fetch(request);
+  },
+  async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
+    return api.queue(batch, env);
+  },
+  async scheduled(
+    controller: ScheduledController,
+    env: Env,
+    ctx: ExecutionContext,
+  ): Promise<void> {
+    return api.scheduled(controller, env, ctx);
   },
 } satisfies ExportedHandler<Env>;

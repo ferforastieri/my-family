@@ -2,12 +2,56 @@
   "name": "siao-web",
   "main": "../../workers/web/src/index.ts",
   "compatibility_date": "2026-10-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "observability": { "enabled": true },
   "assets": {
     "directory": "./build/site",
     "binding": "ASSETS",
     "not_found_handling": "404-page",
     "run_worker_first": ["/", "/seo", "/seo/*", "/api", "/api/*", "/ws", "/app", "/app/*"]
   },
-  "services": [{ "binding": "API", "service": "siao-api" }],
-  "observability": { "enabled": true }
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "siao",
+      "database_id": "1673888e-92c0-4045-b1a8-d29ee72dc4b1"
+    }
+  ],
+  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "siao-media" }],
+  "queues": {
+    "producers": [{ "binding": "JOBS", "queue": "siao-jobs" }],
+    "consumers": [
+      {
+        "queue": "siao-jobs",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 5
+      }
+    ]
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "REALTIME", "class_name": "TenantRealtime" },
+      { "name": "RATE_LIMITER", "class_name": "RateLimiter" }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["TenantRealtime", "RateLimiter"]
+    }
+  ],
+  "triggers": { "crons": ["* * * * *"] },
+  "vars": {
+    "APP_ENV": "production",
+    "CORS_ORIGIN": "https://siao-web.vira-ia-br.workers.dev",
+    "PLATFORM_ADMIN_EMAIL": "ffnephew@hotmail.com",
+    "COOKIE_SECURE": "true",
+    "COOKIE_SAME_SITE": "lax",
+    "THROTTLE_TTL_MS": "60000",
+    "THROTTLE_LIMIT": "120",
+    "VAPID_PUBLIC_KEY": "BOBoIEseHEO5B1xE25Y8RBBr7n9vkfk8Be1UGF1hQEZD_5CPu9oM40JASU_58ji6p_YiFp5LdLe_VI0TTRbD0ts",
+    "VAPID_SUBJECT": "mailto:ffnephew@hotmail.com"
+  }
 }
