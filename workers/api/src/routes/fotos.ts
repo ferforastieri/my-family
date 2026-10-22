@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import type { AppEnv } from '../env';
 import { authMiddleware, requireAccess } from '../auth';
-import { badRequest, envelope, notFound, paginated, parseBody, queryInt } from '../http';
+import { badRequest, envelope, forbidden, notFound, paginated, parseBody, queryInt } from '../http';
 import { execute, iso, now, queryAll, queryOne } from '../db';
 import { serveMedia, signedMediaUrl } from '../media';
 import { hmacHex } from '../hmac';
@@ -84,6 +84,20 @@ function albumFilter(album?: string) {
   return { sql: ' AND album = ?', params: [value] as unknown[] };
 }
 
+async function assertPhotoQuota(c: { env: AppEnv['Bindings'] }, principal: { tenantId: string; tenant: { planCode: string } }) {
+  if (principal.tenant.planCode === 'monthly' || principal.tenant.planCode === 'yearly') {
+    return;
+  }
+  const row = await queryOne<{ count: number }>(
+    c.env.DB,
+    'SELECT COUNT(*) AS count FROM fotos WHERE tenant_id = ?',
+    [principal.tenantId],
+  );
+  if ((row?.count ?? 0) >= 10) {
+    throw forbidden('O plano Free permite até 10 fotos. Assine um plano para liberar mais.');
+  }
+}
+
 fotosRoutes.get('/', async (c) => {
   const principal = c.get('principal');
   const page = queryInt(c.req.query('page'), 1, 100000);
@@ -143,6 +157,7 @@ fotosRoutes.get('/file', async (c) => {
 
 fotosRoutes.post('/upload', async (c) => {
   const principal = c.get('principal');
+  await assertPhotoQuota(c, principal);
   let form: FormData;
   try {
     form = await c.req.formData();
@@ -171,6 +186,7 @@ fotosRoutes.post('/upload', async (c) => {
 
 fotosRoutes.post('/upload-url', async (c) => {
   const principal = c.get('principal');
+  await assertPhotoQuota(c, principal);
   const body = await parseBody(c, z.object({ contentType: z.string() }));
   const mime = body.contentType.toLowerCase();
   if (!allowedImage.test(mime) && !allowedVideo.test(mime)) {
@@ -189,6 +205,7 @@ fotosRoutes.post('/upload-url', async (c) => {
 
 fotosRoutes.post('/upload-complete', async (c) => {
   const principal = c.get('principal');
+  await assertPhotoQuota(c, principal);
   const body = await parseBody(c, z.object({ key: z.string() }));
   if (!body.key.startsWith(`quarantine/${principal.tenantId}/`)) {
     throw badRequest('Objeto de quarentena inválido');
@@ -226,6 +243,7 @@ fotosRoutes.get('/:id', async (c) => {
 
 fotosRoutes.post('/', async (c) => {
   const principal = c.get('principal');
+  await assertPhotoQuota(c, principal);
   const body = await parseBody(c, fotoSchema);
   const url = body.url.trim();
   if (!url) throw badRequest('url é obrigatória');

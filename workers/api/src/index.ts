@@ -25,6 +25,7 @@ import { locationRoutes } from './routes/location';
 import { gamesRoutes } from './routes/games';
 import { demoRoutes } from './routes/demo';
 import { mapRoutes } from './routes/map';
+import { billingRoutes } from './routes/billing';
 import {
   publicBrandingRoutes,
   tenantBrandingRoutes,
@@ -67,6 +68,7 @@ const publicPosts = new Set([
   '/api/auth/register',
   '/api/auth/login',
   '/api/public/demo-sessions',
+  '/api/billing/webhook',
 ]);
 
 app.use('/api/*', async (c, next) => {
@@ -153,6 +155,7 @@ app.route('/api/location', locationRoutes);
 app.route('/api/games', gamesRoutes);
 app.route('/api/public/demo-sessions', demoRoutes);
 app.route('/api/map', mapRoutes);
+app.route('/api/billing', billingRoutes);
 app.route('/api/public', publicBrandingRoutes);
 app.route('/api/tenant/branding', tenantBrandingRoutes);
 app.route('/api/platform', platformBrandingRoutes);

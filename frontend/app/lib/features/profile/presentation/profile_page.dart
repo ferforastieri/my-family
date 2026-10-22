@@ -196,6 +196,13 @@ class _SignedProfileCardState extends State<_SignedProfileCard> {
               ),
               const SizedBox(height: 10),
               _ProfileActionTile(
+                icon: FamilyIcons.starRounded,
+                label: 'Plano',
+                description: 'Free, mensal ou anual. Veja os limites e assine.',
+                onTap: () => context.openAppRoute('/plano'),
+              ),
+              const SizedBox(height: 10),
+              _ProfileActionTile(
                 icon: FamilyIcons.locationOnOutlined,
                 label: 'Localização',
                 description: 'Controle se a família pode ver você.',

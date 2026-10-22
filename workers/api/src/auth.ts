@@ -40,6 +40,8 @@ export interface TenantEntity {
   status: 'active' | 'suspended' | 'deleted';
   planCode: string;
   subscriptionStatus: 'active' | 'past_due' | 'cancelled';
+  billingInterval: 'monthly' | 'yearly' | null;
+  accessUntil: string | null;
   theme: { primaryColor: string; fontFamily: string };
   isDemo: boolean;
   locationEnabled: boolean;
@@ -205,6 +207,8 @@ interface PrincipalRow {
   tenant_status: string;
   plan_code: string;
   subscription_status: string;
+  billing_interval: string | null;
+  access_until: number | null;
   theme: string;
   is_demo: number;
   location_enabled: number;
@@ -231,6 +235,7 @@ export async function loadPrincipal(
             u.created_at AS user_created_at, u.updated_at AS user_updated_at,
             t.id AS tenant_id, t.name AS tenant_name, t.slug,
             t.status AS tenant_status, t.plan_code, t.subscription_status,
+            t.billing_interval, t.access_until,
             t.theme, t.is_demo, t.location_enabled,
             t.logo_path AS tenant_logo_path,
             t.logo_updated_at AS tenant_logo_updated_at,
@@ -278,6 +283,8 @@ export async function loadPrincipal(
       status: row.tenant_status as TenantEntity['status'],
       planCode: row.plan_code,
       subscriptionStatus: row.subscription_status as TenantEntity['subscriptionStatus'],
+      billingInterval: row.billing_interval as TenantEntity['billingInterval'],
+      accessUntil: row.access_until ? new Date(row.access_until * 1000).toISOString() : null,
       theme,
       isDemo: row.is_demo === 1,
       locationEnabled: row.location_enabled !== 0,

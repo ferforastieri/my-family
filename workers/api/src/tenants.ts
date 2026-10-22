@@ -34,6 +34,8 @@ export interface TenantRow {
   status: string;
   plan_code: string;
   subscription_status: string;
+  billing_interval: string | null;
+  access_until: number | null;
   theme: string;
   is_demo: number;
   location_enabled: number;
@@ -70,6 +72,8 @@ export function tenantFromRow(row: TenantRow): TenantEntity {
     status: row.status as TenantEntity['status'],
     planCode: row.plan_code,
     subscriptionStatus: row.subscription_status as TenantEntity['subscriptionStatus'],
+    billingInterval: row.billing_interval as TenantEntity['billingInterval'],
+    accessUntil: row.access_until ? new Date(row.access_until * 1000).toISOString() : null,
     theme,
     isDemo: row.is_demo === 1,
     locationEnabled: row.location_enabled !== 0,
@@ -115,7 +119,7 @@ export async function createTenant(
       id,
       data.name,
       data.slug,
-      data.isDemo ? 'demo' : 'early_access',
+      data.isDemo ? 'demo' : 'free',
       '{"primaryColor":"#9F4D4D","fontFamily":"nunitoSans"}',
       data.isDemo ? 1 : 0,
       data.expiresAt ? data.expiresAt.getTime() : null,

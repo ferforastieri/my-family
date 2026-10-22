@@ -596,6 +596,27 @@ class FamilyRepository {
     return HomeSettingsConfig.fromJson(data);
   }
 
+  Future<List<Map<String, dynamic>>> getPlanPrices() async {
+    final data = await api.get<dynamic>('/billing/prices');
+    final map = data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+    return ((map['items'] as List?) ?? const [])
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList();
+  }
+
+  Future<String?> startCheckout(String plan) async {
+    final data = await api.post<Map<String, dynamic>>(
+      '/billing/checkout',
+      data: {'plan': plan},
+    );
+    return data['url']?.toString();
+  }
+
+  Future<String?> openBillingPortal() async {
+    final data = await api.post<Map<String, dynamic>>('/billing/portal');
+    return data['url']?.toString();
+  }
+
   Future<Map<String, dynamic>> getPublicLegal() async {
     final data = await api.get<Map<String, dynamic>>('/public/legal');
     return Map<String, dynamic>.from(data);

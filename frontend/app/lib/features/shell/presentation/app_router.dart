@@ -20,6 +20,7 @@ import '../../legal/presentation/legal_page.dart';
 import '../../lists/presentation/lists_page.dart';
 import '../../location/presentation/location_page.dart';
 import '../../profile/presentation/profile_page.dart';
+import '../../billing/presentation/plan_page.dart';
 import '../../resources/presentation/resource_page.dart';
 import 'app_shell.dart';
 
@@ -263,6 +264,14 @@ GoRouter buildRouter(
               auth: auth,
               repository: repository,
               location: location,
+              toast: toast,
+            )),
+          ),
+          GoRoute(
+            path: '/plano',
+            pageBuilder: (context, state) => _page(PlanPage(
+              auth: auth,
+              repository: repository,
               toast: toast,
             )),
           ),

@@ -16,6 +16,8 @@ class AppUser {
     this.locationSharing = true,
     this.hasTenantLogo = false,
     this.tenantLogoVersion,
+    this.planCode = 'free',
+    this.billingInterval,
   });
 
   final String id;
@@ -34,6 +36,8 @@ class AppUser {
   final bool locationSharing;
   final bool hasTenantLogo;
   final int? tenantLogoVersion;
+  final String planCode;
+  final String? billingInterval;
 
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
         id: json['id'].toString(),
@@ -63,6 +67,10 @@ class AppUser {
             ((json['tenant'] as Map?)?['hasLogo']) == true,
         tenantLogoVersion:
             ((json['tenant'] as Map?)?['logoVersion'] as num?)?.toInt(),
+        planCode:
+            ((json['tenant'] as Map?)?['planCode'] ?? 'free').toString(),
+        billingInterval:
+            ((json['tenant'] as Map?)?['billingInterval'])?.toString(),
       );
 
   bool get isAdmin => membershipRole == 'owner' || membershipRole == 'admin';
