@@ -596,6 +596,50 @@ class FamilyRepository {
     return HomeSettingsConfig.fromJson(data);
   }
 
+  Future<Map<String, dynamic>> getPublicLegal() async {
+    final data = await api.get<Map<String, dynamic>>('/public/legal');
+    return Map<String, dynamic>.from(data);
+  }
+
+  Future<Map<String, dynamic>> getPlatformSettings() async {
+    final data = await api.get<Map<String, dynamic>>('/platform/settings');
+    return Map<String, dynamic>.from(data);
+  }
+
+  Future<void> updatePlatformLegal({
+    required String terms,
+    required String privacy,
+  }) async {
+    await api.put<Map<String, dynamic>>(
+      '/platform/settings',
+      data: {'terms': terms, 'privacy': privacy},
+    );
+  }
+
+  Future<void> uploadPlatformLogo(XFile file) async {
+    await api.post<Map<String, dynamic>>(
+      '/platform/logo',
+      data: FormData.fromMap({
+        'file': MultipartFile.fromBytes(
+          await file.readAsBytes(),
+          filename: file.name,
+        ),
+      }),
+    );
+  }
+
+  Future<void> uploadTenantLogo(XFile file) async {
+    await api.post<Map<String, dynamic>>(
+      '/tenant/branding/logo',
+      data: FormData.fromMap({
+        'file': MultipartFile.fromBytes(
+          await file.readAsBytes(),
+          filename: file.name,
+        ),
+      }),
+    );
+  }
+
   Future<Map<String, dynamic>> getTenantInfo() async {
     final data = await api.get<Map<String, dynamic>>('/tenant');
     return Map<String, dynamic>.from(data);

@@ -16,6 +16,7 @@ import '../../chat/presentation/chat_page.dart';
 import '../../content/presentation/editable_text_collection_page.dart';
 import '../../games/presentation/games_page.dart';
 import '../../home/presentation/home_page.dart';
+import '../../legal/presentation/legal_page.dart';
 import '../../lists/presentation/lists_page.dart';
 import '../../location/presentation/location_page.dart';
 import '../../profile/presentation/profile_page.dart';
@@ -38,7 +39,11 @@ GoRouter buildRouter(
     redirect: (context, state) {
       final path = state.uri.path;
       if (auth.user == null) {
-        if (path == '/boas-vindas') return null;
+        if (path == '/boas-vindas' ||
+            path == '/termos' ||
+            path == '/privacidade') {
+          return null;
+        }
         final query = <String, String>{...state.uri.queryParameters};
         final segments = state.uri.pathSegments;
         final slug = state.pathParameters['slug'] ??
@@ -64,6 +69,18 @@ GoRouter buildRouter(
         path: '/boas-vindas',
         pageBuilder: (context, state) => _page(
           WelcomePage(auth: auth, toast: toast),
+        ),
+      ),
+      GoRoute(
+        path: '/termos',
+        pageBuilder: (context, state) => _page(
+          LegalPage(repository: repository, kind: LegalKind.terms),
+        ),
+      ),
+      GoRoute(
+        path: '/privacidade',
+        pageBuilder: (context, state) => _page(
+          LegalPage(repository: repository, kind: LegalKind.privacy),
         ),
       ),
       ShellRoute(

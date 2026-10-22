@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_brand.dart';
 
 import '../theme/app_theme.dart';
 import 'package:family_ui/family_ui.dart';
@@ -196,11 +197,8 @@ class _AppHeaderLogoButton extends StatelessWidget {
                     color: palette.primary.withValues(alpha: .22),
                   ),
                 ),
-                child: ClipOval(
-                  child: Image.asset(
-                    'assets/brand/family-logo.png',
-                    fit: BoxFit.cover,
-                  ),
+                child: const ClipOval(
+                  child: AppBrandLogo(fit: BoxFit.cover),
                 ),
               ),
               Positioned(

@@ -43,6 +43,8 @@ export interface TenantEntity {
   theme: { primaryColor: string; fontFamily: string };
   isDemo: boolean;
   locationEnabled: boolean;
+  hasLogo: boolean;
+  logoVersion: number | null;
   expiresAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -208,6 +210,8 @@ interface PrincipalRow {
   location_enabled: number;
   location_sharing: number;
   expires_at: number | null;
+  tenant_logo_path: string | null;
+  tenant_logo_updated_at: number | null;
   tenant_created_at: number;
   tenant_updated_at: number;
   membership_id: string;
@@ -227,7 +231,10 @@ export async function loadPrincipal(
             u.created_at AS user_created_at, u.updated_at AS user_updated_at,
             t.id AS tenant_id, t.name AS tenant_name, t.slug,
             t.status AS tenant_status, t.plan_code, t.subscription_status,
-            t.theme, t.is_demo, t.location_enabled, t.expires_at,
+            t.theme, t.is_demo, t.location_enabled,
+            t.logo_path AS tenant_logo_path,
+            t.logo_updated_at AS tenant_logo_updated_at,
+            t.expires_at,
             t.created_at AS tenant_created_at, t.updated_at AS tenant_updated_at,
             m.id AS membership_id, m.role AS membership_role,
             m.relationship, m.access AS membership_access, m.location_sharing
@@ -274,6 +281,8 @@ export async function loadPrincipal(
       theme,
       isDemo: row.is_demo === 1,
       locationEnabled: row.location_enabled !== 0,
+      hasLogo: Boolean(row.tenant_logo_path),
+      logoVersion: row.tenant_logo_updated_at,
       expiresAt: row.expires_at ? new Date(row.expires_at).toISOString() : null,
       createdAt: new Date(row.tenant_created_at).toISOString(),
       updatedAt: new Date(row.tenant_updated_at).toISOString(),

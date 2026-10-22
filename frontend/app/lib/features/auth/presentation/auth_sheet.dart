@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/auth/auth_controller.dart';
-import '../../../core/config/app_config.dart';
 import '../../../core/toast/toast_controller.dart';
 import 'package:family_ui/family_ui.dart';
 import '../../../core/widgets/app_sheet.dart';
@@ -192,11 +191,8 @@ class _AuthSheetState extends State<AuthSheet> {
     );
   }
 
-  Future<void> _openLegal(String path) async {
-    await launchUrl(
-      Uri.parse('${AppConfig.landingUrl}/$path'),
-      mode: LaunchMode.externalApplication,
-    );
+  void _openLegal(String path) {
+    context.push('/$path');
   }
 
   Future<void> _submit() async {

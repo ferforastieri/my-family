@@ -1,4 +1,5 @@
 import 'package:family_ui/family_ui.dart';
+import '../../../core/widgets/app_brand.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -1863,15 +1864,10 @@ class _ConversationAvatar extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       alignment: Alignment.center,
       child: isGlobal
-          ? Image.asset(
-              'assets/brand/family-logo.png',
+          ? AppBrandLogo(
               width: size,
               height: size,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _AvatarInitial(
-                initial: initial,
-                color: palette.primary,
-              ),
             )
           : avatarPath?.isNotEmpty == true
               ? Image.network(

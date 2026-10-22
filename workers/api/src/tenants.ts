@@ -37,6 +37,8 @@ export interface TenantRow {
   theme: string;
   is_demo: number;
   location_enabled: number;
+  logo_path: string | null;
+  logo_updated_at: number | null;
   expires_at: number | null;
   created_at: number;
   updated_at: number;
@@ -71,6 +73,8 @@ export function tenantFromRow(row: TenantRow): TenantEntity {
     theme,
     isDemo: row.is_demo === 1,
     locationEnabled: row.location_enabled !== 0,
+    hasLogo: Boolean(row.logo_path),
+    logoVersion: row.logo_updated_at,
     expiresAt: row.expires_at ? new Date(row.expires_at).toISOString() : null,
     createdAt: new Date(row.created_at).toISOString(),
     updatedAt: new Date(row.updated_at).toISOString(),

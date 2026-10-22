@@ -49,6 +49,15 @@ export default {
       }
       return dynamicRoot(await env.ASSETS.fetch(request));
     }
+    if (url.pathname === '/termos' || url.pathname === '/termos/') {
+      return Response.redirect(new URL('/#/termos', url).toString(), 308);
+    }
+    if (
+      url.pathname === '/privacidade' ||
+      url.pathname === '/privacidade/'
+    ) {
+      return Response.redirect(new URL('/#/privacidade', url).toString(), 308);
+    }
     if (url.pathname === '/seo' || url.pathname.startsWith('/seo/')) {
       return new Response('Not found', { status: 404 });
     }

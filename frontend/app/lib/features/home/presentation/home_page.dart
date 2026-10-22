@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../core/widgets/app_brand.dart';
 
 import 'package:flutter/material.dart';
 
@@ -203,7 +204,7 @@ class _HomeLogoMark extends StatelessWidget {
         ],
       ),
       child: ClipOval(
-        child: Image.asset('assets/brand/family-logo.png', fit: BoxFit.cover),
+        child: const AppBrandLogo(fit: BoxFit.cover),
       ),
     );
   }

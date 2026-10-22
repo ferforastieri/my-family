@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/app_brand.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/auth/auth_controller.dart';
-import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
 import '../../../core/widgets/app_sheet.dart';
@@ -40,11 +39,8 @@ class WelcomePage extends StatelessWidget {
     );
   }
 
-  Future<void> _openLegal(String path) async {
-    await launchUrl(
-      Uri.parse('${AppConfig.landingUrl}/$path'),
-      mode: LaunchMode.externalApplication,
-    );
+  void _openLegal(BuildContext context, String path) {
+    context.push('/$path');
   }
 
   @override
@@ -103,8 +99,8 @@ class WelcomePage extends StatelessWidget {
                   const SizedBox(height: 26),
                   _WelcomeFooter(
                     palette: palette,
-                    onTerms: () => _openLegal('termos'),
-                    onPrivacy: () => _openLegal('privacidade'),
+                    onTerms: () => _openLegal(context, 'termos'),
+                    onPrivacy: () => _openLegal(context, 'privacidade'),
                     onLogin: () => _openAuth(
                       context,
                       register: false,
@@ -139,8 +135,7 @@ class _WelcomeHero extends StatelessWidget {
       crossAxisAlignment:
           wide ? CrossAxisAlignment.start : CrossAxisAlignment.center,
       children: [
-        Image.asset(
-          'assets/brand/siao-logo.png',
+        AppBrandLogo(
           width: wide ? 250 : 200,
           fit: BoxFit.contain,
         ),

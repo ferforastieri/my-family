@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Assembles the single deployable site:
 #   /     -> Flutter landing for people, SEO HTML for crawlers
-#   /termos, /privacidade -> legal pages
+#   /termos, /privacidade -> Flutter routes (legacy HTML redirects)
 #   /api  -> separate API Worker through service binding
 # The API remains a separate Worker and is reached through /api and /ws.
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
@@ -28,11 +28,6 @@ cp -R "$APP/build/web/." "$SITE/"
 
 # The same landing content, pre-rendered as HTML for crawlers.
 cp "$LANDING/build/jaspr/index.html" "$SITE/seo/index.html"
-
-# Legal pages stay public; the other marketing pages no longer exist.
-rm -rf "$SITE/termos" "$SITE/privacidade"
-cp -R "$LANDING/build/jaspr/termos" "$SITE/termos"
-cp -R "$LANDING/build/jaspr/privacidade" "$SITE/privacidade"
 
 # Landing styles, scripts and images required by the SEO snapshot and legal pages.
 mkdir -p "$SITE/assets"

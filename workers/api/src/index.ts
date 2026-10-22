@@ -25,6 +25,11 @@ import { locationRoutes } from './routes/location';
 import { gamesRoutes } from './routes/games';
 import { demoRoutes } from './routes/demo';
 import { mapRoutes } from './routes/map';
+import {
+  publicBrandingRoutes,
+  tenantBrandingRoutes,
+  platformBrandingRoutes,
+} from './routes/branding';
 import { TenantRealtime } from './durable/realtime';
 import { RateLimiter } from './durable/rate-limit';
 import { handleJob, handleScheduled } from './jobs';
@@ -148,6 +153,9 @@ app.route('/api/location', locationRoutes);
 app.route('/api/games', gamesRoutes);
 app.route('/api/public/demo-sessions', demoRoutes);
 app.route('/api/map', mapRoutes);
+app.route('/api/public', publicBrandingRoutes);
+app.route('/api/tenant/branding', tenantBrandingRoutes);
+app.route('/api/platform', platformBrandingRoutes);
 
 app.get('/ws', async (c) => {
   const ticket = c.req.query('ticket');

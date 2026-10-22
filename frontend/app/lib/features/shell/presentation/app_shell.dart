@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../core/widgets/app_brand.dart';
 
 import 'package:flutter/material.dart';
 import '../../../core/auth/auth_controller.dart';
@@ -211,10 +212,7 @@ class _NavigationSheet extends StatelessWidget {
                       ),
                     ),
                     child: ClipOval(
-                      child: Image.asset(
-                        'assets/brand/family-logo.png',
-                        fit: BoxFit.cover,
-                      ),
+                      child: const AppBrandLogo(fit: BoxFit.cover),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -413,10 +411,7 @@ class _DesktopMainNavigation extends StatelessWidget {
                 ),
                 child: _BadgeIcon(
                   count: chatUnreadCount,
-                  child: Image.asset(
-                    'assets/brand/family-logo.png',
-                    fit: BoxFit.contain,
-                  ),
+                  child: const AppBrandLogo(fit: BoxFit.contain),
                 ),
               ),
             ),
@@ -776,10 +771,7 @@ class _MobileBottomNavigation extends StatelessWidget {
                       ),
                       child: _BadgeIcon(
                         count: chatUnreadCount,
-                        child: Image.asset(
-                          'assets/brand/family-logo.png',
-                          fit: BoxFit.contain,
-                        ),
+                        child: const AppBrandLogo(fit: BoxFit.contain),
                       ),
                     ),
                   ),

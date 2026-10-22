@@ -48,8 +48,8 @@ class SiteShell extends StatelessComponent {
           ('Baixar app', downloadUrl),
         ]),
         _footerColumn('Confiança', [
-          ('Política de privacidade', '/privacidade'),
-          ('Termos de uso', '/termos'),
+          ('Política de privacidade', '/#/privacidade'),
+          ('Termos de uso', '/#/termos'),
         ]),
         _footerColumn('Acesso', [
           ('Criar minha família', appHome),

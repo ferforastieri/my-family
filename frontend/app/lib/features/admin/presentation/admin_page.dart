@@ -7,6 +7,7 @@ import '../../../core/api/query_keys.dart';
 import '../../../core/auth/auth_controller.dart';
 import '../../../core/auth/authenticated_media.dart';
 import '../../../core/config/app_config.dart';
+import '../../../core/widgets/app_brand.dart';
 import '../../../core/query/app_query.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/toast/toast_controller.dart';
@@ -296,7 +297,10 @@ class _AdminPageState extends State<AdminPage> {
           onDelete: _deleteUser,
           pagination: _pagination(usersPagination, (page) => usersPage = page),
         ),
-      _AdminSection.family => _FamilyAdminTab(tenant: tenantInfo),
+      _AdminSection.family => _FamilyAdminTab(
+          tenant: tenantInfo,
+          onUploadLogo: _uploadFamilyLogo,
+        ),
       _AdminSection.notifications => _NotificationsAdminTab(
           notifications: notifications,
           scheduledNotifications: scheduledNotifications,
@@ -346,6 +350,7 @@ class _AdminPageState extends State<AdminPage> {
         ),
       _AdminSection.platform => _PlatformAdminTab(
           tenants: platformTenants,
+          onOpenSettings: _openPlatformSettings,
           loading: false,
           pagination: _pagination(
             platformPagination,
@@ -403,6 +408,33 @@ class _AdminPageState extends State<AdminPage> {
     await widget.repository.deleteUser(user.id);
     widget.toast.backendSuccess(widget.repository.takeMessage());
     _invalidateAdmin();
+  }
+
+  Future<void> _openPlatformSettings() async {
+    await showAppSheet<void>(
+      context: context,
+      builder: (_) => _PlatformSettingsSheet(
+        repository: widget.repository,
+        toast: widget.toast,
+      ),
+    );
+  }
+
+  Future<void> _uploadFamilyLogo() async {
+    final file = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 90,
+      maxWidth: 1200,
+    );
+    if (file == null) return;
+    try {
+      await widget.repository.uploadTenantLogo(file);
+      await widget.auth.refreshMe();
+      widget.toast.backendSuccess(widget.repository.takeMessage());
+      _invalidateAdmin();
+    } catch (error) {
+      widget.toast.error(error.toString());
+    }
   }
 
   Future<void> _openInviteSheet() async {
@@ -1023,9 +1055,13 @@ class _AdminActions extends StatelessWidget {
 }
 
 class _FamilyAdminTab extends StatelessWidget {
-  const _FamilyAdminTab({required this.tenant});
+  const _FamilyAdminTab({
+    required this.tenant,
+    required this.onUploadLogo,
+  });
 
   final Map<String, dynamic>? tenant;
+  final VoidCallback onUploadLogo;
 
   @override
   Widget build(BuildContext context) {
@@ -1076,6 +1112,12 @@ class _FamilyAdminTab extends StatelessWidget {
                               ),
                             ],
                           ),
+                        ),
+                        const SizedBox(width: 8),
+                        FamilyOutlinedButton.icon(
+                          onPressed: onUploadLogo,
+                          icon: const Icon(FamilyIcons.uploadFile),
+                          label: const Text('Logo'),
                         ),
                       ],
                     ),
@@ -1129,19 +1171,26 @@ class _PlatformAdminTab extends StatelessWidget {
     required this.tenants,
     required this.loading,
     required this.pagination,
+    required this.onOpenSettings,
   });
 
   final List<Map<String, dynamic>> tenants;
   final bool loading;
   final Widget? pagination;
+  final VoidCallback onOpenSettings;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const _AdminToolbar(
+        _AdminToolbar(
           title: 'Plataforma',
           subtitle: 'Visão operacional das famílias cadastradas.',
+          action: FamilyFilledButton.icon(
+            onPressed: onOpenSettings,
+            icon: const Icon(FamilyIcons.tuneOutlined),
+            label: const Text('Configurações'),
+          ),
         ),
         Expanded(
           child: _AdminSectionBody(
@@ -1263,6 +1312,178 @@ class _InviteMemberSheetState extends State<_InviteMemberSheet> {
             onPressed: _submit,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PlatformSettingsSheet extends StatefulWidget {
+  const _PlatformSettingsSheet({
+    required this.repository,
+    required this.toast,
+  });
+
+  final FamilyRepository repository;
+  final ToastController toast;
+
+  @override
+  State<_PlatformSettingsSheet> createState() => _PlatformSettingsSheetState();
+}
+
+class _PlatformSettingsSheetState extends State<_PlatformSettingsSheet> {
+  final terms = TextEditingController();
+  final privacy = TextEditingController();
+  bool loading = true;
+  bool saving = false;
+  bool uploading = false;
+  int? logoVersion;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    terms.dispose();
+    privacy.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    try {
+      final data = await widget.repository.getPlatformSettings();
+      if (!mounted) return;
+      setState(() {
+        terms.text = data['terms']?.toString() ?? '';
+        privacy.text = data['privacy']?.toString() ?? '';
+        logoVersion = (data['logoVersion'] as num?)?.toInt();
+        loading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => loading = false);
+      widget.toast.error(error.toString());
+    }
+  }
+
+  Future<void> _uploadLogo() async {
+    final file = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 90,
+      maxWidth: 1200,
+    );
+    if (file == null) return;
+    setState(() => uploading = true);
+    try {
+      await widget.repository.uploadPlatformLogo(file);
+      brandGlobalVersion.value++;
+      widget.toast.backendSuccess(widget.repository.takeMessage());
+      if (mounted) {
+        setState(() {
+          uploading = false;
+          logoVersion = DateTime.now().millisecondsSinceEpoch;
+        });
+      }
+    } catch (error) {
+      if (mounted) setState(() => uploading = false);
+      widget.toast.error(error.toString());
+    }
+  }
+
+  Future<void> _save() async {
+    setState(() => saving = true);
+    try {
+      await widget.repository.updatePlatformLegal(
+        terms: terms.text,
+        privacy: privacy.text,
+      );
+      widget.toast.backendSuccess(widget.repository.takeMessage());
+      if (mounted) Navigator.of(context).pop();
+    } catch (error) {
+      widget.toast.error(error.toString());
+      if (mounted) setState(() => saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = Theme.of(context).extension<AppPalette>()!;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 720),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const AppSheetHeader(
+              title: 'Plataforma',
+              subtitle: 'Logo global, termos de uso e privacidade.',
+              icon: FamilyIcons.tuneOutlined,
+            ),
+            const SizedBox(height: 18),
+            FamilyCard(
+              child: Row(
+                children: [
+                  ClipOval(
+                    child: Image.network(
+                      AppConfig.apiUri(
+                        '/public/branding/logo?v=${logoVersion ?? 0}',
+                      ).toString(),
+                      width: 64,
+                      height: 64,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Icon(
+                        FamilyIcons.imageOutlined,
+                        size: 38,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      'Logo global exibido para toda a plataforma.',
+                      style: TextStyle(color: palette.muted, height: 1.35),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  FamilyOutlinedButton.icon(
+                    onPressed: uploading ? null : _uploadLogo,
+                    icon: const Icon(FamilyIcons.uploadFile),
+                    label: Text(uploading ? 'Enviando...' : 'Alterar'),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            if (loading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 30),
+                child: Center(child: SkeletonBox(height: 200)),
+              )
+            else ...[
+              FamilyTextField(
+                controller: terms,
+                label: 'Termos de uso',
+                maxLines: 10,
+                minLines: 6,
+              ),
+              const SizedBox(height: 14),
+              FamilyTextField(
+                controller: privacy,
+                label: 'Política de privacidade',
+                maxLines: 10,
+                minLines: 6,
+              ),
+              const SizedBox(height: 18),
+              FamilyFilledButton(
+                onPressed: saving ? null : _save,
+                child: Text(saving ? 'Salvando...' : 'Salvar conteúdo legal'),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

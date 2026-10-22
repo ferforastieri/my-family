@@ -11,6 +11,7 @@ import 'core/query/app_query_provider.dart';
 import 'core/socket/socket_client.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
+import 'core/widgets/app_brand.dart';
 import 'core/widgets/skeleton.dart';
 import 'core/toast/toast_controller.dart';
 import 'core/toast/toast_overlay.dart';
@@ -163,7 +164,9 @@ class MyFamilyApp extends StatelessWidget {
             ),
           );
         }
-        return MaterialApp.router(
+        return AppBrandScope(
+          auth: auth,
+          child: MaterialApp.router(
           title: 'Sião',
           debugShowCheckedModeBanner: false,
           theme: buildAppTheme(
@@ -188,6 +191,7 @@ class MyFamilyApp extends StatelessWidget {
               child: _SystemSafeArea(child: child ?? const SizedBox.shrink()),
             ),
           ),
+        ),
         );
       },
     );
